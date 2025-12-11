@@ -179,17 +179,17 @@ export function AddonCard({
 ```
 
 ## Acceptance Criteria
-- [ ] Displays all active add-ons with name, description, price
-- [ ] Breed-specific upsells shown first with "Recommended" badge
-- [ ] Upsell message displayed when present
-- [ ] Clicking card toggles selection
-- [ ] Selected add-ons show check state and ring highlight
-- [ ] Selected add-ons summary shows itemized list
-- [ ] Running total updates with animation
-- [ ] "Skip" option when no add-ons selected
-- [ ] "Continue" button works with or without add-ons
-- [ ] Loading skeleton shown while fetching
-- [ ] Mobile-friendly layout (stacked cards)
+- [x] Displays all active add-ons with name, description, price
+- [x] Breed-specific upsells shown first with "Recommended" badge
+- [x] Upsell message displayed when present
+- [x] Clicking card toggles selection
+- [x] Selected add-ons show check state and ring highlight
+- [x] Selected add-ons summary shows itemized list
+- [x] Running total updates with animation
+- [x] "Skip" option when no add-ons selected
+- [x] "Continue" button works with or without add-ons
+- [x] Loading skeleton shown while fetching
+- [x] Mobile-friendly layout (stacked cards)
 
 ## Estimated Complexity
 Medium
@@ -201,3 +201,18 @@ Phase 4: Step Components Enhancement
 - Task 3 (useAddons hook)
 - Task 5 (addons API)
 - Task 12 (hook integration pattern)
+
+## Status
+**Completed** - December 11, 2025
+
+### Implementation Notes
+- Added animated price summary with Framer Motion
+- Individual addon line items slide in with smooth animations
+- Running total with scale animation on price changes
+- Clean itemized breakdown with border separator
+- Breed-specific upsells shown first with "Recommended" badge
+- Skip option when no add-ons selected
+
+### Files Modified
+- `src/components/booking/steps/AddonsStep.tsx` (added animated price summary)
+- `src/components/booking/AddonCard.tsx` (already complete)
