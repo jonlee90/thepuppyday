@@ -2,445 +2,266 @@
 
 ## Overview
 
-This document contains the implementation checklist for the booking system. Tasks are ordered by dependency - complete earlier tasks before later ones.
+This document outlines the implementation tasks for the booking system. Tasks are organized into logical phases and reference specific requirements from the requirements document.
+
+**Prerequisites**:
+- Marketing site (Phase 2) completed
+- Existing database types and mock store structure
+- Booking UI components (partially implemented)
+
+**Estimated Timeline**: 4-5 weeks
 
 ---
 
-## Tasks
+## Phase 1: Foundation & Data Layer
 
-### Task 1: Create Booking Store (Zustand)
+- [ ] **1.1** Create booking utility functions (pricing, availability, validation)
+  - File: `src/lib/booking/pricing.ts`, `src/lib/booking/availability.ts`, `src/lib/booking/validation.ts`
+  - Implements size-based price calculation, time slot generation, business hours logic
+  - References: Req 10.1, 10.2, 10.4, 14.1, 14.2, 14.3
 
-**Priority:** High | **Estimate:** 2 hours
+- [ ] **1.2** Seed mock data for services, add-ons, and business hours
+  - File: `src/mocks/supabase/seed-booking.ts`
+  - Add services (Basic/Premium Grooming), service prices, add-ons, business hours settings
+  - References: Req 2.1, 5.1
 
-Create the Zustand store for managing booking wizard state with session persistence.
-
-**Files to create/modify:**
-- `src/stores/bookingStore.ts`
-
-**Acceptance Criteria:**
-- [ ] Store manages all booking state (service, pet, date/time, add-ons, guest info)
-- [ ] Step navigation actions (next, prev, setStep)
-- [ ] Price calculation computed values
-- [ ] Session storage persistence with 30-min expiry
-- [ ] Reset action to clear all state
-
----
-
-### Task 2: Create Booking Utilities
-
-**Priority:** High | **Estimate:** 2 hours
-
-Create utility functions for availability calculation, pricing, and validation.
-
-**Files to create/modify:**
-- `src/lib/booking/availability.ts`
-- `src/lib/booking/pricing.ts`
-- `src/lib/booking/validation.ts`
-
-**Acceptance Criteria:**
-- [ ] `getAvailableSlots()` calculates available time slots for a date
-- [ ] `hasConflict()` checks for appointment overlaps
-- [ ] `calculatePrice()` computes total with size-based pricing and add-ons
-- [ ] Zod schemas for guest info and pet form validation
-- [ ] Unit tests for pricing and availability functions
+- [ ] **1.3** Create data fetching hooks (useServices, useAddons, useAvailability, usePets)
+  - Files: `src/hooks/useServices.ts`, `src/hooks/useAddons.ts`, `src/hooks/useAvailability.ts`, `src/hooks/usePets.ts`
+  - Implement with mock store support, loading states, error handling
+  - References: Req 2.1, 3.1, 4.2, 5.1
 
 ---
 
-### Task 3: Create BookingWizard Container
+## Phase 2: API Routes
 
-**Priority:** High | **Estimate:** 2 hours
+- [ ] **2.1** Create GET /api/services endpoint
+  - File: `src/app/api/services/route.ts`
+  - Return active services with size-based prices
+  - References: Req 2.1, 2.2
 
-Create the main wizard orchestrator component with step management and animations.
+- [ ] **2.2** Create GET /api/addons endpoint
+  - File: `src/app/api/addons/route.ts`
+  - Return active add-ons with upsell information
+  - References: Req 5.1, 5.2
 
-**Files to create/modify:**
-- `src/components/booking/BookingWizard.tsx`
-- `src/components/booking/BookingProgress.tsx`
-- `src/components/booking/BookingContext.tsx`
+- [ ] **2.3** Create GET /api/availability endpoint
+  - File: `src/app/api/availability/route.ts`
+  - Calculate available time slots for date/service, respecting business hours and existing appointments
+  - References: Req 4.2, 4.3, 4.6, 4.9, 14.1, 14.2, 14.3
 
-**Acceptance Criteria:**
-- [ ] Renders current step based on store state
-- [ ] Progress indicator shows completed, current, and upcoming steps
-- [ ] Navigation between completed steps via progress clicks
-- [ ] Framer Motion step transition animations
-- [ ] Responsive layout (sidebar on desktop, bottom bar on mobile)
+- [ ] **2.4** Create GET/POST /api/pets endpoints
+  - File: `src/app/api/pets/route.ts`
+  - GET: Return authenticated user's pets
+  - POST: Create new pet profile
+  - References: Req 3.1, 3.3, 3.4, 3.5
 
----
+- [ ] **2.5** Create POST /api/appointments endpoint
+  - File: `src/app/api/appointments/route.ts`
+  - Create appointment with pessimistic locking to prevent double-booking
+  - Handle guest info, add-ons, price validation
+  - References: Req 6.5, 6.7, 14.5
 
-### Task 4: Create ServiceStep Component
+- [ ] **2.6** Create POST /api/waitlist endpoint
+  - File: `src/app/api/waitlist/route.ts`
+  - Create waitlist entry with time preference
+  - Prevent duplicate entries for same date
+  - References: Req 9.2, 9.5, 9.6
 
-**Priority:** High | **Estimate:** 2 hours
-
-Build the service selection step with service cards grid.
-
-**Files to create/modify:**
-- `src/components/booking/steps/ServiceStep.tsx`
-- `src/components/booking/ServiceCard.tsx`
-
-**Acceptance Criteria:**
-- [ ] Fetches and displays active services from serviceStore
-- [ ] Service cards show image, name, description, price range, duration
-- [ ] Selected state with visual highlight
-- [ ] Next button enabled only when service selected
-- [ ] Responsive grid (3 cols desktop, 2 tablet, 1 mobile)
-
----
-
-### Task 5: Create PetStep Component
-
-**Priority:** High | **Estimate:** 3 hours
-
-Build the pet selection and creation step.
-
-**Files to create/modify:**
-- `src/components/booking/steps/PetStep.tsx`
-- `src/components/booking/PetCard.tsx`
-- `src/components/booking/PetForm.tsx`
-
-**Acceptance Criteria:**
-- [ ] Authenticated users see their pets list
-- [ ] Pet cards show photo, name, breed, size
-- [ ] "Add New Pet" option available
-- [ ] Pet form with name (required), size (required), breed, weight
-- [ ] Size selection shows weight ranges
-- [ ] Price updates when size is selected/changed
-- [ ] Guest flow shows pet form directly
+- [ ] **2.7** Create POST /api/users/guest endpoint
+  - File: `src/app/api/users/guest/route.ts`
+  - Create guest user account during booking
+  - Check for existing email, return conflict if exists
+  - References: Req 7.3, 7.5
 
 ---
 
-### Task 6: Create CalendarPicker Component
+## Phase 3: Booking Page & Integration
 
-**Priority:** High | **Estimate:** 3 hours
+- [ ] **3.1** Create /book page route with BookingWizard
+  - File: `src/app/(marketing)/book/page.tsx`
+  - Server component wrapping BookingWizard
+  - Support pre-selected service via query parameter
+  - References: Req 13.1, 13.2, 13.4
 
-Build the date selection calendar.
+- [ ] **3.2** Update step components to use API hooks instead of direct mock store access
+  - Files: `src/components/booking/steps/*.tsx`
+  - Replace getMockStore() calls with useServices, useAddons, useAvailability hooks
+  - References: Req 2.1, 3.1, 4.2, 5.1
 
-**Files to create/modify:**
-- `src/components/booking/CalendarPicker.tsx`
-
-**Acceptance Criteria:**
-- [ ] Displays current and next month
-- [ ] Past dates disabled
-- [ ] Closed days (from business hours) disabled
-- [ ] Selected date highlighted
-- [ ] Mobile-friendly touch targets
-- [ ] Keyboard navigation support
-
----
-
-### Task 7: Create TimeSlotGrid Component
-
-**Priority:** High | **Estimate:** 3 hours
-
-Build the time slot selection grid with availability.
-
-**Files to create/modify:**
-- `src/components/booking/TimeSlotGrid.tsx`
-
-**Acceptance Criteria:**
-- [ ] Displays 30-minute slots within business hours
-- [ ] Available slots are selectable
-- [ ] Unavailable slots show "Join Waitlist" button
-- [ ] Selected slot highlighted
-- [ ] Accounts for service duration when calculating availability
-- [ ] Loading state while fetching availability
+- [ ] **3.3** Implement useBookingSubmit hook for appointment creation
+  - File: `src/hooks/useBookingSubmit.ts`
+  - Handle API call, error states, conflict recovery
+  - References: Req 6.5, 12.4, 12.5
 
 ---
 
-### Task 8: Create DateTimeStep Component
+## Phase 4: Step Components Enhancement
 
-**Priority:** High | **Estimate:** 2 hours
+- [ ] **4.1** Complete PetStep with pet creation form and validation
+  - File: `src/components/booking/steps/PetStep.tsx`, `src/components/booking/PetForm.tsx`
+  - Display existing pets for authenticated users, pet creation form for new pets
+  - Size selection updates pricing in real-time
+  - References: Req 3.1, 3.2, 3.3, 3.4, 3.6, 3.7
 
-Combine calendar and time slots into the date/time step.
+- [ ] **4.2** Complete DateTimeStep with calendar and time slot grid
+  - File: `src/components/booking/steps/DateTimeStep.tsx`, `src/components/booking/CalendarPicker.tsx`, `src/components/booking/TimeSlotGrid.tsx`
+  - Calendar with disabled dates, time slots with availability
+  - Waitlist button for fully booked slots
+  - References: Req 4.1, 4.2, 4.3, 4.4, 4.5, 4.7, 4.8
 
-**Files to create/modify:**
-- `src/components/booking/steps/DateTimeStep.tsx`
+- [ ] **4.3** Complete AddonsStep with addon cards and upsell highlighting
+  - File: `src/components/booking/steps/AddonsStep.tsx`, `src/components/booking/AddonCard.tsx`
+  - Display add-ons with breed-specific upsells, running total animation
+  - References: Req 5.1, 5.2, 5.3, 5.4, 5.5, 5.6
 
-**Acceptance Criteria:**
-- [ ] Integrates CalendarPicker and TimeSlotGrid
-- [ ] Time slots update when date changes
-- [ ] Selected date/time displayed prominently
-- [ ] Next button enabled when both date and time selected
-- [ ] Handles waitlist joining flow
+- [ ] **4.4** Complete ReviewStep with booking summary and guest info form
+  - File: `src/components/booking/steps/ReviewStep.tsx`, `src/components/booking/GuestInfoForm.tsx`
+  - Itemized pricing, guest info collection for unauthenticated users
+  - Handle submission and conflict errors
+  - References: Req 6.1, 6.2, 6.3, 6.4, 7.2, 7.6
 
----
-
-### Task 9: Create AddonsStep Component
-
-**Priority:** Medium | **Estimate:** 2 hours
-
-Build the add-on selection step.
-
-**Files to create/modify:**
-- `src/components/booking/steps/AddonsStep.tsx`
-- `src/components/booking/AddonCard.tsx`
-
-**Acceptance Criteria:**
-- [ ] Fetches and displays active add-ons
-- [ ] Add-on cards show name, description, price
-- [ ] Breed-matched upsells highlighted at top
-- [ ] Toggle selection with running total update
-- [ ] "Skip" option to proceed without add-ons
-- [ ] Multiple add-ons can be selected
+- [ ] **4.5** Complete ConfirmationStep with booking details and next steps
+  - File: `src/components/booking/steps/ConfirmationStep.tsx`
+  - Display confirmation with reference number, add to calendar link
+  - Book another appointment option
+  - References: Req 6.6
 
 ---
 
-### Task 10: Create PriceSummary Component
+## Phase 5: Waitlist Integration
 
-**Priority:** Medium | **Estimate:** 1.5 hours
+- [ ] **5.1** Implement WaitlistModal component
+  - File: `src/components/booking/WaitlistModal.tsx`
+  - Time preference selection (morning/afternoon/any)
+  - API integration for waitlist creation
+  - References: Req 9.2, 9.3, 9.6
 
-Build the running price total display.
-
-**Files to create/modify:**
-- `src/components/booking/PriceSummary.tsx`
-
-**Acceptance Criteria:**
-- [ ] Displays service name and price
-- [ ] Lists selected add-ons with prices
-- [ ] Shows subtotal and total
-- [ ] Price changes animate smoothly
-- [ ] Sticky sidebar on desktop
-- [ ] Collapsible bottom bar on mobile
+- [ ] **5.2** Integrate waitlist with TimeSlotGrid
+  - File: `src/components/booking/TimeSlotGrid.tsx`
+  - Show waitlist button for fully booked slots
+  - Display waitlist count
+  - References: Req 9.1, 4.5
 
 ---
 
-### Task 11: Create GuestInfoForm Component
+## Phase 6: Form Validation & Error Handling
 
-**Priority:** Medium | **Estimate:** 2 hours
+- [ ] **6.1** Create Zod validation schemas for all forms
+  - File: `src/lib/booking/schemas.ts`
+  - Pet form, guest info, appointment creation schemas
+  - References: Req 12.1, 12.2, 12.3
 
-Build the guest contact information form.
+- [ ] **6.2** Implement error handling UI patterns
+  - Update step components with error display, field validation
+  - Toast notifications for API errors
+  - References: Req 12.1, 12.2, 12.3, 12.4, 12.5, 12.6
 
-**Files to create/modify:**
-- `src/components/booking/GuestInfoForm.tsx`
-
-**Acceptance Criteria:**
-- [ ] Fields: first name, last name, email, phone
-- [ ] Zod validation with react-hook-form
-- [ ] Error messages display below fields
-- [ ] Phone input with formatting
-- [ ] Check for existing email and prompt login
-
----
-
-### Task 12: Create ReviewStep Component
-
-**Priority:** High | **Estimate:** 2.5 hours
-
-Build the final review step before confirmation.
-
-**Files to create/modify:**
-- `src/components/booking/steps/ReviewStep.tsx`
-
-**Acceptance Criteria:**
-- [ ] Displays complete booking summary
-- [ ] Shows service, pet, date/time, add-ons
-- [ ] Itemized pricing breakdown
-- [ ] GuestInfoForm for unauthenticated users
-- [ ] Edit links to go back to specific steps
-- [ ] "Confirm Booking" button with loading state
+- [ ] **6.3** Handle booking conflicts and session expiry
+  - Redirect to date/time step on conflict
+  - Session expiry warning with data preservation
+  - References: Req 12.4, 1.5
 
 ---
 
-### Task 13: Create ConfirmationStep Component
+## Phase 7: Mobile Responsiveness & Accessibility
 
-**Priority:** Medium | **Estimate:** 1.5 hours
+- [ ] **7.1** Optimize booking wizard for mobile
+  - Single-column layouts, large touch targets
+  - Mobile-friendly calendar and time slots
+  - Full-width buttons with clear labels
+  - References: Req 11.1, 11.2, 11.3, 11.4, 11.5
 
-Build the booking success confirmation page.
-
-**Files to create/modify:**
-- `src/components/booking/steps/ConfirmationStep.tsx`
-
-**Acceptance Criteria:**
-- [ ] Success icon and message
-- [ ] Booking reference number displayed
-- [ ] Appointment details summary
-- [ ] "View My Appointments" button (authenticated)
-- [ ] "Create Account" prompt (guests)
-- [ ] "Book Another" button to restart
+- [ ] **7.2** Add ARIA labels and keyboard navigation
+  - Progress indicator accessibility
+  - Form field ARIA attributes
+  - Live regions for price updates
+  - References: Req 1.1 (implicit accessibility requirements)
 
 ---
 
-### Task 14: Implement Booking Creation Logic
+## Phase 8: Testing
 
-**Priority:** High | **Estimate:** 3 hours
+- [ ] **8.1** Write unit tests for booking utility functions
+  - File: `src/lib/booking/__tests__/*.test.ts`
+  - Test pricing calculations, availability logic, validation
+  - References: Req 10.1, 10.2, 14.1, 14.2
 
-Wire up the booking confirmation to create appointments.
+- [ ] **8.2** Write unit tests for booking store
+  - File: `src/stores/__tests__/bookingStore.test.ts`
+  - Test state transitions, navigation guards, price calculations
+  - References: Req 1.2, 1.3, 10.3
 
-**Files to create/modify:**
-- `src/hooks/useBooking.ts`
-- Update `src/mocks/stores/appointmentStore.ts` if needed
-- Update `src/mocks/stores/waitlistStore.ts` if needed
+- [ ] **8.3** Write integration tests for API routes
+  - File: `src/app/api/__tests__/*.test.ts`
+  - Test appointment creation, conflict handling, validation
+  - References: Req 6.5, 14.5
 
-**Acceptance Criteria:**
-- [ ] Creates appointment record on confirmation
-- [ ] Creates appointment_addons records
-- [ ] Creates pet if new pet was added
-- [ ] Creates user if guest booking
-- [ ] Handles slot conflict (race condition) gracefully
-- [ ] Triggers confirmation (logged in mock mode)
-
----
-
-### Task 15: Create Booking Page
-
-**Priority:** High | **Estimate:** 1.5 hours
-
-Create the booking page route and integrate the wizard.
-
-**Files to create/modify:**
-- `src/app/(marketing)/book/page.tsx`
-- `src/app/(marketing)/book/loading.tsx`
-
-**Acceptance Criteria:**
-- [ ] Page renders BookingWizard
-- [ ] Supports `?service=<id>` URL parameter for pre-selection
-- [ ] Loading skeleton matches wizard layout
-- [ ] Page title and meta tags for SEO
-- [ ] "Back to Home" navigation link
+- [ ] **8.4** Write component tests for booking steps
+  - File: `src/components/booking/__tests__/*.test.tsx`
+  - Test user interactions, form submissions, error states
+  - References: Req 2.3, 3.2, 4.8, 5.3
 
 ---
 
-### Task 16: Update Marketing Header/CTA
+## Phase 9: Polish & Integration
 
-**Priority:** Medium | **Estimate:** 1 hour
+- [ ] **9.1** Update marketing site CTAs to link to booking page
+  - Update hero, service cards, header to link to /book
+  - Pass service ID as query parameter from service cards
+  - References: Req 13.1, 13.4
 
-Update marketing site "Book Now" buttons to link to booking page.
+- [ ] **9.2** Add loading states and animations
+  - Skeleton screens for data loading
+  - Smooth step transitions
+  - Price update animations
+  - References: Req 1.6, 10.3
 
-**Files to create/modify:**
-- Update `src/components/marketing/Header.tsx`
-- Update `src/components/marketing/HeroSection.tsx`
-- Update any other CTA buttons
-
-**Acceptance Criteria:**
-- [ ] "Book Now" buttons navigate to /book
-- [ ] Service cards can link to /book?service=<id>
-- [ ] Smooth transition to booking flow
-
----
-
-### Task 17: Add Waitlist Creation
-
-**Priority:** Medium | **Estimate:** 2 hours
-
-Implement joining waitlist for unavailable slots.
-
-**Files to create/modify:**
-- Extend TimeSlotGrid component
-- Create waitlist modal/form if needed
-
-**Acceptance Criteria:**
-- [ ] "Join Waitlist" button on unavailable slots
-- [ ] Captures time preference (morning/afternoon/any)
-- [ ] Creates waitlist entry in store
-- [ ] Confirmation message after joining
-- [ ] Prevents duplicate waitlist entries
-
----
-
-### Task 18: Mobile Optimization Pass
-
-**Priority:** Medium | **Estimate:** 2 hours
-
-Ensure all booking components work well on mobile.
-
-**Files to modify:**
-- All booking components
-
-**Acceptance Criteria:**
-- [ ] Touch-friendly tap targets (44px minimum)
-- [ ] Proper input types for mobile keyboards
-- [ ] Calendar scrollable/swipeable
-- [ ] Bottom price bar doesn't cover content
-- [ ] Step navigation buttons full-width
-- [ ] Forms don't break viewport
-
----
-
-### Task 19: Add Booking Animations
-
-**Priority:** Low | **Estimate:** 1.5 hours
-
-Polish animations throughout the booking flow.
-
-**Files to modify:**
-- All booking step components
-
-**Acceptance Criteria:**
-- [ ] Step transitions slide smoothly
-- [ ] Cards scale on hover/select
-- [ ] Price updates with number animation
-- [ ] Success confirmation has celebratory animation
-- [ ] Loading states have appropriate animations
-
----
-
-### Task 20: Unit Tests for Booking System
-
-**Priority:** Medium | **Estimate:** 3 hours
-
-Create tests for booking utilities and core logic.
-
-**Files to create:**
-- `src/lib/booking/availability.test.ts`
-- `src/lib/booking/pricing.test.ts`
-- `src/stores/bookingStore.test.ts`
-
-**Acceptance Criteria:**
-- [ ] Availability calculation tests (conflicts, business hours)
-- [ ] Price calculation tests (sizes, add-ons)
-- [ ] Store action tests (step navigation, selection)
-- [ ] Validation schema tests
-- [ ] All tests pass
+- [ ] **9.3** Final accessibility audit
+  - Run jest-axe tests
+  - Manual keyboard navigation testing
+  - Screen reader testing
+  - References: Req 11.1-11.5 (implicit)
 
 ---
 
 ## Dependency Graph
 
 ```
-Task 1 (Store) ─────────────────────────────────────────────┐
-                                                            │
-Task 2 (Utilities) ─────────────────────────────────────────┤
-                                                            │
-                ┌───────────────────────────────────────────┴─────┐
-                │                                                 │
-Task 3 (Wizard Container) ◄───────────────────────────────────────┤
-        │                                                         │
-        ├──▶ Task 4 (ServiceStep) ────────────────────────────────┤
-        │                                                         │
-        ├──▶ Task 5 (PetStep) ────────────────────────────────────┤
-        │                                                         │
-        ├──▶ Task 6 (Calendar) ──┬──▶ Task 8 (DateTimeStep) ──────┤
-        │                        │                                │
-        ├──▶ Task 7 (TimeSlots) ─┘                                │
-        │                                                         │
-        ├──▶ Task 9 (AddonsStep) ─────────────────────────────────┤
-        │                                                         │
-        ├──▶ Task 10 (PriceSummary) ──────────────────────────────┤
-        │                                                         │
-        ├──▶ Task 11 (GuestInfoForm) ─┬──▶ Task 12 (ReviewStep) ──┤
-        │                             │                           │
-        └──▶ Task 13 (Confirmation) ──┴───────────────────────────┤
-                                                                  │
-Task 14 (Booking Logic) ◄─────────────────────────────────────────┤
-                                                                  │
-Task 15 (Booking Page) ◄──────────────────────────────────────────┘
-        │
-        ├──▶ Task 16 (Update CTAs)
-        │
-        ├──▶ Task 17 (Waitlist)
-        │
-        ├──▶ Task 18 (Mobile Pass)
-        │
-        └──▶ Task 19 (Animations)
-
-Task 20 (Tests) ─ Can run in parallel after Tasks 1-2
+Phase 1 (Foundation)
+    |
+    v
+Phase 2 (APIs) -----> Phase 3 (Integration)
+    |                     |
+    v                     v
+Phase 4 (Steps) <-----> Phase 5 (Waitlist)
+    |                     |
+    v                     v
+Phase 6 (Validation) --> Phase 7 (Mobile/A11y)
+    |
+    v
+Phase 8 (Testing)
+    |
+    v
+Phase 9 (Polish)
 ```
 
 ---
 
-## Summary
+## Requirements Traceability
 
-| Priority | Tasks | Estimated Time |
-|----------|-------|----------------|
-| High | 1, 2, 3, 4, 5, 6, 7, 8, 12, 14, 15 | 25 hours |
-| Medium | 9, 10, 11, 16, 17, 18, 20 | 13.5 hours |
-| Low | 19 | 1.5 hours |
-| **Total** | **20 tasks** | **40 hours** |
+| Requirement | Tasks |
+|-------------|-------|
+| Req 1: Multi-Step Wizard | 3.1, 3.2, 6.3, 9.2 |
+| Req 2: Service Selection | 1.2, 1.3, 2.1, 3.2 |
+| Req 3: Pet Selection | 1.3, 2.4, 4.1 |
+| Req 4: Date/Time Selection | 1.1, 1.3, 2.3, 4.2 |
+| Req 5: Add-on Selection | 1.2, 1.3, 2.2, 4.3 |
+| Req 6: Booking Review | 2.5, 4.4, 4.5 |
+| Req 7: Guest Booking | 2.7, 4.4 |
+| Req 8: Authenticated Booking | 1.3, 4.1, 4.4 |
+| Req 9: Waitlist | 2.6, 5.1, 5.2 |
+| Req 10: Price Calculation | 1.1, 4.3, 4.4, 8.1 |
+| Req 11: Mobile Experience | 7.1 |
+| Req 12: Validation/Errors | 6.1, 6.2, 6.3 |
+| Req 13: Widget Embedding | 3.1, 9.1 |
+| Req 14: Slot Availability | 1.1, 2.3, 2.5, 8.1 |

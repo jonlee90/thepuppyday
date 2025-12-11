@@ -29,6 +29,19 @@ export interface TimeSlot {
 const SLOT_INTERVAL_MINUTES = 30;
 
 /**
+ * Default business hours configuration
+ */
+export const DEFAULT_BUSINESS_HOURS: BusinessHours = {
+  monday: { open: '09:00', close: '17:00', is_open: true },
+  tuesday: { open: '09:00', close: '17:00', is_open: true },
+  wednesday: { open: '09:00', close: '17:00', is_open: true },
+  thursday: { open: '09:00', close: '17:00', is_open: true },
+  friday: { open: '09:00', close: '17:00', is_open: true },
+  saturday: { open: '09:00', close: '17:00', is_open: true },
+  sunday: { open: '09:00', close: '17:00', is_open: false },
+};
+
+/**
  * Get day name from date
  */
 export function getDayName(date: Date): keyof BusinessHours {
@@ -248,4 +261,32 @@ export function getNextAvailableDate(businessHours: BusinessHours): string {
 
   // Fallback to today if no available date found
   return new Date().toISOString().split('T')[0];
+}
+
+/**
+ * Alias for isDateAvailable to match task spec
+ */
+export function isBusinessDay(date: string, businessHours: BusinessHours): boolean {
+  return isDateAvailable(date, businessHours);
+}
+
+/**
+ * Filter past time slots when date is today
+ */
+export function filterPastSlots(slots: string[], date: string): string[] {
+  const dateObj = new Date(date + 'T00:00:00');
+  const now = new Date();
+  const isToday = dateObj.toDateString() === now.toDateString();
+
+  if (!isToday) {
+    return slots;
+  }
+
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  return slots.filter((slotTime) => {
+    const slotMinutes = timeToMinutes(slotTime);
+    // Add 30 min buffer for booking ahead
+    return slotMinutes > currentMinutes + 30;
+  });
 }

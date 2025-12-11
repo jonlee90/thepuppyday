@@ -9,18 +9,20 @@ import type {
   Breed,
   Setting,
   User,
+  Pet,
+  Appointment,
   BeforeAfterPair,
   GalleryImage,
   SiteContent,
 } from '@/types/database';
 import { generateId } from '@/lib/utils';
 
-// Default services
+// Default services - The Puppy Day actual services
 export const seedServices: Service[] = [
   {
     id: generateId(),
-    name: 'Basic Groom',
-    description: 'Bath, brush, nail trim, ear cleaning',
+    name: 'Basic Grooming',
+    description: 'Shampoo, conditioner, nail trimming, filing, ear plucking, anal gland sanitizing, sanitary cut',
     image_url: null,
     duration_minutes: 60,
     is_active: true,
@@ -29,8 +31,8 @@ export const seedServices: Service[] = [
   },
   {
     id: generateId(),
-    name: 'Premium Groom',
-    description: 'Full groom with haircut and styling',
+    name: 'Premium Grooming',
+    description: 'Everything in Basic plus full styling, breed-specific cuts, paw pad trimming, and finishing cologne',
     image_url: null,
     duration_minutes: 90,
     is_active: true,
@@ -39,22 +41,12 @@ export const seedServices: Service[] = [
   },
   {
     id: generateId(),
-    name: 'Bath & Brush',
-    description: 'Bath and thorough brushing only',
+    name: 'Day Care',
+    description: 'Supervised playtime in a safe, social environment',
     image_url: null,
-    duration_minutes: 45,
+    duration_minutes: 480,
     is_active: true,
     display_order: 3,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: generateId(),
-    name: 'Puppy First Groom',
-    description: 'Gentle introduction for puppies under 6 months',
-    image_url: null,
-    duration_minutes: 45,
-    is_active: true,
-    display_order: 4,
     created_at: new Date().toISOString(),
   },
 ];
@@ -62,10 +54,9 @@ export const seedServices: Service[] = [
 // Generate service prices for each service
 export function generateServicePrices(services: Service[]): ServicePrice[] {
   const pricesByService: Record<string, Record<string, number>> = {
-    'Basic Groom': { small: 45, medium: 55, large: 65, xlarge: 75 },
-    'Premium Groom': { small: 65, medium: 75, large: 90, xlarge: 110 },
-    'Bath & Brush': { small: 35, medium: 40, large: 50, xlarge: 60 },
-    'Puppy First Groom': { small: 40, medium: 45, large: 50, xlarge: 55 },
+    'Basic Grooming': { small: 40, medium: 55, large: 70, xlarge: 85 },
+    'Premium Grooming': { small: 70, medium: 95, large: 125, xlarge: 150 },
+    'Day Care': { small: 35, medium: 35, large: 35, xlarge: 35 },
   };
 
   const prices: ServicePrice[] = [];
@@ -85,8 +76,19 @@ export function generateServicePrices(services: Service[]): ServicePrice[] {
   return prices;
 }
 
-// Default add-ons
+// Default add-ons - The Puppy Day actual add-ons
 export const seedAddons: Addon[] = [
+  {
+    id: generateId(),
+    name: 'Long Hair/Sporting',
+    description: 'Additional grooming for long-haired or sporting breeds',
+    price: 10,
+    upsell_prompt: 'Recommended for long-haired breeds',
+    upsell_breeds: ['Golden Retriever', 'Cocker Spaniel', 'Shih Tzu', 'Yorkshire Terrier', 'Maltese'],
+    is_active: true,
+    display_order: 1,
+    created_at: new Date().toISOString(),
+  },
   {
     id: generateId(),
     name: 'Teeth Brushing',
@@ -95,27 +97,16 @@ export const seedAddons: Addon[] = [
     upsell_prompt: 'Add fresh breath for your pup!',
     upsell_breeds: [],
     is_active: true,
-    display_order: 1,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: generateId(),
-    name: 'Pawdicure',
-    description: 'Nail trim with paw balm',
-    price: 15,
-    upsell_prompt: 'Pamper those paws!',
-    upsell_breeds: [],
-    is_active: true,
     display_order: 2,
     created_at: new Date().toISOString(),
   },
   {
     id: generateId(),
-    name: 'De-shedding Treatment',
-    description: 'Reduces shedding by up to 80%',
+    name: 'Pawdicure',
+    description: 'Premium nail care with paw balm',
     price: 15,
-    upsell_prompt: 'Most [breed]s add this!',
-    upsell_breeds: ['Labrador Retriever', 'Golden Retriever', 'German Shepherd', 'Siberian Husky'],
+    upsell_prompt: 'Pamper those paws!',
+    upsell_breeds: [],
     is_active: true,
     display_order: 3,
     created_at: new Date().toISOString(),
@@ -125,7 +116,7 @@ export const seedAddons: Addon[] = [
     name: 'Flea & Tick Treatment',
     description: 'Medicated bath treatment',
     price: 25,
-    upsell_prompt: null,
+    upsell_prompt: 'Protect your pup from pests',
     upsell_breeds: [],
     is_active: true,
     display_order: 4,
@@ -133,13 +124,24 @@ export const seedAddons: Addon[] = [
   },
   {
     id: generateId(),
-    name: 'Blueberry Facial',
-    description: 'Gentle face cleaning',
-    price: 10,
-    upsell_prompt: 'A refreshing facial treatment!',
-    upsell_breeds: [],
+    name: 'Tangle Removal',
+    description: 'Gentle removal of tangles and mats (pricing variable $5-$30 based on severity)',
+    price: 15,
+    upsell_prompt: 'Keep your pup comfortable and mat-free',
+    upsell_breeds: ['Poodle', 'Shih Tzu', 'Maltese', 'Yorkshire Terrier', 'Golden Retriever'],
     is_active: true,
     display_order: 5,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: generateId(),
+    name: 'De-shedding Treatment',
+    description: 'Reduces shedding by up to 80%',
+    price: 20,
+    upsell_prompt: 'Most [breed]s add this!',
+    upsell_breeds: ['Labrador Retriever', 'Golden Retriever', 'German Shepherd', 'Siberian Husky'],
+    is_active: true,
+    display_order: 6,
     created_at: new Date().toISOString(),
   },
 ];
@@ -164,7 +166,7 @@ export const seedBreeds: Breed[] = [
   { id: generateId(), name: 'Mixed Breed', grooming_frequency_weeks: 6, reminder_message: 'for a fresh, clean look', created_at: new Date().toISOString() },
 ];
 
-// Default settings
+// Default settings - The Puppy Day business configuration
 export const seedSettings: Setting[] = [
   { id: generateId(), key: 'payments_enabled', value: false, updated_at: new Date().toISOString() },
   { id: generateId(), key: 'payment_requirement', value: 'optional', updated_at: new Date().toISOString() },
@@ -172,9 +174,9 @@ export const seedSettings: Setting[] = [
   { id: generateId(), key: 'deposit_amount', value: 25, updated_at: new Date().toISOString() },
   { id: generateId(), key: 'tipping_enabled', value: true, updated_at: new Date().toISOString() },
   { id: generateId(), key: 'tip_suggestions', value: [15, 20, 25], updated_at: new Date().toISOString() },
-  { id: generateId(), key: 'cancellation_window_hours', value: 48, updated_at: new Date().toISOString() },
+  { id: generateId(), key: 'cancellation_window_hours', value: 24, updated_at: new Date().toISOString() },
   { id: generateId(), key: 'advance_booking_min_hours', value: 24, updated_at: new Date().toISOString() },
-  { id: generateId(), key: 'advance_booking_max_days', value: 60, updated_at: new Date().toISOString() },
+  { id: generateId(), key: 'advance_booking_max_days', value: 30, updated_at: new Date().toISOString() },
   { id: generateId(), key: 'buffer_minutes', value: 15, updated_at: new Date().toISOString() },
   { id: generateId(), key: 'waitlist_discount_percent', value: 10, updated_at: new Date().toISOString() },
   { id: generateId(), key: 'loyalty_program_type', value: 'points', updated_at: new Date().toISOString() },
@@ -182,18 +184,18 @@ export const seedSettings: Setting[] = [
   { id: generateId(), key: 'loyalty_redemption_threshold', value: 100, updated_at: new Date().toISOString() },
   { id: generateId(), key: 'loyalty_redemption_value', value: 10, updated_at: new Date().toISOString() },
   { id: generateId(), key: 'business_hours', value: {
-    monday: { open: '09:00', close: '18:00' },
-    tuesday: { open: '09:00', close: '18:00' },
-    wednesday: { open: '09:00', close: '18:00' },
-    thursday: { open: '09:00', close: '18:00' },
-    friday: { open: '09:00', close: '18:00' },
-    saturday: { open: '09:00', close: '16:00' },
-    sunday: null,
+    monday: { open: '09:00', close: '17:00', is_open: true },
+    tuesday: { open: '09:00', close: '17:00', is_open: true },
+    wednesday: { open: '09:00', close: '17:00', is_open: true },
+    thursday: { open: '09:00', close: '17:00', is_open: true },
+    friday: { open: '09:00', close: '17:00', is_open: true },
+    saturday: { open: '09:00', close: '17:00', is_open: true },
+    sunday: { open: '00:00', close: '00:00', is_open: false },
   }, updated_at: new Date().toISOString() },
 ];
 
-// Demo admin user for testing
-export const seedUsers = [
+// Demo users for testing
+export const seedUsers: User[] = [
   {
     id: generateId(),
     email: 'admin@thepuppyday.com',
@@ -215,6 +217,111 @@ export const seedUsers = [
     role: 'customer' as const,
     avatar_url: null,
     preferences: {},
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: generateId(),
+    email: 'test@thepuppyday.com',
+    phone: '+15551112233',
+    first_name: 'Sarah',
+    last_name: 'Johnson',
+    role: 'customer' as const,
+    avatar_url: null,
+    preferences: {},
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
+// Test pets for authenticated flow
+export const seedPets: Pet[] = [
+  {
+    id: generateId(),
+    owner_id: seedUsers[2].id, // Sarah Johnson
+    name: 'Buddy',
+    breed_id: seedBreeds.find(b => b.name === 'Golden Retriever')?.id || null,
+    breed_custom: null,
+    size: 'large' as const,
+    weight: 65,
+    birth_date: new Date(2020, 3, 15).toISOString(),
+    notes: 'Very friendly, loves treats',
+    medical_info: 'Hip dysplasia - gentle handling required',
+    photo_url: null,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: generateId(),
+    owner_id: seedUsers[2].id, // Sarah Johnson
+    name: 'Bella',
+    breed_id: seedBreeds.find(b => b.name === 'Shih Tzu')?.id || null,
+    breed_custom: null,
+    size: 'small' as const,
+    weight: 12,
+    birth_date: new Date(2021, 8, 22).toISOString(),
+    notes: 'Gets nervous around loud noises',
+    medical_info: null,
+    photo_url: null,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
+// Helper function to create appointment date at specific time
+const createAppointmentDate = (daysFromNow: number, hour: number, minute: number = 0): string => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  date.setHours(hour, minute, 0, 0);
+  return date.toISOString();
+};
+
+// Sample appointments for testing slot blocking
+export const seedAppointments: Appointment[] = [
+  {
+    id: generateId(),
+    customer_id: seedUsers[1].id, // Demo Customer
+    pet_id: generateId(), // Mock pet ID
+    service_id: seedServices[0].id, // Basic Grooming
+    groomer_id: null,
+    scheduled_at: createAppointmentDate(2, 10, 0), // 2 days from now at 10:00 AM
+    duration_minutes: 60,
+    status: 'confirmed' as const,
+    payment_status: 'pending' as const,
+    total_price: 55,
+    notes: 'First time customer',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[2].id, // Sarah Johnson
+    pet_id: seedPets[0].id, // Buddy
+    service_id: seedServices[1].id, // Premium Grooming
+    groomer_id: null,
+    scheduled_at: createAppointmentDate(3, 14, 0), // 3 days from now at 2:00 PM
+    duration_minutes: 90,
+    status: 'confirmed' as const,
+    payment_status: 'pending' as const,
+    total_price: 125,
+    notes: 'Regular customer - knows the routine',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[2].id, // Sarah Johnson
+    pet_id: seedPets[1].id, // Bella
+    service_id: seedServices[0].id, // Basic Grooming
+    groomer_id: null,
+    scheduled_at: createAppointmentDate(5, 11, 0), // 5 days from now at 11:00 AM
+    duration_minutes: 60,
+    status: 'confirmed' as const,
+    payment_status: 'pending' as const,
+    total_price: 40,
+    notes: 'Bella gets nervous - extra patience needed',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
