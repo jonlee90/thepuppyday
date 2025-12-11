@@ -21,7 +21,7 @@ Implement task specifications with automated review and testing.
 
 ## Execution
 
-Based on the task file, find out what agents are needed to implement the task. If Python backend / FastAPI, use @agent-python-backend-expert. If web frontend, use @agent-frontend-expert. Otherwise, use @general-purpose agent.
+Based on the task file, find out what agents are needed to implement the task. If Supabase or database, use @agent-supabase-nextjs-expert. If web frontend, use @agent-frontend-expert and @agent-daisyui-expert. Otherwise, use @general-purpose agent.
 
 Code reviewer shall use @agent-code-reviewer.
 
