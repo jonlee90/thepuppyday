@@ -77,10 +77,10 @@ export function BeforeAfterSlider({
 
   return (
     <div className="w-full">
-      {/* Image Container */}
+      {/* Image Container - Neubrutalism Frame */}
       <div
         ref={containerRef}
-        className="relative w-full h-96 md:h-[500px] overflow-hidden rounded-lg shadow-xl cursor-ew-resize select-none"
+        className="relative w-full h-96 md:h-[500px] overflow-hidden rounded-3xl border-4 border-neutral shadow-[8px_8px_0px_0px_rgba(45,52,54,1)] cursor-ew-resize select-none bg-[#FFFEF9]"
         onClick={handleClick}
         onTouchStart={() => setIsDragging(true)}
       >
@@ -96,9 +96,9 @@ export function BeforeAfterSlider({
             placeholder="blur"
             blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
           />
-          {/* "BEFORE" Label */}
-          <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-md text-sm font-semibold">
-            BEFORE
+          {/* "BEFORE" Label - Neubrutalism Style */}
+          <div className="absolute top-6 left-6 bg-[#FF6B6B] text-neutral px-5 py-3 rounded-xl border-3 border-neutral shadow-[4px_4px_0px_0px_rgba(45,52,54,1)] text-sm font-black">
+            BEFORE 😢
           </div>
         </div>
 
@@ -119,28 +119,28 @@ export function BeforeAfterSlider({
             placeholder="blur"
             blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
           />
-          {/* "AFTER" Label */}
-          <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-md text-sm font-semibold">
-            AFTER
+          {/* "AFTER" Label - Neubrutalism Style */}
+          <div className="absolute top-6 right-6 bg-[#4ECDC4] text-neutral px-5 py-3 rounded-xl border-3 border-neutral shadow-[4px_4px_0px_0px_rgba(45,52,54,1)] text-sm font-black">
+            AFTER ✨
           </div>
         </div>
 
-        {/* Slider Handle */}
+        {/* Slider Handle - Neubrutalism Style */}
         <div
-          className="absolute top-0 bottom-0 w-1 bg-white cursor-ew-resize"
+          className="absolute top-0 bottom-0 w-2 bg-neutral cursor-ew-resize"
           style={{ left: `${sliderPosition}%` }}
           onMouseDown={handleMouseDown}
           onTouchStart={() => setIsDragging(true)}
         >
           {/* Handle Circle */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-2xl flex items-center justify-center border-4 border-primary hover:scale-110 transition-transform">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-[#FFE66D] rounded-full shadow-[4px_4px_0px_0px_rgba(45,52,54,1)] flex items-center justify-center border-4 border-neutral hover:scale-110 transition-transform">
             {/* Left Arrow */}
             <svg
-              className="w-4 h-4 text-primary absolute left-1"
+              className="w-5 h-5 text-neutral absolute left-2"
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth="2"
+              strokeWidth="3"
               viewBox="0 0 24 24"
               stroke="currentColor"
             >
@@ -148,11 +148,11 @@ export function BeforeAfterSlider({
             </svg>
             {/* Right Arrow */}
             <svg
-              className="w-4 h-4 text-primary absolute right-1"
+              className="w-5 h-5 text-neutral absolute right-2"
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth="2"
+              strokeWidth="3"
               viewBox="0 0 24 24"
               stroke="currentColor"
             >
@@ -161,19 +161,27 @@ export function BeforeAfterSlider({
           </div>
         </div>
 
-        {/* Instructions Overlay (shown briefly on hover for first-time users) */}
+        {/* Instructions Overlay */}
         {!isDragging && sliderPosition === 50 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-md text-sm pointer-events-none animate-pulse">
-            ← Drag to compare →
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-neutral text-[#FFFEF9] px-6 py-3 rounded-full border-3 border-[#FFFEF9] shadow-[4px_4px_0px_0px_rgba(255,254,249,1)] text-sm font-black pointer-events-none animate-pulse">
+            ← Drag to See Magic →
           </div>
         )}
       </div>
 
-      {/* Caption */}
+      {/* Caption - Neubrutalism Style */}
       {(petName || description) && (
-        <div className="mt-4 text-center">
-          {petName && <h3 className="font-semibold text-lg">{petName}</h3>}
-          {description && <p className="text-base-content/70 text-sm mt-1">{description}</p>}
+        <div className="mt-6 text-center">
+          {petName && (
+            <div className="inline-block bg-[#FFE66D] border-4 border-neutral rounded-2xl px-6 py-3 shadow-[4px_4px_0px_0px_rgba(45,52,54,1)]">
+              <h3 className="font-black text-neutral text-xl">{petName}</h3>
+            </div>
+          )}
+          {description && (
+            <p className="text-neutral/80 font-bold text-sm mt-4 max-w-md mx-auto">
+              {description}
+            </p>
+          )}
         </div>
       )}
     </div>
