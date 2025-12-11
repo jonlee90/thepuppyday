@@ -135,15 +135,19 @@ export async function POST(req: NextRequest) {
 ```
 
 ## Acceptance Criteria
-- [ ] Validates all required fields
-- [ ] Validates time_preference is valid enum value
-- [ ] Validates date format (YYYY-MM-DD)
-- [ ] Returns 400 for validation errors
-- [ ] Detects existing active waitlist entry for same customer/date
-- [ ] Returns 409 with DUPLICATE_ENTRY code if already on waitlist
-- [ ] Creates waitlist entry with status "active"
-- [ ] Returns position in queue for that date
-- [ ] Returns success response with waitlist_id and position
+- [x] Validates all required fields
+- [x] Validates time_preference is valid enum value
+- [x] Validates date format (YYYY-MM-DD)
+- [x] Returns 400 for validation errors
+- [x] Detects existing active waitlist entry for same customer/date
+- [x] Returns 409 with DUPLICATE_ENTRY code if already on waitlist
+- [x] Creates waitlist entry with status "active"
+- [x] Returns position in queue for that date
+- [x] Returns success response with waitlist_id and position
+
+## Status
+✅ **COMPLETED** - Implemented in commit 1b00eca
+- Enhanced duplicate check to include service_id and pet_id (allows multiple pets/services on same date)
 
 ## Estimated Complexity
 Medium

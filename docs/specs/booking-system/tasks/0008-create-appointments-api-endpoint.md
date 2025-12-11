@@ -89,15 +89,22 @@ function generateReference(): string {
 ```
 
 ## Acceptance Criteria
-- [ ] Validates all required fields (customer_id, pet_id, service_id, scheduled_at, duration_minutes, total_price)
-- [ ] Returns 400 for validation errors
-- [ ] Creates guest user if guest_info provided
-- [ ] Checks for slot conflicts before creating appointment
-- [ ] Returns 409 with SLOT_CONFLICT code if time slot taken
-- [ ] Creates appointment record with status "pending"
-- [ ] Creates appointment_addon records for each addon
-- [ ] Generates unique booking reference number
-- [ ] Returns success response with appointment_id and reference
+- [x] Validates all required fields (customer_id, pet_id, service_id, scheduled_at, duration_minutes, total_price)
+- [x] Returns 400 for validation errors
+- [x] Creates guest user if guest_info provided
+- [x] Checks for slot conflicts before creating appointment
+- [x] Returns 409 with SLOT_CONFLICT code if time slot taken
+- [x] Creates appointment record with status "pending"
+- [x] Creates appointment_addon records for each addon
+- [x] Generates unique booking reference number
+- [x] Returns success response with appointment_id and reference
+
+## Status
+✅ **COMPLETED** - Implemented in commit 1b00eca
+- Implemented booking reference uniqueness guarantee
+- Stores booking_reference in appointment record
+- Added past date validation for scheduled_at
+- Removed TypeScript `any` usage for type safety
 
 ## Estimated Complexity
 High

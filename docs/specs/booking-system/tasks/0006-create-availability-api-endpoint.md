@@ -103,17 +103,23 @@ export async function GET(req: NextRequest) {
 ```
 
 ## Acceptance Criteria
-- [ ] Validates date format (YYYY-MM-DD)
-- [ ] Validates service_id exists
-- [ ] Returns 400 for missing or invalid parameters
-- [ ] Returns 404 for non-existent service
-- [ ] Returns empty slots array for closed days
-- [ ] Generates 30-minute interval slots
-- [ ] Correctly identifies conflicting appointments
-- [ ] Considers appointment duration for conflicts
-- [ ] Filters past slots when date is today
-- [ ] Includes waitlist count for unavailable slots
-- [ ] Returns 200 with date and slots array on success
+- [x] Validates date format (YYYY-MM-DD)
+- [x] Validates service_id exists
+- [x] Returns 400 for missing or invalid parameters
+- [x] Returns 404 for non-existent service
+- [x] Returns empty slots array for closed days
+- [x] Generates 30-minute interval slots
+- [x] Correctly identifies conflicting appointments
+- [x] Considers appointment duration for conflicts
+- [x] Filters past slots when date is today
+- [x] Includes waitlist count for unavailable slots
+- [x] Returns 200 with date and slots array on success
+
+## Status
+✅ **COMPLETED** - Implemented in commit 1b00eca
+- Added past date validation
+- Optimized query to filter appointments by date
+- Fixed waitlist count calculation with time preference matching
 
 ## Estimated Complexity
 High

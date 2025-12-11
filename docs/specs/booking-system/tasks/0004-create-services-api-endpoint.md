@@ -74,12 +74,15 @@ export async function GET() {
 ```
 
 ## Acceptance Criteria
-- [ ] Returns active services only (is_active = true)
-- [ ] Services sorted by display_order ascending
-- [ ] Each service includes prices array with all sizes
-- [ ] Returns 200 with services array on success
-- [ ] Returns 500 with error message on failure
-- [ ] Response matches TypeScript ServiceWithPrices type
+- [x] Returns active services only (is_active = true)
+- [x] Services sorted by display_order ascending
+- [x] Each service includes prices array with all sizes
+- [x] Returns 200 with services array on success
+- [x] Returns 500 with error message on failure
+- [x] Response matches TypeScript ServiceWithPrices type
+
+## Status
+✅ **COMPLETED** - Implemented in commit 1b00eca
 
 ## Estimated Complexity
 Low

@@ -60,12 +60,15 @@ export async function GET() {
 ```
 
 ## Acceptance Criteria
-- [ ] Returns active add-ons only (is_active = true)
-- [ ] Add-ons sorted by display_order ascending
-- [ ] Each add-on includes upsell_prompt and upsell_breeds fields
-- [ ] Returns 200 with addons array on success
-- [ ] Returns 500 with error message on failure
-- [ ] Response matches TypeScript Addon type
+- [x] Returns active add-ons only (is_active = true)
+- [x] Add-ons sorted by display_order ascending
+- [x] Each add-on includes upsell_prompt and upsell_breeds fields
+- [x] Returns 200 with addons array on success
+- [x] Returns 500 with error message on failure
+- [x] Response matches TypeScript Addon type
+
+## Status
+✅ **COMPLETED** - Implemented in commit 1b00eca
 
 ## Estimated Complexity
 Low

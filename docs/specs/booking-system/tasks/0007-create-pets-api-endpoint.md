@@ -142,14 +142,18 @@ export async function POST(req: NextRequest) {
 ```
 
 ## Acceptance Criteria
-- [ ] GET returns only authenticated user's active pets
-- [ ] GET returns 401 for unauthenticated requests
-- [ ] POST validates required fields (name, size)
-- [ ] POST validates size is valid enum value
-- [ ] POST creates pet associated with authenticated user
-- [ ] POST returns 400 for validation errors
-- [ ] POST returns 401 for unauthenticated requests without owner_id
-- [ ] Response matches TypeScript Pet type
+- [x] GET returns only authenticated user's active pets
+- [x] GET returns 401 for unauthenticated requests
+- [x] POST validates required fields (name, size)
+- [x] POST validates size is valid enum value
+- [x] POST creates pet associated with authenticated user
+- [x] POST returns 400 for validation errors
+- [x] POST returns 401 for unauthenticated requests without owner_id
+- [x] Response matches TypeScript Pet type
+
+## Status
+✅ **COMPLETED** - Implemented in commit 1b00eca
+- Added authorization check to prevent users from creating pets for others (403 Forbidden)
 
 ## Estimated Complexity
 Medium
