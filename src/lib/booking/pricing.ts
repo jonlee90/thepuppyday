@@ -4,6 +4,16 @@
 
 import type { ServiceWithPrices, Addon, PetSize } from '@/types/database';
 
+/**
+ * Size weight ranges constant
+ */
+export const SIZE_WEIGHT_RANGES = {
+  small: { min: 0, max: 18 },
+  medium: { min: 19, max: 35 },
+  large: { min: 36, max: 65 },
+  xlarge: { min: 66, max: Infinity },
+} as const;
+
 export interface PriceBreakdown {
   serviceName: string;
   servicePrice: number;
@@ -92,9 +102,18 @@ export function calculatePrice(
   const addonsTotal = calculateAddonsTotal(addons);
 
   const subtotal = servicePrice + addonsTotal;
+
+  /**
+   * Tax calculation uses standard rounding (round to nearest cent)
+   * Note: Some jurisdictions require rounding up for taxes. Verify local requirements.
+   */
   const tax = settings.taxRate ? Math.round(subtotal * settings.taxRate * 100) / 100 : 0;
   const total = subtotal + tax;
 
+  /**
+   * Deposit calculation uses standard rounding (round to nearest cent)
+   * This minimizes cumulative rounding errors over many transactions.
+   */
   const deposit =
     settings.depositEnabled && settings.depositPercentage
       ? Math.round(total * settings.depositPercentage * 100) / 100
@@ -154,10 +173,23 @@ export function getSizeShortLabel(size: PetSize): string {
  * Get size from weight
  */
 export function getSizeFromWeight(weight: number): PetSize {
-  if (weight <= 18) return 'small';
-  if (weight <= 35) return 'medium';
-  if (weight <= 65) return 'large';
+  if (weight <= SIZE_WEIGHT_RANGES.small.max) return 'small';
+  if (weight <= SIZE_WEIGHT_RANGES.medium.max) return 'medium';
+  if (weight <= SIZE_WEIGHT_RANGES.large.max) return 'large';
   return 'xlarge';
+}
+
+/**
+ * Alias for getSizeFromWeight to match task spec
+ */
+export const determineSizeFromWeight = getSizeFromWeight;
+
+/**
+ * Calculate total from service price and addons (simplified version)
+ */
+export function calculateTotal(servicePrice: number, addons: Addon[]): number {
+  const addonsTotal = calculateAddonsTotal(addons);
+  return servicePrice + addonsTotal;
 }
 
 /**

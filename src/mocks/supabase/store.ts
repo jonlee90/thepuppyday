@@ -11,6 +11,8 @@ import {
   seedBreeds,
   seedSettings,
   seedUsers,
+  seedPets,
+  seedAppointments,
   seedBeforeAfterPairs,
   seedGalleryImages,
   seedSiteContent,
@@ -110,6 +112,10 @@ class MockStore {
 
     // Seed settings
     this.tables.set('settings', [...seedSettings] as unknown as TableData[]);
+
+    // Seed pets and appointments
+    this.tables.set('pets', [...seedPets] as unknown as TableData[]);
+    this.tables.set('appointments', [...seedAppointments] as unknown as TableData[]);
 
     // Seed marketing content
     this.tables.set('before_after_pairs', [...seedBeforeAfterPairs] as unknown as TableData[]);

@@ -4,19 +4,16 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { AddonCard } from '../AddonCard';
-import { getMockStore } from '@/mocks/supabase/store';
+import { useAddons } from '@/hooks/useAddons';
 import type { Addon } from '@/types/database';
 
 export function AddonsStep() {
-  const [addons, setAddons] = useState<Addon[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { addons, isLoading, error, getUpsellAddons } = useAddons();
 
   const {
     selectedPet,
-    newPetData,
     selectedAddonIds,
     selectedAddons,
     toggleAddon,
@@ -27,31 +24,12 @@ export function AddonsStep() {
   // Get pet breed for upsell matching
   const petBreedId = selectedPet?.breed_id || null;
 
-  // Load add-ons
-  useEffect(() => {
-    const loadAddons = () => {
-      const store = getMockStore();
-      const addonsData = store.select('addons', {
-        column: 'is_active',
-        value: true,
-        order: { column: 'display_order', ascending: true },
-      }) as unknown as Addon[];
-      setAddons(addonsData);
-      setLoading(false);
-    };
-
-    loadAddons();
-  }, []);
-
   // Separate upsell add-ons (matching pet's breed)
-  const upsellAddons = addons.filter((addon) => {
-    if (!petBreedId) return false;
-    return addon.upsell_breeds.includes(petBreedId);
-  });
+  const upsellAddons = getUpsellAddons(petBreedId);
 
   const regularAddons = addons.filter((addon) => {
     if (!petBreedId) return true;
-    return !addon.upsell_breeds.includes(petBreedId);
+    return !upsellAddons.some((upsell) => upsell.id === addon.id);
   });
 
   const handleToggle = (addon: Addon) => {
@@ -67,21 +45,21 @@ export function AddonsStep() {
     nextStep();
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-base-content mb-2">Add Extra Services</h2>
-          <p className="text-base-content/70">Enhance your pet&apos;s grooming experience</p>
+          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Add Extra Services</h2>
+          <p className="text-[#6B7280]">Enhance your pet&apos;s grooming experience</p>
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-base-100 rounded-xl border border-base-300 p-4 animate-pulse">
+            <div key={i} className="bg-white rounded-xl shadow-md p-4 animate-pulse">
               <div className="flex items-start gap-4">
-                <div className="w-6 h-6 rounded bg-base-300" />
+                <div className="w-6 h-6 rounded bg-[#EAE0D5]" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-5 bg-base-300 rounded w-1/3" />
-                  <div className="h-4 bg-base-300 rounded w-2/3" />
+                  <div className="h-5 bg-[#EAE0D5] rounded w-1/3" />
+                  <div className="h-4 bg-[#EAE0D5] rounded w-2/3" />
                 </div>
               </div>
             </div>
@@ -91,31 +69,96 @@ export function AddonsStep() {
     );
   }
 
-  if (addons.length === 0) {
+  if (error) {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-base-content mb-2">Add Extra Services</h2>
-          <p className="text-base-content/70">Enhance your pet&apos;s grooming experience</p>
+          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Add Extra Services</h2>
+          <p className="text-[#6B7280]">Enhance your pet&apos;s grooming experience</p>
         </div>
-
-        <div className="bg-base-100 rounded-xl border border-base-300 p-8 text-center">
-          <div className="w-16 h-16 bg-base-300 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="bg-white rounded-xl shadow-md p-8 text-center">
+          <div className="w-16 h-16 bg-[#EF4444]/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-8 h-8 text-base-content/50"
+              className="w-8 h-8 text-[#EF4444]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
+              strokeWidth={2}
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-[#434E54] mb-2">Failed to Load Add-ons</h3>
+          <p className="text-[#6B7280] mb-4">{error.message}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-[#434E54] text-white font-medium py-2.5 px-5 rounded-lg
+                     hover:bg-[#363F44] transition-colors duration-200"
+          >
+            Retry
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between pt-4">
+          <button onClick={prevStep} className="btn btn-ghost">
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+          <button onClick={handleContinue} className="btn btn-primary btn-lg">
+            Continue
+            <svg
+              className="w-5 h-5 ml-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (addons.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Add Extra Services</h2>
+          <p className="text-[#6B7280]">Enhance your pet&apos;s grooming experience</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-md p-8 text-center">
+          <div className="w-16 h-16 bg-[#EAE0D5] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-[#6B7280]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 d="M12 6v6m0 0v6m0-6h6m-6 0H6"
               />
             </svg>
           </div>
-          <p className="text-base-content/70">No additional services available at this time</p>
+          <p className="text-[#6B7280]">No additional services available at this time</p>
         </div>
 
         {/* Navigation */}
@@ -153,8 +196,8 @@ export function AddonsStep() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-base-content mb-2">Add Extra Services</h2>
-        <p className="text-base-content/70">Enhance your pet&apos;s grooming experience</p>
+        <h2 className="text-2xl font-bold text-[#434E54] mb-2">Add Extra Services</h2>
+        <p className="text-[#6B7280]">Enhance your pet&apos;s grooming experience</p>
       </div>
 
       {/* Selected count */}

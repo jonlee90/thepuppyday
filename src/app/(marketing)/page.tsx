@@ -83,12 +83,12 @@ async function getMarketingData() {
     contentRes,
     settingsRes,
   ] = await Promise.all([
-    (supabase as any).from('services').select('*').eq('is_active', true).order('display_order'),
-    (supabase as any).from('promo_banners').select('*').order('display_order'),
-    (supabase as any).from('before_after_pairs').select('*').order('display_order'),
-    (supabase as any).from('gallery_images').select('*').eq('is_published', true).order('display_order'),
-    (supabase as any).from('site_content').select('*'),
-    (supabase as any).from('settings').select('*').single(),
+    supabase.from('services').select('*').eq('is_active', true).order('display_order'),
+    supabase.from('promo_banners').select('*').order('display_order'),
+    supabase.from('before_after_pairs').select('*').order('display_order'),
+    supabase.from('gallery_images').select('*').eq('is_published', true).order('display_order'),
+    supabase.from('site_content').select('*'),
+    supabase.from('settings').select('*').single(),
   ]);
 
   // Helper to get site content by key
@@ -119,7 +119,7 @@ async function getMarketingData() {
     aboutTitle: getContent('about_title'),
     aboutDescription: getContent('about_description'),
     aboutDifferentiators: getJSONContent('about_differentiators'),
-    businessHours: (settingsRes.data as any)?.business_hours || {},
+    businessHours: settingsRes.data?.business_hours || {},
   };
 }
 
@@ -146,7 +146,7 @@ export default async function MarketingPage() {
               Our Services
             </h2>
             <p className="text-lg text-[#6B7280] max-w-2xl mx-auto">
-              Professional grooming and daycare services tailored to your dog's needs
+              Professional grooming and daycare services tailored to your dog&apos;s needs
             </p>
           </div>
           <ServiceGrid services={data.services} />
@@ -295,11 +295,11 @@ export default async function MarketingPage() {
               longitude: '-118.0120',
             },
             openingHoursSpecification: data.businessHours
-              ? Object.entries(data.businessHours).map(([day, hours]: [string, any]) => ({
+              ? Object.entries(data.businessHours).map(([day, hours]) => ({
                   '@type': 'OpeningHoursSpecification',
                   dayOfWeek: day.charAt(0).toUpperCase() + day.slice(1),
-                  opens: hours.is_open ? hours.open : undefined,
-                  closes: hours.is_open ? hours.close : undefined,
+                  opens: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).open : undefined,
+                  closes: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).close : undefined,
                 }))
               : [],
             priceRange: '$$',

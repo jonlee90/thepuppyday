@@ -12,7 +12,33 @@
       "Bash(npm run lint)",
       "mcp__ide__getDiagnostics",
       "Bash(git push:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(npx lighthouse:*)",
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm start)",
+      "Bash(findstr:*)",
+      "WebSearch",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(wc:*)",
+      "Bash(echo:*)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__execute_sql",
+      "Bash(ls:*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

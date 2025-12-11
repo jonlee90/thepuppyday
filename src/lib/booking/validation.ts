@@ -4,30 +4,39 @@
 
 import { z } from 'zod';
 
-// Phone number regex - flexible format
-const phoneRegex = /^[\d\s\-\(\)\+]+$/;
-
 /**
  * Guest information schema
  */
 export const guestInfoSchema = z.object({
   firstName: z
     .string()
+    .trim()
     .min(1, 'First name is required')
-    .max(50, 'First name is too long'),
+    .max(50, 'First name is too long')
+    .regex(/^[a-zA-Z\s\-']+$/, 'First name contains invalid characters'),
   lastName: z
     .string()
+    .trim()
     .min(1, 'Last name is required')
-    .max(50, 'Last name is too long'),
+    .max(50, 'Last name is too long')
+    .regex(/^[a-zA-Z\s\-']+$/, 'Last name contains invalid characters'),
   email: z
     .string()
+    .trim()
     .min(1, 'Email is required')
     .email('Please enter a valid email address'),
   phone: z
     .string()
     .min(10, 'Please enter a valid phone number')
     .max(20, 'Phone number is too long')
-    .regex(phoneRegex, 'Please enter a valid phone number'),
+    .regex(/^\+?[\d\s\-\(\)]+$/, 'Please enter a valid phone number')
+    .refine(
+      (phone) => {
+        const cleaned = phone.replace(/\D/g, '');
+        return cleaned.length >= 10 && cleaned.length <= 15;
+      },
+      { message: 'Phone number must contain 10-15 digits' }
+    ),
 });
 
 export type GuestInfoFormData = z.infer<typeof guestInfoSchema>;
@@ -64,6 +73,33 @@ export const bookingNotesSchema = z.object({
 });
 
 export type BookingNotesData = z.infer<typeof bookingNotesSchema>;
+
+/**
+ * Appointment creation schema
+ */
+export const appointmentCreationSchema = z.object({
+  customer_id: z.string().uuid('Invalid customer ID'),
+  pet_id: z.string().uuid('Invalid pet ID'),
+  service_id: z.string().uuid('Invalid service ID'),
+  groomer_id: z.string().uuid('Invalid groomer ID').optional().nullable(),
+  scheduled_at: z
+    .string()
+    .min(1, 'Scheduled time is required')
+    .refine(
+      (dateStr) => {
+        const scheduledDate = new Date(dateStr);
+        const now = new Date();
+        return scheduledDate > now;
+      },
+      { message: 'Appointment must be in the future' }
+    ),
+  duration_minutes: z.number().positive('Duration must be positive'),
+  total_price: z.number().nonnegative('Total price must be non-negative'),
+  notes: z.string().max(500, 'Notes are too long').optional().nullable(),
+  addon_ids: z.array(z.string().uuid('Invalid addon ID')).optional(),
+});
+
+export type AppointmentCreationData = z.infer<typeof appointmentCreationSchema>;
 
 /**
  * Format phone number for display
