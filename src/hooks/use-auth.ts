@@ -18,7 +18,7 @@ interface SignUpData {
   phone?: string;
 }
 
-interface UseAuthReturn {
+export interface UseAuthReturn {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
