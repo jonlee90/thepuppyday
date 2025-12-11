@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getMockStore } from '@/mocks/supabase/store';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import {
   getAvailableSlots,
   DEFAULT_BUSINESS_HOURS,
@@ -11,7 +11,6 @@ import {
   type BusinessHours,
   type TimeSlot,
 } from '@/lib/booking';
-import type { Service, Appointment, WaitlistEntry, Setting } from '@/types/database';
 
 export async function GET(req: NextRequest) {
   try {
@@ -47,50 +46,60 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const store = getMockStore();
+    const supabase = await createServerSupabaseClient();
 
     // Get service to check duration
-    const services = store.select('services', {
-      column: 'id',
-      value: serviceId,
-    }) as unknown as Service[];
-    if (services.length === 0) {
+    const { data: service, error: serviceError } = await supabase
+      .from('services')
+      .select('*')
+      .eq('id', serviceId)
+      .single();
+
+    if (serviceError || !service) {
       return NextResponse.json({ error: 'Service not found' }, { status: 404 });
     }
-    const service = services[0];
 
     // Get business hours from settings
-    const settings = store.select('settings', {
-      column: 'key',
-      value: 'business_hours',
-    }) as unknown as Setting[];
-    const businessHours = (settings[0]?.value as BusinessHours) || DEFAULT_BUSINESS_HOURS;
+    const { data: settingsData } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'business_hours')
+      .single();
 
-    // Get appointments for the requested date only (optimized query)
-    // Create date range for filtering (start of day to end of day)
+    const businessHours = (settingsData?.value as BusinessHours) || DEFAULT_BUSINESS_HOURS;
+
+    // Get appointments for the requested date
     const dateStart = new Date(date + 'T00:00:00').toISOString();
     const dateEnd = new Date(date + 'T23:59:59').toISOString();
 
-    const allAppointments = (store.select('appointments') as unknown as Appointment[])
-      .filter((apt) => {
-        const aptDate = new Date(apt.scheduled_at);
-        const aptISO = aptDate.toISOString();
-        return aptISO >= dateStart && aptISO <= dateEnd;
-      });
+    const { data: appointments, error: apptError } = await supabase
+      .from('appointments')
+      .select('*')
+      .gte('scheduled_at', dateStart)
+      .lte('scheduled_at', dateEnd);
+
+    if (apptError) {
+      console.error('Error fetching appointments:', apptError);
+      return NextResponse.json(
+        { error: 'Failed to fetch appointments' },
+        { status: 500 }
+      );
+    }
 
     // Generate available slots using utility function
     const slots = getAvailableSlots(
       date,
       service.duration_minutes,
-      allAppointments,
+      appointments || [],
       businessHours
     );
 
     // Get waitlist counts for unavailable slots
-    const waitlistEntries = (store.select('waitlist', {
-      column: 'requested_date',
-      value: date,
-    }) as unknown as WaitlistEntry[]).filter((entry) => entry.status === 'active');
+    const { data: waitlistEntries } = await supabase
+      .from('waitlist')
+      .select('*')
+      .eq('requested_date', date)
+      .eq('status', 'active');
 
     // Helper function to check if a time slot matches a time preference
     const matchesTimePreference = (slotTime: string, preference: 'morning' | 'afternoon' | 'any'): boolean => {
@@ -116,7 +125,7 @@ export async function GET(req: NextRequest) {
       }
 
       // Count waitlist entries that match this slot's time preference
-      const waitlistCount = waitlistEntries.filter((entry) =>
+      const waitlistCount = (waitlistEntries || []).filter((entry) =>
         matchesTimePreference(slot.time, entry.time_preference)
       ).length;
 

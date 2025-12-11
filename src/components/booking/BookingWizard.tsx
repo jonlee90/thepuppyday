@@ -44,10 +44,8 @@ export function BookingWizard({ preSelectedServiceId }: BookingWizardProps) {
     isSessionExpired,
     reset,
     selectedService,
-    petSize,
     selectedAddons,
     servicePrice,
-    addonsTotal,
     totalPrice,
   } = useBookingStore();
 

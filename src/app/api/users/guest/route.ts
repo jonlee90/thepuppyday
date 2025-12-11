@@ -3,9 +3,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getMockStore } from '@/mocks/supabase/store';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { guestInfoSchema } from '@/lib/booking/validation';
-import type { User } from '@/types/database';
 import { z } from 'zod';
 
 export async function POST(req: NextRequest) {
@@ -13,14 +12,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = guestInfoSchema.parse(body);
 
-    const store = getMockStore();
+    const supabase = await createServerSupabaseClient();
 
     // Check if email already exists (case-insensitive)
-    const existingUsers = (store
-      .select('users') as unknown as User[])
-      .filter((u) => u.email.toLowerCase() === validated.email.toLowerCase());
+    const { data: existingUsers } = await supabase
+      .from('users')
+      .select('*')
+      .ilike('email', validated.email);
 
-    if (existingUsers.length > 0) {
+    if (existingUsers && existingUsers.length > 0) {
       return NextResponse.json(
         {
           error: 'An account with this email already exists. Please log in.',
@@ -31,15 +31,27 @@ export async function POST(req: NextRequest) {
     }
 
     // Create guest user
-    const user = store.insert('users', {
-      email: validated.email.toLowerCase(),
-      first_name: validated.firstName,
-      last_name: validated.lastName,
-      phone: validated.phone || null,
-      role: 'customer',
-      avatar_url: null,
-      preferences: {},
-    }) as unknown as User;
+    const { data: user, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        email: validated.email.toLowerCase(),
+        first_name: validated.firstName,
+        last_name: validated.lastName,
+        phone: validated.phone || null,
+        role: 'customer',
+        avatar_url: null,
+        preferences: {},
+      })
+      .select()
+      .single();
+
+    if (insertError || !user) {
+      console.error('Error creating guest user:', insertError);
+      return NextResponse.json(
+        { error: 'Failed to create guest account' },
+        { status: 500 }
+      );
+    }
 
     // TODO: Send welcome email with account claim instructions
 

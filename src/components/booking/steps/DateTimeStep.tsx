@@ -4,38 +4,20 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { CalendarPicker } from '../CalendarPicker';
 import { TimeSlotGrid } from '../TimeSlotGrid';
 import { WaitlistModal } from '../WaitlistModal';
+import { useAvailability } from '@/hooks/useAvailability';
 import {
-  getAvailableSlots,
   getDisabledDates,
   formatTimeDisplay,
+  DEFAULT_BUSINESS_HOURS,
   type BusinessHours,
-  type TimeSlot,
 } from '@/lib/booking/availability';
-import { getMockStore } from '@/mocks/supabase/store';
-import type { Appointment, Setting } from '@/types/database';
-
-// Default business hours if not in settings
-const DEFAULT_BUSINESS_HOURS: BusinessHours = {
-  monday: { open: '09:00', close: '18:00', is_open: true },
-  tuesday: { open: '09:00', close: '18:00', is_open: true },
-  wednesday: { open: '09:00', close: '18:00', is_open: true },
-  thursday: { open: '09:00', close: '18:00', is_open: true },
-  friday: { open: '09:00', close: '18:00', is_open: true },
-  saturday: { open: '09:00', close: '16:00', is_open: true },
-  sunday: { open: '09:00', close: '16:00', is_open: false },
-};
 
 export function DateTimeStep() {
-  const [businessHours, setBusinessHours] = useState<BusinessHours>(DEFAULT_BUSINESS_HOURS);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [slots, setSlots] = useState<TimeSlot[]>([]);
-  const [slotsLoading, setSlotsLoading] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [waitlistModalOpen, setWaitlistModalOpen] = useState(false);
   const [waitlistTime, setWaitlistTime] = useState<string | undefined>();
 
@@ -49,57 +31,15 @@ export function DateTimeStep() {
     prevStep,
   } = useBookingStore();
 
-  // Load business hours and appointments
-  useEffect(() => {
-    const loadData = () => {
-      const store = getMockStore();
+  // Fetch availability for selected date and service
+  const { slots, isLoading: slotsLoading, error } = useAvailability({
+    date: selectedDate,
+    serviceId: selectedService?.id || null,
+  });
 
-      // Get business hours from settings
-      const settings = store.select('settings', {
-        column: 'key',
-        value: 'business_hours',
-      }) as unknown as Setting[];
-
-      if (settings.length > 0 && settings[0].value) {
-        const hoursData = settings[0].value as Record<
-          string,
-          { open: string; close: string } | null
-        >;
-        const parsed: BusinessHours = {
-          monday: hoursData.monday
-            ? { ...hoursData.monday, is_open: true }
-            : { open: '09:00', close: '18:00', is_open: false },
-          tuesday: hoursData.tuesday
-            ? { ...hoursData.tuesday, is_open: true }
-            : { open: '09:00', close: '18:00', is_open: false },
-          wednesday: hoursData.wednesday
-            ? { ...hoursData.wednesday, is_open: true }
-            : { open: '09:00', close: '18:00', is_open: false },
-          thursday: hoursData.thursday
-            ? { ...hoursData.thursday, is_open: true }
-            : { open: '09:00', close: '18:00', is_open: false },
-          friday: hoursData.friday
-            ? { ...hoursData.friday, is_open: true }
-            : { open: '09:00', close: '18:00', is_open: false },
-          saturday: hoursData.saturday
-            ? { ...hoursData.saturday, is_open: true }
-            : { open: '09:00', close: '16:00', is_open: false },
-          sunday: hoursData.sunday
-            ? { ...hoursData.sunday, is_open: true }
-            : { open: '09:00', close: '16:00', is_open: false },
-        };
-        setBusinessHours(parsed);
-      }
-
-      // Get existing appointments
-      const appts = store.select('appointments') as unknown as Appointment[];
-      setAppointments(appts);
-
-      setLoading(false);
-    };
-
-    loadData();
-  }, []);
+  // TODO: In future, fetch business hours from settings
+  // For now, using default business hours
+  const businessHours: BusinessHours = DEFAULT_BUSINESS_HOURS;
 
   // Calculate disabled dates
   const disabledDates = useMemo(() => {
@@ -108,30 +48,6 @@ export function DateTimeStep() {
     maxDate.setMonth(maxDate.getMonth() + 2);
     return getDisabledDates(today, maxDate, businessHours);
   }, [businessHours]);
-
-  // Load time slots when date changes
-  useEffect(() => {
-    if (!selectedDate || !selectedService) {
-      setSlots([]);
-      return;
-    }
-
-    setSlotsLoading(true);
-
-    // Simulate a small delay for UX
-    const timer = setTimeout(() => {
-      const availableSlots = getAvailableSlots(
-        selectedDate,
-        selectedService.duration_minutes,
-        appointments,
-        businessHours
-      );
-      setSlots(availableSlots);
-      setSlotsLoading(false);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [selectedDate, selectedService, appointments, businessHours]);
 
   const handleDateSelect = (date: string) => {
     // Clear time when date changes
@@ -159,20 +75,54 @@ export function DateTimeStep() {
 
   const canContinue = selectedDate !== null && selectedTimeSlot !== null;
 
-  if (loading) {
+  if (error) {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-base-content mb-2">Select Date & Time</h2>
-          <p className="text-base-content/70">Choose when you&apos;d like to bring your pet in</p>
+          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Select Date & Time</h2>
+          <p className="text-[#6B7280]">Choose when you&apos;d like to bring your pet in</p>
         </div>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-base-100 rounded-xl border border-base-300 p-4 animate-pulse">
-            <div className="h-64 bg-base-300 rounded-lg" />
+        <div className="bg-white rounded-xl shadow-md p-8 text-center">
+          <div className="w-16 h-16 bg-[#EF4444]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-[#EF4444]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
           </div>
-          <div className="bg-base-100 rounded-xl border border-base-300 p-4 animate-pulse">
-            <div className="h-64 bg-base-300 rounded-lg" />
-          </div>
+          <h3 className="text-lg font-semibold text-[#434E54] mb-2">Failed to Load Availability</h3>
+          <p className="text-[#6B7280] mb-4">{error.message}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-[#434E54] text-white font-medium py-2.5 px-5 rounded-lg
+                     hover:bg-[#363F44] transition-colors duration-200"
+          >
+            Retry
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between pt-4">
+          <button onClick={prevStep} className="btn btn-ghost">
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
         </div>
       </div>
     );
@@ -182,8 +132,8 @@ export function DateTimeStep() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-base-content mb-2">Select Date & Time</h2>
-        <p className="text-base-content/70">Choose when you&apos;d like to bring your pet in</p>
+        <h2 className="text-2xl font-bold text-[#434E54] mb-2">Select Date & Time</h2>
+        <p className="text-[#6B7280]">Choose when you&apos;d like to bring your pet in</p>
       </div>
 
       {/* Selected datetime banner */}
@@ -241,23 +191,23 @@ export function DateTimeStep() {
         {/* Time slots */}
         <div>
           {!selectedDate ? (
-            <div className="bg-base-100 rounded-xl border border-base-300 p-6 text-center h-full flex flex-col items-center justify-center">
-              <div className="w-16 h-16 bg-base-300 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="bg-white rounded-xl shadow-md p-6 text-center h-full flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-[#EAE0D5] rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
-                  className="w-8 h-8 text-base-content/50"
+                  className="w-8 h-8 text-[#6B7280]"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth={2}
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                   />
                 </svg>
               </div>
-              <p className="text-base-content/70">Select a date to see available times</p>
+              <p className="text-[#6B7280]">Select a date to see available times</p>
             </div>
           ) : (
             <TimeSlotGrid

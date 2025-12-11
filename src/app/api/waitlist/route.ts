@@ -3,8 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getMockStore } from '@/mocks/supabase/store';
-import type { WaitlistEntry } from '@/types/database';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 /**
@@ -29,23 +28,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = waitlistSchema.parse(body);
 
-    const store = getMockStore();
+    const supabase = await createServerSupabaseClient();
 
     // Check for existing active entry for same customer/date/service/pet
-    const existingEntries = (store
-      .select('waitlist', {
-        column: 'customer_id',
-        value: validated.customer_id,
-      }) as unknown as WaitlistEntry[])
-      .filter(
-        (w) =>
-          w.requested_date === validated.requested_date &&
-          w.service_id === validated.service_id &&
-          w.pet_id === validated.pet_id &&
-          w.status === 'active'
-      );
+    const { data: existingEntries } = await supabase
+      .from('waitlist')
+      .select('*')
+      .eq('customer_id', validated.customer_id)
+      .eq('requested_date', validated.requested_date)
+      .eq('service_id', validated.service_id)
+      .eq('pet_id', validated.pet_id)
+      .eq('status', 'active');
 
-    if (existingEntries.length > 0) {
+    if (existingEntries && existingEntries.length > 0) {
       return NextResponse.json(
         {
           error: 'Already on waitlist for this date',
@@ -60,28 +55,39 @@ export async function POST(req: NextRequest) {
     }
 
     // Create waitlist entry
-    const entry = store.insert('waitlist', {
-      customer_id: validated.customer_id,
-      pet_id: validated.pet_id,
-      service_id: validated.service_id,
-      requested_date: validated.requested_date,
-      time_preference: validated.time_preference,
-      status: 'active',
-      notified_at: null,
-    }) as unknown as WaitlistEntry;
+    const { data: entry, error: insertError } = await supabase
+      .from('waitlist')
+      .insert({
+        customer_id: validated.customer_id,
+        pet_id: validated.pet_id,
+        service_id: validated.service_id,
+        requested_date: validated.requested_date,
+        time_preference: validated.time_preference,
+        status: 'active',
+        notified_at: null,
+      })
+      .select()
+      .single();
+
+    if (insertError || !entry) {
+      console.error('Error creating waitlist entry:', insertError);
+      return NextResponse.json(
+        { error: 'Failed to join waitlist' },
+        { status: 500 }
+      );
+    }
 
     // Calculate position (count active entries for this date)
-    const position = (store
-      .select('waitlist', {
-        column: 'requested_date',
-        value: validated.requested_date,
-      }) as unknown as WaitlistEntry[])
-      .filter((w) => w.status === 'active').length;
+    const { count } = await supabase
+      .from('waitlist')
+      .select('*', { count: 'exact', head: true })
+      .eq('requested_date', validated.requested_date)
+      .eq('status', 'active');
 
     return NextResponse.json({
       success: true,
       waitlist_id: entry.id,
-      position,
+      position: count || 1,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

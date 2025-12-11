@@ -159,16 +159,16 @@ export function useBookingSubmit(): UseBookingSubmitReturn {
 ```
 
 ## Acceptance Criteria
-- [ ] Creates guest user if guestInfo is present in store
-- [ ] Creates pet if newPetData is present in store
-- [ ] Creates appointment with all required data
-- [ ] Handles SLOT_CONFLICT error by redirecting to date/time step
-- [ ] Handles EMAIL_EXISTS error from guest user creation
-- [ ] Handles network errors with friendly message
-- [ ] Updates booking store with result on success
-- [ ] Exposes isSubmitting state for loading UI
-- [ ] Exposes error state for error display
-- [ ] Provides clearError function
+- [x] Creates guest user if guestInfo is present in store
+- [x] Creates pet if newPetData is present in store
+- [x] Creates appointment with all required data
+- [x] Handles SLOT_CONFLICT error by redirecting to date/time step
+- [x] Handles EMAIL_EXISTS error from guest user creation
+- [x] Handles network errors with friendly message
+- [x] Updates booking store with result on success
+- [x] Exposes isSubmitting state for loading UI
+- [x] Exposes error state for error display
+- [x] Provides clearError function
 
 ## Estimated Complexity
 High
@@ -180,3 +180,41 @@ Phase 3: Booking Page & Integration
 - Task 7 (pets API)
 - Task 8 (appointments API)
 - Task 10 (guest user API)
+
+## Implementation Notes
+**Status:** ✅ Completed
+
+**File Created:**
+- `src/hooks/useBookingSubmit.ts` - Full implementation with comprehensive error handling
+
+**Key Features Implemented:**
+1. **Multi-step booking flow:**
+   - Guest user creation (if not authenticated)
+   - Pet creation (if new pet)
+   - Appointment creation with addons
+
+2. **Comprehensive error handling:**
+   - SLOT_CONFLICT: Clears date/time and redirects to step 2
+   - VALIDATION: User-friendly messages for missing/invalid data
+   - NETWORK: Network connectivity issues
+   - UNKNOWN: Fallback for unexpected errors
+
+3. **Authentication integration:**
+   - Uses `useAuth` hook to check authentication status
+   - Supports both authenticated and guest flows
+   - Handles EMAIL_EXISTS error for duplicate guest accounts
+
+4. **State management:**
+   - Integrates with `useBookingStore` for all booking data
+   - Updates store with booking result on success
+   - Provides loading and error states for UI feedback
+
+5. **TypeScript safety:**
+   - Full type definitions for all interfaces
+   - Proper error categorization
+   - Type-safe API request/response handling
+
+**Error Recovery:**
+- SLOT_CONFLICT automatically clears conflicting selection and returns user to date/time step
+- All errors are categorized for appropriate UI handling
+- Network errors are detected and reported separately

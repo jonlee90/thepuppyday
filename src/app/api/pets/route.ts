@@ -4,10 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getMockStore } from '@/mocks/supabase/store';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { petFormSchema } from '@/lib/booking/validation';
 import { getAuthenticatedUserId, getUserIdFromRequest } from '@/lib/auth/mock-auth';
-import type { Pet } from '@/types/database';
 import { z } from 'zod';
 
 export async function GET(req: NextRequest) {
@@ -18,15 +17,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const store = getMockStore();
-    const pets = (store
-      .select('pets', {
-        column: 'owner_id',
-        value: userId,
-      }) as unknown as Pet[])
-      .filter((pet) => pet.is_active);
+    const supabase = await createServerSupabaseClient();
+    const { data: pets, error } = await supabase
+      .from('pets')
+      .select('*')
+      .eq('owner_id', userId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
-    return NextResponse.json({ pets });
+    if (error) {
+      console.error('Error fetching pets:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch pets' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ pets: pets || [] });
   } catch (error) {
     console.error('Error fetching pets:', error);
     return NextResponse.json(
@@ -60,20 +67,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const store = getMockStore();
-    const pet = store.insert('pets', {
-      owner_id: userId,
-      name: validated.name,
-      breed_id: validated.breed_id || null,
-      breed_custom: validated.breed_custom || null,
-      size: validated.size,
-      weight: validated.weight || null,
-      birth_date: null,
-      notes: validated.notes || null,
-      medical_info: null,
-      photo_url: null,
-      is_active: true,
-    }) as unknown as Pet;
+    const supabase = await createServerSupabaseClient();
+    const { data: pet, error } = await supabase
+      .from('pets')
+      .insert({
+        owner_id: userId,
+        name: validated.name,
+        breed_id: validated.breed_id || null,
+        breed_custom: validated.breed_custom || null,
+        size: validated.size,
+        weight: validated.weight || null,
+        birth_date: null,
+        notes: validated.notes || null,
+        medical_info: null,
+        photo_url: null,
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating pet:', error);
+      return NextResponse.json(
+        { error: 'Failed to create pet' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ pet });
   } catch (error) {

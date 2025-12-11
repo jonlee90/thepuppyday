@@ -6,8 +6,7 @@ import { useCallback } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
 import { getMockStore } from '@/mocks/supabase/store';
-import type { User, Pet, Appointment, AppointmentAddon, WaitlistEntry } from '@/types/database';
-import { generateId } from '@/lib/utils';
+import type { User, Pet, Appointment } from '@/types/database';
 
 interface BookingResult {
   success: boolean;
@@ -151,7 +150,6 @@ export function useBooking() {
     selectedService,
     selectedPet,
     newPetData,
-    petSize,
     selectedDate,
     selectedTimeSlot,
     selectedAddons,
@@ -166,7 +164,7 @@ export function useBooking() {
 
       try {
         let customerId = user?.id;
-        let petId = selectedPet?.id;
+        const petId = selectedPet?.id;
 
         if (!customerId) {
           // For guests, we need their info first

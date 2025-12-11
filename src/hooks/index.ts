@@ -29,3 +29,11 @@ export type { UsePetsReturn } from './usePets';
 
 // Booking creation
 export { useBooking } from './useBooking';
+
+// Booking submission
+export { useBookingSubmit } from './useBookingSubmit';
+export type {
+  UseBookingSubmitReturn,
+  BookingResult,
+  BookingError,
+} from './useBookingSubmit';

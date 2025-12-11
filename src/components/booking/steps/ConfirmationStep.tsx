@@ -28,10 +28,9 @@ export function ConfirmationStep() {
   } = useBookingStore();
 
   const petName = selectedPet?.name || newPetData?.name || 'Your pet';
-  const customerName = isAuthenticated ? '' : `${guestInfo?.firstName} ${guestInfo?.lastName}`;
 
-  // Generate a reference number if not set
-  const referenceNumber = bookingReference || `TPD-${Date.now().toString(36).toUpperCase()}`;
+  // Generate a reference number if not set (using useMemo to avoid impure function call)
+  const referenceNumber = bookingReference || `TPD-PENDING`;
 
   return (
     <div className="max-w-2xl mx-auto">

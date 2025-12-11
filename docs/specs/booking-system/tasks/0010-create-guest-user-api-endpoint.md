@@ -124,15 +124,18 @@ export async function POST(req: NextRequest) {
 ```
 
 ## Acceptance Criteria
-- [ ] Validates required fields (email, first_name, last_name)
-- [ ] Validates email format
-- [ ] Validates phone format if provided
-- [ ] Returns 400 for validation errors
-- [ ] Checks for existing email (case-insensitive)
-- [ ] Returns 409 with EMAIL_EXISTS code if email taken
-- [ ] Creates user with role "customer"
-- [ ] Stores email in lowercase
-- [ ] Returns user data without sensitive fields
+- [x] Validates required fields (email, first_name, last_name)
+- [x] Validates email format
+- [x] Validates phone format if provided
+- [x] Returns 400 for validation errors
+- [x] Checks for existing email (case-insensitive)
+- [x] Returns 409 with EMAIL_EXISTS code if email taken
+- [x] Creates user with role "customer"
+- [x] Stores email in lowercase
+- [x] Returns user data without sensitive fields
+
+## Status
+✅ **COMPLETED** - Implemented in commit 1b00eca
 
 ## Estimated Complexity
 Medium

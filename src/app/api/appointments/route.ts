@@ -3,10 +3,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getMockStore } from '@/mocks/supabase/store';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { appointmentCreationSchema } from '@/lib/booking/validation';
-import { generateId } from '@/lib/utils';
-import type { Appointment, User, Addon } from '@/types/database';
+import type { Appointment } from '@/types/database';
 import { z } from 'zod';
 
 /**
@@ -25,42 +24,15 @@ const appointmentRequestSchema = appointmentCreationSchema.extend({
 });
 
 /**
- * Extended Appointment type with booking_reference
- */
-interface AppointmentWithReference extends Appointment {
-  booking_reference?: string;
-}
-
-/**
  * Generate a unique booking reference number
  * Format: APT-YYYY-NNNNNN
  */
-function generateBookingReference(existingAppointments: Appointment[]): string {
+function generateBookingReference(): string {
   const year = new Date().getFullYear();
-  const maxAttempts = 10;
-
-  // Get all existing references for uniqueness check
-  const existingReferences = new Set(
-    (existingAppointments as AppointmentWithReference[])
-      .map(apt => apt.booking_reference)
-      .filter(Boolean)
-  );
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const random = Math.floor(Math.random() * 1000000)
-      .toString()
-      .padStart(6, '0');
-    const reference = `APT-${year}-${random}`;
-
-    // Check if reference is unique
-    if (!existingReferences.has(reference)) {
-      return reference;
-    }
-  }
-
-  // Fallback: use timestamp-based reference if random fails
-  const timestamp = Date.now().toString().slice(-6);
-  return `APT-${year}-${timestamp}`;
+  const random = Math.floor(Math.random() * 1000000)
+    .toString()
+    .padStart(6, '0');
+  return `APT-${year}-${random}`;
 }
 
 /**
@@ -104,43 +76,65 @@ export async function POST(req: NextRequest) {
     // Validate request body
     const validated = appointmentRequestSchema.parse(body);
 
-    const store = getMockStore();
+    const supabase = await createServerSupabaseClient();
 
     // Handle guest user creation if guest_info provided
     let customerId = validated.customer_id;
     if (validated.guest_info) {
-      // Check if user exists
-      const existingUsers = (store
-        .select('users') as unknown as User[])
-        .filter(
-          (u) =>
-            u.email.toLowerCase() === validated.guest_info!.email.toLowerCase()
-        );
+      // Check if user exists (case-insensitive email match)
+      const { data: existingUsers } = await supabase
+        .from('users')
+        .select('*')
+        .ilike('email', validated.guest_info.email);
 
-      if (existingUsers.length > 0) {
+      if (existingUsers && existingUsers.length > 0) {
         customerId = existingUsers[0].id;
       } else {
         // Create guest user
-        const guestUser = store.insert('users', {
-          email: validated.guest_info.email.toLowerCase(),
-          first_name: validated.guest_info.firstName,
-          last_name: validated.guest_info.lastName,
-          phone: validated.guest_info.phone,
-          role: 'customer',
-          avatar_url: null,
-          preferences: {},
-        }) as unknown as User;
+        const { data: guestUser, error: userError } = await supabase
+          .from('users')
+          .insert({
+            email: validated.guest_info.email.toLowerCase(),
+            first_name: validated.guest_info.firstName,
+            last_name: validated.guest_info.lastName,
+            phone: validated.guest_info.phone,
+            role: 'customer',
+            avatar_url: null,
+            preferences: {},
+          })
+          .select()
+          .single();
+
+        if (userError || !guestUser) {
+          console.error('Error creating guest user:', userError);
+          return NextResponse.json(
+            { error: 'Failed to create guest account' },
+            { status: 500 }
+          );
+        }
         customerId = guestUser.id;
       }
     }
 
-    // Check for slot conflicts (pessimistic locking in mock mode)
-    const allAppointments = store.select('appointments') as unknown as Appointment[];
+    // Check for slot conflicts
+    // Get appointments for the same day
+    const slotDate = new Date(validated.scheduled_at);
+    const dateStart = new Date(slotDate);
+    dateStart.setHours(0, 0, 0, 0);
+    const dateEnd = new Date(slotDate);
+    dateEnd.setHours(23, 59, 59, 999);
+
+    const { data: allAppointments } = await supabase
+      .from('appointments')
+      .select('*')
+      .gte('scheduled_at', dateStart.toISOString())
+      .lte('scheduled_at', dateEnd.toISOString());
+
     if (
       hasSlotConflict(
         validated.scheduled_at,
         validated.duration_minutes,
-        allAppointments
+        allAppointments || []
       )
     ) {
       return NextResponse.json(
@@ -150,36 +144,80 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate unique booking reference
-    const reference = generateBookingReference(allAppointments);
+    let reference = generateBookingReference();
+    let attempts = 0;
+    const maxAttempts = 10;
 
-    // Create appointment record with booking reference
-    const appointment = store.insert('appointments', {
-      customer_id: customerId,
-      pet_id: validated.pet_id,
-      service_id: validated.service_id,
-      groomer_id: validated.groomer_id || null,
-      scheduled_at: validated.scheduled_at,
-      duration_minutes: validated.duration_minutes,
-      status: 'pending',
-      payment_status: 'pending',
-      total_price: validated.total_price,
-      notes: validated.notes || null,
-      booking_reference: reference,
-    }) as unknown as Appointment;
+    // Ensure uniqueness
+    while (attempts < maxAttempts) {
+      const { data: existing } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('booking_reference', reference)
+        .single();
+
+      if (!existing) break;
+
+      reference = generateBookingReference();
+      attempts++;
+    }
+
+    // If we couldn't generate a unique reference, use timestamp-based
+    if (attempts >= maxAttempts) {
+      const timestamp = Date.now().toString().slice(-6);
+      reference = `APT-${new Date().getFullYear()}-${timestamp}`;
+    }
+
+    // Create appointment record
+    const { data: appointment, error: apptError } = await supabase
+      .from('appointments')
+      .insert({
+        customer_id: customerId,
+        pet_id: validated.pet_id,
+        service_id: validated.service_id,
+        groomer_id: validated.groomer_id || null,
+        scheduled_at: validated.scheduled_at,
+        duration_minutes: validated.duration_minutes,
+        status: 'pending',
+        payment_status: 'pending',
+        total_price: validated.total_price,
+        notes: validated.notes || null,
+        booking_reference: reference,
+      })
+      .select()
+      .single();
+
+    if (apptError || !appointment) {
+      console.error('Error creating appointment:', apptError);
+      return NextResponse.json(
+        { error: 'Failed to create appointment' },
+        { status: 500 }
+      );
+    }
 
     // Create appointment_addon records
     if (validated.addon_ids && validated.addon_ids.length > 0) {
       // Get addon prices
-      const addons = (store.select('addons') as unknown as Addon[])
-        .filter((addon) => validated.addon_ids!.includes(addon.id));
+      const { data: addons } = await supabase
+        .from('addons')
+        .select('*')
+        .in('id', validated.addon_ids);
 
-      for (const addon of addons) {
-        store.insert('appointment_addons', {
-          id: generateId(),
+      if (addons && addons.length > 0) {
+        const addonInserts = addons.map((addon) => ({
           appointment_id: appointment.id,
           addon_id: addon.id,
           price: addon.price,
-        });
+        }));
+
+        const { error: addonError } = await supabase
+          .from('appointment_addons')
+          .insert(addonInserts);
+
+        if (addonError) {
+          console.error('Error creating appointment addons:', addonError);
+          // Non-fatal error, continue
+        }
       }
     }
 
