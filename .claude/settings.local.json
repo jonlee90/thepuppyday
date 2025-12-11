@@ -5,7 +5,12 @@
       "WebFetch(domain:thepuppyday.com)",
       "WebFetch(domain:daisyui.com)",
       "Bash(git checkout:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run lint)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git push:*)"
     ]
   }
 }
