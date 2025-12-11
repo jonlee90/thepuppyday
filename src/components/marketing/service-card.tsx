@@ -146,7 +146,7 @@ export function ServiceCard({ service, onLearnMore }: ServiceCardProps) {
             exit={{ opacity: 0, height: 0 }}
             className="mt-4 pt-4 border-t border-gray-200"
           >
-            <h4 className="font-semibold text-[#434E54] text-sm mb-3">What's Included:</h4>
+            <h4 className="font-semibold text-[#434E54] text-sm mb-3">What&apos;s Included:</h4>
             <ul className="text-sm text-[#6B7280] space-y-2">
               {service.name.toLowerCase().includes('basic') && (
                 <>
