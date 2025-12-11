@@ -11,38 +11,38 @@
   --foreground: #434E54;
 }
 
-/* Custom DaisyUI Theme Colors */
+/* Clean & Elegant Professional DaisyUI Theme */
 [data-theme="light"] {
-  --p: 67 78 84; /* Primary: #434E54 */
-  --pf: 57 68 74;
+  --p: 67 78 84; /* Primary: #434E54 (Charcoal) */
+  --pf: 54 63 68; /* Primary Focus: #363F44 */
   --pc: 248 238 229;
-  --s: 189 147 249;
-  --sf: 139 92 246;
-  --sc: 30 41 59;
-  --a: 251 191 36;
-  --af: 245 158 11;
-  --ac: 30 41 59;
-  --n: 30 41 59;
-  --nf: 15 23 42;
+  --s: 234 224 213; /* Secondary: #EAE0D5 (Lighter cream) */
+  --sf: 220 210 199;
+  --sc: 67 78 84;
+  --a: 78 205 196; /* Accent: #4ECDC4 (Sky Blue) - keeping playful accent */
+  --af: 69 183 170;
+  --ac: 67 78 84;
+  --n: 67 78 84; /* Neutral: #434E54 (Charcoal) */
+  --nf: 50 60 65;
   --nc: 248 238 229;
-  --b1: 248 238 229; /* Background: #F8EEE5 */
-  --b2: 239 230 220;
-  --b3: 230 221 211;
+  --b1: 248 238 229; /* Base-100: #F8EEE5 (Warm cream) */
+  --b2: 234 224 213; /* Base-200: #EAE0D5 (Slightly darker cream) */
+  --b3: 220 210 199; /* Base-300: #DCD2C7 (Even darker) */
   --bc: 67 78 84;
-  --in: 59 130 246;
+  --in: 116 185 255; /* Info: #74B9FF */
   --inc: 255 255 255;
-  --su: 34 197 94;
+  --su: 107 203 119; /* Success: #6BCB77 */
   --suc: 255 255 255;
-  --wa: 251 191 36;
-  --wac: 30 41 59;
-  --er: 239 68 68;
+  --wa: 255 179 71; /* Warning: #FFB347 */
+  --wac: 45 52 54;
+  --er: 255 107 107; /* Error: #FF6B6B */
   --erc: 255 255 255;
   --rounded-box: 1rem;
   --rounded-btn: 0.5rem;
-  --rounded-badge: 1.9rem;
-  --animation-btn: 0.25s;
+  --rounded-badge: 1.5rem;
+  --animation-btn: 0.2s;
   --animation-input: 0.2s;
-  --btn-focus-scale: 0.95;
+  --btn-focus-scale: 0.98;
   --border-btn: 1px;
   --tab-border: 1px;
   --tab-radius: 0.5rem;
@@ -51,12 +51,17 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-nunito);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-nunito), 'Poppins', system-ui, sans-serif;
+  font-weight: 600;
 }

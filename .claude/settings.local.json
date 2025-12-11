@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git merge:*)"
+      "Bash(npm run dev:*)",
+      "WebFetch(domain:thepuppyday.com)",
+      "WebFetch(domain:daisyui.com)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git merge:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run lint)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git push:*)"
     ]
   }
 }

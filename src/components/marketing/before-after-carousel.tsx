@@ -19,7 +19,7 @@ export function BeforeAfterCarousel({ pairs }: BeforeAfterCarouselProps) {
   if (pairs.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-base-content/60">No before/after transformations available.</p>
+        <p className="text-[#6B7280]">No before/after transformations available.</p>
       </div>
     );
   }
@@ -61,11 +61,11 @@ export function BeforeAfterCarousel({ pairs }: BeforeAfterCarouselProps) {
           <>
             <button
               onClick={goToPrevious}
-              className="absolute left-4 top-1/2 -translate-y-1/2 btn btn-circle btn-primary shadow-lg hover:scale-110 transition-transform z-10"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 z-10"
               aria-label="Previous transformation"
             >
               <svg
-                className="w-6 h-6"
+                className="w-6 h-6 text-[#434E54]"
                 fill="none"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -79,11 +79,11 @@ export function BeforeAfterCarousel({ pairs }: BeforeAfterCarouselProps) {
 
             <button
               onClick={goToNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 btn btn-circle btn-primary shadow-lg hover:scale-110 transition-transform z-10"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 z-10"
               aria-label="Next transformation"
             >
               <svg
-                className="w-6 h-6"
+                className="w-6 h-6 text-[#434E54]"
                 fill="none"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -105,8 +105,8 @@ export function BeforeAfterCarousel({ pairs }: BeforeAfterCarouselProps) {
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`h-2 rounded-full transition-all ${
-                index === currentIndex ? 'w-8 bg-primary' : 'w-2 bg-base-300'
+              className={`h-2 rounded-full transition-all duration-200 ${
+                index === currentIndex ? 'w-8 bg-[#434E54]' : 'w-2 bg-[#EAE0D5]'
               }`}
               aria-label={`Go to transformation ${index + 1}`}
             />
@@ -116,7 +116,7 @@ export function BeforeAfterCarousel({ pairs }: BeforeAfterCarouselProps) {
 
       {/* Counter */}
       {pairs.length > 1 && (
-        <div className="text-center mt-4 text-sm text-base-content/60">
+        <div className="text-center mt-4 text-sm text-[#6B7280]">
           {currentIndex + 1} / {pairs.length}
         </div>
       )}
