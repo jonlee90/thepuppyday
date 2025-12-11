@@ -14,7 +14,6 @@ import { formatTimeDisplay } from '@/lib/booking/availability';
 
 export function ReviewStep() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [guestFormSubmitted, setGuestFormSubmitted] = useState(false);
 
   const { isAuthenticated, user } = useAuthStore();
   const { createBooking } = useBooking();
@@ -27,7 +26,6 @@ export function ReviewStep() {
     selectedTimeSlot,
     selectedAddons,
     servicePrice,
-    addonsTotal,
     totalPrice,
     guestInfo,
     setGuestInfo,
@@ -38,7 +36,6 @@ export function ReviewStep() {
 
   const handleGuestInfoSubmit = (info: GuestInfo) => {
     setGuestInfo(info);
-    setGuestFormSubmitted(true);
   };
 
   const handleConfirm = async () => {

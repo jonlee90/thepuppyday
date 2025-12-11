@@ -22,7 +22,6 @@ export function ConfirmationStep() {
     selectedTimeSlot,
     selectedAddons,
     totalPrice,
-    guestInfo,
     bookingReference,
     reset,
   } = useBookingStore();

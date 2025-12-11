@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
 import { PetCard, AddPetCard } from '../PetCard';
@@ -14,8 +14,6 @@ import type { Pet, CreatePetInput } from '@/types/database';
 import type { PetFormData } from '@/lib/booking/validation';
 
 export function PetStep() {
-  const [showForm, setShowForm] = useState(false);
-
   const { user, isAuthenticated } = useAuthStore();
   const { pets, isLoading, error, refetch } = usePets();
   const {
@@ -27,12 +25,13 @@ export function PetStep() {
     prevStep,
   } = useBookingStore();
 
-  // Show form for guests or when no pets available
-  useEffect(() => {
-    if (!isLoading && (!isAuthenticated || pets.length === 0)) {
-      setShowForm(true);
-    }
-  }, [isAuthenticated, pets.length, isLoading]);
+  // Determine if form should be shown: for guests or when user has no pets
+  const shouldAutoShowForm = useMemo(
+    () => !isLoading && (!isAuthenticated || pets.length === 0),
+    [isLoading, isAuthenticated, pets.length]
+  );
+
+  const [showForm, setShowForm] = useState(shouldAutoShowForm);
 
   const handleSelectPet = (pet: Pet) => {
     selectPet(pet);
