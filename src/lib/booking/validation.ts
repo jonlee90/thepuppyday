@@ -82,7 +82,17 @@ export const appointmentCreationSchema = z.object({
   pet_id: z.string().uuid('Invalid pet ID'),
   service_id: z.string().uuid('Invalid service ID'),
   groomer_id: z.string().uuid('Invalid groomer ID').optional().nullable(),
-  scheduled_at: z.string().min(1, 'Scheduled time is required'),
+  scheduled_at: z
+    .string()
+    .min(1, 'Scheduled time is required')
+    .refine(
+      (dateStr) => {
+        const scheduledDate = new Date(dateStr);
+        const now = new Date();
+        return scheduledDate > now;
+      },
+      { message: 'Appointment must be in the future' }
+    ),
   duration_minutes: z.number().positive('Duration must be positive'),
   total_price: z.number().nonnegative('Total price must be non-negative'),
   notes: z.string().max(500, 'Notes are too long').optional().nullable(),
