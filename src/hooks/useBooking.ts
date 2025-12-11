@@ -6,7 +6,7 @@ import { useCallback } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
 import { getMockStore } from '@/mocks/supabase/store';
-import type { User, Pet, Appointment } from '@/types/database';
+import type { User, Pet, Appointment, WaitlistEntry } from '@/types/database';
 
 interface BookingResult {
   success: boolean;

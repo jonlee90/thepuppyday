@@ -15,6 +15,7 @@ import { formatTimeDisplay } from '@/lib/booking/availability';
 export function ReviewStep() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [guestFormSubmitted, setGuestFormSubmitted] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   const { isAuthenticated, user } = useAuthStore();
   const { createBooking } = useBooking();
@@ -53,6 +54,7 @@ export function ReviewStep() {
     }
 
     setIsSubmitting(true);
+    setBookingError(null);
 
     try {
       const result = await createBooking();
@@ -61,10 +63,11 @@ export function ReviewStep() {
         nextStep();
       } else {
         console.error('Booking failed:', result.error);
-        // Could show an error toast here
+        setBookingError(result.error || 'Failed to create booking. Please try again.');
       }
     } catch (error) {
       console.error('Booking error:', error);
+      setBookingError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -75,27 +78,42 @@ export function ReviewStep() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-base-content mb-2">Review Your Booking</h2>
-        <p className="text-base-content/70">Please confirm all details are correct</p>
+      {/* Header with dog theme */}
+      <div className="relative">
+        {/* Subtle paw print decoration */}
+        <div className="absolute top-0 left-0 opacity-[0.04] pointer-events-none hidden lg:block">
+          <svg className="w-16 h-16 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
+          </svg>
+        </div>
+
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-[#EAE0D5] rounded-xl flex items-center justify-center shadow-sm">
+            <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-[#434E54]">Review Your Booking</h2>
+        </div>
+        <p className="text-[#6B7280] leading-relaxed">Double-check everything looks perfect for your pup's visit</p>
       </div>
 
       {/* Booking summary */}
-      <div className="bg-base-100 rounded-xl border border-base-300 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {/* Service */}
-        <div className="p-4 border-b border-base-300">
+        <div className="p-4 border-b border-gray-200">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-base-content/60">Service</p>
-              <p className="font-semibold text-base-content">{selectedService?.name}</p>
-              <p className="text-sm text-base-content/70">
+              <p className="text-sm text-[#6B7280]">Service</p>
+              <p className="font-semibold text-[#434E54]">{selectedService?.name}</p>
+              <p className="text-sm text-[#6B7280]">
                 {formatDuration(selectedService?.duration_minutes || 0)}
               </p>
             </div>
             <button
               onClick={() => setStep(0)}
-              className="btn btn-ghost btn-xs"
+              className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
+                       hover:bg-[#EAE0D5] transition-colors duration-200"
             >
               Edit
             </button>
@@ -103,12 +121,12 @@ export function ReviewStep() {
         </div>
 
         {/* Pet */}
-        <div className="p-4 border-b border-base-300">
+        <div className="p-4 border-b border-gray-200">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-base-content/60">Pet</p>
-              <p className="font-semibold text-base-content">{petName}</p>
-              <p className="text-sm text-base-content/70">
+              <p className="text-sm text-[#6B7280]">Pet</p>
+              <p className="font-semibold text-[#434E54]">{petName}</p>
+              <p className="text-sm text-[#6B7280]">
                 {petSize ? getSizeShortLabel(petSize) : ''}
                 {(selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom) && (
                   <> • {selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom}</>
@@ -117,7 +135,8 @@ export function ReviewStep() {
             </div>
             <button
               onClick={() => setStep(1)}
-              className="btn btn-ghost btn-xs"
+              className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
+                       hover:bg-[#EAE0D5] transition-colors duration-200"
             >
               Edit
             </button>
@@ -125,11 +144,11 @@ export function ReviewStep() {
         </div>
 
         {/* Date & Time */}
-        <div className="p-4 border-b border-base-300">
+        <div className="p-4 border-b border-gray-200">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-base-content/60">Date & Time</p>
-              <p className="font-semibold text-base-content">
+              <p className="text-sm text-[#6B7280]">Date & Time</p>
+              <p className="font-semibold text-[#434E54]">
                 {selectedDate &&
                   new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
                     weekday: 'long',
@@ -138,13 +157,14 @@ export function ReviewStep() {
                     year: 'numeric',
                   })}
               </p>
-              <p className="text-sm text-base-content/70">
+              <p className="text-sm text-[#6B7280]">
                 {selectedTimeSlot && formatTimeDisplay(selectedTimeSlot)}
               </p>
             </div>
             <button
               onClick={() => setStep(2)}
-              className="btn btn-ghost btn-xs"
+              className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
+                       hover:bg-[#EAE0D5] transition-colors duration-200"
             >
               Edit
             </button>
@@ -153,21 +173,22 @@ export function ReviewStep() {
 
         {/* Add-ons */}
         {selectedAddons.length > 0 && (
-          <div className="p-4 border-b border-base-300">
+          <div className="p-4 border-b border-gray-200">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-base-content/60">Add-ons</p>
+                <p className="text-sm text-[#6B7280]">Add-ons</p>
                 <ul className="mt-1 space-y-1">
                   {selectedAddons.map((addon) => (
-                    <li key={addon.id} className="text-sm text-base-content">
-                      {addon.name} <span className="text-base-content/60">+{formatCurrency(addon.price)}</span>
+                    <li key={addon.id} className="text-sm text-[#434E54]">
+                      {addon.name} <span className="text-[#6B7280]">+{formatCurrency(addon.price)}</span>
                     </li>
                   ))}
                 </ul>
               </div>
               <button
                 onClick={() => setStep(3)}
-                className="btn btn-ghost btn-xs"
+                className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
+                         hover:bg-[#EAE0D5] transition-colors duration-200"
               >
                 Edit
               </button>
@@ -176,22 +197,22 @@ export function ReviewStep() {
         )}
 
         {/* Price breakdown */}
-        <div className="p-4 bg-base-200">
+        <div className="p-4 bg-[#FFFBF7]">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-base-content/70">{selectedService?.name}</span>
-              <span className="text-base-content">{formatCurrency(servicePrice)}</span>
+              <span className="text-[#6B7280]">{selectedService?.name}</span>
+              <span className="text-[#434E54]">{formatCurrency(servicePrice)}</span>
             </div>
             {selectedAddons.map((addon) => (
               <div key={addon.id} className="flex justify-between text-sm">
-                <span className="text-base-content/70">{addon.name}</span>
-                <span className="text-base-content">{formatCurrency(addon.price)}</span>
+                <span className="text-[#6B7280]">{addon.name}</span>
+                <span className="text-[#434E54]">{formatCurrency(addon.price)}</span>
               </div>
             ))}
-            <div className="border-t border-base-300 pt-2 mt-2">
+            <div className="border-t border-gray-200 pt-2 mt-2">
               <div className="flex justify-between">
-                <span className="font-semibold text-base-content">Total</span>
-                <span className="text-xl font-bold text-primary">{formatCurrency(totalPrice)}</span>
+                <span className="font-semibold text-[#434E54]">Total</span>
+                <span className="text-xl font-bold text-[#434E54]">{formatCurrency(totalPrice)}</span>
               </div>
             </div>
           </div>
@@ -200,9 +221,9 @@ export function ReviewStep() {
 
       {/* Guest info form */}
       {!isAuthenticated && (
-        <div className="bg-base-100 rounded-xl border border-base-300 p-6">
-          <h3 className="font-semibold text-base-content mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="font-semibold text-[#434E54] mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -215,17 +236,18 @@ export function ReviewStep() {
 
           {guestInfo ? (
             <div className="space-y-2">
-              <p className="text-base-content">
+              <p className="text-[#434E54]">
                 <span className="font-medium">{guestInfo.firstName} {guestInfo.lastName}</span>
               </p>
-              <p className="text-sm text-base-content/70">{guestInfo.email}</p>
-              <p className="text-sm text-base-content/70">{guestInfo.phone}</p>
+              <p className="text-sm text-[#6B7280]">{guestInfo.email}</p>
+              <p className="text-sm text-[#6B7280]">{guestInfo.phone}</p>
               <button
                 onClick={() => {
                   setGuestInfo(null as unknown as GuestInfo);
                   setGuestFormSubmitted(false);
                 }}
-                className="btn btn-ghost btn-sm mt-2"
+                className="text-[#434E54] font-medium py-1.5 px-3 rounded-lg text-sm mt-2
+                         hover:bg-[#EAE0D5] transition-colors duration-200"
               >
                 Edit
               </button>
@@ -238,9 +260,9 @@ export function ReviewStep() {
 
       {/* Authenticated user info */}
       {isAuthenticated && user && (
-        <div className="bg-base-100 rounded-xl border border-base-300 p-6">
-          <h3 className="font-semibold text-base-content mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="font-semibold text-[#434E54] mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -251,20 +273,54 @@ export function ReviewStep() {
             Your Information
           </h3>
           <div className="space-y-2">
-            <p className="text-base-content">
+            <p className="text-[#434E54]">
               <span className="font-medium">{user.first_name} {user.last_name}</span>
             </p>
-            <p className="text-sm text-base-content/70">{user.email}</p>
-            {user.phone && <p className="text-sm text-base-content/70">{user.phone}</p>}
+            <p className="text-sm text-[#6B7280]">{user.email}</p>
+            {user.phone && <p className="text-sm text-[#6B7280]">{user.phone}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Error display */}
+      {bookingError && (
+        <div className="bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-5 h-5 text-[#EF4444] flex-shrink-0 mt-0.5">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-[#EF4444] mb-1">Booking Error</h4>
+              <p className="text-sm text-[#EF4444]">{bookingError}</p>
+            </div>
+            <button
+              onClick={() => setBookingError(null)}
+              className="text-[#EF4444] hover:text-[#DC2626] p-1"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
       )}
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
-        <button onClick={prevStep} className="btn btn-ghost">
+        <button
+          onClick={prevStep}
+          className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
+                   hover:bg-[#EAE0D5] transition-colors duration-200
+                   flex items-center gap-2"
+        >
           <svg
-            className="w-5 h-5 mr-2"
+            className="w-5 h-5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -277,18 +333,21 @@ export function ReviewStep() {
         <button
           onClick={handleConfirm}
           disabled={!canConfirm && !isAuthenticated || isSubmitting}
-          className="btn btn-primary btn-lg"
+          className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
+                   hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
+                   disabled:bg-[#6B7280] disabled:cursor-not-allowed disabled:opacity-50
+                   flex items-center gap-2"
         >
           {isSubmitting ? (
             <>
-              <span className="loading loading-spinner loading-sm" />
-              Confirming...
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Processing...
             </>
           ) : (
             <>
               Confirm Booking
               <svg
-                className="w-5 h-5 ml-2"
+                className="w-5 h-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"

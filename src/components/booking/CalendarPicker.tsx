@@ -122,23 +122,24 @@ export function CalendarPicker({
   };
 
   return (
-    <div className="bg-base-100 rounded-xl border border-base-300 p-4">
+    <div className="bg-white rounded-xl shadow-md p-4">
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={handlePrevMonth}
           disabled={!canGoPrev}
           className={cn(
-            'btn btn-ghost btn-sm btn-circle',
-            !canGoPrev && 'opacity-30 cursor-not-allowed'
+            'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
+            'hover:bg-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20',
+            !canGoPrev && 'opacity-30 cursor-not-allowed hover:bg-transparent'
           )}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
 
-        <h3 className="text-lg font-semibold text-base-content">
+        <h3 className="text-lg font-semibold text-[#434E54]">
           {MONTHS[currentMonth.month]} {currentMonth.year}
         </h3>
 
@@ -146,11 +147,12 @@ export function CalendarPicker({
           onClick={handleNextMonth}
           disabled={!canGoNext}
           className={cn(
-            'btn btn-ghost btn-sm btn-circle',
-            !canGoNext && 'opacity-30 cursor-not-allowed'
+            'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
+            'hover:bg-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20',
+            !canGoNext && 'opacity-30 cursor-not-allowed hover:bg-transparent'
           )}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -161,7 +163,7 @@ export function CalendarPicker({
         {DAYS_OF_WEEK.map((day) => (
           <div
             key={day}
-            className="text-center text-xs font-medium text-base-content/50 py-2"
+            className="text-center text-xs font-medium text-[#6B7280] py-2"
           >
             {day}
           </div>
@@ -187,12 +189,12 @@ export function CalendarPicker({
               whileHover={!disabled ? { scale: 1.1 } : {}}
               whileTap={!disabled ? { scale: 0.95 } : {}}
               className={cn(
-                'aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-colors',
-                'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-                disabled && 'opacity-30 cursor-not-allowed',
-                !disabled && !selected && 'hover:bg-primary/10',
-                selected && 'bg-primary text-primary-content',
-                todayDate && !selected && 'ring-2 ring-primary/50'
+                'aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200',
+                'focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:ring-offset-2',
+                disabled && 'opacity-30 cursor-not-allowed text-[#6B7280]',
+                !disabled && !selected && 'hover:bg-[#EAE0D5] text-[#434E54]',
+                selected && 'bg-[#434E54] text-white shadow-md',
+                todayDate && !selected && 'ring-2 ring-[#434E54]/30 font-semibold'
               )}
             >
               {date.getDate()}
@@ -202,17 +204,17 @@ export function CalendarPicker({
       </div>
 
       {/* Legend */}
-      <div className="mt-4 pt-4 border-t border-base-300 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs text-base-content/60">
+      <div className="mt-4 pt-4 border-t border-gray-200 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs text-[#6B7280]">
         <div className="flex items-center gap-1 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-primary" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-[#434E54] shadow-sm" />
           <span>Selected</span>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded ring-2 ring-primary/50" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded ring-2 ring-[#434E54]/30" />
           <span>Today</span>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-base-300 opacity-30" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-gray-300 opacity-50" />
           <span>Unavailable</span>
         </div>
       </div>

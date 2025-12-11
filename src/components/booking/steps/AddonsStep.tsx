@@ -4,9 +4,11 @@
 
 'use client';
 
+import { motion, AnimatePresence } from 'framer-motion';
 import { useBookingStore } from '@/stores/bookingStore';
 import { AddonCard } from '../AddonCard';
 import { useAddons } from '@/hooks/useAddons';
+import { formatCurrency } from '@/lib/booking/pricing';
 import type { Addon } from '@/types/database';
 
 export function AddonsStep() {
@@ -105,9 +107,14 @@ export function AddonsStep() {
 
         {/* Navigation */}
         <div className="flex justify-between pt-4">
-          <button onClick={prevStep} className="btn btn-ghost">
+          <button
+            onClick={prevStep}
+            className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
+                     hover:bg-[#EAE0D5] transition-colors duration-200
+                     flex items-center gap-2"
+          >
             <svg
-              className="w-5 h-5 mr-2"
+              className="w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -117,10 +124,15 @@ export function AddonsStep() {
             </svg>
             Back
           </button>
-          <button onClick={handleContinue} className="btn btn-primary btn-lg">
+          <button
+            onClick={handleContinue}
+            className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
+                     hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
+                     flex items-center gap-2"
+          >
             Continue
             <svg
-              className="w-5 h-5 ml-2"
+              className="w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -163,9 +175,14 @@ export function AddonsStep() {
 
         {/* Navigation */}
         <div className="flex justify-between pt-4">
-          <button onClick={prevStep} className="btn btn-ghost">
+          <button
+            onClick={prevStep}
+            className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
+                     hover:bg-[#EAE0D5] transition-colors duration-200
+                     flex items-center gap-2"
+          >
             <svg
-              className="w-5 h-5 mr-2"
+              className="w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -175,10 +192,15 @@ export function AddonsStep() {
             </svg>
             Back
           </button>
-          <button onClick={handleContinue} className="btn btn-primary btn-lg">
+          <button
+            onClick={handleContinue}
+            className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
+                     hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
+                     flex items-center gap-2"
+          >
             Continue
             <svg
-              className="w-5 h-5 ml-2"
+              className="w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -194,25 +216,74 @@ export function AddonsStep() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-[#434E54] mb-2">Add Extra Services</h2>
-        <p className="text-[#6B7280]">Enhance your pet&apos;s grooming experience</p>
+      {/* Header with dog theme */}
+      <div className="relative">
+        {/* Subtle paw print decoration */}
+        <div className="absolute -bottom-2 left-1/2 opacity-[0.04] pointer-events-none hidden lg:block">
+          <svg className="w-16 h-16 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
+          </svg>
+        </div>
+
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-[#EAE0D5] rounded-xl flex items-center justify-center shadow-sm">
+            <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-[#434E54]">Add Extra Services</h2>
+        </div>
+        <p className="text-[#6B7280] leading-relaxed">Give your pup the ultimate spa experience with these add-ons</p>
       </div>
 
-      {/* Selected count */}
-      {selectedAddons.length > 0 && (
-        <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
-          <p className="text-sm text-primary font-medium">
-            {selectedAddons.length} add-on{selectedAddons.length > 1 ? 's' : ''} selected
-          </p>
-        </div>
-      )}
+      {/* Selected add-ons summary with animation */}
+      <AnimatePresence>
+        {selectedAddons.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="bg-[#434E54]/10 border border-[#434E54]/30 rounded-lg p-4 overflow-hidden"
+          >
+            <p className="text-sm text-[#434E54] font-medium mb-2">
+              {selectedAddons.length} add-on{selectedAddons.length > 1 ? 's' : ''} selected
+            </p>
+            <div className="space-y-1.5">
+              {selectedAddons.map((addon) => (
+                <motion.div
+                  key={addon.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  className="flex justify-between text-sm"
+                >
+                  <span className="text-[#434E54]">{addon.name}</span>
+                  <span className="text-[#434E54] font-semibold">+{formatCurrency(addon.price)}</span>
+                </motion.div>
+              ))}
+              <div className="border-t border-[#434E54]/20 pt-2 mt-2">
+                <motion.div
+                  key={selectedAddons.reduce((sum, addon) => sum + addon.price, 0)}
+                  initial={{ scale: 1.1 }}
+                  animate={{ scale: 1 }}
+                  className="flex justify-between font-semibold"
+                >
+                  <span className="text-[#434E54]">Add-ons Total</span>
+                  <span className="text-[#434E54] text-lg">
+                    +{formatCurrency(selectedAddons.reduce((sum, addon) => sum + addon.price, 0))}
+                  </span>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Upsell add-ons */}
       {upsellAddons.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-warning flex items-center gap-2">
+          <h3 className="text-sm font-medium text-[#FFB347] flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
@@ -241,7 +312,7 @@ export function AddonsStep() {
       {regularAddons.length > 0 && (
         <div className="space-y-3">
           {upsellAddons.length > 0 && (
-            <h3 className="text-sm font-medium text-base-content/70">Other add-ons</h3>
+            <h3 className="text-sm font-medium text-[#6B7280]">Other add-ons</h3>
           )}
           <div className="space-y-3">
             {regularAddons.map((addon) => (
@@ -258,9 +329,14 @@ export function AddonsStep() {
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
-        <button onClick={prevStep} className="btn btn-ghost">
+        <button
+          onClick={prevStep}
+          className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
+                   hover:bg-[#EAE0D5] transition-colors duration-200
+                   flex items-center gap-2"
+        >
           <svg
-            className="w-5 h-5 mr-2"
+            className="w-5 h-5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -273,14 +349,23 @@ export function AddonsStep() {
 
         <div className="flex gap-3">
           {selectedAddons.length === 0 && (
-            <button onClick={handleSkip} className="btn btn-ghost">
+            <button
+              onClick={handleSkip}
+              className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
+                       hover:bg-[#EAE0D5] transition-colors duration-200"
+            >
               Skip
             </button>
           )}
-          <button onClick={handleContinue} className="btn btn-primary btn-lg">
+          <button
+            onClick={handleContinue}
+            className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
+                     hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
+                     flex items-center gap-2"
+          >
             Continue
             <svg
-              className="w-5 h-5 ml-2"
+              className="w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

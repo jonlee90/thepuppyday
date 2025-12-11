@@ -19,6 +19,7 @@ import Link from 'next/link';
 
 interface BookingWizardProps {
   preSelectedServiceId?: string;
+  embedded?: boolean; // Hide header/progress when embedded
 }
 
 const stepVariants = {
@@ -36,7 +37,7 @@ const stepVariants = {
   }),
 };
 
-export function BookingWizard({ preSelectedServiceId }: BookingWizardProps) {
+export function BookingWizard({ preSelectedServiceId, embedded = false }: BookingWizardProps) {
   const {
     currentStep,
     setStep,
@@ -89,33 +90,35 @@ export function BookingWizard({ preSelectedServiceId }: BookingWizardProps) {
   const showPriceSummary = currentStep > 0 && currentStep < 5;
 
   return (
-    <div className="min-h-screen bg-base-200">
-      {/* Header */}
-      <div className="bg-base-100 border-b border-base-300">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-base-content hover:text-primary transition-colors">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="text-sm font-medium">Back to Home</span>
-            </Link>
-            <h1 className="text-lg font-semibold text-base-content">Book Appointment</h1>
-            <div className="w-24" /> {/* Spacer for centering */}
+    <div className={embedded ? "" : "min-h-screen bg-gradient-to-b from-[#FFFBF7] via-[#F8EEE5] to-[#FFFBF7]"}>
+      {/* Header - Only show when not embedded */}
+      {!embedded && (
+        <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-2 text-[#434E54] hover:text-[#363F44] transition-colors">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className="text-sm font-medium">Back to Home</span>
+              </Link>
+              <h1 className="text-lg font-bold text-[#434E54]">Book Appointment</h1>
+              <div className="w-24" /> {/* Spacer for centering */}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Progress indicator */}
-      {showProgress && (
-        <div className="bg-base-100 border-b border-base-300">
-          <div className="container mx-auto">
+      {/* Progress indicator - Only show when not embedded */}
+      {!embedded && showProgress && (
+        <div className="bg-white/60 backdrop-blur-sm border-b border-gray-200">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <BookingProgress
               currentStep={currentStep}
               onStepClick={handleStepClick}
@@ -126,7 +129,7 @@ export function BookingWizard({ preSelectedServiceId }: BookingWizardProps) {
       )}
 
       {/* Main content */}
-      <div className="container mx-auto px-4 py-8">
+      <div className={embedded ? "px-4 sm:px-6 py-6" : "container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12"}>
         <div className={showPriceSummary ? 'lg:grid lg:grid-cols-3 lg:gap-8' : ''}>
           {/* Step content */}
           <div className={showPriceSummary ? 'lg:col-span-2' : ''}>
@@ -138,7 +141,7 @@ export function BookingWizard({ preSelectedServiceId }: BookingWizardProps) {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               >
                 {renderStep()}
               </motion.div>
@@ -163,19 +166,19 @@ export function BookingWizard({ preSelectedServiceId }: BookingWizardProps) {
 
       {/* Mobile price summary - fixed bottom */}
       {showPriceSummary && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 p-4 shadow-lg">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 p-4 shadow-xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-base-content/70">Total</p>
-              <p className="text-xl font-bold text-base-content">
+              <p className="text-sm text-[#6B7280]">Total</p>
+              <p className="text-2xl font-bold text-[#434E54]">
                 ${totalPrice.toFixed(2)}
               </p>
             </div>
             {selectedService && (
               <div className="text-right">
-                <p className="text-sm text-base-content/70">{selectedService.name}</p>
+                <p className="text-sm font-semibold text-[#434E54]">{selectedService.name}</p>
                 {selectedAddons.length > 0 && (
-                  <p className="text-xs text-base-content/50">
+                  <p className="text-xs text-[#6B7280]">
                     +{selectedAddons.length} add-on{selectedAddons.length > 1 ? 's' : ''}
                   </p>
                 )}

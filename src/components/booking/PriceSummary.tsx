@@ -18,12 +18,12 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
   const hasItems = serviceName !== null;
 
   return (
-    <div className="bg-base-100 rounded-xl shadow-lg border border-base-300 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
       {/* Header */}
-      <div className="bg-primary/10 px-6 py-4">
-        <h3 className="font-semibold text-base-content flex items-center gap-2">
+      <div className="bg-gradient-to-r from-[#EAE0D5] to-[#DCD2C7] px-6 py-4">
+        <h3 className="font-bold text-[#434E54] flex items-center gap-2.5">
           <svg
-            className="w-5 h-5 text-primary"
+            className="w-5 h-5 text-[#434E54]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -42,7 +42,7 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
       {/* Content */}
       <div className="p-6 space-y-4">
         {!hasItems ? (
-          <p className="text-base-content/50 text-sm text-center py-4">
+          <p className="text-[#6B7280] text-sm text-center py-8">
             Select a service to see pricing
           </p>
         ) : (
@@ -50,14 +50,14 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
             {/* Service */}
             <div className="flex justify-between items-start">
               <div>
-                <p className="font-medium text-base-content">{serviceName}</p>
-                <p className="text-sm text-base-content/60">Base service</p>
+                <p className="font-semibold text-[#434E54]">{serviceName}</p>
+                <p className="text-sm text-[#6B7280] mt-0.5">Base service</p>
               </div>
               <motion.span
                 key={servicePrice}
-                initial={{ scale: 1.1, color: 'hsl(var(--p))' }}
-                animate={{ scale: 1, color: 'hsl(var(--bc))' }}
-                className="font-medium"
+                initial={{ scale: 1.1 }}
+                animate={{ scale: 1 }}
+                className="font-bold text-[#434E54]"
               >
                 {formatCurrency(servicePrice)}
               </motion.span>
@@ -65,8 +65,8 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
 
             {/* Add-ons */}
             {addons.length > 0 && (
-              <div className="space-y-2 pt-2 border-t border-base-300">
-                <p className="text-sm text-base-content/60">Add-ons</p>
+              <div className="space-y-3 pt-3 border-t border-gray-200">
+                <p className="text-sm font-semibold text-[#6B7280]">Add-ons</p>
                 {addons.map((addon, index) => (
                   <motion.div
                     key={addon.name}
@@ -76,23 +76,23 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
                     transition={{ delay: index * 0.05 }}
                     className="flex justify-between items-center text-sm"
                   >
-                    <span className="text-base-content/80">{addon.name}</span>
-                    <span className="text-base-content/80">{formatCurrency(addon.price)}</span>
+                    <span className="text-[#6B7280]">{addon.name}</span>
+                    <span className="font-semibold text-[#434E54]">{formatCurrency(addon.price)}</span>
                   </motion.div>
                 ))}
               </div>
             )}
 
             {/* Divider */}
-            <div className="border-t border-base-300 pt-4">
+            <div className="border-t border-gray-200 pt-4 mt-4">
               {/* Total */}
               <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-base-content">Total</span>
+                <span className="text-lg font-bold text-[#434E54]">Total</span>
                 <motion.span
                   key={total}
                   initial={{ scale: 1.1 }}
                   animate={{ scale: 1 }}
-                  className="text-xl font-bold text-primary"
+                  className="text-2xl font-bold text-[#434E54]"
                 >
                   {formatCurrency(total)}
                 </motion.span>
@@ -103,8 +103,8 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
       </div>
 
       {/* Footer note */}
-      <div className="px-6 py-3 bg-base-200 border-t border-base-300">
-        <p className="text-xs text-base-content/50 text-center">
+      <div className="px-6 py-4 bg-[#FFFBF7] border-t border-gray-200">
+        <p className="text-xs text-[#6B7280] text-center">
           Payment collected at checkout
         </p>
       </div>

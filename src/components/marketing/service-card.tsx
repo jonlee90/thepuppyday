@@ -2,84 +2,101 @@
 
 /**
  * Service card component - Clean & Elegant Professional style
+ * Displays service with size-based pricing for Basic/Premium or individual add-on pricing
  */
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Scissors, Sparkles, Check, ChevronDown } from 'lucide-react';
 import type { Service } from '@/types/database';
+import type { LucideIcon } from 'lucide-react';
 
 interface ServiceCardProps {
   service: Service;
   onLearnMore?: () => void;
+  isFeatured?: boolean;
 }
 
-// Simple line icons mapping (using SVG instead of emojis)
-const getServiceIcon = (serviceName: string) => {
-  const name = serviceName.toLowerCase();
-
-  // Scissors for basic/cutting services
-  if (name.includes('basic') || name.includes('premium')) {
-    return (
-      <svg className="w-8 h-8 text-[#434E54]" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-        <path d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" />
-      </svg>
-    );
-  }
-
-  // Sparkles for spa
-  if (name.includes('spa')) {
-    return (
-      <svg className="w-8 h-8 text-[#434E54]" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-        <path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-      </svg>
-    );
-  }
-
-  // Heart for puppy
-  if (name.includes('puppy')) {
-    return (
-      <svg className="w-8 h-8 text-[#434E54]" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-      </svg>
-    );
-  }
-
-  // Default paw icon
-  return (
-    <svg className="w-8 h-8 text-[#434E54]" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-      <path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-    </svg>
-  );
+// Hardcoded service data with pricing by size
+const SERVICE_DATA: Record<string, {
+  icon: LucideIcon;
+  gradient: string;
+  priceRanges?: Array<{ size: string; weight: string; price: number }>;
+  addonServices?: Array<{ name: string; price: number; priceRange?: string }>;
+  features: string[];
+}> = {
+  basic: {
+    icon: Scissors,
+    gradient: 'from-[#EAE0D5] to-[#DCD2C7]',
+    priceRanges: [
+      { size: 'Small', weight: '0-18 lbs', price: 40 },
+      { size: 'Medium', weight: '19-35 lbs', price: 55 },
+      { size: 'Large', weight: '36-65 lbs', price: 70 },
+      { size: 'X-Large', weight: '66+ lbs', price: 85 },
+    ],
+    features: [
+      'Bath with premium shampoo & conditioner',
+      'Thorough brush out & de-shedding',
+      'Nail trimming & filing',
+      'Ear cleaning & plucking',
+      'Anal gland sanitizing',
+      'Sanitary & paw pad trim',
+    ],
+  },
+  premium: {
+    icon: Sparkles,
+    gradient: 'from-[#434E54] to-[#5A6670]',
+    priceRanges: [
+      { size: 'Small', weight: '0-18 lbs', price: 70 },
+      { size: 'Medium', weight: '19-35 lbs', price: 95 },
+      { size: 'Large', weight: '36-65 lbs', price: 120 },
+      { size: 'X-Large', weight: '66+ lbs', price: 150 },
+    ],
+    features: [
+      'Everything in Basic Groom',
+      'Full haircut & breed-specific styling',
+      'Paw pad & sanitary trim',
+      'Teeth brushing for fresh breath',
+      'Finishing cologne spritz',
+      'Bandana or bow',
+    ],
+  },
+  addons: {
+    icon: Check,
+    gradient: 'from-[#FFFBF7] to-[#F8EEE5]',
+    addonServices: [
+      { name: 'Long Hair / Sporting', price: 10 },
+      { name: 'Teeth Brushing', price: 10 },
+      { name: 'Pawdicure', price: 15 },
+      { name: 'Flea & Tick Treatment', price: 25 },
+      { name: 'Tangles / Matting (>20min)', priceRange: '5-30' },
+    ],
+    features: [
+      'Enhance your grooming package',
+      'Premium treatments available',
+      'Customized for your pet',
+      'Professional quality products',
+    ],
+  },
 };
 
-export function ServiceCard({ service, onLearnMore }: ServiceCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function ServiceCard({ service, onLearnMore, isFeatured = false }: ServiceCardProps) {
   const router = useRouter();
+  const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
 
-  // Display price range based on service type
-  const priceDisplay = () => {
-    const serviceName = service.name.toLowerCase();
+  // Determine which service type this is
+  const serviceName = service.name.toLowerCase();
+  let serviceType: 'basic' | 'premium' | 'addons' = 'basic';
 
-    if (serviceName.includes('basic')) return '$40 - $85';
-    else if (serviceName.includes('premium')) return '$70 - $150';
-    else if (serviceName.includes('day') || serviceName.includes('daycare')) return 'Call for pricing';
-    else if (serviceName.includes('long hair') || serviceName.includes('sporting')) return '$10';
-    else if (serviceName.includes('teeth')) return '$10';
-    else if (serviceName.includes('pawdicure')) return '$15';
-    else if (serviceName.includes('flea')) return '$25';
-    else if (serviceName.includes('tangle')) return '$5 - $30';
+  if (serviceName.includes('premium')) {
+    serviceType = 'premium';
+  } else if (serviceName.includes('add')) {
+    serviceType = 'addons';
+  }
 
-    return '$40 - $85';
-  };
-
-  const handleClick = () => {
-    if (onLearnMore) {
-      onLearnMore();
-    } else {
-      setIsExpanded(!isExpanded);
-    }
-  };
+  const data = SERVICE_DATA[serviceType];
+  const Icon = data.icon;
 
   return (
     <motion.div
@@ -87,178 +104,146 @@ export function ServiceCard({ service, onLearnMore }: ServiceCardProps) {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.5 }}
     >
       <div
-        className="bg-white rounded-xl p-6 cursor-pointer h-full flex flex-col shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
-        onClick={handleClick}
+        className={`bg-white rounded-2xl p-6 md:p-8 h-full flex flex-col shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border ${
+          isFeatured ? 'border-[#434E54] ring-2 ring-[#434E54]/20' : 'border-gray-200'
+        } relative overflow-hidden`}
       >
-        {/* Service Icon */}
-        <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 bg-[#EAE0D5] rounded-full flex items-center justify-center">
-            {getServiceIcon(service.name)}
+        {/* Featured Badge */}
+        {isFeatured && (
+          <div className="absolute top-0 right-0 bg-[#434E54] text-white px-4 py-1 rounded-bl-xl text-xs font-bold">
+            MOST POPULAR
           </div>
-        </div>
-
-        {/* Service Name */}
-        <h3 className="text-xl font-semibold text-[#434E54] text-center mb-3">
-          {service.name}
-        </h3>
-
-        {/* Service Description */}
-        <p className="text-[#6B7280] text-center text-sm mb-4 flex-grow">
-          {service.description}
-        </p>
-
-        {/* Duration Badge */}
-        <div className="flex justify-center mb-4">
-          <div className="inline-flex items-center gap-2 bg-[#F8EEE5] px-4 py-2 rounded-full">
-            <svg
-              className="w-4 h-4 text-[#434E54]"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span className="font-medium text-[#434E54] text-sm">{service.duration_minutes} min</span>
-          </div>
-        </div>
-
-        {/* Price */}
-        <div className="text-center mb-4">
-          <div className="inline-block bg-[#F8EEE5] rounded-lg px-6 py-3">
-            <div className="text-2xl font-semibold text-[#434E54]">{priceDisplay()}</div>
-            <div className="text-xs text-[#6B7280] mt-1">
-              {priceDisplay().includes('-') && !priceDisplay().includes('Call') ? 'Varies by size' : priceDisplay().includes('Call') ? 'Contact us' : 'Fixed price'}
-            </div>
-          </div>
-        </div>
-
-        {/* Expanded Details */}
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-4 pt-4 border-t border-gray-200"
-          >
-            <h4 className="font-semibold text-[#434E54] text-sm mb-3">What&apos;s Included:</h4>
-            <ul className="text-sm text-[#6B7280] space-y-2">
-              {service.name.toLowerCase().includes('basic') && (
-                <>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Bath with premium shampoo</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Brush out and de-shedding</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Nail trim</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Ear cleaning</span>
-                  </li>
-                </>
-              )}
-              {service.name.toLowerCase().includes('premium') && (
-                <>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Everything in Basic Groom</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Full haircut and styling</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Paw pad trim</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Teeth brushing</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Cologne spritz</span>
-                  </li>
-                </>
-              )}
-              {service.name.toLowerCase().includes('spa') && (
-                <>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Premium grooming package</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Blueberry facial</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Aromatherapy treatment</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Pawdicure</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Luxury bandana</span>
-                  </li>
-                </>
-              )}
-              {service.name.toLowerCase().includes('puppy') && (
-                <>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Gentle introduction to grooming</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Light bath and dry</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Nail tip trim</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#434E54] mt-0.5">•</span>
-                    <span>Treats and positive reinforcement</span>
-                  </li>
-                </>
-              )}
-            </ul>
-          </motion.div>
         )}
 
-        {/* CTA Button */}
-        <div className="mt-4">
-          {isExpanded ? (
-            <button
-              className="w-full px-6 py-3 text-base font-medium text-white bg-[#434E54] rounded-lg shadow-md hover:bg-[#363F44] hover:shadow-lg transition-all duration-200"
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/book?service=${service.id}`);
-              }}
-            >
-              Book This Service
-            </button>
-          ) : (
-            <button
-              className="w-full px-6 py-3 text-base font-medium text-[#434E54] bg-[#F8EEE5] rounded-lg hover:bg-[#EAE0D5] transition-all duration-200"
-            >
-              Learn More
-            </button>
+        {/* Fixed Height Header Section */}
+        <div className="flex-shrink-0">
+          {/* Service Icon */}
+          <div className="flex justify-center mb-6">
+            <div className={`w-20 h-20 bg-gradient-to-br ${data.gradient} rounded-2xl flex items-center justify-center shadow-md`}>
+              <Icon className={`w-10 h-10 ${serviceType === 'premium' ? 'text-white' : 'text-[#434E54]'}`} strokeWidth={2} />
+            </div>
+          </div>
+
+          {/* Service Name */}
+          <h3 className="text-2xl font-bold text-[#434E54] text-center mb-3">
+            {service.name}
+          </h3>
+
+          {/* Service Description */}
+          <p className="text-[#6B7280] text-center text-sm mb-6">
+            {service.description}
+          </p>
+        </div>
+
+
+
+        {/* Details Section (Flexible, takes remaining space) */}
+        <div className="flex-grow mb-6 pb-6 border-t border-gray-200 pt-6">
+          {/* Size Breakdown for Basic/Premium */}
+          {'priceRanges' in data && data.priceRanges && (
+            <div className="space-y-3 mb-6">
+              <h4 className="font-bold text-[#434E54] text-sm mb-4 flex items-center gap-2">
+                <Scissors className="w-4 h-4" />
+                <span>Pricing by Size</span>
+              </h4>
+              {data.priceRanges.map((range, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between bg-[#F8EEE5]/50 rounded-xl px-4 py-3"
+                >
+                  <div>
+                    <div className="font-semibold text-[#434E54] text-sm">{range.size}</div>
+                    <div className="text-xs text-[#6B7280]">{range.weight}</div>
+                  </div>
+                  <div className="text-xl font-bold text-[#434E54]">${range.price}</div>
+                </div>
+              ))}
+            </div>
           )}
+
+          {/* Add-on Services List */}
+          {('addonServices' in data ? data.addonServices : [])?.map((addon, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between bg-[#F8EEE5]/50 rounded-xl px-4 py-3 mb-2"
+            >
+              <div className="flex items-center gap-3">
+                <Check className="w-4 h-4 text-[#434E54] flex-shrink-0" />
+                <span className="font-medium text-[#434E54] text-sm">{addon.name}</span>
+              </div>
+              <div className="text-lg font-bold text-[#434E54]">
+                {addon.priceRange ? `$${addon.priceRange}` : `$${addon.price}`}
+              </div>
+            </div>
+          ))}
+
+          {/* What's Included - Collapsible */}
+          <div className="mt-6">
+            <button
+              onClick={() => setIsIncludedExpanded(!isIncludedExpanded)}
+              className="w-full flex items-center justify-between font-bold text-[#434E54] text-sm mb-4 hover:text-[#363F44] transition-colors duration-200"
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                <span>What&apos;s Included</span>
+              </div>
+              <motion.div
+                animate={{ rotate: isIncludedExpanded ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronDown className="w-4 h-4" />
+              </motion.div>
+            </button>
+
+            <AnimatePresence>
+              {isIncludedExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-3">
+                    {data.features.map((feature, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className="flex items-start gap-3"
+                      >
+                        <div className="w-5 h-5 rounded-full bg-[#434E54] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                        </div>
+                        <span className="text-[#6B7280] text-sm leading-relaxed">{feature}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* CTA Button - Fixed at bottom */}
+        <div className="flex-shrink-0 mt-auto">
+          <button
+            className={`w-full px-6 py-4 text-base font-semibold rounded-xl shadow-md transition-all duration-200 ${
+              isFeatured
+                ? 'bg-[#434E54] text-white hover:bg-[#363F44] hover:shadow-lg'
+                : 'bg-gradient-to-r from-[#434E54] to-[#5A6670] text-white hover:shadow-lg'
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/booking?service=${service.id}`);
+            }}
+          >
+            Book This Service
+          </button>
         </div>
       </div>
     </motion.div>

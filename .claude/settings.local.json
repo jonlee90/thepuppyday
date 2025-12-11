@@ -34,7 +34,11 @@
       "mcp__supabase__list_migrations",
       "mcp__supabase__apply_migration",
       "mcp__supabase__execute_sql",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(curl:*)",
+      "Bash(kill:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

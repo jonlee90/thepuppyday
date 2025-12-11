@@ -55,7 +55,7 @@ export function Header() {
     const element = document.getElementById(targetId);
 
     if (element) {
-      const offsetTop = element.offsetTop - 80; // Account for fixed header height
+      const offsetTop = element.offsetTop - 160; // Account for announcement bar (44px) + header (80px) + hours bar (36px)
       window.scrollTo({
         top: offsetTop,
         behavior: 'smooth',
@@ -68,7 +68,7 @@ export function Header() {
   const handleBookNowClick = () => {
     const bookingElement = document.getElementById('booking');
     if (bookingElement) {
-      const offsetTop = bookingElement.offsetTop - 80;
+      const offsetTop = bookingElement.offsetTop - 160; // Account for announcement bar (44px) + header (80px) + hours bar (36px)
       window.scrollTo({
         top: offsetTop,
         behavior: 'smooth',
@@ -80,7 +80,7 @@ export function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-[44px] left-0 right-0 z-40 transition-all duration-300 ${
         isScrolled
           ? 'bg-white shadow-md backdrop-blur-sm'
           : 'bg-white/95 shadow-sm'

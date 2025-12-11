@@ -2,10 +2,12 @@
 
 /**
  * Carousel for displaying multiple before/after pairs
+ * Clean & Elegant Professional design
  */
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { BeforeAfterSlider } from './before-after-slider';
 import type { BeforeAfterPair } from '@/types/database';
 
@@ -19,7 +21,10 @@ export function BeforeAfterCarousel({ pairs }: BeforeAfterCarouselProps) {
   if (pairs.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-[#6B7280]">No before/after transformations available.</p>
+        <div className="bg-white rounded-2xl p-8 shadow-md max-w-md mx-auto">
+          <p className="text-[#6B7280]">No before/after transformations available at this time.</p>
+          <p className="text-sm text-[#6B7280] mt-2">Check back soon for amazing grooming transformations!</p>
+        </div>
       </div>
     );
   }
@@ -41,10 +46,10 @@ export function BeforeAfterCarousel({ pairs }: BeforeAfterCarouselProps) {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
             <BeforeAfterSlider
               beforeImage={currentPair.before_image_url}
@@ -59,41 +64,25 @@ export function BeforeAfterCarousel({ pairs }: BeforeAfterCarouselProps) {
         {/* Navigation Buttons */}
         {pairs.length > 1 && (
           <>
-            <button
+            <motion.button
               onClick={goToPrevious}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 z-10"
+              whileHover={{ scale: 1.05, x: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="absolute left-0 md:left-4 top-1/2 -translate-y-1/2 w-11 h-11 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow duration-200 z-10 border border-gray-100"
               aria-label="Previous transformation"
             >
-              <svg
-                className="w-6 h-6 text-[#434E54]"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path d="M15 19l-7-7 7-7"></path>
-              </svg>
-            </button>
+              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-[#434E54]" strokeWidth={2.5} />
+            </motion.button>
 
-            <button
+            <motion.button
               onClick={goToNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 z-10"
+              whileHover={{ scale: 1.05, x: 2 }}
+              whileTap={{ scale: 0.95 }}
+              className="absolute right-0 md:right-4 top-1/2 -translate-y-1/2 w-11 h-11 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow duration-200 z-10 border border-gray-100"
               aria-label="Next transformation"
             >
-              <svg
-                className="w-6 h-6 text-[#434E54]"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path d="M9 5l7 7-7 7"></path>
-              </svg>
-            </button>
+              <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-[#434E54]" strokeWidth={2.5} />
+            </motion.button>
           </>
         )}
       </div>

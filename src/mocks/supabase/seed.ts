@@ -21,8 +21,8 @@ import { generateId } from '@/lib/utils';
 export const seedServices: Service[] = [
   {
     id: generateId(),
-    name: 'Basic Grooming',
-    description: 'Shampoo, conditioner, nail trimming, filing, ear plucking, anal gland sanitizing, sanitary cut',
+    name: 'Basic Groom',
+    description: 'Essential grooming package for a clean and healthy pet',
     image_url: null,
     duration_minutes: 60,
     is_active: true,
@@ -31,8 +31,8 @@ export const seedServices: Service[] = [
   },
   {
     id: generateId(),
-    name: 'Premium Grooming',
-    description: 'Everything in Basic plus full styling, breed-specific cuts, paw pad trimming, and finishing cologne',
+    name: 'Premium Groom',
+    description: 'Complete grooming experience with full styling and extras',
     image_url: null,
     duration_minutes: 90,
     is_active: true,
@@ -41,10 +41,10 @@ export const seedServices: Service[] = [
   },
   {
     id: generateId(),
-    name: 'Day Care',
-    description: 'Supervised playtime in a safe, social environment',
+    name: 'Add-Ons',
+    description: 'Enhance your grooming package with premium treatments',
     image_url: null,
-    duration_minutes: 480,
+    duration_minutes: 0,
     is_active: true,
     display_order: 3,
     created_at: new Date().toISOString(),
@@ -54,9 +54,9 @@ export const seedServices: Service[] = [
 // Generate service prices for each service
 export function generateServicePrices(services: Service[]): ServicePrice[] {
   const pricesByService: Record<string, Record<string, number>> = {
-    'Basic Grooming': { small: 40, medium: 55, large: 70, xlarge: 85 },
-    'Premium Grooming': { small: 70, medium: 95, large: 125, xlarge: 150 },
-    'Day Care': { small: 35, medium: 35, large: 35, xlarge: 35 },
+    'Basic Groom': { small: 40, medium: 55, large: 70, xlarge: 85 },
+    'Premium Groom': { small: 70, medium: 95, large: 120, xlarge: 150 },
+    'Add-Ons': { small: 0, medium: 0, large: 0, xlarge: 0 }, // Add-ons have individual pricing
   };
 
   const prices: ServicePrice[] = [];
@@ -80,7 +80,7 @@ export function generateServicePrices(services: Service[]): ServicePrice[] {
 export const seedAddons: Addon[] = [
   {
     id: generateId(),
-    name: 'Long Hair/Sporting',
+    name: 'Long Hair / Sporting',
     description: 'Additional grooming for long-haired or sporting breeds',
     price: 10,
     upsell_prompt: 'Recommended for long-haired breeds',
@@ -92,7 +92,7 @@ export const seedAddons: Addon[] = [
   {
     id: generateId(),
     name: 'Teeth Brushing',
-    description: 'Fresh breath treatment',
+    description: 'Fresh breath treatment for your pet',
     price: 10,
     upsell_prompt: 'Add fresh breath for your pup!',
     upsell_breeds: [],
@@ -103,7 +103,7 @@ export const seedAddons: Addon[] = [
   {
     id: generateId(),
     name: 'Pawdicure',
-    description: 'Premium nail care with paw balm',
+    description: 'Premium nail care with paw balm and polish',
     price: 15,
     upsell_prompt: 'Pamper those paws!',
     upsell_breeds: [],
@@ -114,7 +114,7 @@ export const seedAddons: Addon[] = [
   {
     id: generateId(),
     name: 'Flea & Tick Treatment',
-    description: 'Medicated bath treatment',
+    description: 'Medicated bath treatment to protect against pests',
     price: 25,
     upsell_prompt: 'Protect your pup from pests',
     upsell_breeds: [],
@@ -124,24 +124,13 @@ export const seedAddons: Addon[] = [
   },
   {
     id: generateId(),
-    name: 'Tangle Removal',
-    description: 'Gentle removal of tangles and mats (pricing variable $5-$30 based on severity)',
-    price: 15,
+    name: 'Tangles (>20min. Matted. Neglected)',
+    description: 'Gentle removal of severe tangles and mats - pricing varies based on severity',
+    price: 5,
     upsell_prompt: 'Keep your pup comfortable and mat-free',
     upsell_breeds: ['Poodle', 'Shih Tzu', 'Maltese', 'Yorkshire Terrier', 'Golden Retriever'],
     is_active: true,
     display_order: 5,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: generateId(),
-    name: 'De-shedding Treatment',
-    description: 'Reduces shedding by up to 80%',
-    price: 20,
-    upsell_prompt: 'Most [breed]s add this!',
-    upsell_breeds: ['Labrador Retriever', 'Golden Retriever', 'German Shepherd', 'Siberian Husky'],
-    is_active: true,
-    display_order: 6,
     created_at: new Date().toISOString(),
   },
 ];
@@ -284,7 +273,7 @@ export const seedAppointments: Appointment[] = [
     id: generateId(),
     customer_id: seedUsers[1].id, // Demo Customer
     pet_id: generateId(), // Mock pet ID
-    service_id: seedServices[0].id, // Basic Grooming
+    service_id: seedServices[0].id, // Basic Groom
     groomer_id: null,
     scheduled_at: createAppointmentDate(2, 10, 0), // 2 days from now at 10:00 AM
     duration_minutes: 60,
@@ -299,13 +288,13 @@ export const seedAppointments: Appointment[] = [
     id: generateId(),
     customer_id: seedUsers[2].id, // Sarah Johnson
     pet_id: seedPets[0].id, // Buddy
-    service_id: seedServices[1].id, // Premium Grooming
+    service_id: seedServices[1].id, // Premium Groom
     groomer_id: null,
     scheduled_at: createAppointmentDate(3, 14, 0), // 3 days from now at 2:00 PM
     duration_minutes: 90,
     status: 'confirmed' as const,
     payment_status: 'pending' as const,
-    total_price: 125,
+    total_price: 120,
     notes: 'Regular customer - knows the routine',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -314,7 +303,7 @@ export const seedAppointments: Appointment[] = [
     id: generateId(),
     customer_id: seedUsers[2].id, // Sarah Johnson
     pet_id: seedPets[1].id, // Bella
-    service_id: seedServices[0].id, // Basic Grooming
+    service_id: seedServices[0].id, // Basic Groom
     groomer_id: null,
     scheduled_at: createAppointmentDate(5, 11, 0), // 5 days from now at 11:00 AM
     duration_minutes: 60,

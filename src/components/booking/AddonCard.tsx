@@ -20,30 +20,30 @@ export function AddonCard({ addon, isSelected, isUpsell = false, onToggle }: Add
   return (
     <motion.button
       onClick={onToggle}
-      whileHover={{ scale: 1.01 }}
+      whileHover={{ y: -2 }}
       whileTap={{ scale: 0.99 }}
       className={cn(
-        'w-full text-left bg-base-100 rounded-xl overflow-hidden border-2 transition-all',
-        'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-        isSelected ? 'border-primary shadow-md' : 'border-base-300 hover:border-primary/50',
-        isUpsell && !isSelected && 'ring-2 ring-warning/30'
+        'w-full text-left bg-white rounded-xl overflow-hidden transition-all duration-200',
+        'focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:ring-offset-2',
+        isSelected ? 'shadow-lg ring-2 ring-[#434E54]' : 'shadow-md hover:shadow-lg',
+        isUpsell && !isSelected && 'ring-2 ring-[#FFB347]/40'
       )}
     >
-      <div className="p-4 flex items-start gap-4">
+      <div className="p-5 flex items-start gap-4">
         {/* Checkbox */}
         <div
           className={cn(
-            'w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors',
+            'w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors shadow-sm',
             isSelected
-              ? 'bg-primary border-primary'
-              : 'border-base-300 bg-base-100'
+              ? 'bg-[#434E54] border-[#434E54]'
+              : 'border-gray-300 bg-white'
           )}
         >
           {isSelected && (
             <motion.svg
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="w-4 h-4 text-primary-content"
+              className="w-4 h-4 text-white"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -58,29 +58,28 @@ export function AddonCard({ addon, isSelected, isUpsell = false, onToggle }: Add
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h3 className="font-semibold text-base-content">{addon.name}</h3>
+              <h3 className="font-bold text-[#434E54]">{addon.name}</h3>
               {isUpsell && !isSelected && (
-                <span className="inline-block bg-warning/20 text-warning text-xs font-medium px-2 py-0.5 rounded mt-1">
+                <span className="inline-block bg-[#FFB347]/20 text-[#FFB347] text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1.5">
                   Recommended
                 </span>
               )}
             </div>
-            <span className="text-lg font-bold text-primary flex-shrink-0">
+            <span className="text-lg font-bold text-[#434E54] flex-shrink-0">
               +{formatCurrency(addon.price)}
             </span>
           </div>
 
           {addon.description && (
-            <p className="text-sm text-base-content/70 mt-1">{addon.description}</p>
+            <p className="text-sm text-[#6B7280] mt-2 leading-relaxed">{addon.description}</p>
           )}
 
           {isUpsell && addon.upsell_prompt && !isSelected && (
-            <p className="text-sm text-warning mt-2 flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <p className="text-sm text-[#FFB347] mt-3 flex items-center gap-1.5 font-medium">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
                   d="M13 10V3L4 14h7v7l9-11h-7z"
                 />
               </svg>

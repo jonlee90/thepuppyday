@@ -1,165 +1,142 @@
 /**
  * Contact section component - Clean & Elegant Professional style
+ * Enhanced with Lucide icons and refined design
  */
 
 'use client';
 
 import { motion } from 'framer-motion';
-import { BusinessHours } from './business-hours';
-
-interface DayHours {
-  open: string;
-  close: string;
-  is_open: boolean;
-}
-
-type BusinessHoursType = Record<string, DayHours>;
+import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 
 interface ContactSectionProps {
   phone: string;
   email: string;
   address: string;
-  businessHours: BusinessHoursType;
 }
 
 export function ContactSection({
   phone,
   email,
   address,
-  businessHours,
 }: ContactSectionProps) {
   return (
-    <section id="contact" className="py-16 md:py-24 bg-[#F8EEE5]">
-      <div className="container mx-auto px-4">
-        <div className="max-w-5xl mx-auto">
-          {/* Title */}
+    <section id="contact" className="py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#EAE0D5]">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Section Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-center mb-12"
+            className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-semibold text-[#434E54] mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold text-[#434E54] mb-4">
               Get In Touch
             </h2>
+            <div className="h-1 w-24 bg-gradient-to-r from-[#434E54] to-[#434E54]/30 rounded-full mx-auto mb-6"></div>
+            <p className="text-lg text-[#6B7280] max-w-2xl mx-auto leading-relaxed">
+              Have questions or ready to book? We're here to help make your pet's grooming experience wonderful.
+            </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Contact Information */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="bg-white rounded-xl p-8 shadow-md"
-            >
-              <h3 className="text-2xl font-semibold text-[#434E54] mb-8">Contact Us</h3>
+          {/* Single Contact Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="bg-white rounded-2xl p-8 md:p-12 shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-100 max-w-3xl mx-auto"
+          >
+            <h3 className="text-2xl font-bold text-[#434E54] mb-10 text-center">Contact Information</h3>
 
-              <div className="space-y-6">
-                {/* Phone */}
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-[#EAE0D5] rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-[#434E54]"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-[#434E54] mb-1 text-sm">Phone</div>
-                    <a
-                      href={`tel:${phone}`}
-                      className="text-[#6B7280] hover:text-[#434E54] transition-colors text-base"
-                    >
-                      {phone}
-                    </a>
-                  </div>
+            <div className="space-y-8">
+              {/* Phone */}
+              <div className="flex items-start gap-5 group">
+                <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-[#EAE0D5] to-[#DCD2C7] rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
+                  <Phone className="w-6 h-6 text-[#434E54]" strokeWidth={2} />
                 </div>
-
-                {/* Email */}
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-[#EAE0D5] rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-[#434E54]"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-[#434E54] mb-1 text-sm">Email</div>
-                    <a
-                      href={`mailto:${email}`}
-                      className="text-[#6B7280] hover:text-[#434E54] transition-colors break-all text-sm"
-                    >
-                      {email}
-                    </a>
-                  </div>
-                </div>
-
-                {/* Address */}
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-[#EAE0D5] rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-[#434E54]"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                      <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-[#434E54] mb-1 text-sm">Location</div>
-                    <a
-                      href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#6B7280] hover:text-[#434E54] transition-colors text-base"
-                    >
-                      {address}
-                    </a>
-                  </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-[#434E54] mb-2 text-sm uppercase tracking-wide">Phone</div>
+                  <a
+                    href={`tel:${phone}`}
+                    className="text-xl text-[#6B7280] hover:text-[#434E54] transition-colors duration-200 font-medium"
+                  >
+                    {phone}
+                  </a>
                 </div>
               </div>
 
-              {/* CTA Button */}
-              <a
-                href="/book"
-                className="mt-8 block w-full text-center px-6 py-4 text-base font-medium text-white bg-[#434E54] rounded-lg shadow-md hover:bg-[#363F44] hover:shadow-lg transition-all duration-200"
-              >
-                Book Appointment
-              </a>
-            </motion.div>
+              {/* Email */}
+              <div className="flex items-start gap-5 group">
+                <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-[#EAE0D5] to-[#DCD2C7] rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
+                  <Mail className="w-6 h-6 text-[#434E54]" strokeWidth={2} />
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-[#434E54] mb-2 text-sm uppercase tracking-wide">Email</div>
+                  <a
+                    href={`mailto:${email}`}
+                    className="text-lg text-[#6B7280] hover:text-[#434E54] transition-colors duration-200 break-all font-medium"
+                  >
+                    {email}
+                  </a>
+                </div>
+              </div>
 
-            {/* Business Hours */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="bg-white rounded-xl p-8 shadow-md"
+              {/* Address */}
+              <div className="flex items-start gap-5 group">
+                <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-[#EAE0D5] to-[#DCD2C7] rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
+                  <MapPin className="w-6 h-6 text-[#434E54]" strokeWidth={2} />
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-[#434E54] mb-2 text-sm uppercase tracking-wide">Location</div>
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xl text-[#6B7280] hover:text-[#434E54] transition-colors duration-200 font-medium inline-flex items-center gap-2"
+                  >
+                    {address}
+                    <svg
+                      className="w-4 h-4 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+
+              {/* Business Hours */}
+              <div className="flex items-start gap-5 group pt-4 border-t border-gray-200">
+                <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-[#EAE0D5] to-[#DCD2C7] rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
+                  <Clock className="w-6 h-6 text-[#434E54]" strokeWidth={2} />
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-[#434E54] mb-3 text-sm uppercase tracking-wide">Hours</div>
+                  <div className="text-lg text-[#6B7280] font-medium">
+                    Monday - Saturday: 9:00 AM - 5:00 PM
+                  </div>
+                  <div className="text-base text-[#9CA3AF] mt-1">
+                    Sunday: Closed
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA Button */}
+            <a
+              href="/login"
+              className="mt-12 block w-full text-center px-8 py-4 text-lg font-semibold text-white bg-[#434E54] rounded-xl shadow-md hover:bg-[#363F44] hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
             >
-              <h3 className="text-2xl font-semibold text-[#434E54] mb-8">Business Hours</h3>
-              <BusinessHours hours={businessHours} />
-            </motion.div>
-          </div>
+              Book Appointment Now
+            </a>
+          </motion.div>
         </div>
       </div>
     </section>

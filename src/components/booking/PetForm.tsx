@@ -190,18 +190,27 @@ export function PetForm({ onSubmit, onCancel, initialData }: PetFormProps) {
       {/* Actions */}
       <div className="flex gap-3">
         {onCancel && (
-          <button type="button" onClick={onCancel} className="btn btn-ghost flex-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
+                     hover:bg-[#EAE0D5] transition-colors duration-200
+                     flex-1"
+          >
             Cancel
           </button>
         )}
         <button
           type="submit"
           disabled={isSubmitting}
-          className={`btn btn-primary ${onCancel ? 'flex-1' : 'w-full'}`}
+          className={`bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
+                     hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
+                     disabled:bg-[#6B7280] disabled:cursor-not-allowed disabled:opacity-50
+                     flex items-center justify-center gap-2 ${onCancel ? 'flex-1' : 'w-full'}`}
         >
           {isSubmitting ? (
             <>
-              <span className="loading loading-spinner loading-sm" />
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               Saving...
             </>
           ) : (

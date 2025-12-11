@@ -18,11 +18,11 @@ export default async function BookPage({ searchParams }: BookPageProps) {
 
 function BookingPageSkeleton() {
   return (
-    <div className="min-h-screen bg-base-200 animate-pulse">
-      <div className="bg-base-100 border-b border-base-300 h-16" />
-      <div className="bg-base-100 border-b border-base-300 h-20" />
-      <div className="container mx-auto px-4 py-8">
-        <div className="h-96 bg-base-300 rounded-xl" />
+    <div className="min-h-screen bg-gradient-to-b from-[#FFFBF7] via-[#F8EEE5] to-[#FFFBF7] animate-pulse">
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 h-16" />
+      <div className="bg-white/60 backdrop-blur-sm border-b border-gray-200 h-20" />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+        <div className="h-96 bg-white rounded-2xl shadow-lg" />
       </div>
     </div>
   );

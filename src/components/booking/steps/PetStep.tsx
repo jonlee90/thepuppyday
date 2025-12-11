@@ -76,10 +76,26 @@ export function PetStep() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Select Your Pet</h2>
-          <p className="text-[#6B7280]">Choose which pet is getting groomed</p>
+        {/* Header with dog theme */}
+        <div className="relative">
+          {/* Subtle paw print decoration */}
+          <div className="absolute -top-2 -left-2 opacity-[0.04] pointer-events-none hidden lg:block">
+            <svg className="w-16 h-16 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
+            </svg>
+          </div>
+
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-[#EAE0D5] rounded-xl flex items-center justify-center shadow-sm">
+              <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-[#434E54]">Select Your Pet</h2>
+          </div>
+          <p className="text-[#6B7280] leading-relaxed">Tell us which furry family member we'll be pampering today</p>
         </div>
+
         <div className="space-y-4">
           {[1, 2].map((i) => (
             <div key={i} className="bg-white rounded-xl shadow-md p-4 animate-pulse">
@@ -100,10 +116,26 @@ export function PetStep() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Select Your Pet</h2>
-          <p className="text-[#6B7280]">Choose which pet is getting groomed</p>
+        {/* Header with dog theme */}
+        <div className="relative">
+          {/* Subtle paw print decoration */}
+          <div className="absolute -top-2 -left-2 opacity-[0.04] pointer-events-none hidden lg:block">
+            <svg className="w-16 h-16 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
+            </svg>
+          </div>
+
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-[#EAE0D5] rounded-xl flex items-center justify-center shadow-sm">
+              <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-[#434E54]">Select Your Pet</h2>
+          </div>
+          <p className="text-[#6B7280] leading-relaxed">Tell us which furry family member we'll be pampering today</p>
         </div>
+
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
           <div className="w-16 h-16 bg-[#EF4444]/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
@@ -133,9 +165,14 @@ export function PetStep() {
 
         {/* Navigation */}
         <div className="flex justify-between pt-4">
-          <button onClick={prevStep} className="btn btn-ghost">
+          <button
+            onClick={prevStep}
+            className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
+                     hover:bg-[#EAE0D5] transition-colors duration-200
+                     flex items-center gap-2"
+          >
             <svg
-              className="w-5 h-5 mr-2"
+              className="w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -154,14 +191,29 @@ export function PetStep() {
   if (showForm && (!isAuthenticated || pets.length === 0 || showForm)) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-[#434E54] mb-2">
-            {isAuthenticated ? 'Add New Pet' : 'Tell Us About Your Pet'}
-          </h2>
-          <p className="text-[#6B7280]">
+        {/* Header with dog theme */}
+        <div className="relative">
+          {/* Subtle paw print decoration */}
+          <div className="absolute -top-2 -left-2 opacity-[0.04] pointer-events-none hidden lg:block">
+            <svg className="w-16 h-16 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
+            </svg>
+          </div>
+
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-[#EAE0D5] rounded-xl flex items-center justify-center shadow-sm">
+              <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-[#434E54]">
+              {isAuthenticated ? 'Add New Pet' : 'Tell Us About Your Pet'}
+            </h2>
+          </div>
+          <p className="text-[#6B7280] leading-relaxed">
             {isAuthenticated
-              ? 'Enter your pet\'s information'
-              : 'We need some details about your furry friend'}
+              ? 'Enter your pet\'s information so we can provide the best care'
+              : 'We need some details about your furry friend to personalize their grooming experience'}
           </p>
         </div>
 
@@ -175,9 +227,14 @@ export function PetStep() {
 
         {/* Navigation */}
         <div className="flex justify-between pt-4">
-          <button onClick={prevStep} className="btn btn-ghost">
+          <button
+            onClick={prevStep}
+            className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
+                     hover:bg-[#EAE0D5] transition-colors duration-200
+                     flex items-center gap-2"
+          >
             <svg
-              className="w-5 h-5 mr-2"
+              className="w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -195,20 +252,34 @@ export function PetStep() {
   // Show pet selection for authenticated users
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-[#434E54] mb-2">Select Your Pet</h2>
-        <p className="text-[#6B7280]">Choose which pet is getting groomed</p>
+      {/* Header with dog theme */}
+      <div className="relative">
+        {/* Subtle paw print decoration */}
+        <div className="absolute -top-2 -left-2 opacity-[0.04] pointer-events-none hidden lg:block">
+          <svg className="w-16 h-16 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
+          </svg>
+        </div>
+
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-[#EAE0D5] rounded-xl flex items-center justify-center shadow-sm">
+            <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-[#434E54]">Select Your Pet</h2>
+        </div>
+        <p className="text-[#6B7280] leading-relaxed">Tell us which furry family member we'll be pampering today</p>
       </div>
 
       {/* New pet info banner */}
       {newPetData && (
-        <div className="bg-success/10 border border-success/30 rounded-lg p-4">
+        <div className="bg-[#6BCB77]/10 border border-[#6BCB77]/30 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-success/20 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-[#6BCB77]/20 rounded-full flex items-center justify-center">
                 <svg
-                  className="w-5 h-5 text-success"
+                  className="w-5 h-5 text-[#6BCB77]"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -218,15 +289,16 @@ export function PetStep() {
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-success">New pet: {newPetData.name}</p>
-                <p className="text-sm text-base-content/60">
+                <p className="font-medium text-[#6BCB77]">New pet: {newPetData.name}</p>
+                <p className="text-sm text-[#6B7280]">
                   This pet will be created when you confirm your booking
                 </p>
               </div>
             </div>
             <button
               onClick={() => setShowForm(true)}
-              className="btn btn-ghost btn-sm"
+              className="text-[#434E54] font-medium py-1.5 px-3 rounded-lg text-sm
+                       hover:bg-[#EAE0D5] transition-colors duration-200"
             >
               Edit
             </button>
@@ -249,9 +321,14 @@ export function PetStep() {
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
-        <button onClick={prevStep} className="btn btn-ghost">
+        <button
+          onClick={prevStep}
+          className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
+                   hover:bg-[#EAE0D5] transition-colors duration-200
+                   flex items-center gap-2"
+        >
           <svg
-            className="w-5 h-5 mr-2"
+            className="w-5 h-5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -264,11 +341,14 @@ export function PetStep() {
         <button
           onClick={handleContinue}
           disabled={!canContinue}
-          className="btn btn-primary btn-lg"
+          className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
+                   hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
+                   disabled:bg-[#6B7280] disabled:cursor-not-allowed disabled:opacity-50
+                   flex items-center gap-2"
         >
           Continue
           <svg
-            className="w-5 h-5 ml-2"
+            className="w-5 h-5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
