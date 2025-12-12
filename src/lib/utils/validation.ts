@@ -124,3 +124,81 @@ export function validateSizeBasedPricing(prices: { small: number; medium: number
 
   return { valid: true };
 }
+
+/**
+ * Validates and sanitizes gallery caption
+ */
+export function validateCaption(caption: string | null): { valid: boolean; sanitized: string; error?: string } {
+  if (!caption) {
+    return { valid: true, sanitized: '' };
+  }
+
+  const sanitized = sanitizeText(caption);
+
+  if (sanitized.length > 200) {
+    return { valid: false, sanitized, error: 'Caption must be 200 characters or less' };
+  }
+
+  return { valid: true, sanitized };
+}
+
+/**
+ * Validates and sanitizes pet name
+ */
+export function validatePetName(name: string | null): { valid: boolean; sanitized: string; error?: string } {
+  if (!name) {
+    return { valid: true, sanitized: '' };
+  }
+
+  const sanitized = sanitizeText(name);
+
+  if (sanitized.length > 100) {
+    return { valid: false, sanitized, error: 'Pet name must be 100 characters or less' };
+  }
+
+  return { valid: true, sanitized };
+}
+
+/**
+ * Validates and sanitizes tags array
+ */
+export function validateTags(tags: string[]): { valid: boolean; sanitized: string[]; error?: string } {
+  const sanitized = tags
+    .map((tag) => sanitizeText(tag))
+    .filter((tag) => tag.length > 0)
+    .slice(0, 10); // Max 10 tags
+
+  // Check individual tag length
+  const invalidTag = sanitized.find((tag) => tag.length > 50);
+  if (invalidTag) {
+    return { valid: false, sanitized: [], error: 'Each tag must be 50 characters or less' };
+  }
+
+  return { valid: true, sanitized };
+}
+
+/**
+ * Validates file upload (type and size)
+ */
+export function validateImageFile(
+  file: File
+): { valid: boolean; error?: string } {
+  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return {
+      valid: false,
+      error: 'Invalid file type. Only JPEG, PNG, and WebP images are allowed.',
+    };
+  }
+
+  if (file.size > MAX_SIZE) {
+    return {
+      valid: false,
+      error: 'File size must be 10MB or less.',
+    };
+  }
+
+  return { valid: true };
+}
