@@ -10,7 +10,7 @@ export async function GET() {
     const supabase = await createServerSupabaseClient();
 
     // Get active services with their prices
-    const { data: services, error } = await supabase
+    const { data: services, error } = await (supabase as any)
       .from('services')
       .select('*, prices:service_prices(*)')
       .eq('is_active', true)

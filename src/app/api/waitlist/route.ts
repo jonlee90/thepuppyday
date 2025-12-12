@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // Check for existing active entry for same customer/date/service/pet
-    const { data: existingEntries } = await supabase
+    const { data: existingEntries } = await (supabase as any)
       .from('waitlist')
       .select('*')
       .eq('customer_id', validated.customer_id)
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create waitlist entry
-    const { data: entry, error: insertError } = await supabase
+    const { data: entry, error: insertError } = await (supabase as any)
       .from('waitlist')
       .insert({
         customer_id: validated.customer_id,
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate position (count active entries for this date)
-    const { count } = await supabase
+    const { count } = await (supabase as any)
       .from('waitlist')
       .select('*', { count: 'exact', head: true })
       .eq('requested_date', validated.requested_date)

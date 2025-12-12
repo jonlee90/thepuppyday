@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     let customerId = validated.customer_id;
     if (validated.guest_info) {
       // Check if user exists (case-insensitive email match)
-      const { data: existingUsers } = await supabase
+      const { data: existingUsers } = await (supabase as any)
         .from('users')
         .select('*')
         .ilike('email', validated.guest_info.email);
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
         customerId = existingUsers[0].id;
       } else {
         // Create guest user
-        const { data: guestUser, error: userError } = await supabase
+        const { data: guestUser, error: userError } = await (supabase as any)
           .from('users')
           .insert({
             email: validated.guest_info.email.toLowerCase(),
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     const dateEnd = new Date(slotDate);
     dateEnd.setHours(23, 59, 59, 999);
 
-    const { data: allAppointments } = await supabase
+    const { data: allAppointments } = await (supabase as any)
       .from('appointments')
       .select('*')
       .gte('scheduled_at', dateStart.toISOString())
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
 
     // Ensure uniqueness
     while (attempts < maxAttempts) {
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from('appointments')
         .select('id')
         .eq('booking_reference', reference)
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create appointment record
-    const { data: appointment, error: apptError } = await supabase
+    const { data: appointment, error: apptError } = await (supabase as any)
       .from('appointments')
       .insert({
         customer_id: customerId,
@@ -198,19 +198,19 @@ export async function POST(req: NextRequest) {
     // Create appointment_addon records
     if (validated.addon_ids && validated.addon_ids.length > 0) {
       // Get addon prices
-      const { data: addons } = await supabase
+      const { data: addons } = await (supabase as any)
         .from('addons')
         .select('*')
         .in('id', validated.addon_ids);
 
       if (addons && addons.length > 0) {
-        const addonInserts = addons.map((addon) => ({
+        const addonInserts = addons.map((addon: any) => ({
           appointment_id: appointment.id,
           addon_id: addon.id,
           price: addon.price,
         }));
 
-        const { error: addonError } = await supabase
+        const { error: addonError } = await (supabase as any)
           .from('appointment_addons')
           .insert(addonInserts);
 

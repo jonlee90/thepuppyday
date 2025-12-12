@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // Get service to check duration
-    const { data: service, error: serviceError } = await supabase
+    const { data: service, error: serviceError } = await (supabase as any)
       .from('services')
       .select('*')
       .eq('id', serviceId)
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get business hours from settings
-    const { data: settingsData } = await supabase
+    const { data: settingsData } = await (supabase as any)
       .from('settings')
       .select('value')
       .eq('key', 'business_hours')
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
     const dateStart = new Date(date + 'T00:00:00').toISOString();
     const dateEnd = new Date(date + 'T23:59:59').toISOString();
 
-    const { data: appointments, error: apptError } = await supabase
+    const { data: appointments, error: apptError } = await (supabase as any)
       .from('appointments')
       .select('*')
       .gte('scheduled_at', dateStart)
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
     );
 
     // Get waitlist counts for unavailable slots
-    const { data: waitlistEntries } = await supabase
+    const { data: waitlistEntries } = await (supabase as any)
       .from('waitlist')
       .select('*')
       .eq('requested_date', date)
@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
       }
 
       // Count waitlist entries that match this slot's time preference
-      const waitlistCount = (waitlistEntries || []).filter((entry) =>
+      const waitlistCount = (waitlistEntries || []).filter((entry: any) =>
         matchesTimePreference(slot.time, entry.time_preference)
       ).length;
 

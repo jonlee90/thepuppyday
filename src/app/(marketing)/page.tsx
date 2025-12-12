@@ -11,6 +11,7 @@ import { BeforeAfterCarousel } from '@/components/marketing/before-after-carouse
 import { GalleryGrid } from '@/components/marketing/gallery-grid';
 import { AboutSection } from '@/components/marketing/about-section';
 import { ContactSection } from '@/components/marketing/contact-section';
+import { EmbeddedBookingWidget } from '@/components/marketing/embedded-booking-widget';
 import type {
   Service,
   PromoBanner as PromoBannerType,
@@ -83,12 +84,12 @@ async function getMarketingData() {
     contentRes,
     settingsRes,
   ] = await Promise.all([
-    supabase.from('services').select('*').eq('is_active', true).order('display_order'),
-    supabase.from('promo_banners').select('*').order('display_order'),
-    supabase.from('before_after_pairs').select('*').order('display_order'),
-    supabase.from('gallery_images').select('*').eq('is_published', true).order('display_order'),
-    supabase.from('site_content').select('*'),
-    supabase.from('settings').select('*').single(),
+    (supabase as any).from('services').select('*').eq('is_active', true).order('display_order'),
+    (supabase as any).from('promo_banners').select('*').order('display_order'),
+    (supabase as any).from('before_after_pairs').select('*').order('display_order'),
+    (supabase as any).from('gallery_images').select('*').eq('is_published', true).order('display_order'),
+    (supabase as any).from('site_content').select('*'),
+    (supabase as any).from('settings').select('*').single(),
   ]);
 
   // Helper to get site content by key
@@ -127,7 +128,7 @@ export default async function MarketingPage() {
   const data = await getMarketingData();
 
   return (
-    <>
+    <div className="bg-[#FFFBF7]">
       {/* Promotional Banner */}
       {data.banners.length > 0 && <PromoBanner banners={data.banners} />}
 
@@ -138,133 +139,118 @@ export default async function MarketingPage() {
         imageUrl={data.heroImageUrl || 'https://placedog.net/1920/1080?id=hero'}
       />
 
-      {/* Services Section - Clean & Elegant */}
-      <section id="services" className="py-16 md:py-24 bg-[#F8EEE5]">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-semibold text-[#434E54] mb-4">
-              Our Services
-            </h2>
-            <p className="text-lg text-[#6B7280] max-w-2xl mx-auto">
-              Professional grooming and daycare services tailored to your dog&apos;s needs
-            </p>
-          </div>
+      {/* Services Section - Clean & Elegant with enhanced spacing */}
+      <section id="services" className="relative py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#FFFBF7]">
+        {/* Subtle decorative element */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#434E54]/10 to-transparent"></div>
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <ServiceGrid services={data.services} />
         </div>
+
+        {/* Bottom decorative element */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#434E54]/10 to-transparent"></div>
       </section>
 
-      {/* Before/After Section - Clean & Elegant */}
+      {/* Before/After Section - Clean & Elegant with refined styling */}
       {data.beforeAfterPairs.length > 0 && (
-        <section className="py-16 md:py-24 bg-[#EAE0D5]">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl md:text-5xl font-semibold text-[#434E54] mb-4">
+        <section className="relative py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#EAE0D5]">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section Header with decorative underline */}
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-[#434E54] mb-4">
                 Amazing Transformations
               </h2>
-              <p className="text-lg text-[#6B7280] max-w-2xl mx-auto">
-                See the incredible before and after results of our grooming services
+              <div className="h-1 w-24 bg-gradient-to-r from-[#434E54] to-[#434E54]/30 rounded-full mx-auto mb-6"></div>
+              <p className="text-lg text-[#6B7280] max-w-2xl mx-auto leading-relaxed">
+                See the incredible before and after results of our professional grooming services
               </p>
             </div>
+
             <BeforeAfterCarousel pairs={data.beforeAfterPairs} />
           </div>
         </section>
       )}
 
-      {/* About Section */}
-      <AboutSection
-        title={data.aboutTitle || 'About Puppy Day'}
-        description={data.aboutDescription || 'At Puppy Day, we provide professional grooming services that promote your dog\'s health, comfort, and happiness. We use gentle techniques and premium hypoallergenic products suitable for sensitive skin. Our day care offers a safe, social experience with supervised playtime.'}
-        differentiators={data.aboutDifferentiators.length > 0 ? data.aboutDifferentiators : [
-          'Gentle techniques and premium hypoallergenic products',
-          'Safe, supervised daycare environment',
-          'Experienced and caring staff',
-          'Health-focused grooming services',
-          'Social playtime for dogs',
-          'Comfortable and clean facilities'
-        ]}
-      />
+      {/* About Section with smooth transition */}
+      <div className="relative bg-gradient-to-b from-[#EAE0D5] to-[#FFFBF7]">
+        <AboutSection
+          title={data.aboutTitle || 'About Puppy Day'}
+          description={data.aboutDescription || 'At Puppy Day, we provide professional grooming services that promote your dog\'s health, comfort, and happiness. We use gentle techniques and premium hypoallergenic products suitable for sensitive skin. Our day care offers a safe, social experience with supervised playtime.'}
+          differentiators={data.aboutDifferentiators.length > 0 ? data.aboutDifferentiators : [
+            'Gentle techniques and premium hypoallergenic products',
+            'Safe, supervised daycare environment',
+            'Experienced and caring staff',
+            'Health-focused grooming services',
+            'Social playtime for dogs',
+            'Comfortable and clean facilities'
+          ]}
+        />
+      </div>
 
-      {/* Gallery Section - Clean & Elegant */}
+      {/* Gallery Section - Clean & Elegant with enhanced presentation */}
       {data.galleryImages.length > 0 && (
-        <section id="gallery" className="py-16 md:py-24 bg-[#F8EEE5]">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl md:text-5xl font-semibold text-[#434E54] mb-4">
-                Happy Pups
+        <section id="gallery" className="relative py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#F8EEE5]">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section Header with decorative underline */}
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-[#434E54] mb-4">
+                Happy Pups Gallery
               </h2>
-              <p className="text-lg text-[#6B7280] max-w-2xl mx-auto">
-                Check out some of our recent grooming clients looking fabulous
+              <div className="h-1 w-24 bg-gradient-to-r from-[#434E54] to-[#434E54]/30 rounded-full mx-auto mb-6"></div>
+              <p className="text-lg text-[#6B7280] max-w-2xl mx-auto leading-relaxed">
+                Check out some of our recent grooming clients looking absolutely fabulous
               </p>
             </div>
+
             <GalleryGrid images={data.galleryImages} />
           </div>
         </section>
       )}
 
-      {/* Contact Section */}
-      <ContactSection
-        phone="(657) 252-2903"
-        email="puppyday14936@gmail.com"
-        address="14936 Leffingwell Rd, La Mirada, CA 90638"
-        businessHours={data.businessHours}
-      />
+      {/* Contact Section with refined background */}
+      <div className="relative bg-gradient-to-b from-[#F8EEE5] to-[#EAE0D5]">
+        <ContactSection
+          phone="(657) 252-2903"
+          email="puppyday14936@gmail.com"
+          address="14936 Leffingwell Rd, La Mirada, CA 90638"
+        />
+      </div>
 
-      {/* Final CTA Section - Clean & Elegant */}
-      <section className="py-20 md:py-32 bg-[#EAE0D5]">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-4xl md:text-6xl font-semibold text-[#434E54] mb-6">
-              Ready to Pamper Your Pup?
-            </h2>
+      {/* Booking Widget Section - Embedded booking experience */}
+      <section id="book" className="relative py-20 md:py-32 bg-gradient-to-b from-[#FFFBF7] via-[#F8EEE5] to-[#FFFBF7] overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-20 right-10 w-80 h-80 bg-[#434E54]/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#434E54]/5 rounded-full blur-3xl"></div>
 
-            <p className="text-xl md:text-2xl text-[#6B7280] mb-12 max-w-3xl mx-auto">
-              Book your appointment today and give your furry friend the care they deserve
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-              <a
-                href="/login"
-                className="group px-10 py-4 text-lg font-medium text-white bg-[#434E54] rounded-lg shadow-md hover:bg-[#363F44] hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 inline-flex items-center gap-2"
-              >
-                Book Appointment Now
-                <svg
-                  className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                </svg>
-              </a>
-
-              <a
-                href="#services"
-                className="px-10 py-4 text-lg font-medium text-[#434E54] bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
-              >
-                View Services
-              </a>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-6xl mx-auto">
+            {/* Section Header */}
+            <div className="text-center mb-12 md:mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-[#434E54] mb-4">
+                Book Your Pup's Spa Day
+              </h2>
+              <div className="h-1 w-24 bg-gradient-to-r from-[#434E54] to-[#434E54]/30 rounded-full mx-auto mb-6"></div>
+              <p className="text-lg md:text-xl text-[#6B7280] max-w-3xl mx-auto leading-relaxed">
+                Ready to treat your furry friend? Book an appointment in minutes and give them the grooming experience they deserve
+              </p>
             </div>
 
-            {/* Trust Badges */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-              {[
-                { text: '5-Star Rated' },
-                { text: 'Award Winning' },
-                { text: '100% Satisfaction' },
-                { text: 'Pet Approved' },
-              ].map((badge, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-xl p-6 shadow-md"
-                >
-                  <div className="text-sm font-semibold text-[#434E54]">{badge.text}</div>
-                </div>
-              ))}
-            </div>
+            {/* Embedded Booking Widget */}
+            <EmbeddedBookingWidget />
           </div>
+        </div>
+
+        {/* Decorative paw prints - subtle and elegant */}
+        <div className="absolute bottom-10 right-20 text-[#434E54]/5 hidden lg:block">
+          <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
+          </svg>
+        </div>
+        <div className="absolute top-32 left-20 text-[#434E54]/5 hidden lg:block">
+          <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
+          </svg>
         </div>
       </section>
 
@@ -316,6 +302,6 @@ export default async function MarketingPage() {
           }),
         }}
       />
-    </>
+    </div>
   );
 }

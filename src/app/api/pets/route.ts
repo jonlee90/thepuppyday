@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     }
 
     const supabase = await createServerSupabaseClient();
-    const { data: pets, error } = await supabase
+    const { data: pets, error } = await (supabase as any)
       .from('pets')
       .select('*')
       .eq('owner_id', userId)
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = await createServerSupabaseClient();
-    const { data: pet, error } = await supabase
+    const { data: pet, error } = await (supabase as any)
       .from('pets')
       .insert({
         owner_id: userId,

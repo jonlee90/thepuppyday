@@ -44,7 +44,7 @@ export function useAuth(): UseAuthReturn {
 
         if (authUser) {
           // Fetch full user data from users table
-          const { data: userData } = await supabase
+          const { data: userData } = await (supabase as any)
             .from('users')
             .select('*')
             .eq('id', authUser.id)
@@ -74,7 +74,7 @@ export function useAuth(): UseAuthReturn {
         if (event === 'SIGNED_OUT') {
           clearAuth();
         } else if (event === 'SIGNED_IN' && session?.user) {
-          const { data: userData } = await supabase
+          const { data: userData } = await (supabase as any)
             .from('users')
             .select('*')
             .eq('id', session.user.id)
@@ -108,7 +108,7 @@ export function useAuth(): UseAuthReturn {
 
         if (data.user) {
           // Fetch full user data
-          const { data: userData } = await supabase
+          const { data: userData } = await (supabase as any)
             .from('users')
             .select('*')
             .eq('id', data.user.id)
@@ -149,7 +149,7 @@ export function useAuth(): UseAuthReturn {
 
         if (authData.user) {
           // Fetch the created user data
-          const { data: userData } = await supabase
+          const { data: userData } = await (supabase as any)
             .from('users')
             .select('*')
             .eq('id', authData.user.id)

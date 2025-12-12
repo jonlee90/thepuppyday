@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const supabase = await createServerSupabaseClient();
 
     // Check if email already exists (case-insensitive)
-    const { data: existingUsers } = await supabase
+    const { data: existingUsers } = await (supabase as any)
       .from('users')
       .select('*')
       .ilike('email', validated.email);
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create guest user
-    const { data: user, error: insertError } = await supabase
+    const { data: user, error: insertError } = await (supabase as any)
       .from('users')
       .insert({
         email: validated.email.toLowerCase(),

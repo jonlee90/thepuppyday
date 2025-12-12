@@ -23,7 +23,7 @@ const SERVICE_DATA: Record<string, {
   icon: LucideIcon;
   gradient: string;
   priceRanges?: Array<{ size: string; weight: string; price: number }>;
-  addonServices?: Array<{ name: string; price: number; priceRange?: string }>;
+  addonServices?: Array<{ name: string; price?: number; priceRange?: string }>;
   features: string[];
 }> = {
   basic: {

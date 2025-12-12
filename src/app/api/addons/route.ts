@@ -10,7 +10,7 @@ export async function GET() {
     const supabase = await createServerSupabaseClient();
 
     // Get active addons ordered by display_order
-    const { data: addons, error } = await supabase
+    const { data: addons, error } = await (supabase as any)
       .from('addons')
       .select('*')
       .eq('is_active', true)
