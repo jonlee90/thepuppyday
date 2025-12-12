@@ -3,95 +3,97 @@
  * Shows upcoming appointments, loyalty status, quick actions, and membership info
  */
 
-import { Suspense } from 'react';
 import { UpcomingAppointments, QuickActions, MembershipStatus } from '@/components/customer/dashboard';
 import { LoyaltyPunchCard } from '@/components/customer/loyalty';
-import { DashboardSkeleton } from '@/components/ui/skeletons';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { AppointmentStatus } from '@/types/database';
 
-// Fetch dashboard data
+// Fetch dashboard data - parallelized for better performance
 async function getDashboardData(userId: string) {
   const supabase = await createServerSupabaseClient();
 
   try {
-    // Get user's pets
-    const { data: pets, error: petsError } = await (supabase as any)
-      .from('pets')
-      .select('*')
-      .eq('owner_id', userId);
+    // Run all queries in parallel for better performance
+    const [
+      petsResult,
+      appointmentsResult,
+      loyaltyDataResult,
+      loyaltySettingsResult,
+      loyaltyPunchesResult,
+      membershipResult,
+    ] = await Promise.all([
+      // Get user's pets with breed info
+      (supabase as any)
+        .from('pets')
+        .select('*, breeds(name)')
+        .eq('owner_id', userId)
+        .eq('is_active', true),
 
-    if (petsError) {
-      console.error('[Dashboard] Error fetching pets:', petsError);
+      // Get upcoming appointments
+      (supabase as any)
+        .from('appointments')
+        .select('*, services(name), pets(name, photo_url)')
+        .eq('customer_id', userId)
+        .in('status', ['pending', 'confirmed', 'checked_in', 'in_progress'])
+        .order('scheduled_at', { ascending: true })
+        .limit(5),
+
+      // Get loyalty data (may not exist yet)
+      (supabase as any)
+        .from('customer_loyalty')
+        .select('*')
+        .eq('customer_id', userId)
+        .single(),
+
+      // Get loyalty settings
+      (supabase as any)
+        .from('loyalty_settings')
+        .select('*')
+        .single(),
+
+      // Get loyalty punches - join through customer_loyalty to filter by customer_id
+      (supabase as any)
+        .from('loyalty_punches')
+        .select('*, customer_loyalty!inner(customer_id)')
+        .eq('customer_loyalty.customer_id', userId)
+        .order('created_at', { ascending: true }),
+
+      // Get membership
+      (supabase as any)
+        .from('customer_memberships')
+        .select('*, memberships(*)')
+        .eq('customer_id', userId)
+        .eq('status', 'active')
+        .single(),
+    ]);
+
+    // Log errors (but don't crash - return empty data)
+    if (petsResult.error) {
+      console.error('[Dashboard] Error fetching pets:', petsResult.error);
     }
-
-    // Get upcoming appointments
-    const { data: appointments, error: appointmentsError } = await (supabase as any)
-      .from('appointments')
-      .select('*, services(name), pets(name, photo_url)')
-      .eq('customer_id', userId)
-      .in('status', ['pending', 'confirmed', 'checked_in', 'in_progress'])
-      .order('scheduled_at', { ascending: true })
-      .limit(5);
-
-    if (appointmentsError) {
-      console.error('[Dashboard] Error fetching appointments:', appointmentsError);
+    if (appointmentsResult.error) {
+      console.error('[Dashboard] Error fetching appointments:', appointmentsResult.error);
     }
-
-    // Get loyalty data (may not exist yet)
-    const { data: loyaltyData, error: loyaltyError } = await (supabase as any)
-      .from('customer_loyalty')
-      .select('*')
-      .eq('customer_id', userId)
-      .single();
-
-    if (loyaltyError && loyaltyError.code !== 'PGRST116') {
-      // PGRST116 = no rows returned, which is fine
-      console.error('[Dashboard] Error fetching loyalty data:', loyaltyError);
+    if (loyaltyDataResult.error && loyaltyDataResult.error.code !== 'PGRST116') {
+      console.error('[Dashboard] Error fetching loyalty data:', loyaltyDataResult.error);
     }
-
-    // Get loyalty settings (may not exist yet)
-    const { data: loyaltySettings, error: loyaltySettingsError } = await (supabase as any)
-      .from('loyalty_settings')
-      .select('*')
-      .single();
-
-    if (loyaltySettingsError && loyaltySettingsError.code !== 'PGRST116') {
-      console.error('[Dashboard] Error fetching loyalty settings:', loyaltySettingsError);
+    if (loyaltySettingsResult.error && loyaltySettingsResult.error.code !== 'PGRST116') {
+      console.error('[Dashboard] Error fetching loyalty settings:', loyaltySettingsResult.error);
     }
-
-    // Get loyalty punches (may not exist yet)
-    // Join through customer_loyalty to filter by customer_id
-    const { data: loyaltyPunches, error: loyaltyPunchesError } = await (supabase as any)
-      .from('loyalty_punches')
-      .select('*, customer_loyalty!inner(customer_id)')
-      .eq('customer_loyalty.customer_id', userId)
-      .order('created_at', { ascending: true });
-
-    if (loyaltyPunchesError && loyaltyPunchesError.code !== '42P01') {
-      // 42P01 = table does not exist
-      console.error('[Dashboard] Error fetching loyalty punches:', loyaltyPunchesError);
+    if (loyaltyPunchesResult.error && loyaltyPunchesResult.error.code !== 'PGRST116') {
+      console.error('[Dashboard] Error fetching loyalty punches:', loyaltyPunchesResult.error);
     }
-
-    // Get membership (may not exist yet)
-    const { data: membership, error: membershipError } = await (supabase as any)
-      .from('customer_memberships')
-      .select('*, memberships(*)')
-      .eq('customer_id', userId)
-      .eq('status', 'active')
-      .single();
-
-    if (membershipError && membershipError.code !== 'PGRST116' && membershipError.code !== '42P01') {
-      console.error('[Dashboard] Error fetching membership:', membershipError);
+    if (membershipResult.error && membershipResult.error.code !== 'PGRST116') {
+      console.error('[Dashboard] Error fetching membership:', membershipResult.error);
     }
 
     return {
-      pets: pets || [],
-      appointments: appointments || [],
-      loyalty: loyaltyData || null,
-      loyaltySettings: loyaltySettings || null,
-      loyaltyPunches: loyaltyPunches || [],
-      membership: membership || null,
+      pets: petsResult.data || [],
+      appointments: appointmentsResult.data || [],
+      loyalty: loyaltyDataResult.data || null,
+      loyaltySettings: loyaltySettingsResult.data || null,
+      loyaltyPunches: loyaltyPunchesResult.data || [],
+      membership: membershipResult.data || null,
     };
   } catch (error) {
     console.error('[Dashboard] Unexpected error fetching dashboard data:', error);
@@ -205,9 +207,9 @@ export default async function CustomerDashboard() {
     planName: data.membership.memberships?.name || 'Membership',
     status: data.membership.status as 'active' | 'paused' | 'cancelled' | 'expired',
     currentPeriodEnd: data.membership.current_period_end,
-    groomsRemaining: data.membership.grooms_remaining,
-    groomsPerPeriod: data.membership.memberships?.grooms_per_period,
-    monthlyPrice: data.membership.memberships?.monthly_price || 0,
+    groomsRemaining: data.membership.grooms_remaining || 0,
+    groomsPerPeriod: data.membership.memberships?.grooms_per_period || 4,
+    monthlyPrice: data.membership.memberships?.price || 0,
     benefits: [
       { label: 'Discounted grooming', included: true },
       { label: 'Priority booking', included: true },
@@ -217,51 +219,50 @@ export default async function CustomerDashboard() {
   } : null;
 
   return (
-    <Suspense fallback={<DashboardSkeleton />}>
-      <div className="space-y-6">
-        {/* Welcome header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[#434E54]">
-            Welcome back, {firstName}!
-          </h1>
-          <p className="text-[#434E54]/60 mt-1">
-            Here&apos;s what&apos;s happening with your furry friends.
-          </p>
+    <div className="space-y-6">
+      {/* Welcome header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[#434E54]">
+          Welcome back, {firstName}!
+        </h1>
+        <p className="text-[#434E54]/60 mt-1">
+          Here&apos;s what&apos;s happening with your furry friends.
+        </p>
+      </div>
+
+      {/* Main grid layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column - Main content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Upcoming appointments */}
+          <UpcomingAppointments
+            appointments={transformAppointments(data.appointments)}
+            maxItems={3}
+          />
+
+          {/* Quick actions */}
+          <QuickActions />
         </div>
 
-        {/* Main grid layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column - Main content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Upcoming appointments */}
-            <UpcomingAppointments
-              appointments={transformAppointments(data.appointments)}
-              maxItems={3}
-            />
+        {/* Right column - Sidebar widgets */}
+        <div className="space-y-6">
+          {/* Loyalty punch card */}
+          <LoyaltyPunchCard
+            currentPunches={currentPunches}
+            threshold={threshold}
+            freeWashesAvailable={freeWashesAvailable}
+            isCloseToGoal={isCloseToGoal}
+            punches={transformPunches(data.loyaltyPunches)}
+            compact
+          />
 
-            {/* Quick actions */}
-            <QuickActions />
-          </div>
-
-          {/* Right column - Sidebar widgets */}
-          <div className="space-y-6">
-            {/* Loyalty punch card */}
-            <LoyaltyPunchCard
-              currentPunches={currentPunches}
-              threshold={threshold}
-              freeWashesAvailable={freeWashesAvailable}
-              isCloseToGoal={isCloseToGoal}
-              punches={transformPunches(data.loyaltyPunches)}
-              compact
-            />
-
-            {/* Membership status */}
-            <MembershipStatus membership={membershipData} />
-          </div>
+          {/* Membership status */}
+          <MembershipStatus membership={membershipData} />
         </div>
+      </div>
 
-        {/* Pet quick stats (if they have pets) */}
-        {data.pets.length > 0 && (
+      {/* Pet quick stats (if they have pets) */}
+      {data.pets.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-[#434E54]/10 overflow-hidden">
             <div className="px-5 py-4 border-b border-[#434E54]/10 flex items-center justify-between">
               <h3 className="font-bold text-[#434E54]">Your Pets</h3>
@@ -295,7 +296,7 @@ export default async function CustomerDashboard() {
                     </div>
                     <div>
                       <p className="font-semibold text-sm text-[#434E54]">{pet.name}</p>
-                      <p className="text-xs text-[#434E54]/60">{pet.breed_name || 'Pet'}</p>
+                      <p className="text-xs text-[#434E54]/60">{pet.breeds?.name || pet.breed_custom || 'Pet'}</p>
                     </div>
                   </a>
                 ))}
@@ -303,7 +304,6 @@ export default async function CustomerDashboard() {
             </div>
           </div>
         )}
-      </div>
-    </Suspense>
+    </div>
   );
 }

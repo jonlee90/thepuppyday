@@ -45,17 +45,8 @@ export function useAuth(): UseAuthReturn {
       try {
         console.log('[Auth] Calling supabase.auth.getSession()...');
 
-        // Use getSession instead of getUser for client-side initialization
-        // This is more reliable for client components as it reads from local storage
-        const { data: { session }, error: sessionError } = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise<{ data: { session: null }, error: Error }>((_, reject) =>
-            setTimeout(() => reject(new Error('Session fetch timeout')), 5000)
-          ),
-        ]).catch((error) => {
-          console.error('[Auth] Session fetch failed or timed out:', error);
-          return { data: { session: null }, error };
-        });
+        // Use getSession for client-side initialization - reads from local storage
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (!mounted) {
           console.log('[Auth] Component unmounted, skipping state update');
