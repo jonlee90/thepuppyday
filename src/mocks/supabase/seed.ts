@@ -14,6 +14,11 @@ import type {
   BeforeAfterPair,
   GalleryImage,
   SiteContent,
+  LoyaltySettings,
+  CustomerLoyalty,
+  LoyaltyPunch,
+  LoyaltyRedemption,
+  ReportCard,
 } from '@/types/database';
 import { generateId } from '@/lib/utils';
 
@@ -183,10 +188,15 @@ export const seedSettings: Setting[] = [
   }, updated_at: new Date().toISOString() },
 ];
 
+// Stable user IDs for mock data (must be consistent across app restarts)
+const ADMIN_USER_ID = '00000000-0000-0000-0000-000000000001';
+const DEMO_USER_ID = '00000000-0000-0000-0000-000000000002';
+const SARAH_USER_ID = '00000000-0000-0000-0000-000000000003';
+
 // Demo users for testing
 export const seedUsers: User[] = [
   {
-    id: generateId(),
+    id: ADMIN_USER_ID,
     email: 'admin@thepuppyday.com',
     phone: '+15551234567',
     first_name: 'Admin',
@@ -198,7 +208,7 @@ export const seedUsers: User[] = [
     updated_at: new Date().toISOString(),
   },
   {
-    id: generateId(),
+    id: DEMO_USER_ID,
     email: 'demo@example.com',
     phone: '+15559876543',
     first_name: 'Demo',
@@ -210,8 +220,8 @@ export const seedUsers: User[] = [
     updated_at: new Date().toISOString(),
   },
   {
-    id: generateId(),
-    email: 'test@thepuppyday.com',
+    id: SARAH_USER_ID,
+    email: 'sarah@example.com',
     phone: '+15551112233',
     first_name: 'Sarah',
     last_name: 'Johnson',
@@ -575,3 +585,134 @@ export const seedSiteContent = [
     updated_at: new Date().toISOString(),
   },
 ] as SiteContent[];
+
+// Loyalty Settings - Global configuration
+export const seedLoyaltySettings: LoyaltySettings[] = [
+  {
+    id: generateId(),
+    default_threshold: 9, // Buy 9, get 10th free
+    is_enabled: true,
+    updated_at: new Date().toISOString(),
+  },
+];
+
+// Generate IDs for referencing
+const sarahLoyaltyId = generateId();
+const demoLoyaltyId = generateId();
+
+// Customer Loyalty Records
+export const seedCustomerLoyalty: CustomerLoyalty[] = [
+  {
+    id: sarahLoyaltyId,
+    customer_id: seedUsers[2].id, // Sarah Johnson
+    current_punches: 7, // 7 of 9 punches toward free wash
+    threshold_override: null, // Uses default threshold
+    total_visits: 17, // Has visited 17 times total
+    free_washes_earned: 1, // Earned 1 free wash previously
+    free_washes_redeemed: 1, // Used 1 free wash
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: demoLoyaltyId,
+    customer_id: seedUsers[1].id, // Demo Customer
+    current_punches: 2, // Just started
+    threshold_override: null,
+    total_visits: 2,
+    free_washes_earned: 0,
+    free_washes_redeemed: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
+// Helper to create past dates
+const daysAgo = (days: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString();
+};
+
+// Loyalty Punches - Sarah's punch history (current cycle: 7 punches)
+export const seedLoyaltyPunches: LoyaltyPunch[] = [
+  // Previous cycle (completed - 9 punches)
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 1, punch_number: 1, earned_at: daysAgo(180), created_at: daysAgo(180) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 1, punch_number: 2, earned_at: daysAgo(165), created_at: daysAgo(165) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 1, punch_number: 3, earned_at: daysAgo(150), created_at: daysAgo(150) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 1, punch_number: 4, earned_at: daysAgo(135), created_at: daysAgo(135) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 1, punch_number: 5, earned_at: daysAgo(120), created_at: daysAgo(120) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 1, punch_number: 6, earned_at: daysAgo(105), created_at: daysAgo(105) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 1, punch_number: 7, earned_at: daysAgo(90), created_at: daysAgo(90) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 1, punch_number: 8, earned_at: daysAgo(75), created_at: daysAgo(75) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 1, punch_number: 9, earned_at: daysAgo(60), created_at: daysAgo(60) },
+  // Current cycle (7 punches so far - 2 more for free wash!)
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 2, punch_number: 1, earned_at: daysAgo(45), created_at: daysAgo(45) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 2, punch_number: 2, earned_at: daysAgo(38), created_at: daysAgo(38) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 2, punch_number: 3, earned_at: daysAgo(31), created_at: daysAgo(31) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 2, punch_number: 4, earned_at: daysAgo(24), created_at: daysAgo(24) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 2, punch_number: 5, earned_at: daysAgo(17), created_at: daysAgo(17) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 2, punch_number: 6, earned_at: daysAgo(10), created_at: daysAgo(10) },
+  { id: generateId(), customer_loyalty_id: sarahLoyaltyId, appointment_id: generateId(), cycle_number: 2, punch_number: 7, earned_at: daysAgo(3), created_at: daysAgo(3) },
+  // Demo customer punches
+  { id: generateId(), customer_loyalty_id: demoLoyaltyId, appointment_id: generateId(), cycle_number: 1, punch_number: 1, earned_at: daysAgo(14), created_at: daysAgo(14) },
+  { id: generateId(), customer_loyalty_id: demoLoyaltyId, appointment_id: generateId(), cycle_number: 1, punch_number: 2, earned_at: daysAgo(7), created_at: daysAgo(7) },
+];
+
+// Loyalty Redemptions - Sarah redeemed 1 free wash
+export const seedLoyaltyRedemptions: LoyaltyRedemption[] = [
+  {
+    id: generateId(),
+    customer_loyalty_id: sarahLoyaltyId,
+    appointment_id: generateId(), // The appointment where she used the free wash
+    cycle_number: 1,
+    redeemed_at: daysAgo(50), // Used it ~50 days ago
+    status: 'redeemed',
+    created_at: daysAgo(60), // Earned at end of cycle 1
+  },
+];
+
+// Report Cards - Sample report cards for completed appointments
+export const seedReportCards: ReportCard[] = [
+  {
+    id: generateId(),
+    appointment_id: seedAppointments[0]?.id || generateId(),
+    mood: 'happy',
+    coat_condition: 'good',
+    behavior: 'great',
+    health_observations: ['Healthy skin', 'No ear issues detected'],
+    groomer_notes: 'Buddy was a joy to groom! Very cooperative and loved the bath time.',
+    before_photo_url: 'https://placedog.net/600/400?id=before1',
+    after_photo_url: 'https://placedog.net/600/400?id=after1',
+    rating: null,
+    feedback: null,
+    created_at: daysAgo(30),
+  },
+  {
+    id: generateId(),
+    appointment_id: generateId(),
+    mood: 'calm',
+    coat_condition: 'excellent',
+    behavior: 'great',
+    health_observations: ['Coat in excellent condition'],
+    groomer_notes: 'Bella was a bit nervous at first but calmed down quickly. Beautiful coat!',
+    before_photo_url: 'https://placedog.net/600/400?id=before2',
+    after_photo_url: 'https://placedog.net/600/400?id=after2',
+    rating: 5,
+    feedback: 'Amazing service! Bella looks fantastic.',
+    created_at: daysAgo(14),
+  },
+  {
+    id: generateId(),
+    appointment_id: generateId(),
+    mood: 'energetic',
+    coat_condition: 'good',
+    behavior: 'some_difficulty',
+    health_observations: ['Minor matting found and removed', 'Recommended more frequent brushing'],
+    groomer_notes: 'Very energetic pup! Had some tangles but we got them all sorted out.',
+    before_photo_url: 'https://placedog.net/600/400?id=before3',
+    after_photo_url: 'https://placedog.net/600/400?id=after3',
+    rating: 4,
+    feedback: 'Great job with the tangles!',
+    created_at: daysAgo(7),
+  },
+];

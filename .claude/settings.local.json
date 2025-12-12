@@ -40,7 +40,16 @@
       "Bash(curl:*)",
       "Bash(kill:*)",
       "Bash(tail:*)",
-      "Bash(npx next build:*)"
+      "Bash(npx next build:*)",
+      "Bash(tasklist:*)",
+      "mcp__supabase__get_advisors",
+      "mcp__supabase__generate_typescript_types",
+      "mcp__supabase__get_logs",
+      "Bash(netstat:*)",
+      "Bash(dir /b \"C:\\Users\\Jon\\Documents\\claude projects\\thepuppyday\")",
+      "Bash(dir /b \"C:\\Users\\Jon\\Documents\\claude projects\\thepuppyday\\src\")",
+      "Bash(timeout 2 npm run dev:*)",
+      "Bash(dir:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

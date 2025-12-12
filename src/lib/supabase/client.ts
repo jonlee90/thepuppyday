@@ -23,6 +23,8 @@ export function createClient(): AppSupabaseClient {
     console.log('[Supabase] Using mock client');
     browserClient = createMockClient();
   } else {
+    console.log('[Supabase] Creating real client with URL:', config.supabase.url);
+    console.log('[Supabase] Anon key present:', !!config.supabase.anonKey);
     browserClient = createBrowserClient(
       config.supabase.url,
       config.supabase.anonKey

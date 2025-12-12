@@ -231,7 +231,7 @@ export interface CustomerMembership extends BaseEntity {
   membership?: Membership;
 }
 
-// Loyalty
+// Loyalty (Legacy points-based - kept for migration)
 export interface LoyaltyPoints {
   id: string;
   customer_id: string;
@@ -247,6 +247,61 @@ export interface LoyaltyTransaction extends BaseEntity {
   reference_type: string | null;
   notes: string | null;
 }
+
+// Loyalty Punch Card System (New "Buy X, Get 1 Free" model)
+export type LoyaltyRedemptionStatus = 'pending' | 'redeemed' | 'expired';
+
+export interface LoyaltySettings {
+  id: string;
+  default_threshold: number; // Default: 9 (Buy 9, get 10th free)
+  is_enabled: boolean;
+  updated_at: string;
+}
+
+export interface CustomerLoyalty extends BaseEntity {
+  customer_id: string;
+  current_punches: number;
+  threshold_override: number | null;
+  total_visits: number;
+  free_washes_earned: number;
+  free_washes_redeemed: number;
+  updated_at: string;
+}
+
+export interface LoyaltyPunch extends BaseEntity {
+  customer_loyalty_id: string;
+  appointment_id: string;
+  cycle_number: number;
+  punch_number: number;
+  earned_at: string;
+}
+
+export interface LoyaltyRedemption extends BaseEntity {
+  customer_loyalty_id: string;
+  appointment_id: string | null;
+  cycle_number: number;
+  redeemed_at: string | null;
+  status: LoyaltyRedemptionStatus;
+}
+
+// User Notification Preferences
+export interface NotificationPreferences {
+  email_appointment_reminders: boolean;
+  email_promotional: boolean;
+  email_report_cards: boolean;
+  sms_appointment_reminders: boolean;
+  sms_promotional: boolean;
+  sms_report_cards: boolean;
+}
+
+export const defaultNotificationPreferences: NotificationPreferences = {
+  email_appointment_reminders: true,
+  email_promotional: true,
+  email_report_cards: true,
+  sms_appointment_reminders: true,
+  sms_promotional: false,
+  sms_report_cards: true,
+};
 
 // Customer Flags
 export interface CustomerFlag extends BaseEntity {
@@ -356,6 +411,10 @@ export interface Database {
   customer_memberships: CustomerMembership;
   loyalty_points: LoyaltyPoints;
   loyalty_transactions: LoyaltyTransaction;
+  loyalty_settings: LoyaltySettings;
+  customer_loyalty: CustomerLoyalty;
+  loyalty_punches: LoyaltyPunch;
+  loyalty_redemptions: LoyaltyRedemption;
   customer_flags: CustomerFlag;
   payments: Payment;
   site_content: SiteContent;

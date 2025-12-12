@@ -2,11 +2,12 @@
 
 /**
  * Hook for fetching and managing user's pet profiles
- * Supports both mock mode and future Supabase integration
+ * Supports both mock mode and Supabase integration
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { getMockStore } from '@/mocks/supabase/store';
+import { createClient } from '@/lib/supabase/client';
 import { config } from '@/lib/config';
 import { useAuthStore } from '@/stores/auth-store';
 import type { Pet, CreatePetInput, Breed } from '@/types/database';
@@ -96,19 +97,20 @@ export function usePets(): UsePetsReturn {
 
         setPets(petsWithBreeds);
       } else {
-        // TODO: Implement Supabase query when ready
-        // const supabase = createClient();
-        // const { data, error } = await supabase
-        //   .from('pets')
-        //   .select('*, breed:breeds(*)')
-        //   .eq('owner_id', user.id)
-        //   .eq('is_active', true)
-        //   .order('created_at', { ascending: false });
-        //
-        // if (error) throw error;
-        // setPets(data || []);
+        // Fetch from Supabase
+        const supabase = createClient();
+        const { data, error: supabaseError } = await (supabase as any)
+          .from('pets')
+          .select('*, breed:breeds(*)')
+          .eq('owner_id', user.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
 
-        throw new Error('Supabase integration not yet implemented');
+        if (supabaseError) {
+          throw new Error(`Failed to fetch pets: ${supabaseError.message}`);
+        }
+
+        setPets(data || []);
       }
     } catch (err) {
       console.error('Failed to fetch pets:', err);
@@ -169,22 +171,22 @@ export function usePets(): UsePetsReturn {
 
           return newPet;
         } else {
-          // TODO: Implement Supabase mutation when ready
-          // const supabase = createClient();
-          // const { data: newPet, error } = await supabase
-          //   .from('pets')
-          //   .insert([{ ...data, is_active: true }])
-          //   .select('*, breed:breeds(*)')
-          //   .single();
-          //
-          // if (error) throw error;
-          //
-          // // Refresh the pets list
-          // await fetchPets();
-          //
-          // return newPet;
+          // Create in Supabase
+          const supabase = createClient();
+          const { data: newPet, error: supabaseError } = await (supabase as any)
+            .from('pets')
+            .insert([{ ...data, is_active: true }])
+            .select('*, breed:breeds(*)')
+            .single();
 
-          throw new Error('Supabase integration not yet implemented');
+          if (supabaseError) {
+            throw new Error(`Failed to create pet: ${supabaseError.message}`);
+          }
+
+          // Refresh the pets list
+          await fetchPets();
+
+          return newPet;
         }
       } catch (err) {
         console.error('Failed to create pet:', err);

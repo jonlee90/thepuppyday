@@ -1,8 +1,11 @@
 /**
- * Auth layout - minimal layout for login/register pages
+ * Auth layout - Clean & elegant professional layout for login/register pages
+ * Uses marketing footer for consistency
  */
 
 import Link from 'next/link';
+import Image from 'next/image';
+import { Footer } from '@/components/marketing/footer';
 
 export default function AuthLayout({
   children,
@@ -11,24 +14,49 @@ export default function AuthLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Simple header with logo */}
-      <header className="p-4">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold">The Puppy Day</span>
-        </Link>
+      {/* Header matching marketing style */}
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo matching marketing header */}
+            <Link
+              href="/"
+              className="flex items-center space-x-3 group"
+            >
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 transition-transform duration-200 group-hover:scale-105">
+                <Image
+                  src="/images/puppy_day_logo_dog_only_transparent.png"
+                  alt="Puppy Day Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <span className="text-xl sm:text-2xl font-semibold text-[#434E54] tracking-tight">
+                PUPPY DAY
+              </span>
+            </Link>
+
+            {/* Simple navigation for auth pages */}
+            <Link
+              href="/"
+              className="text-sm font-medium text-[#6B7280] hover:text-[#434E54] transition-colors duration-200"
+            >
+              Back to Home
+            </Link>
+          </div>
+        </div>
       </header>
 
-      {/* Main content */}
-      <main className="flex-1 flex items-center justify-center p-4">
+      {/* Main content with gradient background */}
+      <main className="flex-1 flex items-center justify-center px-4 py-8 bg-gradient-to-br from-[#F8EEE5] via-[#FFFBF7] to-[#EAE0D5]">
         <div className="w-full max-w-md">
           {children}
         </div>
       </main>
 
-      {/* Simple footer */}
-      <footer className="p-4 text-center text-sm text-base-content/60">
-        <p>&copy; {new Date().getFullYear()} The Puppy Day. All rights reserved.</p>
-      </footer>
+      {/* Marketing footer for consistency */}
+      <Footer />
     </div>
   );
 }

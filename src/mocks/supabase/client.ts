@@ -55,7 +55,13 @@ class MockQueryBuilder<T> {
   }
 
   select(columns = '*'): this {
-    this.selectColumns = columns === '*' ? [] : columns.split(',').map((c) => c.trim());
+    // Handle joins in select (e.g., "*, customer_loyalty!inner(customer_id)")
+    if (columns.includes('!inner') || columns.includes('!left')) {
+      // Store the full select string for join processing
+      this.selectColumns = columns === '*' ? [] : [columns];
+    } else {
+      this.selectColumns = columns === '*' ? [] : columns.split(',').map((c) => c.trim());
+    }
     return this;
   }
 
@@ -135,8 +141,40 @@ class MockQueryBuilder<T> {
     try {
       let records = store.select<Record<string, unknown>>(this.table);
 
-      // Apply filters
+      // Handle joins in select (e.g., "*, customer_loyalty!inner(customer_id)")
+      // For joins, we need to filter based on related table
+      const hasJoin = this.selectColumns.length > 0 &&
+                      (this.selectColumns[0].includes('!inner') || this.selectColumns[0].includes('!left'));
+
+      if (hasJoin) {
+        // Parse join syntax: "*, customer_loyalty!inner(customer_id)"
+        const joinMatch = this.selectColumns[0].match(/(\w+)!inner\((\w+)\)/);
+        if (joinMatch) {
+          const [, joinTable, joinColumn] = joinMatch;
+          // Get the related table data
+          const relatedRecords = store.select<Record<string, unknown>>(joinTable);
+
+          // For each filter on the join table, resolve it
+          const joinFilters = this.filters.filter(f => f.column.startsWith(`${joinTable}.`));
+          for (const filter of joinFilters) {
+            const actualColumn = filter.column.replace(`${joinTable}.`, '');
+            const matchingRelated = relatedRecords.filter(r => r[actualColumn] === filter.value);
+            const relatedIds = matchingRelated.map(r => r.id);
+
+            // Filter main table by foreign key matching related IDs
+            records = records.filter((r) => {
+              const fkValue = r[`${joinTable}_id`];
+              return relatedIds.includes(fkValue);
+            });
+          }
+        }
+      }
+
+      // Apply direct filters (not join filters)
       for (const filter of this.filters) {
+        // Skip join table filters (already handled above)
+        if (filter.column.includes('.')) continue;
+
         records = records.filter((r) => {
           const value = r[filter.column];
           switch (filter.operator) {
@@ -419,7 +457,7 @@ class MockAuth {
   async signUp(credentials: {
     email: string;
     password: string;
-    options?: { data?: { first_name?: string; last_name?: string } };
+    options?: { data?: { first_name?: string; last_name?: string; phone?: string } };
   }): Promise<{ data: { user: MockAuthUser | null; session: MockSession | null }; error: Error | null }> {
     const store = getMockStore();
 
@@ -435,13 +473,14 @@ class MockAuth {
     // Create user in store
     const firstName = credentials.options?.data?.first_name || 'New';
     const lastName = credentials.options?.data?.last_name || 'User';
+    const phone = credentials.options?.data?.phone || null;
 
     const newUser = store.insert<Record<string, any>>('users', {
       email: credentials.email,
       first_name: firstName,
       last_name: lastName,
       role: 'customer',
-      phone: null,
+      phone: phone,
       avatar_url: null,
       preferences: {},
     });
@@ -537,9 +576,49 @@ class MockAuth {
     };
   }
 
-  async resetPasswordForEmail(email: string): Promise<{ error: Error | null }> {
+  async resetPasswordForEmail(email: string, options?: { redirectTo?: string }): Promise<{ error: Error | null }> {
     console.log(`[Mock] Password reset email sent to: ${email}`);
+    if (options?.redirectTo) {
+      console.log(`[Mock] Reset link would redirect to: ${options.redirectTo}`);
+    }
     return { error: null };
+  }
+
+  async updateUser(attributes: { password?: string; email?: string; data?: Record<string, any> }): Promise<{ data: { user: MockAuthUser | null }; error: Error | null }> {
+    if (!this.currentUser) {
+      return {
+        data: { user: null },
+        error: new Error('Not authenticated'),
+      };
+    }
+
+    // In mock mode, just update the session (password updates don't persist)
+    console.log(`[Mock] User update requested:`, attributes);
+
+    // Update user metadata if provided
+    if (attributes.data) {
+      this.currentUser.user_metadata = {
+        ...this.currentUser.user_metadata,
+        ...attributes.data,
+      };
+    }
+
+    // Update email if provided
+    if (attributes.email) {
+      this.currentUser.email = attributes.email;
+    }
+
+    // Password updates are logged but not stored in mock mode
+    if (attributes.password) {
+      console.log(`[Mock] Password would be updated for user: ${this.currentUser.email}`);
+    }
+
+    this.saveSession();
+
+    return {
+      data: { user: this.currentUser },
+      error: null,
+    };
   }
 
   onAuthStateChange(

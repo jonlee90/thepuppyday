@@ -2,11 +2,12 @@
 
 /**
  * Hook for fetching active add-ons with upsell filtering
- * Supports both mock mode and future Supabase integration
+ * Supports both mock mode and Supabase integration
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { getMockStore } from '@/mocks/supabase/store';
+import { createClient } from '@/lib/supabase/client';
 import { config } from '@/lib/config';
 import type { Addon, Breed } from '@/types/database';
 
@@ -69,15 +70,31 @@ export function useAddons(): UseAddonsReturn {
           setAddons(addonsData);
           setBreeds(breedsData);
         } else {
-          // TODO: Implement Supabase query when ready
-          // const supabase = createClient();
-          // const { data, error } = await supabase
-          //   .from('addons')
-          //   .select('*')
-          //   .eq('is_active', true)
-          //   .order('display_order', { ascending: true });
+          // Fetch from Supabase
+          const supabase = createClient();
 
-          throw new Error('Supabase integration not yet implemented');
+          // Fetch addons
+          const { data: addonsData, error: addonsError } = await (supabase as any)
+            .from('addons')
+            .select('*')
+            .eq('is_active', true)
+            .order('display_order', { ascending: true });
+
+          if (addonsError) {
+            throw new Error(`Failed to fetch add-ons: ${addonsError.message}`);
+          }
+
+          // Fetch breeds for upsell matching
+          const { data: breedsData, error: breedsError } = await (supabase as any)
+            .from('breeds')
+            .select('*');
+
+          if (breedsError) {
+            throw new Error(`Failed to fetch breeds: ${breedsError.message}`);
+          }
+
+          setAddons(addonsData || []);
+          setBreeds(breedsData || []);
         }
       } catch (err) {
         console.error('Failed to fetch add-ons:', err);

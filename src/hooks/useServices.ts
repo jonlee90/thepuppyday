@@ -2,11 +2,12 @@
 
 /**
  * Hook for fetching active services with prices
- * Supports both mock mode and future Supabase integration
+ * Supports both mock mode and Supabase integration
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { getMockStore } from '@/mocks/supabase/store';
+import { createClient } from '@/lib/supabase/client';
 import { config } from '@/lib/config';
 import type { Service, ServicePrice, ServiceWithPrices } from '@/types/database';
 
@@ -71,15 +72,25 @@ export function useServices(): UseServicesReturn {
 
           setServices(servicesWithPrices);
         } else {
-          // TODO: Implement Supabase query when ready
-          // const supabase = createClient();
-          // const { data, error } = await supabase
-          //   .from('services')
-          //   .select('*, prices:service_prices(*)')
-          //   .eq('is_active', true)
-          //   .order('display_order', { ascending: true });
+          // Fetch from Supabase
+          const supabase = createClient();
+          const { data, error: supabaseError } = await (supabase as any)
+            .from('services')
+            .select('*, prices:service_prices(*)')
+            .eq('is_active', true)
+            .order('display_order', { ascending: true });
 
-          throw new Error('Supabase integration not yet implemented');
+          if (supabaseError) {
+            throw new Error(`Failed to fetch services: ${supabaseError.message}`);
+          }
+
+          // Transform data to match ServiceWithPrices type
+          const servicesWithPrices: ServiceWithPrices[] = (data || []).map((service: any) => ({
+            ...service,
+            prices: service.prices || [],
+          }));
+
+          setServices(servicesWithPrices);
         }
       } catch (err) {
         console.error('Failed to fetch services:', err);

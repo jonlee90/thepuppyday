@@ -6,6 +6,7 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { usePathname } from 'next/navigation';
 import type { User } from '@/types/database';
 
 interface AuthContextValue {
@@ -32,6 +33,30 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const auth = useAuth();
+  const pathname = usePathname();
+
+  // Show loading spinner only on protected routes during initial auth check
+  const isProtectedRoute =
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/appointments') ||
+    pathname?.startsWith('/pets') ||
+    pathname?.startsWith('/profile') ||
+    pathname?.startsWith('/loyalty') ||
+    pathname?.startsWith('/membership') ||
+    pathname?.startsWith('/report-cards') ||
+    pathname?.startsWith('/admin');
+
+  // Show loading UI only on protected routes
+  if (auth.isLoading && isProtectedRoute) {
+    return (
+      <div className="min-h-screen bg-[#F8EEE5] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#EAE0D5] border-t-[#434E54] rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#6B7280] font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={auth}>

@@ -16,6 +16,11 @@ import {
   seedBeforeAfterPairs,
   seedGalleryImages,
   seedSiteContent,
+  seedLoyaltySettings,
+  seedCustomerLoyalty,
+  seedLoyaltyPunches,
+  seedLoyaltyRedemptions,
+  seedReportCards,
 } from './seed';
 
 const STORAGE_KEY = 'thepuppyday_mock_db';
@@ -74,6 +79,10 @@ class MockStore {
       'customer_memberships',
       'loyalty_points',
       'loyalty_transactions',
+      'loyalty_settings',
+      'customer_loyalty',
+      'loyalty_punches',
+      'loyalty_redemptions',
       'customer_flags',
       'payments',
       'site_content',
@@ -121,6 +130,15 @@ class MockStore {
     this.tables.set('before_after_pairs', [...seedBeforeAfterPairs] as unknown as TableData[]);
     this.tables.set('gallery_images', [...seedGalleryImages] as unknown as TableData[]);
     this.tables.set('site_content', [...seedSiteContent] as unknown as TableData[]);
+
+    // Seed loyalty punch card system
+    this.tables.set('loyalty_settings', [...seedLoyaltySettings] as unknown as TableData[]);
+    this.tables.set('customer_loyalty', [...seedCustomerLoyalty] as unknown as TableData[]);
+    this.tables.set('loyalty_punches', [...seedLoyaltyPunches] as unknown as TableData[]);
+    this.tables.set('loyalty_redemptions', [...seedLoyaltyRedemptions] as unknown as TableData[]);
+
+    // Seed report cards
+    this.tables.set('report_cards', [...seedReportCards] as unknown as TableData[]);
 
     this.save();
   }

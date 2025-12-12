@@ -65,3 +65,94 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-nunito), 'Poppins', system-ui, sans-serif;
   font-weight: 600;
 }
+
+/* ============================================
+   DaisyUI Component Theme Overrides
+   ============================================ */
+
+/* Card Components - Softer shadows for Clean & Elegant design */
+.card {
+  @apply shadow-md;
+  background: #FFFFFF;
+}
+
+.card:hover {
+  @apply shadow-lg;
+}
+
+/* Alert Components - Subtle, professional error states */
+.alert {
+  @apply rounded-lg border-0;
+}
+
+.alert-error {
+  background: rgba(255, 107, 107, 0.1); /* Soft red background */
+  color: #434E54; /* Primary text color, not harsh red */
+}
+
+.alert-error svg {
+  color: #FF6B6B; /* Error accent color for icon */
+}
+
+.alert-success {
+  background: rgba(107, 203, 119, 0.1);
+  color: #434E54;
+}
+
+.alert-success svg {
+  color: #6BCB77;
+}
+
+.alert-info {
+  background: rgba(116, 185, 255, 0.1);
+  color: #434E54;
+}
+
+.alert-info svg {
+  color: #74B9FF;
+}
+
+/* Divider - More subtle, matches theme */
+.divider {
+  color: #6B7280; /* Text secondary */
+  opacity: 0.5;
+}
+
+.divider::before,
+.divider::after {
+  background-color: rgba(67, 78, 84, 0.15); /* Very subtle line */
+}
+
+/* Links - Use charcoal instead of bright primary */
+.link-primary {
+  color: #434E54;
+  text-decoration-color: rgba(67, 78, 84, 0.3);
+}
+
+.link-primary:hover {
+  color: #363F44;
+  text-decoration-color: #363F44;
+}
+
+/* Loading Spinner - Match primary color */
+.loading {
+  color: #434E54;
+}
+
+/* Form Controls - Softer focus states */
+.input:focus,
+.textarea:focus,
+.select:focus {
+  outline: 2px solid rgba(67, 78, 84, 0.2);
+  outline-offset: 2px;
+  border-color: #434E54;
+}
+
+.input-error {
+  border-color: rgba(255, 107, 107, 0.5);
+}
+
+.input-error:focus {
+  outline-color: rgba(255, 107, 107, 0.3);
+  border-color: #FF6B6B;
+}

@@ -2,11 +2,12 @@
 
 /**
  * Hook for fetching available time slots for appointments
- * Supports both mock mode and future Supabase integration
+ * Supports both mock mode and Supabase integration
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { getMockStore } from '@/mocks/supabase/store';
+import { createClient } from '@/lib/supabase/client';
 import { config } from '@/lib/config';
 import {
   getAvailableSlots,
@@ -112,34 +113,63 @@ export function useAvailability({
 
         setSlots(availableSlots);
       } else {
-        // TODO: Implement Supabase query when ready
-        // const supabase = createClient();
-        //
-        // // Fetch service duration
-        // const { data: service } = await supabase
-        //   .from('services')
-        //   .select('duration_minutes')
-        //   .eq('id', serviceId)
-        //   .single();
-        //
-        // // Fetch business hours
-        // const { data: settings } = await supabase
-        //   .from('settings')
-        //   .select('value')
-        //   .eq('key', 'business_hours')
-        //   .single();
-        //
-        // // Fetch appointments for the date
-        // const startOfDay = new Date(date + 'T00:00:00').toISOString();
-        // const endOfDay = new Date(date + 'T23:59:59').toISOString();
-        // const { data: appointments } = await supabase
-        //   .from('appointments')
-        //   .select('*')
-        //   .gte('scheduled_at', startOfDay)
-        //   .lte('scheduled_at', endOfDay)
-        //   .not('status', 'in', '(cancelled,no_show)');
+        // Fetch from Supabase
+        const supabase = createClient();
 
-        throw new Error('Supabase integration not yet implemented');
+        // Fetch service duration
+        const { data: service, error: serviceError } = await (supabase as any)
+          .from('services')
+          .select('duration_minutes')
+          .eq('id', serviceId)
+          .single();
+
+        if (serviceError) {
+          throw new Error(`Failed to fetch service: ${serviceError.message}`);
+        }
+
+        if (!service) {
+          throw new Error('Service not found');
+        }
+
+        // Fetch business hours
+        const { data: settings, error: settingsError } = await (supabase as any)
+          .from('settings')
+          .select('value')
+          .eq('key', 'business_hours')
+          .single();
+
+        if (settingsError && settingsError.code !== 'PGRST116') {
+          // PGRST116 = no rows returned, which is OK
+          throw new Error(`Failed to fetch business hours: ${settingsError.message}`);
+        }
+
+        const businessHours: BusinessHours = settings?.value
+          ? (settings.value as BusinessHours)
+          : DEFAULT_BUSINESS_HOURS;
+
+        // Fetch appointments for the date
+        const startOfDay = new Date(date + 'T00:00:00').toISOString();
+        const endOfDay = new Date(date + 'T23:59:59').toISOString();
+        const { data: appointments, error: appointmentsError } = await (supabase as any)
+          .from('appointments')
+          .select('*')
+          .gte('scheduled_at', startOfDay)
+          .lte('scheduled_at', endOfDay)
+          .not('status', 'in', '(cancelled,no_show)');
+
+        if (appointmentsError) {
+          throw new Error(`Failed to fetch appointments: ${appointmentsError.message}`);
+        }
+
+        // Calculate available slots using utility function
+        const availableSlots = getAvailableSlots(
+          date,
+          service.duration_minutes,
+          appointments || [],
+          businessHours
+        );
+
+        setSlots(availableSlots);
       }
     } catch (err) {
       console.error('Failed to fetch availability:', err);

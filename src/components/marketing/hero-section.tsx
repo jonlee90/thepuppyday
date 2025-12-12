@@ -22,7 +22,7 @@ export function HeroSection({ headline, tagline, imageUrl }: HeroSectionProps) {
       <div className="absolute top-20 right-10 w-96 h-96 bg-[#434E54]/5 rounded-full blur-3xl"></div>
       <div className="absolute bottom-20 left-10 w-80 h-80 bg-[#434E54]/5 rounded-full blur-3xl"></div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 

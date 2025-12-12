@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Login page
+ * Login page - Clean & Elegant Professional design
  */
 
 import { Suspense, useState } from 'react';
@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
+import { AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 import { Button } from '@/components/ui/button';
@@ -34,13 +35,21 @@ function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
 
+    console.log('[Login] Submitting login form...');
     const result = await signIn(data.email, data.password);
 
     if (result.error) {
+      console.error('[Login] Sign in failed:', result.error);
       setError(result.error.message || 'Invalid email or password');
       return;
     }
 
+    console.log('[Login] Sign in successful, redirecting to:', returnTo);
+
+    // Wait a moment for the auth state to be set in the store
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Use router.push for client-side navigation (middleware will handle session)
     router.push(returnTo);
   };
 
@@ -48,86 +57,80 @@ function LoginForm() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
     >
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h1 className="card-title text-2xl justify-center mb-2">Welcome Back</h1>
-          <p className="text-center text-base-content/60 mb-6">
+      <div className="bg-white p-8 rounded-2xl shadow-lg">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-[#434E54] mb-2">Welcome Back</h1>
+          <p className="text-[#6B7280]">
             Sign in to manage your appointments
           </p>
-
-          {error && (
-            <div className="alert alert-error mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="stroke-current shrink-0 h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-              label="Email"
-              type="email"
-              placeholder="you@example.com"
-              error={errors.email?.message}
-              {...register('email')}
-            />
-
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter your password"
-              error={errors.password?.message}
-              {...register('password')}
-            />
-
-            <div className="flex justify-end">
-              <Link
-                href="/forgot-password"
-                className="text-sm link link-primary"
-              >
-                Forgot password?
-              </Link>
-            </div>
-
-            <Button
-              type="submit"
-              variant="primary"
-              className="w-full"
-              isLoading={isSubmitting}
-            >
-              Sign In
-            </Button>
-          </form>
-
-          <div className="divider">OR</div>
-
-          <p className="text-center">
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="link link-primary">
-              Sign up
-            </Link>
-          </p>
         </div>
-      </div>
 
-      {/* Demo credentials hint */}
-      <div className="mt-4 p-4 bg-base-200 rounded-lg text-sm">
-        <p className="font-medium mb-2">Demo Credentials:</p>
-        <p>Email: demo@example.com</p>
-        <p>Password: any password (mock mode)</p>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-100 rounded-lg"
+          >
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <span className="text-sm text-red-700">{error}</span>
+          </motion.div>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <Input
+            label="Email"
+            type="email"
+            placeholder="you@example.com"
+            error={errors.email?.message}
+            className="focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54] transition-all"
+            {...register('email')}
+          />
+
+          <Input
+            label="Password"
+            type="password"
+            placeholder="Enter your password"
+            error={errors.password?.message}
+            className="focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54] transition-all"
+            {...register('password')}
+          />
+
+          <div className="flex justify-end">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-[#434E54] hover:text-[#363F44] font-medium transition-colors"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full bg-[#434E54] hover:bg-[#363F44] text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+            isLoading={isSubmitting}
+          >
+            Sign In
+          </Button>
+        </form>
+
+        <div className="relative my-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-white text-[#9CA3AF]">OR</span>
+          </div>
+        </div>
+
+        <p className="text-center text-[#6B7280]">
+          Don&apos;t have an account?{' '}
+          <Link href="/register" className="text-[#434E54] hover:text-[#363F44] font-semibold transition-colors">
+            Sign up
+          </Link>
+        </p>
       </div>
     </motion.div>
   );
@@ -135,7 +138,11 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="loading loading-spinner loading-lg"></div>}>
+    <Suspense fallback={
+      <div className="flex justify-center">
+        <div className="w-8 h-8 border-4 border-[#EAE0D5] border-t-[#434E54] rounded-full animate-spin"></div>
+      </div>
+    }>
       <LoginForm />
     </Suspense>
   );
