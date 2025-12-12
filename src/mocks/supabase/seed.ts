@@ -190,8 +190,9 @@ export const seedSettings: Setting[] = [
 
 // Stable user IDs for mock data (must be consistent across app restarts)
 const ADMIN_USER_ID = '00000000-0000-0000-0000-000000000001';
-const DEMO_USER_ID = '00000000-0000-0000-0000-000000000002';
-const SARAH_USER_ID = '00000000-0000-0000-0000-000000000003';
+const GROOMER_USER_ID = '00000000-0000-0000-0000-000000000002';
+const DEMO_USER_ID = '00000000-0000-0000-0000-000000000003';
+const SARAH_USER_ID = '00000000-0000-0000-0000-000000000004';
 
 // Demo users for testing
 export const seedUsers: User[] = [
@@ -202,6 +203,18 @@ export const seedUsers: User[] = [
     first_name: 'Admin',
     last_name: 'User',
     role: 'admin' as const,
+    avatar_url: null,
+    preferences: {},
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: GROOMER_USER_ID,
+    email: 'staff@thepuppyday.com',
+    phone: '+15551234568',
+    first_name: 'Jessica',
+    last_name: 'Martinez',
+    role: 'groomer' as const,
     avatar_url: null,
     preferences: {},
     created_at: new Date().toISOString(),
@@ -237,7 +250,7 @@ export const seedUsers: User[] = [
 export const seedPets: Pet[] = [
   {
     id: generateId(),
-    owner_id: seedUsers[2].id, // Sarah Johnson
+    owner_id: seedUsers[3].id, // Sarah Johnson
     name: 'Buddy',
     breed_id: seedBreeds.find(b => b.name === 'Golden Retriever')?.id || null,
     breed_custom: null,
@@ -253,7 +266,7 @@ export const seedPets: Pet[] = [
   },
   {
     id: generateId(),
-    owner_id: seedUsers[2].id, // Sarah Johnson
+    owner_id: seedUsers[3].id, // Sarah Johnson
     name: 'Bella',
     breed_id: seedBreeds.find(b => b.name === 'Shih Tzu')?.id || null,
     breed_custom: null,
@@ -281,7 +294,7 @@ const createAppointmentDate = (daysFromNow: number, hour: number, minute: number
 export const seedAppointments: Appointment[] = [
   {
     id: generateId(),
-    customer_id: seedUsers[1].id, // Demo Customer
+    customer_id: seedUsers[2].id, // Demo Customer
     pet_id: generateId(), // Mock pet ID
     service_id: seedServices[0].id, // Basic Groom
     groomer_id: null,
@@ -296,7 +309,7 @@ export const seedAppointments: Appointment[] = [
   },
   {
     id: generateId(),
-    customer_id: seedUsers[2].id, // Sarah Johnson
+    customer_id: seedUsers[3].id, // Sarah Johnson
     pet_id: seedPets[0].id, // Buddy
     service_id: seedServices[1].id, // Premium Groom
     groomer_id: null,
@@ -311,7 +324,7 @@ export const seedAppointments: Appointment[] = [
   },
   {
     id: generateId(),
-    customer_id: seedUsers[2].id, // Sarah Johnson
+    customer_id: seedUsers[3].id, // Sarah Johnson
     pet_id: seedPets[1].id, // Bella
     service_id: seedServices[0].id, // Basic Groom
     groomer_id: null,
@@ -604,7 +617,7 @@ const demoLoyaltyId = generateId();
 export const seedCustomerLoyalty: CustomerLoyalty[] = [
   {
     id: sarahLoyaltyId,
-    customer_id: seedUsers[2].id, // Sarah Johnson
+    customer_id: seedUsers[3].id, // Sarah Johnson
     current_punches: 7, // 7 of 9 punches toward free wash
     threshold_override: null, // Uses default threshold
     total_visits: 17, // Has visited 17 times total
@@ -615,7 +628,7 @@ export const seedCustomerLoyalty: CustomerLoyalty[] = [
   },
   {
     id: demoLoyaltyId,
-    customer_id: seedUsers[1].id, // Demo Customer
+    customer_id: seedUsers[2].id, // Demo Customer
     current_punches: 2, // Just started
     threshold_override: null,
     total_visits: 2,
