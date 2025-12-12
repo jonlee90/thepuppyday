@@ -158,8 +158,8 @@ export function AppointmentDetailModal({
                   <div className="font-semibold text-[#856404] mb-1">Customer Flags</div>
                   {appointment.customer_flags.map((flag) => (
                     <div key={flag.id} className="text-sm text-[#856404]">
-                      <strong>{flag.reason}</strong>
-                      {flag.notes && ` - ${flag.notes}`}
+                      <strong>{flag.flag_type.replace('_', ' ').toUpperCase()}</strong>
+                      {flag.description && ` - ${flag.description}`}
                     </div>
                   ))}
                 </div>

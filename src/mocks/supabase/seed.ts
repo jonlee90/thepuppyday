@@ -21,6 +21,7 @@ import type {
   ReportCard,
   Payment,
   NotificationLog,
+  CustomerFlag,
 } from '@/types/database';
 import { generateId } from '@/lib/utils';
 
@@ -1007,5 +1008,39 @@ export const seedNotificationsLog: NotificationLog[] = [
     error_message: null,
     sent_at: minutesAgo(1200),
     created_at: minutesAgo(1200),
+  },
+];
+
+// Customer Flags - Test data for customer management
+export const seedCustomerFlags: CustomerFlag[] = [
+  {
+    id: generateId(),
+    customer_id: DEMO_USER_ID,
+    flag_type: 'vip',
+    description: 'Long-time customer, always refers new clients. Provides excellent feedback.',
+    color: 'green',
+    is_active: true,
+    created_by: ADMIN_USER_ID,
+    created_at: daysAgo(90),
+  },
+  {
+    id: generateId(),
+    customer_id: DEMO_USER_ID,
+    flag_type: 'special_needs',
+    description: 'Dog has anxiety around clippers. Use quiet clipper and take breaks.',
+    color: 'yellow',
+    is_active: true,
+    created_by: GROOMER_USER_ID,
+    created_at: daysAgo(60),
+  },
+  {
+    id: generateId(),
+    customer_id: SARAH_USER_ID,
+    flag_type: 'grooming_notes',
+    description: 'Bella (Shih Tzu) prefers a shorter cut during summer months. Owner likes traditional style.',
+    color: 'yellow',
+    is_active: true,
+    created_by: GROOMER_USER_ID,
+    created_at: daysAgo(30),
   },
 ];

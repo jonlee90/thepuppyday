@@ -306,15 +306,26 @@ export const defaultNotificationPreferences: NotificationPreferences = {
 };
 
 // Customer Flags
+export type CustomerFlagType = 'aggressive_dog' | 'payment_issues' | 'vip' | 'special_needs' | 'grooming_notes' | 'other';
+export type CustomerFlagColor = 'red' | 'yellow' | 'green';
+
 export interface CustomerFlag extends BaseEntity {
   customer_id: string;
-  reason: string;
-  notes: string | null;
-  flagged_by: string | null;
+  flag_type: CustomerFlagType;
+  description: string;
+  color: CustomerFlagColor;
   is_active: boolean;
+  created_by: string; // admin user ID
   // Joined data
   customer?: User;
-  flagged_by_user?: User;
+  created_by_user?: User;
+}
+
+export interface CreateCustomerFlagInput {
+  customer_id: string;
+  flag_type: CustomerFlagType;
+  description: string;
+  color?: CustomerFlagColor;
 }
 
 // Payments
