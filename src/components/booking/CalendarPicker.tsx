@@ -122,24 +122,24 @@ export function CalendarPicker({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-4">
-      {/* Month navigation */}
+    <div className="bg-white rounded-xl shadow-lg border border-[#434E54]/20 p-3 sm:p-4">
+      {/* Compact month navigation */}
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={handlePrevMonth}
           disabled={!canGoPrev}
           className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
-            'hover:bg-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20',
-            !canGoPrev && 'opacity-30 cursor-not-allowed hover:bg-transparent'
+            'w-8 h-8 rounded-full flex items-center justify-center text-[#434E54] hover:bg-[#EAE0D5] transition-colors',
+            !canGoPrev && 'opacity-30 cursor-not-allowed'
           )}
+          aria-label="Previous month"
         >
-          <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
 
-        <h3 className="text-lg font-semibold text-[#434E54]">
+        <h3 className="text-base sm:text-lg font-bold text-[#434E54]">
           {MONTHS[currentMonth.month]} {currentMonth.year}
         </h3>
 
@@ -147,31 +147,33 @@ export function CalendarPicker({
           onClick={handleNextMonth}
           disabled={!canGoNext}
           className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
-            'hover:bg-[#EAE0D5] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20',
-            !canGoNext && 'opacity-30 cursor-not-allowed hover:bg-transparent'
+            'w-8 h-8 rounded-full flex items-center justify-center text-[#434E54] hover:bg-[#EAE0D5] transition-colors',
+            !canGoNext && 'opacity-30 cursor-not-allowed'
           )}
+          aria-label="Next month"
         >
-          <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
 
-      {/* Day of week headers */}
+      {/* Compact day headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {DAYS_OF_WEEK.map((day) => (
           <div
             key={day}
-            className="text-center text-xs font-medium text-[#6B7280] py-2"
+            className="text-center text-[10px] sm:text-xs font-medium text-[#434E54]/60 py-1"
           >
-            {day}
+            {/* Show only first letter on very small screens */}
+            <span className="sm:hidden">{day.charAt(0)}</span>
+            <span className="hidden sm:inline">{day}</span>
           </div>
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      {/* Enhanced calendar grid with larger touch targets */}
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {calendarDays.map(({ date, dateString }, index) => {
           const disabled = isDateDisabled(dateString, date);
           const selected = dateString === selectedDate;
@@ -186,36 +188,49 @@ export function CalendarPicker({
               key={dateString}
               onClick={() => !disabled && onDateSelect(dateString!)}
               disabled={disabled}
-              whileHover={!disabled ? { scale: 1.1 } : {}}
-              whileTap={!disabled ? { scale: 0.95 } : {}}
+              whileHover={!disabled ? { scale: 1.1, y: -2 } : {}}
+              whileTap={!disabled ? { scale: 0.92 } : {}}
               className={cn(
-                'aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200',
-                'focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:ring-offset-2',
-                disabled && 'opacity-30 cursor-not-allowed text-[#6B7280]',
-                !disabled && !selected && 'hover:bg-[#EAE0D5] text-[#434E54]',
-                selected && 'bg-[#434E54] text-white shadow-md',
-                todayDate && !selected && 'ring-2 ring-[#434E54]/30 font-semibold'
+                // Larger minimum size for touch
+                'aspect-square min-h-[44px] md:min-h-[48px] flex items-center justify-center',
+                'rounded-lg text-sm font-medium transition-all duration-200',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#434E54]/50 focus-visible:ring-offset-2',
+                disabled && 'opacity-30 cursor-not-allowed text-[#434E54]/40',
+                !disabled && !selected && 'hover:bg-[#EAE0D5] hover:shadow-md text-[#434E54] active:bg-[#EAE0D5]/80',
+                selected && 'bg-[#434E54] text-white shadow-lg shadow-[#434E54]/30 font-bold md:scale-105',
+                todayDate && !selected && 'ring-2 ring-[#434E54]/40 font-semibold bg-[#434E54]/5'
               )}
+              aria-label={date.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+              aria-pressed={selected}
+              aria-disabled={disabled}
             >
-              {date.getDate()}
+              <span className="relative z-10">{date.getDate()}</span>
             </motion.button>
           );
         })}
       </div>
 
-      {/* Legend */}
-      <div className="mt-4 pt-4 border-t border-gray-200 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs text-[#6B7280]">
-        <div className="flex items-center gap-1 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-[#434E54] shadow-sm" />
-          <span>Selected</span>
-        </div>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded ring-2 ring-[#434E54]/30" />
-          <span>Today</span>
-        </div>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-gray-300 opacity-50" />
-          <span>Unavailable</span>
+      {/* Responsive legend */}
+      <div className="mt-4 pt-4 border-t border-[#434E54]/20">
+        {/* Mobile: Compact horizontal layout */}
+        <div className="flex items-center justify-center gap-4 sm:gap-6 text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-[#434E54] shadow-sm" />
+            <span className="text-[#434E54]/70">Selected</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded ring-2 ring-[#434E54]/40 bg-[#434E54]/5" />
+            <span className="text-[#434E54]/70">Today</span>
+          </div>
+          {/* Hide unavailable on very small screens */}
+          <div className="hidden xs:flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-[#EAE0D5] opacity-50" />
+            <span className="text-[#434E54]/70">Unavailable</span>
+          </div>
         </div>
       </div>
     </div>

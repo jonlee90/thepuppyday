@@ -42,86 +42,98 @@ export function GuestInfoForm({ onSubmit, initialData }: GuestInfoFormProps) {
     <form onSubmit={handleSubmit(handleFormSubmit)} id="guest-info-form" className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* First name */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">First Name *</span>
+        <div className="space-y-2">
+          <label className="block">
+            <span className="text-sm font-semibold text-[#434E54]">First Name *</span>
           </label>
           <input
             type="text"
             placeholder="John"
-            className={`input input-bordered w-full ${errors.firstName ? 'input-error' : ''}`}
+            className={`w-full px-4 py-3 rounded-lg border-2 transition-colors duration-200
+                       focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1
+                       ${errors.firstName
+                         ? 'border-[#434E54] bg-[#434E54]/5'
+                         : 'border-[#EAE0D5] hover:border-[#434E54]/40 bg-white'}`}
             {...register('firstName')}
           />
           {errors.firstName && (
-            <label className="label">
-              <span className="label-text-alt text-error">{errors.firstName.message}</span>
-            </label>
+            <p className="text-sm text-[#434E54] font-medium mt-1.5">
+              {errors.firstName.message}
+            </p>
           )}
         </div>
 
         {/* Last name */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Last Name *</span>
+        <div className="space-y-2">
+          <label className="block">
+            <span className="text-sm font-semibold text-[#434E54]">Last Name *</span>
           </label>
           <input
             type="text"
             placeholder="Doe"
-            className={`input input-bordered w-full ${errors.lastName ? 'input-error' : ''}`}
+            className={`w-full px-4 py-3 rounded-lg border-2 transition-colors duration-200
+                       focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1
+                       ${errors.lastName
+                         ? 'border-[#434E54] bg-[#434E54]/5'
+                         : 'border-[#EAE0D5] hover:border-[#434E54]/40 bg-white'}`}
             {...register('lastName')}
           />
           {errors.lastName && (
-            <label className="label">
-              <span className="label-text-alt text-error">{errors.lastName.message}</span>
-            </label>
+            <p className="text-sm text-[#434E54] font-medium mt-1.5">
+              {errors.lastName.message}
+            </p>
           )}
         </div>
       </div>
 
       {/* Email */}
-      <div className="form-control">
-        <label className="label">
-          <span className="label-text font-medium">Email *</span>
+      <div className="space-y-2">
+        <label className="block">
+          <span className="text-sm font-semibold text-[#434E54]">Email *</span>
         </label>
         <input
           type="email"
           placeholder="john@example.com"
-          className={`input input-bordered w-full ${errors.email ? 'input-error' : ''}`}
+          className={`w-full px-4 py-3 rounded-lg border-2 transition-colors duration-200
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1
+                     ${errors.email
+                       ? 'border-[#434E54] bg-[#434E54]/5'
+                       : 'border-[#EAE0D5] hover:border-[#434E54]/40 bg-white'}`}
           {...register('email')}
         />
         {errors.email && (
-          <label className="label">
-            <span className="label-text-alt text-error">{errors.email.message}</span>
-          </label>
+          <p className="text-sm text-[#434E54] font-medium mt-1.5">
+            {errors.email.message}
+          </p>
         )}
-        <label className="label">
-          <span className="label-text-alt text-base-content/50">
-            We&apos;ll send your confirmation here
-          </span>
-        </label>
+        <p className="text-xs text-[#434E54]/60 mt-1">
+          We&apos;ll send your confirmation here
+        </p>
       </div>
 
       {/* Phone */}
-      <div className="form-control">
-        <label className="label">
-          <span className="label-text font-medium">Phone *</span>
+      <div className="space-y-2">
+        <label className="block">
+          <span className="text-sm font-semibold text-[#434E54]">Phone *</span>
         </label>
         <input
           type="tel"
           placeholder="(555) 123-4567"
-          className={`input input-bordered w-full ${errors.phone ? 'input-error' : ''}`}
+          className={`w-full px-4 py-3 rounded-lg border-2 transition-colors duration-200
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1
+                     ${errors.phone
+                       ? 'border-[#434E54] bg-[#434E54]/5'
+                       : 'border-[#EAE0D5] hover:border-[#434E54]/40 bg-white'}`}
           {...register('phone')}
         />
         {errors.phone && (
-          <label className="label">
-            <span className="label-text-alt text-error">{errors.phone.message}</span>
-          </label>
+          <p className="text-sm text-[#434E54] font-medium mt-1.5">
+            {errors.phone.message}
+          </p>
         )}
-        <label className="label">
-          <span className="label-text-alt text-base-content/50">
-            For appointment reminders
-          </span>
-        </label>
+        <p className="text-xs text-[#434E54]/60 mt-1">
+          For appointment reminders
+        </p>
       </div>
     </form>
   );

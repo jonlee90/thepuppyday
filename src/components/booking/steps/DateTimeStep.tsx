@@ -80,12 +80,12 @@ export function DateTimeStep() {
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-[#434E54] mb-2">Select Date & Time</h2>
-          <p className="text-[#6B7280]">Choose when you&apos;d like to bring your pet in</p>
+          <p className="text-[#434E54]/70">Choose when you&apos;d like to bring your pet in</p>
         </div>
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
-          <div className="w-16 h-16 bg-[#EF4444]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[#434E54]/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-8 h-8 text-[#EF4444]"
+              className="w-8 h-8 text-[#434E54]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -99,11 +99,11 @@ export function DateTimeStep() {
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-[#434E54] mb-2">Failed to Load Availability</h3>
-          <p className="text-[#6B7280] mb-4">{error.message}</p>
+          <p className="text-[#434E54]/70 mb-4">{error.message}</p>
           <button
             onClick={() => window.location.reload()}
             className="bg-[#434E54] text-white font-medium py-2.5 px-5 rounded-lg
-                     hover:bg-[#363F44] transition-colors duration-200"
+                     hover:bg-[#434E54]/90 transition-colors duration-200"
           >
             Retry
           </button>
@@ -152,7 +152,7 @@ export function DateTimeStep() {
           </div>
           <h2 className="text-2xl font-bold text-[#434E54]">Select Date & Time</h2>
         </div>
-        <p className="text-[#6B7280] leading-relaxed">Pick a time that works best for you and your pup's schedule</p>
+        <p className="text-[#434E54]/70 leading-relaxed">Pick a time that works best for you and your pup's schedule</p>
       </div>
 
       {/* Selected datetime banner */}
@@ -217,7 +217,7 @@ export function DateTimeStep() {
             <div className="bg-white rounded-xl shadow-md p-6 text-center h-full flex flex-col items-center justify-center">
               <div className="w-16 h-16 bg-[#EAE0D5] rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
-                  className="w-8 h-8 text-[#6B7280]"
+                  className="w-8 h-8 text-[#434E54]/70"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -230,7 +230,7 @@ export function DateTimeStep() {
                   />
                 </svg>
               </div>
-              <p className="text-[#6B7280]">Select a date to see available times</p>
+              <p className="text-[#434E54]/70">Select a date to see available times</p>
             </div>
           ) : (
             <TimeSlotGrid
@@ -267,8 +267,8 @@ export function DateTimeStep() {
           onClick={handleContinue}
           disabled={!canContinue}
           className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                   hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
-                   disabled:bg-[#6B7280] disabled:cursor-not-allowed disabled:opacity-50
+                   hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
+                   disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
                    flex items-center gap-2"
         >
           Continue

@@ -18,9 +18,9 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
   const hasItems = serviceName !== null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-[#434E54]/20">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#EAE0D5] to-[#DCD2C7] px-6 py-4">
+      <div className="bg-[#EAE0D5] px-6 py-4">
         <h3 className="font-bold text-[#434E54] flex items-center gap-2.5">
           <svg
             className="w-5 h-5 text-[#434E54]"
@@ -42,7 +42,7 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
       {/* Content */}
       <div className="p-6 space-y-4">
         {!hasItems ? (
-          <p className="text-[#6B7280] text-sm text-center py-8">
+          <p className="text-[#434E54]/60 text-sm text-center py-8">
             Select a service to see pricing
           </p>
         ) : (
@@ -51,7 +51,7 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
             <div className="flex justify-between items-start">
               <div>
                 <p className="font-semibold text-[#434E54]">{serviceName}</p>
-                <p className="text-sm text-[#6B7280] mt-0.5">Base service</p>
+                <p className="text-sm text-[#434E54]/60 mt-0.5">Base service</p>
               </div>
               <motion.span
                 key={servicePrice}
@@ -65,8 +65,8 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
 
             {/* Add-ons */}
             {addons.length > 0 && (
-              <div className="space-y-3 pt-3 border-t border-gray-200">
-                <p className="text-sm font-semibold text-[#6B7280]">Add-ons</p>
+              <div className="space-y-3 pt-3 border-t border-[#434E54]/20">
+                <p className="text-sm font-semibold text-[#434E54]/60">Add-ons</p>
                 {addons.map((addon, index) => (
                   <motion.div
                     key={addon.name}
@@ -76,7 +76,7 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
                     transition={{ delay: index * 0.05 }}
                     className="flex justify-between items-center text-sm"
                   >
-                    <span className="text-[#6B7280]">{addon.name}</span>
+                    <span className="text-[#434E54]/60">{addon.name}</span>
                     <span className="font-semibold text-[#434E54]">{formatCurrency(addon.price)}</span>
                   </motion.div>
                 ))}
@@ -84,7 +84,7 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
             )}
 
             {/* Divider */}
-            <div className="border-t border-gray-200 pt-4 mt-4">
+            <div className="border-t border-[#434E54]/20 pt-4 mt-4">
               {/* Total */}
               <div className="flex justify-between items-center">
                 <span className="text-lg font-bold text-[#434E54]">Total</span>
@@ -103,8 +103,8 @@ export function PriceSummary({ serviceName, servicePrice, addons, total }: Price
       </div>
 
       {/* Footer note */}
-      <div className="px-6 py-4 bg-[#FFFBF7] border-t border-gray-200">
-        <p className="text-xs text-[#6B7280] text-center">
+      <div className="px-6 py-4 bg-[#EAE0D5] border-t border-[#434E54]/20">
+        <p className="text-xs text-[#434E54]/60 text-center">
           Payment collected at checkout
         </p>
       </div>

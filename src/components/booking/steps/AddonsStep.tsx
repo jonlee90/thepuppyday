@@ -52,7 +52,7 @@ export function AddonsStep() {
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-[#434E54] mb-2">Add Extra Services</h2>
-          <p className="text-[#6B7280]">Enhance your pet&apos;s grooming experience</p>
+          <p className="text-[#434E54]/70">Enhance your pet&apos;s grooming experience</p>
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -76,12 +76,12 @@ export function AddonsStep() {
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-[#434E54] mb-2">Add Extra Services</h2>
-          <p className="text-[#6B7280]">Enhance your pet&apos;s grooming experience</p>
+          <p className="text-[#434E54]/70">Enhance your pet&apos;s grooming experience</p>
         </div>
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
-          <div className="w-16 h-16 bg-[#EF4444]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[#434E54]/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-8 h-8 text-[#EF4444]"
+              className="w-8 h-8 text-[#434E54]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -95,11 +95,11 @@ export function AddonsStep() {
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-[#434E54] mb-2">Failed to Load Add-ons</h3>
-          <p className="text-[#6B7280] mb-4">{error.message}</p>
+          <p className="text-[#434E54]/70 mb-4">{error.message}</p>
           <button
             onClick={() => window.location.reload()}
             className="bg-[#434E54] text-white font-medium py-2.5 px-5 rounded-lg
-                     hover:bg-[#363F44] transition-colors duration-200"
+                     hover:bg-[#434E54]/90 transition-colors duration-200"
           >
             Retry
           </button>
@@ -127,7 +127,7 @@ export function AddonsStep() {
           <button
             onClick={handleContinue}
             className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                     hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
+                     hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
                      flex items-center gap-2"
           >
             Continue
@@ -151,13 +151,13 @@ export function AddonsStep() {
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-[#434E54] mb-2">Add Extra Services</h2>
-          <p className="text-[#6B7280]">Enhance your pet&apos;s grooming experience</p>
+          <p className="text-[#434E54]/70">Enhance your pet&apos;s grooming experience</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
           <div className="w-16 h-16 bg-[#EAE0D5] rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-8 h-8 text-[#6B7280]"
+              className="w-8 h-8 text-[#434E54]/70"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -170,7 +170,7 @@ export function AddonsStep() {
               />
             </svg>
           </div>
-          <p className="text-[#6B7280]">No additional services available at this time</p>
+          <p className="text-[#434E54]/70">No additional services available at this time</p>
         </div>
 
         {/* Navigation */}
@@ -195,7 +195,7 @@ export function AddonsStep() {
           <button
             onClick={handleContinue}
             className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                     hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
+                     hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
                      flex items-center gap-2"
           >
             Continue
@@ -233,7 +233,7 @@ export function AddonsStep() {
           </div>
           <h2 className="text-2xl font-bold text-[#434E54]">Add Extra Services</h2>
         </div>
-        <p className="text-[#6B7280] leading-relaxed">Give your pup the ultimate spa experience with these add-ons</p>
+        <p className="text-[#434E54]/70 leading-relaxed">Give your pup the ultimate spa experience with these add-ons</p>
       </div>
 
       {/* Selected add-ons summary with animation */}
@@ -283,7 +283,7 @@ export function AddonsStep() {
       {/* Upsell add-ons */}
       {upsellAddons.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-[#FFB347] flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-[#434E54] flex items-center gap-2 bg-[#434E54]/5 px-3 py-2 rounded-lg">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
@@ -312,7 +312,7 @@ export function AddonsStep() {
       {regularAddons.length > 0 && (
         <div className="space-y-3">
           {upsellAddons.length > 0 && (
-            <h3 className="text-sm font-medium text-[#6B7280]">Other add-ons</h3>
+            <h3 className="text-sm font-medium text-[#434E54]/60">Other add-ons</h3>
           )}
           <div className="space-y-3">
             {regularAddons.map((addon) => (
@@ -360,7 +360,7 @@ export function AddonsStep() {
           <button
             onClick={handleContinue}
             className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                     hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
+                     hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
                      flex items-center gap-2"
           >
             Continue

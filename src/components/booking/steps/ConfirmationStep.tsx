@@ -65,22 +65,22 @@ export function ConfirmationStep() {
       >
         {/* Subtle celebration paw prints */}
         <div className="absolute -top-4 left-1/4 opacity-[0.06]">
-          <svg className="w-12 h-12 text-[#6BCB77]" viewBox="0 0 24 24" fill="currentColor">
+          <svg className="w-12 h-12 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
           </svg>
         </div>
         <div className="absolute -top-2 right-1/4 opacity-[0.06]">
-          <svg className="w-10 h-10 text-[#6BCB77]" viewBox="0 0 24 24" fill="currentColor">
+          <svg className="w-10 h-10 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
           </svg>
         </div>
 
-        <div className="w-24 h-24 bg-[#6BCB77]/20 rounded-full flex items-center justify-center mx-auto mb-4 relative z-10">
+        <div className="w-24 h-24 bg-[#434E54]/10 rounded-full flex items-center justify-center mx-auto mb-4 relative z-10">
           <motion.svg
             initial={{ pathLength: 0 }}
             animate={{ pathLength: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-12 h-12 text-[#6BCB77]"
+            className="w-12 h-12 text-[#434E54]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -90,7 +90,7 @@ export function ConfirmationStep() {
           </motion.svg>
         </div>
         <h2 className="text-3xl font-bold text-[#434E54] mb-2">Booking Confirmed!</h2>
-        <p className="text-[#6B7280]">
+        <p className="text-[#434E54]/70">
           Your pup's spa day is all set! We've sent a confirmation to your email
         </p>
       </motion.div>
@@ -102,7 +102,7 @@ export function ConfirmationStep() {
         transition={{ delay: 0.3 }}
         className="bg-[#434E54]/10 border border-[#434E54]/30 rounded-xl p-6 text-center mb-6"
       >
-        <p className="text-sm text-[#6B7280] mb-1">Confirmation Number</p>
+        <p className="text-sm text-[#434E54]/70 mb-1">Confirmation Number</p>
         <p className="text-2xl font-mono font-bold text-[#434E54]">{referenceNumber}</p>
       </motion.div>
 
@@ -111,9 +111,9 @@ export function ConfirmationStep() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6"
+        className="bg-white rounded-xl border border-[#434E54]/20 overflow-hidden mb-6"
       >
-        <div className="p-4 bg-[#FFFBF7] border-b border-gray-200">
+        <div className="p-4 bg-[#FFFBF7] border-b border-[#434E54]/20">
           <h3 className="font-semibold text-[#434E54]">Appointment Details</h3>
         </div>
 
@@ -144,7 +144,7 @@ export function ConfirmationStep() {
                     day: 'numeric',
                   })}
               </p>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[#434E54]/70">
                 {selectedTimeSlot && formatTimeDisplay(selectedTimeSlot)}
               </p>
             </div>
@@ -169,7 +169,7 @@ export function ConfirmationStep() {
             </div>
             <div>
               <p className="font-medium text-[#434E54]">{selectedService?.name}</p>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[#434E54]/70">
                 {formatDuration(selectedService?.duration_minutes || 0)}
               </p>
             </div>
@@ -194,7 +194,7 @@ export function ConfirmationStep() {
             </div>
             <div>
               <p className="font-medium text-[#434E54]">{petName}</p>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[#434E54]/70">
                 {petSize && getSizeShortLabel(petSize)}
               </p>
             </div>
@@ -220,7 +220,7 @@ export function ConfirmationStep() {
               </div>
               <div>
                 <p className="font-medium text-[#434E54]">Add-ons</p>
-                <ul className="text-sm text-[#6B7280]">
+                <ul className="text-sm text-[#434E54]/70">
                   {selectedAddons.map((addon) => (
                     <li key={addon.id}>{addon.name}</li>
                   ))}
@@ -230,12 +230,12 @@ export function ConfirmationStep() {
           )}
 
           {/* Total */}
-          <div className="border-t border-gray-200 pt-4 mt-4">
+          <div className="border-t border-[#434E54]/20 pt-4 mt-4">
             <div className="flex justify-between items-center">
               <span className="font-medium text-[#434E54]">Total Due</span>
               <span className="text-2xl font-bold text-[#434E54]">{formatCurrency(totalPrice)}</span>
             </div>
-            <p className="text-xs text-[#6B7280] mt-1">Payment collected at checkout</p>
+            <p className="text-xs text-[#434E54]/70 mt-1">Payment collected at checkout</p>
           </div>
         </div>
       </motion.div>
@@ -245,13 +245,13 @@ export function ConfirmationStep() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="bg-white rounded-xl border border-gray-200 p-6 mb-6"
+        className="bg-white rounded-xl border border-[#434E54]/20 p-6 mb-6"
       >
         <h3 className="font-semibold text-[#434E54] mb-4">What&apos;s Next?</h3>
-        <ul className="space-y-3 text-sm text-[#6B7280]">
+        <ul className="space-y-3 text-sm text-[#434E54]/70">
           <li className="flex items-start gap-3">
             <svg
-              className="w-5 h-5 text-[#6BCB77] flex-shrink-0 mt-0.5"
+              className="w-5 h-5 text-[#434E54] flex-shrink-0 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -262,7 +262,7 @@ export function ConfirmationStep() {
           </li>
           <li className="flex items-start gap-3">
             <svg
-              className="w-5 h-5 text-[#6BCB77] flex-shrink-0 mt-0.5"
+              className="w-5 h-5 text-[#434E54] flex-shrink-0 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -273,7 +273,7 @@ export function ConfirmationStep() {
           </li>
           <li className="flex items-start gap-3">
             <svg
-              className="w-5 h-5 text-[#6BCB77] flex-shrink-0 mt-0.5"
+              className="w-5 h-5 text-[#434E54] flex-shrink-0 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -312,7 +312,7 @@ export function ConfirmationStep() {
             <Link
               href="/dashboard/appointments"
               className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg text-center
-                       hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
+                       hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
                        flex-1 flex items-center justify-center gap-2"
             >
               View My Appointments
@@ -324,7 +324,7 @@ export function ConfirmationStep() {
             <Link
               href="/register"
               className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg text-center
-                       hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
+                       hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
                        flex-1 flex items-center justify-center gap-2"
             >
               Create Account
@@ -354,12 +354,12 @@ export function ConfirmationStep() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className="mt-6 text-center text-sm text-[#6B7280]"
+          className="mt-6 text-center text-sm text-[#434E54]/70"
         >
           <p className="mb-2">
             Create an account to track your appointments, manage your pets, and book faster next time!
           </p>
-          <p className="text-xs text-[#6B7280]">
+          <p className="text-xs text-[#434E54]/70">
             Location: 14936 Leffingwell Rd, La Mirada, CA 90638 | Phone: (657) 252-2903
           </p>
         </motion.div>

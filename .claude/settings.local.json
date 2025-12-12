@@ -39,7 +39,8 @@
       "Bash(xargs kill:*)",
       "Bash(curl:*)",
       "Bash(kill:*)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "Bash(npx next build:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

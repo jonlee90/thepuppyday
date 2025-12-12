@@ -8,19 +8,20 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { petFormSchema, type PetFormData } from '@/lib/booking/validation';
-import { getSizeLabel } from '@/lib/booking/pricing';
+import { getSizeLabel, getServicePriceForSize, formatCurrency } from '@/lib/booking/pricing';
 import { getMockStore } from '@/mocks/supabase/store';
-import type { Breed, PetSize } from '@/types/database';
+import type { Breed, PetSize, ServiceWithPrices } from '@/types/database';
 
 interface PetFormProps {
   onSubmit: (data: PetFormData) => void;
   onCancel?: () => void;
   initialData?: Partial<PetFormData>;
+  selectedService?: ServiceWithPrices | null;
 }
 
 const PET_SIZES: PetSize[] = ['small', 'medium', 'large', 'xlarge'];
 
-export function PetForm({ onSubmit, onCancel, initialData }: PetFormProps) {
+export function PetForm({ onSubmit, onCancel, initialData, selectedService }: PetFormProps) {
   const [breeds, setBreeds] = useState<Breed[]>([]);
 
   const {
@@ -63,68 +64,39 @@ export function PetForm({ onSubmit, onCancel, initialData }: PetFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Pet name */}
-      <div className="form-control">
-        <label className="label">
-          <span className="label-text font-medium">Pet Name *</span>
+      <div className="space-y-2">
+        <label className="block">
+          <span className="text-sm font-semibold text-[#434E54]">Pet Name *</span>
         </label>
         <input
           type="text"
           placeholder="Enter your pet's name"
-          className={`input input-bordered w-full ${errors.name ? 'input-error' : ''}`}
+          className={`w-full px-4 py-3 rounded-lg border-2 transition-colors duration-200
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1
+                     ${errors.name
+                       ? 'border-[#434E54] bg-[#434E54]/5'
+                       : 'border-[#EAE0D5] hover:border-[#434E54]/40 bg-white'}`}
           {...register('name')}
         />
         {errors.name && (
-          <label className="label">
-            <span className="label-text-alt text-error">{errors.name.message}</span>
-          </label>
-        )}
-      </div>
-
-      {/* Pet size */}
-      <div className="form-control">
-        <label className="label">
-          <span className="label-text font-medium">Pet Size *</span>
-        </label>
-        <div className="grid grid-cols-2 gap-3">
-          {PET_SIZES.map((size) => (
-            <label
-              key={size}
-              className={`
-                flex items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-colors
-                ${
-                  selectedSize === size
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-base-300 hover:border-primary/50'
-                }
-              `}
-            >
-              <input
-                type="radio"
-                value={size}
-                className="sr-only"
-                {...register('size')}
-              />
-              <div className="text-center">
-                <span className="block font-medium">{getSizeLabel(size)}</span>
-              </div>
-            </label>
-          ))}
-        </div>
-        {errors.size && (
-          <label className="label">
-            <span className="label-text-alt text-error">{errors.size.message}</span>
-          </label>
+          <p className="text-sm text-[#434E54] font-medium mt-1.5">
+            {errors.name.message}
+          </p>
         )}
       </div>
 
       {/* Breed selection */}
-      <div className="form-control">
-        <label className="label">
-          <span className="label-text font-medium">Breed</span>
-          <span className="label-text-alt text-base-content/50">Optional</span>
+      <div className="space-y-2">
+        <label className="block">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-[#434E54]">Breed</span>
+            <span className="text-xs text-[#434E54]/60">Optional</span>
+          </div>
         </label>
         <select
-          className="select select-bordered w-full"
+          className="w-full px-4 py-3 rounded-lg border-2 border-[#EAE0D5]
+                   hover:border-[#434E54]/40 bg-white text-[#434E54] transition-colors duration-200
+                   focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1"
           {...register('breed_id')}
         >
           <option value="">Select a breed or enter custom</option>
@@ -140,17 +112,21 @@ export function PetForm({ onSubmit, onCancel, initialData }: PetFormProps) {
           <input
             type="text"
             placeholder="Or enter breed name"
-            className="input input-bordered w-full mt-2"
+            className="w-full px-4 py-3 rounded-lg border-2 border-[#EAE0D5]
+                     hover:border-[#434E54]/40 bg-white transition-colors duration-200
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1 mt-2"
             {...register('breed_custom')}
           />
         )}
       </div>
 
       {/* Weight */}
-      <div className="form-control">
-        <label className="label">
-          <span className="label-text font-medium">Weight (lbs)</span>
-          <span className="label-text-alt text-base-content/50">Optional</span>
+      <div className="space-y-2">
+        <label className="block">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-[#434E54]">Weight (lbs)</span>
+            <span className="text-xs text-[#434E54]/60">Optional</span>
+          </div>
         </label>
         <input
           type="number"
@@ -158,32 +134,88 @@ export function PetForm({ onSubmit, onCancel, initialData }: PetFormProps) {
           min="0"
           max="300"
           placeholder="Enter weight in pounds"
-          className={`input input-bordered w-full ${errors.weight ? 'input-error' : ''}`}
+          className={`w-full px-4 py-3 rounded-lg border-2 transition-colors duration-200
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1
+                     ${errors.weight
+                       ? 'border-[#434E54] bg-[#434E54]/5'
+                       : 'border-[#EAE0D5] hover:border-[#434E54]/40 bg-white'}`}
           {...register('weight', { valueAsNumber: true })}
         />
         {errors.weight && (
-          <label className="label">
-            <span className="label-text-alt text-error">{errors.weight.message}</span>
-          </label>
+          <p className="text-sm text-[#434E54] font-medium mt-1.5">
+            {errors.weight.message}
+          </p>
+        )}
+      </div>
+
+      {/* Pet size */}
+      <div className="space-y-2">
+        <label className="block">
+          <span className="text-sm font-semibold text-[#434E54]">Pet Size *</span>
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          {PET_SIZES.map((size) => {
+            const price = selectedService ? getServicePriceForSize(selectedService, size) : null;
+            return (
+              <label
+                key={size}
+                className={`
+                  flex items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200
+                  min-h-[72px] hover:scale-[1.02]
+                  ${
+                    selectedSize === size
+                      ? 'border-[#434E54] bg-[#434E54]/10 text-[#434E54] shadow-md ring-2 ring-[#434E54]/20'
+                      : 'border-[#EAE0D5] hover:border-[#434E54]/50 bg-white'
+                  }
+                `}
+              >
+                <input
+                  type="radio"
+                  value={size}
+                  className="sr-only"
+                  {...register('size')}
+                />
+                <div className="text-center">
+                  <span className="block font-semibold text-[#434E54]">{getSizeLabel(size)}</span>
+                  {price !== null && (
+                    <span className="block text-sm font-bold text-[#434E54] mt-1.5">
+                      {formatCurrency(price)}
+                    </span>
+                  )}
+                </div>
+              </label>
+            );
+          })}
+        </div>
+        {errors.size && (
+          <p className="text-sm text-[#434E54] font-medium mt-1.5">
+            {errors.size.message}
+          </p>
         )}
       </div>
 
       {/* Notes */}
-      <div className="form-control">
-        <label className="label">
-          <span className="label-text font-medium">Special Notes</span>
-          <span className="label-text-alt text-base-content/50">Optional</span>
+      <div className="space-y-2">
+        <label className="block">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-[#434E54]">Special Notes</span>
+            <span className="text-xs text-[#434E54]/60">Optional</span>
+          </div>
         </label>
         <textarea
           placeholder="Any special instructions or notes about your pet"
-          className={`textarea textarea-bordered w-full ${errors.notes ? 'textarea-error' : ''}`}
+          className={`w-full px-4 py-3 rounded-lg border-2 transition-colors duration-200 resize-none
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1
+                     ${errors.notes
+                       ? 'border-[#434E54] bg-[#434E54]/5'
+                       : 'border-[#EAE0D5] hover:border-[#434E54]/40 bg-white'}`}
           rows={3}
           {...register('notes')}
         />
         {errors.notes && (
-          <label className="label">
-            <span className="label-text-alt text-error">{errors.notes.message}</span>
-          </label>
+          <p className="text-sm text-[#434E54] font-medium mt-1.5">
+            {errors.notes.message}
+          </p>
         )}
       </div>
 
@@ -204,8 +236,8 @@ export function PetForm({ onSubmit, onCancel, initialData }: PetFormProps) {
           type="submit"
           disabled={isSubmitting}
           className={`bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                     hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
-                     disabled:bg-[#6B7280] disabled:cursor-not-allowed disabled:opacity-50
+                     hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
+                     disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
                      flex items-center justify-center gap-2 ${onCancel ? 'flex-1' : 'w-full'}`}
         >
           {isSubmitting ? (

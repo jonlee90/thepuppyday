@@ -86,7 +86,7 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="bg-base-100 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
               {isSuccess ? (
                 // Success state
                 <div className="p-8 text-center">
@@ -94,10 +94,10 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                    className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4"
+                    className="w-16 h-16 bg-[#434E54]/10 rounded-full flex items-center justify-center mx-auto mb-4"
                   >
                     <svg
-                      className="w-8 h-8 text-success"
+                      className="w-8 h-8 text-[#434E54]"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -106,10 +106,10 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </motion.div>
-                  <h3 className="text-xl font-bold text-base-content mb-2">
+                  <h3 className="text-xl font-bold text-[#434E54] mb-2">
                     You&apos;re on the Waitlist!
                   </h3>
-                  <p className="text-base-content/70">
+                  <p className="text-[#434E54]/70">
                     We&apos;ll notify you if a spot opens up.
                   </p>
                 </div>
@@ -117,12 +117,13 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                 // Form state
                 <>
                   {/* Header */}
-                  <div className="p-6 border-b border-base-300">
+                  <div className="p-6 border-b border-[#434E54]/20">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xl font-bold text-base-content">Join Waitlist</h3>
+                      <h3 className="text-xl font-bold text-[#434E54]">Join Waitlist</h3>
                       <button
                         onClick={onClose}
-                        className="btn btn-ghost btn-sm btn-circle"
+                        className="w-8 h-8 rounded-full hover:bg-[#EAE0D5] transition-colors duration-200
+                                 flex items-center justify-center text-[#434E54]"
                         aria-label="Close"
                       >
                         <svg
@@ -130,17 +131,17 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
+                          strokeWidth={2}
                         >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            strokeWidth={2}
                             d="M6 18L18 6M6 6l12 12"
                           />
                         </svg>
                       </button>
                     </div>
-                    <p className="text-base-content/70 mt-1">
+                    <p className="text-[#434E54]/70 mt-1">
                       Get notified when a slot opens up
                     </p>
                   </div>
@@ -148,27 +149,27 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                   {/* Content */}
                   <div className="p-6 space-y-6">
                     {/* Selected date display */}
-                    <div className="bg-base-200 rounded-lg p-4">
+                    <div className="bg-[#EAE0D5] rounded-lg p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-[#434E54]/10 rounded-full flex items-center justify-center">
                           <svg
-                            className="w-5 h-5 text-primary"
+                            className="w-5 h-5 text-[#434E54]"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
+                            strokeWidth={2}
                           >
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              strokeWidth={2}
                               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                             />
                           </svg>
                         </div>
                         <div>
-                          <p className="font-medium text-base-content">{formatDate(date)}</p>
+                          <p className="font-medium text-[#434E54]">{formatDate(date)}</p>
                           {time && (
-                            <p className="text-sm text-base-content/70">
+                            <p className="text-sm text-[#434E54]/70">
                               Preferred: {formatTimeDisplay(time)}
                             </p>
                           )}
@@ -178,7 +179,7 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
 
                     {/* Time preference */}
                     <div>
-                      <label className="block text-sm font-medium text-base-content mb-3">
+                      <label className="block text-sm font-semibold text-[#434E54] mb-3">
                         Preferred Time
                       </label>
                       <div className="space-y-2">
@@ -186,11 +187,11 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                           <label
                             key={pref.value}
                             className={`
-                              flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-colors
+                              flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all duration-200
                               ${
                                 timePreference === pref.value
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-base-300 hover:border-primary/50'
+                                  ? 'border-[#434E54] bg-[#434E54]/5 shadow-md'
+                                  : 'border-[#EAE0D5] hover:border-[#434E54]/50'
                               }
                             `}
                           >
@@ -201,11 +202,11 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                                 value={pref.value}
                                 checked={timePreference === pref.value}
                                 onChange={() => setTimePreference(pref.value)}
-                                className="radio radio-primary"
+                                className="w-5 h-5 text-[#434E54] border-2 border-[#EAE0D5] focus:ring-2 focus:ring-[#434E54]/50"
                               />
                               <div>
-                                <span className="font-medium text-base-content">{pref.label}</span>
-                                <span className="text-sm text-base-content/60 ml-2">
+                                <span className="font-semibold text-[#434E54]">{pref.label}</span>
+                                <span className="text-sm text-[#434E54]/60 ml-2">
                                   {pref.description}
                                 </span>
                               </div>
@@ -216,22 +217,22 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                     </div>
 
                     {/* Info note */}
-                    <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
+                    <div className="bg-[#434E54]/5 border border-[#434E54]/20 rounded-lg p-4">
                       <div className="flex gap-3">
                         <svg
-                          className="w-5 h-5 text-warning flex-shrink-0 mt-0.5"
+                          className="w-5 h-5 text-[#434E54] flex-shrink-0 mt-0.5"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
+                          strokeWidth={2}
                         >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            strokeWidth={2}
                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <p className="text-sm text-base-content/70">
+                        <p className="text-sm text-[#434E54]/70">
                           We&apos;ll email you immediately when a matching slot becomes available.
                           Waitlist spots are first-come, first-served.
                         </p>
@@ -240,33 +241,40 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                   </div>
 
                   {/* Footer */}
-                  <div className="p-6 border-t border-base-300 bg-base-200/50">
+                  <div className="p-6 border-t border-[#434E54]/20 bg-[#EAE0D5]/30">
                     <div className="flex gap-3">
-                      <button onClick={onClose} className="btn btn-ghost flex-1">
+                      <button
+                        onClick={onClose}
+                        className="text-[#434E54] font-medium py-3 px-6 rounded-lg
+                                 hover:bg-white transition-colors duration-200 flex-1"
+                      >
                         Cancel
                       </button>
                       <button
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className="btn btn-primary flex-1"
+                        className="bg-[#434E54] text-white font-semibold py-3 px-6 rounded-lg
+                                 hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
+                                 disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
+                                 flex items-center justify-center gap-2 flex-1"
                       >
                         {isSubmitting ? (
                           <>
-                            <span className="loading loading-spinner loading-sm" />
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             Joining...
                           </>
                         ) : (
                           <>
                             <svg
-                              className="w-5 h-5 mr-2"
+                              className="w-5 h-5"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
+                              strokeWidth={2}
                             >
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                strokeWidth={2}
                                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                               />
                             </svg>

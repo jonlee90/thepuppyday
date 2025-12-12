@@ -139,20 +139,7 @@ export default async function MarketingPage() {
         imageUrl={data.heroImageUrl || 'https://placedog.net/1920/1080?id=hero'}
       />
 
-      {/* Services Section - Clean & Elegant with enhanced spacing */}
-      <section id="services" className="relative py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#FFFBF7]">
-        {/* Subtle decorative element */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#434E54]/10 to-transparent"></div>
-
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <ServiceGrid services={data.services} />
-        </div>
-
-        {/* Bottom decorative element */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#434E54]/10 to-transparent"></div>
-      </section>
-
-      {/* Before/After Section - Clean & Elegant with refined styling */}
+      {/* Before/After Transformations Section */}
       {data.beforeAfterPairs.length > 0 && (
         <section className="relative py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#EAE0D5]">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -172,23 +159,20 @@ export default async function MarketingPage() {
         </section>
       )}
 
-      {/* About Section with smooth transition */}
-      <div className="relative bg-gradient-to-b from-[#EAE0D5] to-[#FFFBF7]">
-        <AboutSection
-          title={data.aboutTitle || 'About Puppy Day'}
-          description={data.aboutDescription || 'At Puppy Day, we provide professional grooming services that promote your dog\'s health, comfort, and happiness. We use gentle techniques and premium hypoallergenic products suitable for sensitive skin. Our day care offers a safe, social experience with supervised playtime.'}
-          differentiators={data.aboutDifferentiators.length > 0 ? data.aboutDifferentiators : [
-            'Gentle techniques and premium hypoallergenic products',
-            'Safe, supervised daycare environment',
-            'Experienced and caring staff',
-            'Health-focused grooming services',
-            'Social playtime for dogs',
-            'Comfortable and clean facilities'
-          ]}
-        />
-      </div>
+      {/* Services Section */}
+      <section id="services" className="relative py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#FFFBF7]">
+        {/* Subtle decorative element */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#434E54]/10 to-transparent"></div>
 
-      {/* Gallery Section - Clean & Elegant with enhanced presentation */}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <ServiceGrid services={data.services} />
+        </div>
+
+        {/* Bottom decorative element */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#434E54]/10 to-transparent"></div>
+      </section>
+
+      {/* Gallery Section */}
       {data.galleryImages.length > 0 && (
         <section id="gallery" className="relative py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#F8EEE5]">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -208,16 +192,7 @@ export default async function MarketingPage() {
         </section>
       )}
 
-      {/* Contact Section with refined background */}
-      <div className="relative bg-gradient-to-b from-[#F8EEE5] to-[#EAE0D5]">
-        <ContactSection
-          phone="(657) 252-2903"
-          email="puppyday14936@gmail.com"
-          address="14936 Leffingwell Rd, La Mirada, CA 90638"
-        />
-      </div>
-
-      {/* Booking Widget Section - Embedded booking experience */}
+      {/* Booking Widget Section */}
       <section id="book" className="relative py-20 md:py-32 bg-gradient-to-b from-[#FFFBF7] via-[#F8EEE5] to-[#FFFBF7] overflow-hidden">
         {/* Decorative background elements */}
         <div className="absolute top-20 right-10 w-80 h-80 bg-[#434E54]/5 rounded-full blur-3xl"></div>
@@ -228,11 +203,11 @@ export default async function MarketingPage() {
             {/* Section Header */}
             <div className="text-center mb-12 md:mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-[#434E54] mb-4">
-                Book Your Pup's Spa Day
+                Book Appointment
               </h2>
               <div className="h-1 w-24 bg-gradient-to-r from-[#434E54] to-[#434E54]/30 rounded-full mx-auto mb-6"></div>
               <p className="text-lg md:text-xl text-[#6B7280] max-w-3xl mx-auto leading-relaxed">
-                Ready to treat your furry friend? Book an appointment in minutes and give them the grooming experience they deserve
+                Book an appointment in minutes and give them the grooming experience they deserve
               </p>
             </div>
 
@@ -253,6 +228,31 @@ export default async function MarketingPage() {
           </svg>
         </div>
       </section>
+
+      {/* About Section */}
+      <div className="relative bg-gradient-to-b from-[#EAE0D5] to-[#FFFBF7]">
+        <AboutSection
+          title={data.aboutTitle || 'About Puppy Day'}
+          description={data.aboutDescription || 'At Puppy Day, we provide professional grooming services that promote your dog\'s health, comfort, and happiness. We use gentle techniques and premium hypoallergenic products suitable for sensitive skin. Our day care offers a safe, social experience with supervised playtime.'}
+          differentiators={data.aboutDifferentiators.length > 0 ? data.aboutDifferentiators : [
+            'Gentle techniques and premium hypoallergenic products',
+            'Safe, supervised daycare environment',
+            'Experienced and caring staff',
+            'Health-focused grooming services',
+            'Social playtime for dogs',
+            'Comfortable and clean facilities'
+          ]}
+        />
+      </div>
+
+      {/* Contact Section */}
+      <div className="relative bg-gradient-to-b from-[#F8EEE5] to-[#EAE0D5]">
+        <ContactSection
+          phone="(657) 252-2903"
+          email="puppyday14936@gmail.com"
+          address="14936 Leffingwell Rd, La Mirada, CA 90638"
+        />
+      </div>
 
       {/* Structured Data for SEO */}
       <script

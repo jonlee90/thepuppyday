@@ -21,6 +21,7 @@ export function PetStep() {
   const {
     selectedPetId,
     newPetData,
+    selectedService,
     selectPet,
     setNewPetData,
     nextStep,
@@ -93,7 +94,7 @@ export function PetStep() {
             </div>
             <h2 className="text-2xl font-bold text-[#434E54]">Select Your Pet</h2>
           </div>
-          <p className="text-[#6B7280] leading-relaxed">Tell us which furry family member we'll be pampering today</p>
+          <p className="text-[#434E54]/70 leading-relaxed">Tell us which furry family member we'll be pampering today</p>
         </div>
 
         <div className="space-y-4">
@@ -133,13 +134,13 @@ export function PetStep() {
             </div>
             <h2 className="text-2xl font-bold text-[#434E54]">Select Your Pet</h2>
           </div>
-          <p className="text-[#6B7280] leading-relaxed">Tell us which furry family member we'll be pampering today</p>
+          <p className="text-[#434E54]/70 leading-relaxed">Tell us which furry family member we'll be pampering today</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
-          <div className="w-16 h-16 bg-[#EF4444]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[#434E54]/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-8 h-8 text-[#EF4444]"
+              className="w-8 h-8 text-[#434E54]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -153,11 +154,11 @@ export function PetStep() {
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-[#434E54] mb-2">Failed to Load Pets</h3>
-          <p className="text-[#6B7280] mb-4">{error.message}</p>
+          <p className="text-[#434E54]/70 mb-4">{error.message}</p>
           <button
             onClick={() => refetch()}
             className="bg-[#434E54] text-white font-medium py-2.5 px-5 rounded-lg
-                     hover:bg-[#363F44] transition-colors duration-200"
+                     hover:bg-[#434E54]/90 transition-colors duration-200"
           >
             Retry
           </button>
@@ -210,7 +211,7 @@ export function PetStep() {
               {isAuthenticated ? 'Add New Pet' : 'Tell Us About Your Pet'}
             </h2>
           </div>
-          <p className="text-[#6B7280] leading-relaxed">
+          <p className="text-[#434E54]/70 leading-relaxed">
             {isAuthenticated
               ? 'Enter your pet\'s information so we can provide the best care'
               : 'We need some details about your furry friend to personalize their grooming experience'}
@@ -222,6 +223,7 @@ export function PetStep() {
             onSubmit={handleFormSubmit}
             onCancel={pets.length > 0 ? handleFormCancel : undefined}
             initialData={newPetData || undefined}
+            selectedService={selectedService}
           />
         </div>
 
@@ -274,12 +276,12 @@ export function PetStep() {
 
       {/* New pet info banner */}
       {newPetData && (
-        <div className="bg-[#6BCB77]/10 border border-[#6BCB77]/30 rounded-lg p-4">
+        <div className="bg-[#434E54]/10 border border-[#434E54]/30 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#6BCB77]/20 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-[#434E54]/20 rounded-full flex items-center justify-center">
                 <svg
-                  className="w-5 h-5 text-[#6BCB77]"
+                  className="w-5 h-5 text-[#434E54]"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -289,8 +291,8 @@ export function PetStep() {
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-[#6BCB77]">New pet: {newPetData.name}</p>
-                <p className="text-sm text-[#6B7280]">
+                <p className="font-medium text-[#434E54]">New pet: {newPetData.name}</p>
+                <p className="text-sm text-[#434E54]/70">
                   This pet will be created when you confirm your booking
                 </p>
               </div>
@@ -342,8 +344,8 @@ export function PetStep() {
           onClick={handleContinue}
           disabled={!canContinue}
           className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                   hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
-                   disabled:bg-[#6B7280] disabled:cursor-not-allowed disabled:opacity-50
+                   hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
+                   disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
                    flex items-center gap-2"
         >
           Continue

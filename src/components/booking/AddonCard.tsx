@@ -26,7 +26,7 @@ export function AddonCard({ addon, isSelected, isUpsell = false, onToggle }: Add
         'w-full text-left bg-white rounded-xl overflow-hidden transition-all duration-200',
         'focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:ring-offset-2',
         isSelected ? 'shadow-lg ring-2 ring-[#434E54]' : 'shadow-md hover:shadow-lg',
-        isUpsell && !isSelected && 'ring-2 ring-[#FFB347]/40'
+        isUpsell && !isSelected && 'ring-2 ring-[#434E54]/40'
       )}
     >
       <div className="p-5 flex items-start gap-4">
@@ -36,7 +36,7 @@ export function AddonCard({ addon, isSelected, isUpsell = false, onToggle }: Add
             'w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors shadow-sm',
             isSelected
               ? 'bg-[#434E54] border-[#434E54]'
-              : 'border-gray-300 bg-white'
+              : 'border-[#EAE0D5] bg-white'
           )}
         >
           {isSelected && (
@@ -60,7 +60,7 @@ export function AddonCard({ addon, isSelected, isUpsell = false, onToggle }: Add
             <div>
               <h3 className="font-bold text-[#434E54]">{addon.name}</h3>
               {isUpsell && !isSelected && (
-                <span className="inline-block bg-[#FFB347]/20 text-[#FFB347] text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1.5">
+                <span className="inline-block bg-[#434E54]/20 text-[#434E54] text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1.5">
                   Recommended
                 </span>
               )}
@@ -71,11 +71,11 @@ export function AddonCard({ addon, isSelected, isUpsell = false, onToggle }: Add
           </div>
 
           {addon.description && (
-            <p className="text-sm text-[#6B7280] mt-2 leading-relaxed">{addon.description}</p>
+            <p className="text-sm text-[#434E54]/60 mt-2 leading-relaxed">{addon.description}</p>
           )}
 
           {isUpsell && addon.upsell_prompt && !isSelected && (
-            <p className="text-sm text-[#FFB347] mt-3 flex items-center gap-1.5 font-medium">
+            <p className="text-sm text-[#434E54] mt-3 flex items-center gap-1.5 font-medium">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path
                   strokeLinecap="round"

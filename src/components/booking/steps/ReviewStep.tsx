@@ -95,18 +95,18 @@ export function ReviewStep() {
           </div>
           <h2 className="text-2xl font-bold text-[#434E54]">Review Your Booking</h2>
         </div>
-        <p className="text-[#6B7280] leading-relaxed">Double-check everything looks perfect for your pup's visit</p>
+        <p className="text-[#434E54]/70 leading-relaxed">Double-check everything looks perfect for your pup's visit</p>
       </div>
 
       {/* Booking summary */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#434E54]/20 overflow-hidden">
         {/* Service */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-[#434E54]/20">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-[#6B7280]">Service</p>
+              <p className="text-sm text-[#434E54]/70">Service</p>
               <p className="font-semibold text-[#434E54]">{selectedService?.name}</p>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[#434E54]/70">
                 {formatDuration(selectedService?.duration_minutes || 0)}
               </p>
             </div>
@@ -121,12 +121,12 @@ export function ReviewStep() {
         </div>
 
         {/* Pet */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-[#434E54]/20">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-[#6B7280]">Pet</p>
+              <p className="text-sm text-[#434E54]/70">Pet</p>
               <p className="font-semibold text-[#434E54]">{petName}</p>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[#434E54]/70">
                 {petSize ? getSizeShortLabel(petSize) : ''}
                 {(selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom) && (
                   <> • {selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom}</>
@@ -144,10 +144,10 @@ export function ReviewStep() {
         </div>
 
         {/* Date & Time */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-[#434E54]/20">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-[#6B7280]">Date & Time</p>
+              <p className="text-sm text-[#434E54]/70">Date & Time</p>
               <p className="font-semibold text-[#434E54]">
                 {selectedDate &&
                   new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
@@ -157,7 +157,7 @@ export function ReviewStep() {
                     year: 'numeric',
                   })}
               </p>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[#434E54]/70">
                 {selectedTimeSlot && formatTimeDisplay(selectedTimeSlot)}
               </p>
             </div>
@@ -173,14 +173,14 @@ export function ReviewStep() {
 
         {/* Add-ons */}
         {selectedAddons.length > 0 && (
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-[#434E54]/20">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-[#6B7280]">Add-ons</p>
+                <p className="text-sm text-[#434E54]/70">Add-ons</p>
                 <ul className="mt-1 space-y-1">
                   {selectedAddons.map((addon) => (
                     <li key={addon.id} className="text-sm text-[#434E54]">
-                      {addon.name} <span className="text-[#6B7280]">+{formatCurrency(addon.price)}</span>
+                      {addon.name} <span className="text-[#434E54]/70">+{formatCurrency(addon.price)}</span>
                     </li>
                   ))}
                 </ul>
@@ -200,16 +200,16 @@ export function ReviewStep() {
         <div className="p-4 bg-[#FFFBF7]">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-[#6B7280]">{selectedService?.name}</span>
+              <span className="text-[#434E54]/70">{selectedService?.name}</span>
               <span className="text-[#434E54]">{formatCurrency(servicePrice)}</span>
             </div>
             {selectedAddons.map((addon) => (
               <div key={addon.id} className="flex justify-between text-sm">
-                <span className="text-[#6B7280]">{addon.name}</span>
+                <span className="text-[#434E54]/70">{addon.name}</span>
                 <span className="text-[#434E54]">{formatCurrency(addon.price)}</span>
               </div>
             ))}
-            <div className="border-t border-gray-200 pt-2 mt-2">
+            <div className="border-t border-[#434E54]/20 pt-2 mt-2">
               <div className="flex justify-between">
                 <span className="font-semibold text-[#434E54]">Total</span>
                 <span className="text-xl font-bold text-[#434E54]">{formatCurrency(totalPrice)}</span>
@@ -221,7 +221,7 @@ export function ReviewStep() {
 
       {/* Guest info form */}
       {!isAuthenticated && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-xl border border-[#434E54]/20 p-6">
           <h3 className="font-semibold text-[#434E54] mb-4 flex items-center gap-2">
             <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -239,8 +239,8 @@ export function ReviewStep() {
               <p className="text-[#434E54]">
                 <span className="font-medium">{guestInfo.firstName} {guestInfo.lastName}</span>
               </p>
-              <p className="text-sm text-[#6B7280]">{guestInfo.email}</p>
-              <p className="text-sm text-[#6B7280]">{guestInfo.phone}</p>
+              <p className="text-sm text-[#434E54]/70">{guestInfo.email}</p>
+              <p className="text-sm text-[#434E54]/70">{guestInfo.phone}</p>
               <button
                 onClick={() => {
                   setGuestInfo(null as unknown as GuestInfo);
@@ -260,7 +260,7 @@ export function ReviewStep() {
 
       {/* Authenticated user info */}
       {isAuthenticated && user && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-xl border border-[#434E54]/20 p-6">
           <h3 className="font-semibold text-[#434E54] mb-4 flex items-center gap-2">
             <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -276,17 +276,17 @@ export function ReviewStep() {
             <p className="text-[#434E54]">
               <span className="font-medium">{user.first_name} {user.last_name}</span>
             </p>
-            <p className="text-sm text-[#6B7280]">{user.email}</p>
-            {user.phone && <p className="text-sm text-[#6B7280]">{user.phone}</p>}
+            <p className="text-sm text-[#434E54]/70">{user.email}</p>
+            {user.phone && <p className="text-sm text-[#434E54]/70">{user.phone}</p>}
           </div>
         </div>
       )}
 
       {/* Error display */}
       {bookingError && (
-        <div className="bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg p-4">
+        <div className="bg-[#434E54]/10 border border-[#434E54]/30 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <div className="w-5 h-5 text-[#EF4444] flex-shrink-0 mt-0.5">
+            <div className="w-5 h-5 text-[#434E54] flex-shrink-0 mt-0.5">
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path
                   strokeLinecap="round"
@@ -296,12 +296,12 @@ export function ReviewStep() {
               </svg>
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-[#EF4444] mb-1">Booking Error</h4>
-              <p className="text-sm text-[#EF4444]">{bookingError}</p>
+              <h4 className="font-semibold text-[#434E54] mb-1">Booking Error</h4>
+              <p className="text-sm text-[#434E54]">{bookingError}</p>
             </div>
             <button
               onClick={() => setBookingError(null)}
-              className="text-[#EF4444] hover:text-[#DC2626] p-1"
+              className="text-[#434E54] hover:text-[#434E54]/80 p-1"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -334,8 +334,8 @@ export function ReviewStep() {
           onClick={handleConfirm}
           disabled={!canConfirm && !isAuthenticated || isSubmitting}
           className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                   hover:bg-[#363F44] transition-all duration-200 shadow-md hover:shadow-lg
-                   disabled:bg-[#6B7280] disabled:cursor-not-allowed disabled:opacity-50
+                   hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
+                   disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
                    flex items-center gap-2"
         >
           {isSubmitting ? (
