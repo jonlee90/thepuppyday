@@ -140,6 +140,8 @@ export interface Appointment extends BaseEntity {
   payment_status: PaymentStatus;
   total_price: number;
   notes: string | null;
+  admin_notes: string | null;
+  cancellation_reason: string | null;
   updated_at: string;
   // Joined data
   customer?: User;

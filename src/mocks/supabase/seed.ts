@@ -19,6 +19,8 @@ import type {
   LoyaltyPunch,
   LoyaltyRedemption,
   ReportCard,
+  Payment,
+  NotificationLog,
 } from '@/types/database';
 import { generateId } from '@/lib/utils';
 
@@ -290,8 +292,102 @@ const createAppointmentDate = (daysFromNow: number, hour: number, minute: number
   return date.toISOString();
 };
 
+// Helper to create today's appointment date at specific time
+const createTodayAppointment = (hour: number, minute: number = 0): string => {
+  const date = new Date();
+  date.setHours(hour, minute, 0, 0);
+  return date.toISOString();
+};
+
 // Sample appointments for testing slot blocking
 export const seedAppointments: Appointment[] = [
+  // TODAY'S APPOINTMENTS for dashboard testing
+  {
+    id: generateId(),
+    customer_id: seedUsers[2].id, // Demo Customer
+    pet_id: generateId(), // Mock pet ID
+    service_id: seedServices[0].id, // Basic Groom
+    groomer_id: seedUsers[1].id, // Jessica Martinez
+    scheduled_at: createTodayAppointment(9, 0), // Today at 9:00 AM
+    duration_minutes: 60,
+    status: 'completed' as const,
+    payment_status: 'paid' as const,
+    total_price: 55,
+    notes: 'Early morning appointment - completed',
+    admin_notes: null,
+    cancellation_reason: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[3].id, // Sarah Johnson
+    pet_id: seedPets[0].id, // Buddy
+    service_id: seedServices[1].id, // Premium Groom
+    groomer_id: seedUsers[1].id,
+    scheduled_at: createTodayAppointment(10, 30), // Today at 10:30 AM
+    duration_minutes: 90,
+    status: 'in_progress' as const,
+    payment_status: 'pending' as const,
+    total_price: 120,
+    notes: 'Regular customer - knows the routine',
+    admin_notes: null,
+    cancellation_reason: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[2].id,
+    pet_id: generateId(),
+    service_id: seedServices[0].id,
+    groomer_id: null,
+    scheduled_at: createTodayAppointment(13, 0), // Today at 1:00 PM
+    duration_minutes: 60,
+    status: 'confirmed' as const,
+    payment_status: 'pending' as const,
+    total_price: 70,
+    notes: 'Large breed - allow extra time',
+    admin_notes: null,
+    cancellation_reason: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[3].id, // Sarah Johnson
+    pet_id: seedPets[1].id, // Bella
+    service_id: seedServices[0].id, // Basic Groom
+    groomer_id: null,
+    scheduled_at: createTodayAppointment(14, 30), // Today at 2:30 PM
+    duration_minutes: 60,
+    status: 'pending' as const,
+    payment_status: 'pending' as const,
+    total_price: 40,
+    notes: 'Bella gets nervous - extra patience needed',
+    admin_notes: null,
+    cancellation_reason: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[2].id,
+    pet_id: generateId(),
+    service_id: seedServices[1].id,
+    groomer_id: null,
+    scheduled_at: createTodayAppointment(16, 0), // Today at 4:00 PM
+    duration_minutes: 90,
+    status: 'confirmed' as const,
+    payment_status: 'pending' as const,
+    total_price: 95,
+    notes: null,
+    admin_notes: null,
+    cancellation_reason: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  // FUTURE APPOINTMENTS
   {
     id: generateId(),
     customer_id: seedUsers[2].id, // Demo Customer
@@ -304,6 +400,8 @@ export const seedAppointments: Appointment[] = [
     payment_status: 'pending' as const,
     total_price: 55,
     notes: 'First time customer',
+    admin_notes: null,
+    cancellation_reason: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -319,6 +417,8 @@ export const seedAppointments: Appointment[] = [
     payment_status: 'pending' as const,
     total_price: 120,
     notes: 'Regular customer - knows the routine',
+    admin_notes: null,
+    cancellation_reason: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -334,6 +434,8 @@ export const seedAppointments: Appointment[] = [
     payment_status: 'pending' as const,
     total_price: 40,
     notes: 'Bella gets nervous - extra patience needed',
+    admin_notes: null,
+    cancellation_reason: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -727,5 +829,183 @@ export const seedReportCards: ReportCard[] = [
     rating: 4,
     feedback: 'Great job with the tangles!',
     created_at: daysAgo(7),
+  },
+];
+
+// Helper to create timestamp for minutes ago
+const minutesAgo = (minutes: number): string => {
+  const date = new Date();
+  date.setMinutes(date.getMinutes() - minutes);
+  return date.toISOString();
+};
+
+// Payments - Today's completed payments
+export const seedPayments: Payment[] = [
+  {
+    id: generateId(),
+    appointment_id: seedAppointments[0]?.id || null, // Today's 9AM completed appointment
+    customer_id: seedUsers[2].id,
+    stripe_payment_intent_id: 'pi_mock_' + generateId(),
+    amount: 55,
+    tip_amount: 10,
+    status: 'succeeded',
+    payment_method: 'card',
+    created_at: createTodayAppointment(9, 45),
+  },
+  {
+    id: generateId(),
+    appointment_id: generateId(),
+    customer_id: seedUsers[3].id,
+    stripe_payment_intent_id: 'pi_mock_' + generateId(),
+    amount: 120,
+    tip_amount: 25,
+    status: 'succeeded',
+    payment_method: 'card',
+    created_at: daysAgo(1),
+  },
+  {
+    id: generateId(),
+    appointment_id: generateId(),
+    customer_id: seedUsers[2].id,
+    stripe_payment_intent_id: 'pi_mock_' + generateId(),
+    amount: 70,
+    tip_amount: 15,
+    status: 'succeeded',
+    payment_method: 'card',
+    created_at: daysAgo(3),
+  },
+];
+
+// Notifications Log - Recent activity for dashboard feed
+export const seedNotificationsLog: NotificationLog[] = [
+  {
+    id: generateId(),
+    customer_id: seedUsers[3].id,
+    type: 'appointment_booked',
+    channel: 'email',
+    recipient: 'sarah@example.com',
+    subject: 'Appointment Confirmed',
+    content: 'Your appointment for Bella on ' + new Date().toLocaleDateString() + ' at 2:30 PM has been confirmed.',
+    status: 'sent',
+    error_message: null,
+    sent_at: minutesAgo(45),
+    created_at: minutesAgo(45),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[2].id,
+    type: 'appointment_completed',
+    channel: 'email',
+    recipient: 'demo@example.com',
+    subject: 'Appointment Completed',
+    content: 'Your grooming appointment has been completed. View your report card!',
+    status: 'sent',
+    error_message: null,
+    sent_at: minutesAgo(120),
+    created_at: minutesAgo(120),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[3].id,
+    type: 'appointment_reminder',
+    channel: 'sms',
+    recipient: '+15551112233',
+    subject: null,
+    content: 'Reminder: Buddy\'s grooming appointment is tomorrow at 10:30 AM',
+    status: 'sent',
+    error_message: null,
+    sent_at: minutesAgo(180),
+    created_at: minutesAgo(180),
+  },
+  {
+    id: generateId(),
+    customer_id: null,
+    type: 'user_registered',
+    channel: 'email',
+    recipient: 'newuser@example.com',
+    subject: 'Welcome to The Puppy Day',
+    content: 'Thank you for registering!',
+    status: 'sent',
+    error_message: null,
+    sent_at: minutesAgo(240),
+    created_at: minutesAgo(240),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[2].id,
+    type: 'payment_received',
+    channel: 'email',
+    recipient: 'demo@example.com',
+    subject: 'Payment Confirmation',
+    content: 'We\'ve received your payment of $65.00. Thank you!',
+    status: 'sent',
+    error_message: null,
+    sent_at: minutesAgo(300),
+    created_at: minutesAgo(300),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[3].id,
+    type: 'appointment_cancelled',
+    channel: 'email',
+    recipient: 'sarah@example.com',
+    subject: 'Appointment Cancelled',
+    content: 'Your appointment has been cancelled as requested.',
+    status: 'sent',
+    error_message: null,
+    sent_at: minutesAgo(480),
+    created_at: minutesAgo(480),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[2].id,
+    type: 'appointment_confirmed',
+    channel: 'email',
+    recipient: 'demo@example.com',
+    subject: 'Appointment Confirmed',
+    content: 'Your appointment has been confirmed by our staff.',
+    status: 'sent',
+    error_message: null,
+    sent_at: minutesAgo(600),
+    created_at: minutesAgo(600),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[3].id,
+    type: 'report_card_ready',
+    channel: 'email',
+    recipient: 'sarah@example.com',
+    subject: 'Report Card Ready',
+    content: 'Buddy\'s grooming report card is now available!',
+    status: 'sent',
+    error_message: null,
+    sent_at: minutesAgo(720),
+    created_at: minutesAgo(720),
+  },
+  {
+    id: generateId(),
+    customer_id: seedUsers[2].id,
+    type: 'appointment_booked',
+    channel: 'sms',
+    recipient: '+15559876543',
+    subject: null,
+    content: 'Your appointment for today at 1:00 PM has been booked.',
+    status: 'sent',
+    error_message: null,
+    sent_at: minutesAgo(840),
+    created_at: minutesAgo(840),
+  },
+  {
+    id: generateId(),
+    customer_id: null,
+    type: 'promotional',
+    channel: 'email',
+    recipient: 'newsletter@example.com',
+    subject: 'Special Offer This Week',
+    content: '10% off your next grooming service!',
+    status: 'sent',
+    error_message: null,
+    sent_at: minutesAgo(1200),
+    created_at: minutesAgo(1200),
   },
 ];

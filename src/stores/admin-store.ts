@@ -35,6 +35,9 @@ interface AdminState {
   // Active filters
   appointmentFilters: AppointmentFilters;
 
+  // Appointments view preference
+  appointmentsView: 'calendar' | 'list';
+
   // Toast notifications
   toasts: Toast[];
 
@@ -44,6 +47,7 @@ interface AdminState {
   setDateRange: (range: DateRange) => void;
   setAppointmentFilters: (filters: AppointmentFilters) => void;
   clearAppointmentFilters: () => void;
+  setAppointmentsView: (view: 'calendar' | 'list') => void;
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   clearToasts: () => void;
@@ -59,6 +63,7 @@ export const useAdminStore = create<AdminState>()(
         to: null,
       },
       appointmentFilters: {},
+      appointmentsView: 'calendar',
       toasts: [],
 
       // Sidebar actions
@@ -78,6 +83,10 @@ export const useAdminStore = create<AdminState>()(
 
       clearAppointmentFilters: () =>
         set({ appointmentFilters: {} }),
+
+      // Appointments view actions
+      setAppointmentsView: (view) =>
+        set({ appointmentsView: view }),
 
       // Toast actions
       addToast: (toast) =>
@@ -105,6 +114,7 @@ export const useAdminStore = create<AdminState>()(
         isSidebarCollapsed: state.isSidebarCollapsed,
         selectedDateRange: state.selectedDateRange,
         appointmentFilters: state.appointmentFilters,
+        appointmentsView: state.appointmentsView,
       }),
     }
   )
