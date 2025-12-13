@@ -22,7 +22,7 @@ export interface UseAuthReturn {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; user: User | null }>;
   signUp: (data: SignUpData) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
@@ -161,7 +161,7 @@ export function useAuth(): UseAuthReturn {
   }, []); // Run only once on mount
 
   const signIn = useCallback(
-    async (email: string, password: string): Promise<{ error: Error | null }> => {
+    async (email: string, password: string): Promise<{ error: Error | null; user: User | null }> => {
       const supabase = createClient();
 
       try {
@@ -188,7 +188,7 @@ export function useAuth(): UseAuthReturn {
 
         if (error) {
           console.error('[Auth] Sign in error:', error);
-          return { error };
+          return { error, user: null };
         }
 
         console.log('[Auth] Sign in successful, user:', data.user?.id);
@@ -206,19 +206,20 @@ export function useAuth(): UseAuthReturn {
 
           if (userData) {
             setUser(userData as User);
-            console.log('[Auth] User set in store');
+            console.log('[Auth] User set in store, role:', userData.role);
+            return { error: null, user: userData as User };
           } else if (userError) {
             console.error('[Auth] Failed to fetch user data:', userError);
             // Sign out if we can't get user data
             await supabase.auth.signOut();
-            return { error: new Error('Failed to fetch user profile') };
+            return { error: new Error('Failed to fetch user profile'), user: null };
           }
         }
 
-        return { error: null };
+        return { error: null, user: null };
       } catch (error) {
         console.error('[Auth] Unexpected error:', error);
-        return { error: error as Error };
+        return { error: error as Error, user: null };
       }
     },
     [setUser]

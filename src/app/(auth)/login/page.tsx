@@ -44,13 +44,27 @@ function LoginForm() {
       return;
     }
 
-    console.log('[Login] Sign in successful, redirecting to:', returnTo);
+    console.log('[Login] Sign in successful, user:', result.user?.email);
 
     // Wait a moment for the auth state to be set in the store
     await new Promise(resolve => setTimeout(resolve, 100));
 
+    // Determine redirect based on user role
+    let redirectTo = returnTo;
+
+    // If user is admin/groomer and no specific returnTo was set, go to admin dashboard
+    if (result.user?.role === 'admin' || result.user?.role === 'groomer') {
+      // If default returnTo (/dashboard), redirect to admin dashboard instead
+      if (returnTo === '/dashboard') {
+        redirectTo = '/admin/dashboard';
+      }
+      console.log('[Login] Admin/staff user, redirecting to:', redirectTo);
+    } else {
+      console.log('[Login] Customer user, redirecting to:', redirectTo);
+    }
+
     // Use router.push for client-side navigation (middleware will handle session)
-    router.push(returnTo);
+    router.push(redirectTo);
   };
 
   return (

@@ -110,9 +110,13 @@ function SortableImageCard({ image, onClick }: SortableImageCardProps) {
   );
 }
 
-export function GalleryGrid() {
-  const [images, setImages] = useState<GalleryImageWithBreed[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface GalleryGridProps {
+  initialImages?: GalleryImageWithBreed[];
+}
+
+export function GalleryGrid({ initialImages = [] }: GalleryGridProps) {
+  const [images, setImages] = useState<GalleryImageWithBreed[]>(initialImages);
+  const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState<FilterType>('all');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editImageId, setEditImageId] = useState<string | null>(null);
@@ -124,8 +128,11 @@ export function GalleryGrid() {
     })
   );
 
+  // Only fetch when filter changes from default
   useEffect(() => {
-    fetchImages();
+    if (filter !== 'all') {
+      fetchImages();
+    }
   }, [filter]);
 
   const fetchImages = async () => {

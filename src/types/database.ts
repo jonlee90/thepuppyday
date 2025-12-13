@@ -102,15 +102,16 @@ export interface Service extends BaseEntity {
   duration_minutes: number;
   is_active: boolean;
   display_order: number;
+  updated_at: string;
   // Joined data
   prices?: ServicePrice[];
 }
 
-export interface ServicePrice {
-  id: string;
+export interface ServicePrice extends BaseEntity {
   service_id: string;
   size: PetSize;
   price: number;
+  updated_at: string;
 }
 
 export interface ServiceWithPrices extends Service {

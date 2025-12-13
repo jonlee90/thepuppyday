@@ -186,9 +186,13 @@ function SortableServiceRow({
   );
 }
 
-export function ServicesList() {
-  const [services, setServices] = useState<ServiceWithPrices[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface ServicesListProps {
+  initialServices?: ServiceWithPrices[];
+}
+
+export function ServicesList({ initialServices = [] }: ServicesListProps) {
+  const [services, setServices] = useState<ServiceWithPrices[]>(initialServices);
+  const [isLoading, setIsLoading] = useState(false);
   const [editingService, setEditingService] = useState<ServiceWithPrices | null>(
     null
   );
@@ -201,9 +205,10 @@ export function ServicesList() {
     })
   );
 
+  // Update services when initialServices prop changes
   useEffect(() => {
-    fetchServices();
-  }, []);
+    setServices(initialServices);
+  }, [initialServices]);
 
   const fetchServices = async () => {
     try {

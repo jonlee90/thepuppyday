@@ -1,10 +1,9 @@
 /**
  * Admin Panel Layout
- * Server Component that verifies authentication and role (admin/staff)
- * Redirects unauthorized users appropriately
+ * Server Component that fetches user data for admin/staff users
+ * Authentication is enforced by middleware.ts
  */
 
-import { redirect } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
 import { Toaster } from '@/components/ui/toaster';
@@ -16,19 +15,29 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Server-side authentication check
+  // Fetch authenticated admin user
+  // Middleware guarantees user is authenticated and has admin/staff role
   const supabase = await createServerSupabaseClient();
   const result = await getAuthenticatedAdmin(supabase);
 
-  // Redirect if not authenticated or not admin/staff
+  // This should never happen because middleware blocks unauthorized access
+  // But we need to handle it gracefully to avoid runtime errors
   if (!result) {
-    redirect('/login?returnTo=/admin/dashboard');
+    return (
+      <div className="min-h-screen bg-[#F8EEE5] flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-[#434E54] mb-2">Unauthorized</h1>
+          <p className="text-[#6B7280]">You do not have permission to access this page.</p>
+          <a href="/login" className="text-[#434E54] hover:underline mt-4 inline-block">
+            Go to Login
+          </a>
+        </div>
+      </div>
+    );
   }
 
   const { user } = result;
 
-  // Middleware ensures user is authenticated and has admin/staff role
-  // So we can safely render the layout
   return (
     <div className="min-h-screen bg-[#F8EEE5]">
       {/* Desktop Sidebar - Pass user as prop */}

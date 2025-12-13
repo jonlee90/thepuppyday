@@ -119,13 +119,25 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
     if (!imageFile) return formData.image_url || null;
 
     try {
-      // In mock mode, simulate upload by using local preview URL
-      // In production, this would upload to Supabase Storage
-      const mockImageUrl = `/uploads/service-${Date.now()}.${imageFile.name.split('.').pop()}`;
-      return mockImageUrl;
+      // Upload image to Supabase Storage
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', imageFile);
+
+      const response = await fetch('/api/admin/services/upload-image', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      return data.url;
     } catch (error) {
       console.error('Image upload error:', error);
-      setUploadError('Failed to upload image. Please try again.');
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload image. Please try again.');
       return null;
     }
   };

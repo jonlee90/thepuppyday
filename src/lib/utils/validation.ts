@@ -15,10 +15,24 @@ export function isValidUUID(uuid: string): boolean {
 /**
  * Validates image URL format
  * Security: Prevents XSS via javascript: or data: URIs
+ * Accepts: Full URLs (http/https) or relative paths starting with /
  */
 export function isValidImageUrl(url: string | null): boolean {
-  if (!url) return false;
+  if (!url) return true; // Allow null/empty for optional images
 
+  // Allow relative paths starting with / (for uploaded images)
+  if (url.startsWith('/')) {
+    // Basic validation: must be a valid path format
+    // Prevent directory traversal
+    if (url.includes('..')) return false;
+    // Prevent special protocols disguised in path
+    if (url.toLowerCase().includes('javascript:') || url.toLowerCase().includes('data:')) {
+      return false;
+    }
+    return true;
+  }
+
+  // Validate full URLs
   try {
     const parsed = new URL(url);
     // Only allow http/https protocols

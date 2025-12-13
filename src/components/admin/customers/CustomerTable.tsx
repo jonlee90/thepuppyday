@@ -31,30 +31,33 @@ interface CustomerWithStats extends User {
 
 interface CustomerTableProps {
   onCustomerClick?: (customerId: string) => void;
+  initialCustomers?: CustomerWithStats[];
 }
 
 type SortField = 'name' | 'email' | 'appointments' | 'join_date';
 type SortOrder = 'asc' | 'desc';
 
-export function CustomerTable({ onCustomerClick }: CustomerTableProps) {
+export function CustomerTable({ onCustomerClick, initialCustomers = [] }: CustomerTableProps) {
   const router = useRouter();
-  const [customers, setCustomers] = useState<CustomerWithStats[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [customers, setCustomers] = useState<CustomerWithStats[]>(initialCustomers);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   // Filters and pagination
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(initialCustomers.length);
   const [sortBy, setSortBy] = useState<SortField>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   const ITEMS_PER_PAGE = 50;
 
-  // Fetch customers
+  // Fetch customers - only when search/sort/page changes
   useEffect(() => {
-    fetchCustomers();
+    if (searchQuery || currentPage > 1 || sortBy !== 'name' || sortOrder !== 'asc') {
+      fetchCustomers();
+    }
   }, [searchQuery, currentPage, sortBy, sortOrder]);
 
   const fetchCustomers = async () => {

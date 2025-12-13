@@ -13,10 +13,11 @@ interface ConfirmationModalProps {
   onConfirm: () => void | Promise<void>;
   title: string;
   description: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  variant?: 'default' | 'destructive';
-  details?: React.ReactNode; // Additional details like cancellation policy
+  confirmText?: string;
+  cancelText?: string;
+  variant?: 'default' | 'error';
+  isLoading?: boolean;
+  additionalInfo?: React.ReactNode; // Additional details like cancellation policy
 }
 
 export function ConfirmationModal({
@@ -25,12 +26,14 @@ export function ConfirmationModal({
   onConfirm,
   title,
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
   variant = 'default',
-  details,
+  isLoading: externalIsLoading,
+  additionalInfo,
 }: ConfirmationModalProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [internalIsLoading, setInternalIsLoading] = useState(false);
+  const isLoading = externalIsLoading ?? internalIsLoading;
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
@@ -71,14 +74,20 @@ export function ConfirmationModal({
   }, [isOpen, isLoading, onClose]);
 
   const handleConfirm = async () => {
-    setIsLoading(true);
-    try {
+    if (externalIsLoading !== undefined) {
+      // Loading is managed externally
       await onConfirm();
-      onClose();
-    } catch (error) {
-      console.error('Confirmation action failed:', error);
-    } finally {
-      setIsLoading(false);
+    } else {
+      // Manage loading internally
+      setInternalIsLoading(true);
+      try {
+        await onConfirm();
+        onClose();
+      } catch (error) {
+        console.error('Confirmation action failed:', error);
+      } finally {
+        setInternalIsLoading(false);
+      }
     }
   };
 
@@ -128,12 +137,12 @@ export function ConfirmationModal({
                   <div
                     className={`
                       w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0
-                      ${variant === 'destructive' ? 'bg-[#434E54]/10' : 'bg-[#EAE0D5]'}
+                      ${variant === 'error' ? 'bg-red-100' : 'bg-[#EAE0D5]'}
                     `}
                   >
-                    {variant === 'destructive' ? (
+                    {variant === 'error' ? (
                       <svg
-                        className="w-6 h-6 text-[#434E54]"
+                        className="w-6 h-6 text-red-600"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -179,12 +188,10 @@ export function ConfirmationModal({
                 </div>
               </div>
 
-              {/* Details (e.g., cancellation policy) */}
-              {details && (
+              {/* Additional info (e.g., cancellation policy) */}
+              {additionalInfo && (
                 <div className="px-6 pb-4">
-                  <div className="bg-[#EAE0D5]/50 rounded-lg p-4 border border-[#434E54]/10">
-                    {details}
-                  </div>
+                  {additionalInfo}
                 </div>
               )}
 
@@ -197,7 +204,7 @@ export function ConfirmationModal({
                            hover:bg-white transition-colors duration-200
                            disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {cancelLabel}
+                  {cancelText}
                 </button>
                 <button
                   onClick={handleConfirm}
@@ -207,8 +214,8 @@ export function ConfirmationModal({
                     transition-all duration-200 shadow-md hover:shadow-lg
                     disabled:opacity-50 disabled:cursor-not-allowed
                     flex items-center justify-center gap-2
-                    ${variant === 'destructive'
-                      ? 'bg-[#434E54] text-white hover:bg-[#434E54]/90'
+                    ${variant === 'error'
+                      ? 'bg-red-600 text-white hover:bg-red-700'
                       : 'bg-[#434E54] text-white hover:bg-[#434E54]/90'
                     }
                   `}
@@ -219,7 +226,7 @@ export function ConfirmationModal({
                       Processing...
                     </>
                   ) : (
-                    confirmLabel
+                    confirmText
                   )}
                 </button>
               </div>

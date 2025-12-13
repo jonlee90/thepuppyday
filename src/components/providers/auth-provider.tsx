@@ -35,7 +35,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const auth = useAuth();
   const pathname = usePathname();
 
-  // Show loading spinner only on protected routes during initial auth check
+  // Show loading spinner only on protected CUSTOMER routes during initial auth check
+  // Note: /admin routes are handled server-side via layout.tsx, so don't block here
   const isProtectedRoute =
     pathname?.startsWith('/dashboard') ||
     pathname?.startsWith('/appointments') ||
@@ -43,9 +44,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     pathname?.startsWith('/profile') ||
     pathname?.startsWith('/loyalty') ||
     pathname?.startsWith('/membership') ||
-    pathname?.startsWith('/report-cards') ||
-    pathname?.startsWith('/admin');
+    pathname?.startsWith('/report-cards');
 
+
+    console.log(auth.isLoading, 'auth.isLoading', isProtectedRoute, 'isProtectedRoute');
   // Show loading UI only on protected routes
   if (auth.isLoading && isProtectedRoute) {
     return (

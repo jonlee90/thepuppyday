@@ -169,6 +169,7 @@ export async function PATCH(
     }
 
     // Update service
+    console.log('[Admin API] Updating service:', id, 'with data:', serviceUpdate);
     const { data: service, error: serviceError } = (await (supabase as any)
       .from('services')
       .update(serviceUpdate)
@@ -179,9 +180,12 @@ export async function PATCH(
       error: Error | null;
     };
 
+    console.log('[Admin API] Update result:', { service, serviceError });
+
     if (serviceError || !service) {
+      console.error('[Admin API] Service update failed:', serviceError);
       return NextResponse.json(
-        { error: 'Service not found or update failed' },
+        { error: 'Service not found or update failed', details: serviceError?.message },
         { status: 404 }
       );
     }

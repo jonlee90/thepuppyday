@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { DashboardSkeleton } from '@/components/ui/skeletons';
+import { AppointmentDetailClient } from '@/components/customer/appointments';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { AppointmentStatus } from '@/types/database';
 
@@ -39,6 +40,19 @@ async function getAppointmentAddons(appointmentId: string) {
     .eq('appointment_id', appointmentId);
 
   return addons || [];
+}
+
+// Check if appointment has a report card
+async function hasReportCard(appointmentId: string) {
+  const supabase = await createServerSupabaseClient();
+
+  const { data } = await (supabase as any)
+    .from('report_cards')
+    .select('id')
+    .eq('appointment_id', appointmentId)
+    .single();
+
+  return !!data;
 }
 
 // Get user info from session
@@ -80,26 +94,6 @@ function formatTime(dateString: string) {
   });
 }
 
-// Check if appointment can be cancelled
-function canCancel(appointment: any) {
-  const status = appointment.status as AppointmentStatus;
-  const scheduledAt = new Date(appointment.scheduled_at);
-  const now = new Date();
-  const hoursUntil = (scheduledAt.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-  // Can cancel if: status allows it AND more than 24 hours away
-  return ['pending', 'confirmed'].includes(status) && hoursUntil > 24;
-}
-
-// Check if appointment can be rescheduled
-function canReschedule(appointment: any) {
-  const status = appointment.status as AppointmentStatus;
-  const scheduledAt = new Date(appointment.scheduled_at);
-  const now = new Date();
-  const hoursUntil = (scheduledAt.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-  return ['pending', 'confirmed'].includes(status) && hoursUntil > 24;
-}
 
 export default async function AppointmentDetailPage({ params }: AppointmentDetailPageProps) {
   const resolvedParams = await params;
@@ -115,8 +109,10 @@ export default async function AppointmentDetailPage({ params }: AppointmentDetai
     notFound();
   }
 
-  const addons = await getAppointmentAddons(resolvedParams.id);
-  const showActions = canCancel(appointment) || canReschedule(appointment);
+  const [addons, hasReport] = await Promise.all([
+    getAppointmentAddons(resolvedParams.id),
+    hasReportCard(resolvedParams.id),
+  ]);
 
   return (
     <Suspense fallback={<DashboardSkeleton />}>
@@ -282,35 +278,14 @@ export default async function AppointmentDetailPage({ params }: AppointmentDetai
             </div>
 
             {/* Actions */}
-            {showActions && (
-              <div className="bg-white rounded-xl shadow-sm border border-[#434E54]/10 overflow-hidden p-6">
-                <h2 className="font-bold text-[#434E54] mb-4">Actions</h2>
-                <div className="space-y-3">
-                  {canReschedule(appointment) && (
-                    <Link
-                      href={`/book?reschedule=${appointment.id}`}
-                      className="block w-full text-center py-2.5 px-4 rounded-lg
-                               bg-[#EAE0D5] text-[#434E54] font-semibold text-sm
-                               hover:bg-[#EAE0D5]/70 transition-colors"
-                    >
-                      Reschedule
-                    </Link>
-                  )}
-                  {canCancel(appointment) && (
-                    <button
-                      className="block w-full text-center py-2.5 px-4 rounded-lg
-                               border border-red-200 text-red-600 font-semibold text-sm
-                               hover:bg-red-50 transition-colors"
-                    >
-                      Cancel Appointment
-                    </button>
-                  )}
-                </div>
-                <p className="text-xs text-[#434E54]/50 mt-3">
-                  Cancellations must be made at least 24 hours in advance.
-                </p>
-              </div>
-            )}
+            <AppointmentDetailClient
+              appointmentId={appointment.id}
+              status={appointment.status as AppointmentStatus}
+              scheduledAt={appointment.scheduled_at}
+              petId={appointment.pets?.id || ''}
+              serviceId={appointment.service_id}
+              hasReportCard={hasReport}
+            />
 
             {/* Location */}
             <div className="bg-white rounded-xl shadow-sm border border-[#434E54]/10 overflow-hidden p-6">

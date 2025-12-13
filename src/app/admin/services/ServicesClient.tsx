@@ -4,20 +4,31 @@ import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { ServicesList } from '@/components/admin/services/ServicesList';
 import { ServiceForm } from '@/components/admin/services/ServiceForm';
+import type { Service, ServicePrice } from '@/types/database';
 
-export default function ServicesPage() {
+interface ServiceWithPrices extends Service {
+  prices: ServicePrice[];
+}
+
+interface ServicesClientProps {
+  initialServices: ServiceWithPrices[];
+}
+
+export function ServicesClient({ initialServices }: ServicesClientProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleFormSuccess = () => {
+    setIsFormOpen(false);
+    // Trigger a page refresh to get updated data
+    setRefreshKey(prev => prev + 1);
+    window.location.reload();
+  };
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#434E54]">Services</h1>
-          <p className="text-[#6B7280] mt-1">
-            Manage grooming services and size-based pricing
-          </p>
-        </div>
+    <>
+      {/* Add Service Button */}
+      <div className="flex justify-end">
         <button
           onClick={() => setIsFormOpen(true)}
           className="bg-[#434E54] text-white font-medium py-2.5 px-5 rounded-lg
@@ -29,19 +40,15 @@ export default function ServicesPage() {
       </div>
 
       {/* Services List */}
-      <ServicesList key={isFormOpen ? 'open' : 'closed'} />
+      <ServicesList key={refreshKey} initialServices={initialServices} />
 
       {/* Add Service Form Modal */}
       {isFormOpen && (
         <ServiceForm
           onClose={() => setIsFormOpen(false)}
-          onSuccess={() => {
-            setIsFormOpen(false);
-            // Force re-render of ServicesList to refresh data
-            window.location.reload();
-          }}
+          onSuccess={handleFormSuccess}
         />
       )}
-    </div>
+    </>
   );
 }

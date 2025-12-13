@@ -21,6 +21,9 @@ import {
   seedLoyaltyPunches,
   seedLoyaltyRedemptions,
   seedReportCards,
+  seedPayments,
+  seedNotificationsLog,
+  seedCustomerFlags,
 } from './seed';
 
 const STORAGE_KEY = 'thepuppyday_mock_db';
@@ -139,6 +142,15 @@ class MockStore {
 
     // Seed report cards
     this.tables.set('report_cards', [...seedReportCards] as unknown as TableData[]);
+
+    // Seed payments
+    this.tables.set('payments', [...seedPayments] as unknown as TableData[]);
+
+    // Seed notifications log
+    this.tables.set('notifications_log', [...seedNotificationsLog] as unknown as TableData[]);
+
+    // Seed customer flags
+    this.tables.set('customer_flags', [...seedCustomerFlags] as unknown as TableData[]);
 
     this.save();
   }

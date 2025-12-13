@@ -4,8 +4,13 @@ import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { AddOnsList } from '@/components/admin/addons/AddOnsList';
 import { AddOnForm } from '@/components/admin/addons/AddOnForm';
+import type { Addon } from '@/types/database';
 
-export default function AddOnsPage() {
+interface AddOnsClientProps {
+  initialAddons: Addon[];
+}
+
+export function AddOnsClient({ initialAddons }: AddOnsClientProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   return (
@@ -29,7 +34,7 @@ export default function AddOnsPage() {
       </div>
 
       {/* Add-Ons List */}
-      <AddOnsList key={isFormOpen ? 'open' : 'closed'} />
+      <AddOnsList initialAddons={initialAddons} />
 
       {/* Add Add-On Form Modal */}
       {isFormOpen && (

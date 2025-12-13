@@ -100,6 +100,20 @@ class MockQueryBuilder<T> {
     return this;
   }
 
+  not(column: string, operator: string, value: unknown): this {
+    // Handle .not('status', 'in', '(cancelled,no_show)')
+    // The value is a string like '(cancelled,no_show)' which needs to be parsed
+    if (operator === 'in' && typeof value === 'string') {
+      // Parse the string format: '(value1,value2,value3)'
+      const values = value.replace(/^\(/, '').replace(/\)$/, '').split(',').map(v => v.trim());
+      this.filters.push({ column, operator: 'not_in', value: values });
+    } else {
+      // For other operators, negate them
+      this.filters.push({ column, operator: `not_${operator}`, value });
+    }
+    return this;
+  }
+
   order(column: string, options?: { ascending?: boolean }): this {
     this.orderOptions = { column, ascending: options?.ascending ?? true };
     return this;
@@ -192,6 +206,8 @@ class MockQueryBuilder<T> {
               return (value as number) <= (filter.value as number);
             case 'in':
               return (filter.value as unknown[]).includes(value);
+            case 'not_in':
+              return !(filter.value as unknown[]).includes(value);
             default:
               return true;
           }

@@ -151,9 +151,13 @@ function SortableAddonRow({
   );
 }
 
-export function AddOnsList() {
-  const [addons, setAddons] = useState<Addon[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface AddOnsListProps {
+  initialAddons?: Addon[];
+}
+
+export function AddOnsList({ initialAddons = [] }: AddOnsListProps) {
+  const [addons, setAddons] = useState<Addon[]>(initialAddons);
+  const [isLoading, setIsLoading] = useState(false);
   const [editingAddon, setEditingAddon] = useState<Addon | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -164,8 +168,11 @@ export function AddOnsList() {
     })
   );
 
+  // Only fetch on mount if we don't have initial data
   useEffect(() => {
-    fetchAddons();
+    if (initialAddons.length === 0) {
+      fetchAddons();
+    }
   }, []);
 
   const fetchAddons = async () => {
