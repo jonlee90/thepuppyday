@@ -175,9 +175,9 @@ Key tables: `users`, `pets`, `breeds`, `services`, `service_prices`, `addons`, `
 |-------|------|--------|
 | 1 | Foundation & Database | Completed |
 | 2 | Public Marketing Site | Completed |
-| 3 | Booking System | Pending |
-| 4 | Customer Portal | Pending |
-| 5 | Admin Panel Core | Pending |
+| 3 | Booking System | Completed |
+| 4 | Customer Portal | Completed |
+| 5 | Admin Panel Core | Completed |
 | 6 | Admin Panel Advanced | Pending |
 | 7 | Payments & Memberships | Pending |
 | 8 | Notifications | Pending |
