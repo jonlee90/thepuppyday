@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { WaitlistFilters, type FilterValues } from './WaitlistFilters';
 import { WaitlistStats } from './WaitlistStats';
 import { WaitlistTable } from './WaitlistTable';
+import { BookFromWaitlistModal } from './BookFromWaitlistModal';
 import { toast } from '@/hooks/use-toast';
 import type { WaitlistEntry } from '@/types/database';
 
@@ -43,6 +44,15 @@ export function WaitlistDashboard({ services }: WaitlistDashboardProps) {
     sort_order: 'asc',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<
+    | (WaitlistEntry & {
+        customer?: { id: string; first_name: string; last_name: string; email: string; phone: string };
+        pet?: { id: string; name: string };
+        service?: { id: string; name: string };
+      })
+    | null
+  >(null);
+  const [isBookModalOpen, setIsBookModalOpen] = useState(false);
 
   // Fetch waitlist entries
   const fetchEntries = useCallback(async () => {
@@ -138,9 +148,20 @@ export function WaitlistDashboard({ services }: WaitlistDashboardProps) {
 
   // Action handlers
   const handleBookNow = (entryId: string) => {
-    toast.info('Book Now feature', {
-      description: 'This feature will be implemented in a future update.',
+    const entry = entries.find((e) => e.id === entryId);
+    if (entry) {
+      setSelectedEntry(entry);
+      setIsBookModalOpen(true);
+    } else {
+      toast.error('Waitlist entry not found');
+    }
+  };
+
+  const handleBookingSuccess = () => {
+    toast.success('Appointment booked successfully', {
+      description: 'The waitlist entry has been marked as booked.',
     });
+    fetchEntries(); // Refresh the list
   };
 
   const handleEdit = (entryId: string) => {
@@ -200,6 +221,19 @@ export function WaitlistDashboard({ services }: WaitlistDashboardProps) {
           onEdit={handleEdit}
           onContact={handleContact}
           onCancel={handleCancel}
+        />
+      )}
+
+      {/* Book from Waitlist Modal */}
+      {selectedEntry && (
+        <BookFromWaitlistModal
+          entry={selectedEntry}
+          isOpen={isBookModalOpen}
+          onClose={() => {
+            setIsBookModalOpen(false);
+            setSelectedEntry(null);
+          }}
+          onSuccess={handleBookingSuccess}
         />
       )}
     </div>
