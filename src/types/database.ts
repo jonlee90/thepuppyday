@@ -415,6 +415,11 @@ export interface NotificationLog extends BaseEntity {
   status: NotificationStatus;
   error_message: string | null;
   sent_at: string | null;
+  clicked_at: string | null;
+  delivered_at: string | null;
+  message_id: string | null;
+  tracking_id: string | null;
+  report_card_id: string | null;
 }
 
 // Helper type for database tables

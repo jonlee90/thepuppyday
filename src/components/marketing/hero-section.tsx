@@ -18,10 +18,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ headline, tagline, imageUrl }: HeroSectionProps) {
   return (
-    <section id="home" className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-[#F8EEE5] via-[#FFFBF7] to-[#F8EEE5] pt-[160px]">
-      {/* Decorative background elements */}
-      <div className="absolute top-20 right-10 w-96 h-96 bg-[#434E54]/5 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-20 left-10 w-80 h-80 bg-[#434E54]/5 rounded-full blur-3xl"></div>
+    <section id="home" className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-[#F8EEE5] via-[#FFFBF7] to-[#F8EEE5] pt-5 mt-[160px] lg:mt-5">
 <PawDecoration />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
@@ -83,28 +80,23 @@ export function HeroSection({ headline, tagline, imageUrl }: HeroSectionProps) {
                  {/* Main hero image with dog centered in lobby */}
             <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl">
               <img
-                src={"/images/puppyday-lobby.jpg"}
+                src={"/images/puppyday-lobby-background.jpg"}
                 alt="Adorable groomed dog with bowtie in the Puppy Day salon lobby"
                 className="w-full h-[400px] lg:h-[500px] object-cover"
               />
-           
-              <img
-                src={"/images/hero-image/dog-bandana.png"}
-                alt="Adorable groomed dog with bowtie in the Puppy Day salon lobby"
-                className="w-5 absolute"
-              />
+   
               {/* Overlay gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-hero-overlay/30 to-transparent" />
             </div>
             
             {/* Floating card - repositioned */}
-            <div className="absolute bottom-6 left-6 max-w-[55%] bg-background/90 backdrop-blur-md rounded-2xl p-4 shadow-lg">
+            <div className="mt-5 left-6 w-full lg:w-fit  bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-lg">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#434E54]/20 flex items-center justify-center shrink-0">
-                  <Star className="w-5 h-5 text-[#434E54] fill-[#434E54]" />
+                <div className="w-10 h-10 rounded-full bg-yellow-400/20 flex items-center justify-center shrink-0">
+                  <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
                 </div>
                 <div>
-                  <p className="font-display text-base font-semibold text-foreground">"Best grooming in town!"</p>
+                  <p className="font-display text-base font-semibold text-foreground">"Best dog grooming in La Mirada!"</p>
                   <p className="text-sm font-body text-muted-foreground">— Sarah M.</p>
                 </div>
               </div>
