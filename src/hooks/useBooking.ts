@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
 import { getMockStore } from '@/mocks/supabase/store';
+import { config } from '@/lib/config';
 import type { User, Pet, Appointment, WaitlistEntry } from '@/types/database';
 
 interface BookingResult {
@@ -31,6 +32,38 @@ export function useBooking() {
   } = useBookingStore();
 
   const createBooking = useCallback(async (): Promise<BookingResult> => {
+    console.log('[useBooking] Starting booking creation, useMocks:', config.useMocks);
+
+    try {
+      if (config.useMocks) {
+        // Mock booking creation
+        return createMockBooking();
+      } else {
+        // Real booking via API
+        return createRealBooking();
+      }
+    } catch (error) {
+      console.error('Booking creation failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }, [
+    user,
+    isAuthenticated,
+    selectedService,
+    selectedPet,
+    newPetData,
+    selectedDate,
+    selectedTimeSlot,
+    selectedAddons,
+    totalPrice,
+    guestInfo,
+    setBookingResult,
+  ]);
+
+  const createMockBooking = useCallback(async (): Promise<BookingResult> => {
     const store = getMockStore();
 
     try {
@@ -138,7 +171,183 @@ export function useBooking() {
         bookingReference,
       };
     } catch (error) {
-      console.error('Booking creation failed:', error);
+      console.error('Mock booking creation failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }, [
+    user,
+    isAuthenticated,
+    selectedService,
+    selectedPet,
+    newPetData,
+    selectedDate,
+    selectedTimeSlot,
+    selectedAddons,
+    totalPrice,
+    guestInfo,
+    setBookingResult,
+  ]);
+
+  const createRealBooking = useCallback(async (): Promise<BookingResult> => {
+    console.log('[useBooking] Creating real booking via API');
+
+    try {
+      if (!selectedService || !selectedDate || !selectedTimeSlot) {
+        return { success: false, error: 'Missing booking details' };
+      }
+
+      let customerId = user?.id;
+      let petId = selectedPet?.id;
+
+      // For guest users, create user account first if we need to create a pet
+      if (!isAuthenticated && guestInfo && !petId && newPetData) {
+        console.log('[useBooking] Creating/fetching guest user account...');
+
+        const guestUserResponse = await fetch('/api/users/guest', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: guestInfo.email,
+            firstName: guestInfo.firstName,
+            lastName: guestInfo.lastName,
+            phone: guestInfo.phone,
+          }),
+        });
+
+        if (!guestUserResponse.ok) {
+          const errorData = await guestUserResponse.json().catch(() => ({ error: 'Failed to create account' }));
+          console.error('[useBooking] Guest user creation error:', errorData);
+          return {
+            success: false,
+            error: errorData.error || 'Failed to create guest account',
+          };
+        }
+
+        const guestUserData = await guestUserResponse.json();
+        console.log('[useBooking] Guest user data:', guestUserData);
+        customerId = guestUserData.user?.id;
+      }
+
+      // Create pet first if needed
+      if (!petId && newPetData) {
+        console.log('[useBooking] Creating new pet...');
+
+        const petPayload: any = {
+          name: newPetData.name,
+          size: newPetData.size,
+        };
+
+        // Add optional fields only if they have values
+        if (newPetData.breed_id) petPayload.breed_id = newPetData.breed_id;
+        if (newPetData.breed_custom) petPayload.breed_custom = newPetData.breed_custom;
+        if (newPetData.weight) {
+          // Ensure weight is a number
+          petPayload.weight = typeof newPetData.weight === 'string'
+            ? parseFloat(newPetData.weight)
+            : newPetData.weight;
+        }
+        if (newPetData.notes) petPayload.notes = newPetData.notes;
+
+        // For guests with a created user ID, add owner_id
+        if (!isAuthenticated && customerId) {
+          petPayload.owner_id = customerId;
+        }
+
+        const petResponse = await fetch('/api/pets', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(petPayload),
+        });
+
+        if (!petResponse.ok) {
+          const errorData = await petResponse.json().catch(() => ({ error: 'Failed to create pet' }));
+          console.error('[useBooking] Pet creation error:', errorData);
+          return {
+            success: false,
+            error: errorData.error || 'Failed to create pet profile',
+          };
+        }
+
+        const petData = await petResponse.json();
+        console.log('[useBooking] Pet created:', petData);
+        petId = petData.pet?.id || petData.id;
+      }
+
+      if (!petId) {
+        return { success: false, error: 'Pet information required' };
+      }
+
+      // Create the appointment datetime
+      const scheduledAt = new Date(`${selectedDate}T${selectedTimeSlot}:00`);
+
+      // Prepare the appointment request payload
+      const payload: any = {
+        pet_id: petId,
+        service_id: selectedService.id,
+        scheduled_at: scheduledAt.toISOString(),
+        duration_minutes: selectedService.duration_minutes,
+        total_price: totalPrice,
+        addon_ids: selectedAddons.map(addon => addon.id),
+      };
+
+      // Add customer info
+      if (isAuthenticated && user) {
+        payload.customer_id = user.id;
+      } else if (customerId) {
+        // Guest user - we have the customer ID from creating the guest user
+        payload.customer_id = customerId;
+        payload.guest_info = {
+          firstName: guestInfo?.firstName,
+          lastName: guestInfo?.lastName,
+          email: guestInfo?.email,
+          phone: guestInfo?.phone,
+        };
+      } else {
+        return { success: false, error: 'Customer information required' };
+      }
+
+      console.log('[useBooking] Sending request to /api/appointments:', payload);
+
+      // Call the API
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      console.log('[useBooking] Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to create booking' }));
+        console.error('[useBooking] API error:', errorData);
+        return {
+          success: false,
+          error: errorData.error || `Server error: ${response.statusText}`,
+        };
+      }
+
+      const data = await response.json();
+      console.log('[useBooking] API response:', data);
+
+      // Set the booking result in the store
+      setBookingResult(data.appointment_id, data.reference);
+
+      return {
+        success: true,
+        appointmentId: data.appointment_id,
+        bookingReference: data.reference,
+      };
+    } catch (error) {
+      console.error('Real booking creation failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',

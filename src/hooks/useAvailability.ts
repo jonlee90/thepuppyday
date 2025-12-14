@@ -2,12 +2,11 @@
 
 /**
  * Hook for fetching available time slots for appointments
- * Supports both mock mode and Supabase integration
+ * Supports both mock mode and API endpoint integration
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { getMockStore } from '@/mocks/supabase/store';
-import { createClient } from '@/lib/supabase/client';
 import { config } from '@/lib/config';
 import {
   getAvailableSlots,
@@ -71,16 +70,19 @@ export function useAvailability({
   const fetchAvailability = useCallback(async () => {
     // Don't fetch if date or service not selected
     if (!date || !serviceId) {
+      console.log('[useAvailability] Skipping fetch - missing date or serviceId:', { date, serviceId });
       setSlots([]);
       setIsLoading(false);
       return;
     }
 
+    console.log('[useAvailability] Fetching availability:', { date, serviceId, useMocks: config.useMocks });
     setIsLoading(true);
     setError(null);
 
     try {
       if (config.useMocks) {
+        console.log('[useAvailability] Using mock store');
         // Fetch from mock store
         const store = getMockStore();
 
@@ -111,72 +113,35 @@ export function useAvailability({
           businessHours
         );
 
+        console.log('[useAvailability] Mock slots generated:', availableSlots.length);
         setSlots(availableSlots);
       } else {
-        // Fetch from Supabase
-        const supabase = createClient();
+        // Use API endpoint instead of direct Supabase queries
+        console.log('[useAvailability] Calling /api/availability endpoint');
+        const url = `/api/availability?date=${encodeURIComponent(date)}&service_id=${encodeURIComponent(serviceId)}`;
+        console.log('[useAvailability] Request URL:', url);
 
-        // Fetch service duration
-        const { data: service, error: serviceError } = await (supabase as any)
-          .from('services')
-          .select('duration_minutes')
-          .eq('id', serviceId)
-          .single();
+        const response = await fetch(url);
+        console.log('[useAvailability] Response status:', response.status);
 
-        if (serviceError) {
-          throw new Error(`Failed to fetch service: ${serviceError.message}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('[useAvailability] API error:', errorData);
+          throw new Error(errorData.error || 'Failed to fetch availability');
         }
 
-        if (!service) {
-          throw new Error('Service not found');
-        }
+        const data = await response.json();
+        console.log('[useAvailability] Received slots:', data.slots?.length || 0);
 
-        // Fetch business hours
-        const { data: settings, error: settingsError } = await (supabase as any)
-          .from('settings')
-          .select('value')
-          .eq('key', 'business_hours')
-          .single();
-
-        if (settingsError && settingsError.code !== 'PGRST116') {
-          // PGRST116 = no rows returned, which is OK
-          throw new Error(`Failed to fetch business hours: ${settingsError.message}`);
-        }
-
-        const businessHours: BusinessHours = settings?.value
-          ? (settings.value as BusinessHours)
-          : DEFAULT_BUSINESS_HOURS;
-
-        // Fetch appointments for the date
-        const startOfDay = new Date(date + 'T00:00:00').toISOString();
-        const endOfDay = new Date(date + 'T23:59:59').toISOString();
-        const { data: appointments, error: appointmentsError } = await (supabase as any)
-          .from('appointments')
-          .select('*')
-          .gte('scheduled_at', startOfDay)
-          .lte('scheduled_at', endOfDay)
-          .not('status', 'in', '(cancelled,no_show)');
-
-        if (appointmentsError) {
-          throw new Error(`Failed to fetch appointments: ${appointmentsError.message}`);
-        }
-
-        // Calculate available slots using utility function
-        const availableSlots = getAvailableSlots(
-          date,
-          service.duration_minutes,
-          appointments || [],
-          businessHours
-        );
-
-        setSlots(availableSlots);
+        setSlots(data.slots || []);
       }
     } catch (err) {
-      console.error('Failed to fetch availability:', err);
+      console.error('[useAvailability] Error:', err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
       setSlots([]);
     } finally {
       setIsLoading(false);
+      console.log('[useAvailability] Fetch complete');
     }
   }, [date, serviceId]);
 

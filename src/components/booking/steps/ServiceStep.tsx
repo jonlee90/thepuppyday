@@ -48,17 +48,19 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
           <h2 className="text-2xl font-bold text-[#434E54] mb-2">Select a Service</h2>
           <p className="text-[#434E54]/70">Choose the grooming service for your pet</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-xl shadow-md animate-pulse">
-              <div className="h-40 bg-[#EAE0D5] rounded-t-xl" />
-              <div className="p-4 space-y-3">
-                <div className="h-6 bg-[#EAE0D5] rounded w-3/4" />
-                <div className="h-4 bg-[#EAE0D5] rounded w-full" />
-                <div className="h-4 bg-[#EAE0D5] rounded w-2/3" />
+        <div className="flex justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
+            {[1, 2].map((i) => (
+              <div key={i} className="bg-white rounded-xl shadow-md animate-pulse">
+                <div className="h-40 bg-[#EAE0D5] rounded-t-xl" />
+                <div className="p-4 space-y-3">
+                  <div className="h-6 bg-[#EAE0D5] rounded w-3/4" />
+                  <div className="h-4 bg-[#EAE0D5] rounded w-full" />
+                  <div className="h-4 bg-[#EAE0D5] rounded w-2/3" />
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -156,16 +158,18 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
       </div>
 
 
-      {/* Services grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {bookableServices.map((service) => (
-          <ServiceCard
-            key={service.id}
-            service={service}
-            isSelected={selectedServiceId === service.id}
-            onSelect={() => handleSelectService(service)}
-          />
-        ))}
+      {/* Services grid - Optimized for 2 services */}
+      <div className="flex justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
+          {bookableServices.map((service) => (
+            <ServiceCard
+              key={service.id}
+              service={service}
+              isSelected={selectedServiceId === service.id}
+              onSelect={() => handleSelectService(service)}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Navigation */}

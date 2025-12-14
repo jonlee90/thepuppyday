@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { petFormSchema } from '@/lib/booking/validation';
 import { getAuthenticatedUserId, getUserIdFromRequest } from '@/lib/auth/mock-auth';
 import { z } from 'zod';
@@ -67,7 +67,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = await createServerSupabaseClient();
+    // Use service role client for guest pet creation (bypasses RLS)
+    // Use regular client for authenticated users (respects RLS)
+    const supabase = !authenticatedUserId && body.owner_id
+      ? createServiceRoleClient()
+      : await createServerSupabaseClient();
+
     const { data: pet, error } = await (supabase as any)
       .from('pets')
       .insert({

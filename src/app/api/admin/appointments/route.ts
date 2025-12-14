@@ -37,6 +37,9 @@ export async function GET(request: NextRequest) {
         order: { column: sortBy, ascending: sortOrder === 'asc' },
       }) as unknown as Appointment[];
 
+      console.log('[Admin API] Total appointments in store:', appointments.length);
+      console.log('[Admin API] Date filters - from:', dateFrom, 'to:', dateTo);
+
       // Apply filters
       if (status) {
         appointments = appointments.filter((apt) => apt.status === status);
@@ -47,17 +50,22 @@ export async function GET(request: NextRequest) {
       }
 
       if (dateFrom) {
+        const dateFromDate = new Date(dateFrom);
+        console.log('[Admin API] Filtering by dateFrom:', dateFromDate);
         appointments = appointments.filter(
-          (apt) => new Date(apt.scheduled_at) >= new Date(dateFrom)
+          (apt) => new Date(apt.scheduled_at) >= dateFromDate
         );
+        console.log('[Admin API] After dateFrom filter:', appointments.length);
       }
 
       if (dateTo) {
         const dateToEnd = new Date(dateTo);
         dateToEnd.setHours(23, 59, 59, 999);
+        console.log('[Admin API] Filtering by dateTo:', dateToEnd);
         appointments = appointments.filter(
           (apt) => new Date(apt.scheduled_at) <= dateToEnd
         );
+        console.log('[Admin API] After dateTo filter:', appointments.length);
       }
 
       // Apply search
@@ -102,6 +110,17 @@ export async function GET(request: NextRequest) {
           ? (store.selectById('users', apt.groomer_id) as User | null)
           : null,
       }));
+
+      console.log('[Admin API] Returning', enrichedAppointments.length, 'enriched appointments');
+      if (enrichedAppointments.length > 0) {
+        console.log('[Admin API] Sample appointment:', {
+          id: enrichedAppointments[0].id,
+          scheduled_at: enrichedAppointments[0].scheduled_at,
+          customer: enrichedAppointments[0].customer?.email,
+          pet: enrichedAppointments[0].pet?.name,
+          service: enrichedAppointments[0].service?.name,
+        });
+      }
 
       return NextResponse.json({
         data: enrichedAppointments,

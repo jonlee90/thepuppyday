@@ -21,6 +21,9 @@ import {
   Menu,
   X,
   LogOut,
+  BarChart3,
+  Megaphone,
+  Clock,
 } from 'lucide-react';
 
 interface NavItem {
@@ -37,14 +40,30 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
+    label: 'Analytics',
+    href: '/admin/analytics',
+    icon: BarChart3,
+  },
+  {
     label: 'Appointments',
     href: '/admin/appointments',
     icon: Calendar,
   },
   {
+    label: 'Waitlist',
+    href: '/admin/waitlist',
+    icon: Clock,
+  },
+  {
     label: 'Customers',
     href: '/admin/customers',
     icon: Users,
+  },
+  {
+    label: 'Campaigns',
+    href: '/admin/marketing/campaigns',
+    icon: Megaphone,
+    ownerOnly: true,
   },
   {
     label: 'Services',

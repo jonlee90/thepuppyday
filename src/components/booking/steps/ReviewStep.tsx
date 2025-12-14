@@ -74,7 +74,20 @@ export function ReviewStep() {
   };
 
   const petName = selectedPet?.name || newPetData?.name || 'Your pet';
-  const canConfirm = isAuthenticated || guestInfo !== null;
+
+  // For guests: check if the form has valid data (even if not submitted yet)
+  // Button should always be enabled - clicking it will trigger form validation if needed
+  const canConfirm = true;
+
+  // Debug logging
+  console.log('[ReviewStep] State:', {
+    isAuthenticated,
+    hasGuestInfo: guestInfo !== null,
+    canConfirm,
+    isSubmitting,
+    user: user ? { email: user.email } : null,
+    guestInfo: guestInfo ? { email: guestInfo.email } : null
+  });
 
   return (
     <div className="space-y-6">
@@ -332,7 +345,7 @@ export function ReviewStep() {
         </button>
         <button
           onClick={handleConfirm}
-          disabled={!canConfirm && !isAuthenticated || isSubmitting}
+          disabled={!canConfirm || isSubmitting}
           className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
                    hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
                    disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50

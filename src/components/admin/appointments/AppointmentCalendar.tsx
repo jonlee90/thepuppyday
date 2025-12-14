@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -36,56 +36,113 @@ export function AppointmentCalendar({
   onEventClick,
   onDateRangeChange,
 }: AppointmentCalendarProps) {
+  const calendarRef = useRef<FullCalendar>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<'dayGridMonth' | 'timeGridWeek' | 'timeGridDay'>('timeGridDay');
 
   // Fetch appointments for visible date range
   const fetchAppointments = useCallback(async (start: Date, end: Date) => {
+    console.log('[AppointmentCalendar] Fetching appointments from', start.toISOString(), 'to', end.toISOString());
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        dateFrom: start.toISOString(),
-        dateTo: end.toISOString(),
-        limit: '200', // Performance: Limit to 200 appointments to avoid UI slowdown
-      });
+      let appointments: any[] = [];
 
-      const response = await fetch(`/api/admin/appointments?${params}`);
-      const result = await response.json();
+      // In mock mode, fetch directly from the client-side mock store
+      // This avoids the server/client localStorage mismatch issue
+      if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
+        const { getMockStore } = await import('@/mocks/supabase/store');
+        const store = getMockStore();
 
-      if (response.ok && result.data) {
-        const calendarEvents: CalendarEvent[] = result.data.map((apt: any) => {
-          const endTime = new Date(apt.scheduled_at);
-          endTime.setMinutes(endTime.getMinutes() + apt.duration_minutes);
+        // Get all appointments from the store
+        let allAppointments = store.select('appointments', {
+          order: { column: 'scheduled_at', ascending: true },
+        }) as any[];
 
-          const color = getCalendarEventColor(apt.status);
-          const customerName = apt.customer
-            ? `${apt.customer.first_name} ${apt.customer.last_name}`
-            : 'Unknown Customer';
-          const petName = apt.pet?.name || 'Unknown Pet';
-          const serviceName = apt.service?.name || 'Unknown Service';
+        console.log('[AppointmentCalendar] Total appointments in client store:', allAppointments.length);
 
-          return {
-            id: apt.id,
-            title: `${customerName} - ${petName}\n${serviceName}`,
-            start: apt.scheduled_at,
-            end: endTime.toISOString(),
-            backgroundColor: color,
-            borderColor: color,
-            extendedProps: {
-              appointment: apt,
-            },
-          };
+        // Filter by date range
+        const endDate = new Date(end);
+        endDate.setHours(23, 59, 59, 999); // Include full end date
+
+        appointments = allAppointments.filter((apt: any) => {
+          const aptDate = new Date(apt.scheduled_at);
+          return aptDate >= start && aptDate <= endDate;
         });
 
-        setEvents(calendarEvents);
+        console.log('[AppointmentCalendar] After date filter:', appointments.length);
+
+        // Enrich with related data
+        appointments = appointments.map((apt: any) => ({
+          ...apt,
+          customer: store.selectById('users', apt.customer_id),
+          pet: store.selectById('pets', apt.pet_id),
+          service: store.selectById('services', apt.service_id),
+          groomer: apt.groomer_id ? store.selectById('users', apt.groomer_id) : null,
+        }));
+      } else {
+        // Production mode: use API
+        const params = new URLSearchParams({
+          dateFrom: start.toISOString(),
+          dateTo: end.toISOString(),
+          limit: '200', // Performance: Limit to 200 appointments to avoid UI slowdown
+        });
+
+        const response = await fetch(`/api/admin/appointments?${params}`);
+        const result = await response.json();
+
+        console.log('[AppointmentCalendar] API response:', response.ok, result);
+
+        if (response.ok && result.data) {
+          appointments = result.data;
+        }
       }
+
+      console.log('[AppointmentCalendar] Processing', appointments.length, 'appointments');
+
+      const calendarEvents: CalendarEvent[] = appointments.map((apt: any) => {
+        const endTime = new Date(apt.scheduled_at);
+        endTime.setMinutes(endTime.getMinutes() + apt.duration_minutes);
+
+        const color = getCalendarEventColor(apt.status);
+        const customerName = apt.customer
+          ? `${apt.customer.first_name} ${apt.customer.last_name}`
+          : 'Unknown Customer';
+        const petName = apt.pet?.name || 'Unknown Pet';
+        const serviceName = apt.service?.name || 'Unknown Service';
+
+        return {
+          id: apt.id,
+          title: `${customerName} - ${petName}\n${serviceName}`,
+          start: apt.scheduled_at,
+          end: endTime.toISOString(),
+          backgroundColor: color,
+          borderColor: color,
+          extendedProps: {
+            appointment: apt,
+          },
+        };
+      });
+
+      console.log('[AppointmentCalendar] Setting', calendarEvents.length, 'calendar events');
+      setEvents(calendarEvents);
     } catch (error) {
       console.error('[AppointmentCalendar] Error fetching appointments:', error);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // Change calendar view when currentView state changes
+  useEffect(() => {
+    console.log('[AppointmentCalendar] View changed to:', currentView);
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      calendarApi.changeView(currentView);
+      // Note: We don't need to manually call fetchAppointments here
+      // because FullCalendar's datesSet callback will fire after view change
+    }
+  }, [currentView]);
 
   // Handle date range change
   const handleDatesSet = useCallback(
@@ -176,6 +233,7 @@ export function AppointmentCalendar({
       {/* Calendar */}
       <div className="calendar-wrapper">
         <FullCalendar
+          ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView={currentView}
           headerToolbar={{
