@@ -14,7 +14,7 @@ ALTER TABLE public.campaign_sends
 -- Create indexes for new columns
 CREATE INDEX IF NOT EXISTS idx_campaign_sends_pet ON public.campaign_sends(pet_id) WHERE pet_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_campaign_sends_tracking ON public.campaign_sends(tracking_id) WHERE tracking_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_campaign_sends_user_pet ON public.campaign_sends(user_id, pet_id) WHERE pet_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_campaign_sends_customer_pet ON public.campaign_sends(customer_id, pet_id) WHERE pet_id IS NOT NULL;
 
 -- Add comments
 COMMENT ON COLUMN public.campaign_sends.campaign_id IS 'Link to marketing campaign if part of a campaign (nullable for breed reminders)';

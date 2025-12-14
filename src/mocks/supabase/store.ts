@@ -24,6 +24,7 @@ import {
   seedPayments,
   seedNotificationsLog,
   seedCustomerFlags,
+  seedMarketingCampaigns,
 } from './seed';
 
 const STORAGE_KEY = 'thepuppyday_mock_db';
@@ -95,6 +96,9 @@ class MockStore {
       'before_after_pairs',
       'settings',
       'notifications_log',
+      'marketing_campaigns',
+      'campaign_sends',
+      'marketing_unsubscribes',
     ];
 
     for (const table of tableNames) {
@@ -152,6 +156,9 @@ class MockStore {
 
     // Seed customer flags
     this.tables.set('customer_flags', [...seedCustomerFlags] as unknown as TableData[]);
+
+    // Seed marketing campaigns
+    this.tables.set('marketing_campaigns', [...seedMarketingCampaigns] as unknown as TableData[]);
 
     this.save();
   }

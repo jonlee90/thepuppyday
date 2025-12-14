@@ -23,6 +23,7 @@ import type {
   NotificationLog,
   CustomerFlag,
 } from '@/types/database';
+import type { MarketingCampaign } from '@/types/marketing';
 import { generateId } from '@/lib/utils';
 
 // Default services - The Puppy Day actual services
@@ -1121,5 +1122,116 @@ export const seedCustomerFlags: CustomerFlag[] = [
     is_active: true,
     created_by: GROOMER_USER_ID,
     created_at: daysAgo(30),
+  },
+];
+
+// Marketing Campaigns
+export const seedMarketingCampaigns: MarketingCampaign[] = [
+  {
+    id: generateId(),
+    name: 'Spring Grooming Special',
+    description: 'Promote our spring grooming discounts to customers who haven\'t visited in the last 60 days',
+    type: 'one_time',
+    status: 'sent',
+    channel: 'email',
+    segment_criteria: {
+      not_visited_since: daysAgo(60),
+      min_appointments: 1,
+    },
+    message_content: {
+      email_subject: 'Spring into Freshness - 15% Off Your Next Groom!',
+      email_body: 'We miss seeing you and your furry friend! Book a grooming appointment this spring and save 15%.',
+    },
+    ab_test_config: null,
+    scheduled_at: daysAgo(15),
+    sent_at: daysAgo(15),
+    created_by: ADMIN_USER_ID,
+    created_at: daysAgo(20),
+    updated_at: daysAgo(15),
+  },
+  {
+    id: generateId(),
+    name: 'New Customer Welcome Series',
+    description: 'Welcome email for first-time customers after their initial booking',
+    type: 'recurring',
+    status: 'scheduled',
+    channel: 'email',
+    segment_criteria: {
+      max_appointments: 1,
+    },
+    message_content: {
+      email_subject: 'Welcome to The Puppy Day Family! 🐾',
+      email_body: 'Thank you for choosing us for your pet\'s grooming needs. Here\'s what to expect at your first visit...',
+    },
+    ab_test_config: null,
+    scheduled_at: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+    sent_at: null,
+    created_by: ADMIN_USER_ID,
+    created_at: daysAgo(30),
+    updated_at: daysAgo(5),
+  },
+  {
+    id: generateId(),
+    name: 'Loyalty Program Launch',
+    description: 'Announce our new loyalty program to all active customers',
+    type: 'one_time',
+    status: 'draft',
+    channel: 'both',
+    segment_criteria: {
+      min_appointments: 3,
+    },
+    message_content: {
+      email_subject: 'Introducing Our New Loyalty Rewards Program!',
+      email_body: 'Earn points with every visit and redeem them for discounts and free services!',
+      sms_body: 'New at The Puppy Day: Loyalty Rewards! Earn points on every visit. Learn more: [link]',
+    },
+    ab_test_config: null,
+    scheduled_at: null,
+    sent_at: null,
+    created_by: ADMIN_USER_ID,
+    created_at: daysAgo(7),
+    updated_at: daysAgo(7),
+  },
+  {
+    id: generateId(),
+    name: 'Win-Back Campaign - 90 Days',
+    description: 'Re-engage customers who haven\'t visited in 90+ days with special offer',
+    type: 'recurring',
+    status: 'scheduled',
+    channel: 'sms',
+    segment_criteria: {
+      not_visited_since: daysAgo(90),
+      min_appointments: 2,
+    },
+    message_content: {
+      sms_body: 'We miss you! It\'s been a while since [PET_NAME]\'s last groom. Come back this month & get $10 off! Book: [link]',
+    },
+    ab_test_config: null,
+    scheduled_at: new Date(Date.now() + 172800000).toISOString(), // 2 days from now
+    sent_at: null,
+    created_by: ADMIN_USER_ID,
+    created_at: daysAgo(10),
+    updated_at: daysAgo(3),
+  },
+  {
+    id: generateId(),
+    name: 'Holiday Grooming Reminder',
+    description: 'Remind customers to book holiday grooming appointments early',
+    type: 'one_time',
+    status: 'cancelled',
+    channel: 'email',
+    segment_criteria: {
+      has_upcoming_appointment: false,
+    },
+    message_content: {
+      email_subject: 'Get Holiday Ready - Book Your Pet\'s Grooming Now!',
+      email_body: 'The holidays are approaching fast! Make sure your pet looks their best by booking early.',
+    },
+    ab_test_config: null,
+    scheduled_at: daysAgo(5),
+    sent_at: null,
+    created_by: ADMIN_USER_ID,
+    created_at: daysAgo(25),
+    updated_at: daysAgo(5),
   },
 ];

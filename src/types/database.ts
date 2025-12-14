@@ -471,6 +471,9 @@ export interface Database {
   before_after_pairs: BeforeAfterPair;
   settings: Setting;
   notifications_log: NotificationLog;
+  marketing_campaigns: import('@/types/marketing').MarketingCampaign;
+  campaign_sends: import('@/types/marketing').CampaignSend;
+  marketing_unsubscribes: import('@/types/marketing').MarketingUnsubscribe;
 }
 
 export type TableName = keyof Database;

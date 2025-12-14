@@ -47,6 +47,7 @@ export interface SegmentCriteria {
   breed_ids?: string[];
   /** Filter by appointment count */
   min_appointments?: number;
+  max_appointments?: number;
   /** Filter by total spend */
   min_total_spend?: number;
   /** Filter by customers who haven't visited since date */
@@ -105,7 +106,7 @@ export interface MarketingCampaign extends BaseEntity {
  */
 export interface CampaignSend extends BaseEntity {
   campaign_id: string | null; // Nullable for non-campaign sends (e.g., breed reminders)
-  user_id: string; // Maps to customer_id
+  customer_id: string;
   notification_log_id: string | null;
   variant: string | null; // 'A' or 'B' for A/B tests, NULL otherwise
   sent_at: string | null;

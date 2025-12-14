@@ -40,7 +40,7 @@ const services = [
 
 export function AboutSection({ title, description }: AboutSectionProps) {
   return (
-    <section id="about" className="py-20 md:py-28 bg-gradient-to-b from-[#EAE0D5] to-[#FFFBF7]">
+    <section id="about" className="py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#EAE0D5]">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Section Header */}
