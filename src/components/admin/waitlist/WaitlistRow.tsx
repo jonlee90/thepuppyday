@@ -7,7 +7,7 @@ import type { WaitlistEntry, WaitlistStatus, TimePreference } from '@/types/data
 
 interface WaitlistRowProps {
   entry: WaitlistEntry & {
-    customer?: { id: string; full_name: string; email: string; phone: string };
+    customer?: { id: string; first_name: string; last_name: string; email: string; phone: string };
     pet?: { id: string; name: string };
     service?: { id: string; name: string };
   };
@@ -67,7 +67,11 @@ export function WaitlistRow({
               <ChevronDown className="h-4 w-4 text-gray-400" />
             )}
             <div>
-              <div className="font-medium">{entry.customer?.full_name || 'Unknown'}</div>
+              <div className="font-medium">
+                {entry.customer
+                  ? `${entry.customer.first_name} ${entry.customer.last_name}`
+                  : 'Unknown'}
+              </div>
               <div className="text-sm text-gray-500">{entry.customer?.phone || ''}</div>
             </div>
           </div>

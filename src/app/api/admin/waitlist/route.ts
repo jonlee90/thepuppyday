@@ -76,7 +76,7 @@ export async function GET(request: Request) {
       .select(
         `
         *,
-        customer:users!customer_id(id, full_name, email, phone),
+        customer:users!customer_id(id, first_name, last_name, email, phone),
         pet:pets!pet_id(id, name, breed_id),
         service:services!service_id(id, name)
       `,
@@ -129,11 +129,13 @@ export async function GET(request: Request) {
     if (params.search && filteredEntries.length > 0) {
       const searchLower = params.search.toLowerCase();
       filteredEntries = filteredEntries.filter((entry: any) => {
-        const customerName = entry.customer?.full_name?.toLowerCase() || '';
+        const firstName = entry.customer?.first_name?.toLowerCase() || '';
+        const lastName = entry.customer?.last_name?.toLowerCase() || '';
+        const fullName = `${firstName} ${lastName}`.trim();
         const petName = entry.pet?.name?.toLowerCase() || '';
         const phone = entry.customer?.phone?.toLowerCase() || '';
         return (
-          customerName.includes(searchLower) ||
+          fullName.includes(searchLower) ||
           petName.includes(searchLower) ||
           phone.includes(searchLower)
         );
