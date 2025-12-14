@@ -49,7 +49,21 @@
       "Bash(dir /b \"C:\\Users\\Jon\\Documents\\claude projects\\thepuppyday\")",
       "Bash(dir /b \"C:\\Users\\Jon\\Documents\\claude projects\\thepuppyday\\src\")",
       "Bash(timeout 2 npm run dev:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(find \"C:\\Users\\Jon\\Documents\\claude projects\\thepuppyday\\src\\app\\(customer)\" -type f -name \"*.tsx\")",
+      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -50 \"\"{}\"\"')",
+      "Bash(find:*)",
+      "SlashCommand(/kc:impl:*)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(test:*)",
+      "Bash(if not exist \"C:\\Users\\Jon\\Documents\\claude projects\\thepuppyday\\src\\hooks\\admin\" mkdir \"C:\\Users\\Jon\\Documents\\claude projects\\thepuppyday\\src\\hooks\\admin\")",
+      "Bash(timeout 15 npm run dev:*)",
+      "Bash(del nul)",
+      "Bash(git reset:*)",
+      "Bash(timeout 5 tail:*)",
+      "Bash(npx supabase db push:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx prettier:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
