@@ -24,6 +24,7 @@ import type {
   CustomerFlag,
 } from '@/types/database';
 import type { MarketingCampaign } from '@/types/marketing';
+import { DEFAULT_PHASE6_SETTINGS, DEFAULT_NOTIFICATION_TEMPLATES } from '@/types/settings';
 import { generateId } from '@/lib/utils';
 
 // Default services - The Puppy Day actual services
@@ -195,6 +196,21 @@ export const seedSettings: Setting[] = [
     saturday: { open: '09:00', close: '17:00', is_open: true },
     sunday: { open: '00:00', close: '00:00', is_open: false },
   }, updated_at: new Date().toISOString() },
+
+  // Phase 6 Settings - Report Cards
+  { id: generateId(), key: 'report_card_auto_send_delay', value: DEFAULT_PHASE6_SETTINGS.report_card.auto_send_delay_minutes, updated_at: new Date().toISOString() },
+  { id: generateId(), key: 'report_card_expiration_days', value: DEFAULT_PHASE6_SETTINGS.report_card.expiration_days, updated_at: new Date().toISOString() },
+  { id: generateId(), key: 'google_review_url', value: DEFAULT_PHASE6_SETTINGS.report_card.google_review_url, updated_at: new Date().toISOString() },
+
+  // Phase 6 Settings - Waitlist
+  { id: generateId(), key: 'waitlist_response_window', value: DEFAULT_PHASE6_SETTINGS.waitlist.response_window_hours, updated_at: new Date().toISOString() },
+  { id: generateId(), key: 'waitlist_default_discount', value: DEFAULT_PHASE6_SETTINGS.waitlist.default_discount_percent, updated_at: new Date().toISOString() },
+
+  // Phase 6 Settings - Marketing
+  { id: generateId(), key: 'retention_reminder_days', value: DEFAULT_PHASE6_SETTINGS.marketing.retention_reminder_advance_days, updated_at: new Date().toISOString() },
+
+  // Phase 6 Settings - Notification Templates
+  { id: generateId(), key: 'templates', value: DEFAULT_NOTIFICATION_TEMPLATES, updated_at: new Date().toISOString() },
 ];
 
 // Stable user IDs for mock data (must be consistent across app restarts)
