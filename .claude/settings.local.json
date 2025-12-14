@@ -63,7 +63,8 @@
       "Bash(timeout 5 tail:*)",
       "Bash(npx supabase db push:*)",
       "Bash(mkdir:*)",
-      "Bash(npx prettier:*)"
+      "Bash(npx prettier:*)",
+      "Bash(timeout 60 npm run build:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

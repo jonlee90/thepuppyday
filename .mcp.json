@@ -7,16 +7,7 @@
     "playwright" : {
       "command": "npx",
       "args": [
-        "m@playwright/mcp@0.0.52", 
-        "--config",
-        "./playwright-mcp-config.json",
-        "--vision"
-      ]
-    },
-    "playwright_test" : {
-      "command": "npx",
-      "args": [
-        "m@playwright/mcp@0.0.52", 
+        "@playwright/mcp@0.0.52", 
         "--config",
         "./playwright-mcp-config.json",
         "--vision"

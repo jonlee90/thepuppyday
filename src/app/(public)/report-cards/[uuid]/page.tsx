@@ -16,6 +16,7 @@ async function getReportCard(uuid: string): Promise<{
   data: PublicReportCardType | null;
   error: string | null;
   status: number;
+  hasExistingReview?: boolean;
 }> {
   try {
     // In production, use full URL. In development, construct from env
@@ -35,10 +36,15 @@ async function getReportCard(uuid: string): Promise<{
     }
 
     const data = await response.json();
+
+    // Check if review exists for this report card
+    const hasExistingReview = data.has_review || false;
+
     return {
       data,
       error: null,
       status: 200,
+      hasExistingReview,
     };
   } catch (error) {
     console.error('Error fetching report card:', error);
@@ -99,7 +105,7 @@ export async function generateMetadata({
  */
 export default async function ReportCardPage({ params }: PageProps) {
   const { uuid } = await params;
-  const { data, error, status } = await getReportCard(uuid);
+  const { data, error, status, hasExistingReview } = await getReportCard(uuid);
 
   // Handle 404 - Report card not found
   if (status === 404 || !data) {
@@ -183,5 +189,10 @@ export default async function ReportCardPage({ params }: PageProps) {
   }
 
   // Success - render the report card
-  return <PublicReportCard reportCard={data} />;
+  return (
+    <PublicReportCard
+      reportCard={data}
+      hasExistingReview={hasExistingReview || false}
+    />
+  );
 }

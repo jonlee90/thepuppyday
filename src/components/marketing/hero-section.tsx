@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Phone, Calendar, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import PawDecoration from './paw-decoration';
 interface HeroSectionProps {
   headline: string;
   tagline: string;
@@ -21,7 +22,7 @@ export function HeroSection({ headline, tagline, imageUrl }: HeroSectionProps) {
       {/* Decorative background elements */}
       <div className="absolute top-20 right-10 w-96 h-96 bg-[#434E54]/5 rounded-full blur-3xl"></div>
       <div className="absolute bottom-20 left-10 w-80 h-80 bg-[#434E54]/5 rounded-full blur-3xl"></div>
-
+<PawDecoration />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -87,6 +88,11 @@ export function HeroSection({ headline, tagline, imageUrl }: HeroSectionProps) {
                 className="w-full h-[400px] lg:h-[500px] object-cover"
               />
            
+              <img
+                src={"/images/hero-image/dog-bandana.png"}
+                alt="Adorable groomed dog with bowtie in the Puppy Day salon lobby"
+                className="w-5 absolute"
+              />
               {/* Overlay gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-hero-overlay/30 to-transparent" />
             </div>

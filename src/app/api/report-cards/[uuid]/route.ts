@@ -106,13 +106,20 @@ export async function GET(
       }
     });
 
+    // Check if a review exists for this report card
+    const { data: existingReview } = await (supabase as any)
+      .from('reviews')
+      .select('id')
+      .eq('report_card_id', reportCard.id)
+      .maybeSingle();
+
     // Extract appointment data safely
     const appointment = reportCard.appointments as any;
     const service = appointment?.services;
     const pet = appointment?.pets;
 
     // Transform to public-facing format (no sensitive customer data)
-    const publicReportCard: PublicReportCard = {
+    const publicReportCard: PublicReportCard & { has_review?: boolean } = {
       id: reportCard.id,
       appointment_date: appointment?.scheduled_at || '',
       pet_name: pet?.name || 'Unknown',
@@ -125,6 +132,7 @@ export async function GET(
       before_photo_url: reportCard.before_photo_url,
       after_photo_url: reportCard.after_photo_url,
       created_at: reportCard.created_at,
+      has_review: !!existingReview,
     };
 
     return NextResponse.json(publicReportCard, {

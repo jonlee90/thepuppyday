@@ -6,18 +6,23 @@ import { AssessmentGrid } from './AssessmentGrid';
 import { BeforeAfterComparison } from './BeforeAfterComparison';
 import { HealthObservationsSection } from './HealthObservationsSection';
 import { GroomerNotesSection } from './GroomerNotesSection';
+import { ReviewPrompt } from './ReviewPrompt';
 import { ShareButtons } from './ShareButtons';
 import type { PublicReportCard as PublicReportCardType } from '@/types/report-card';
 
 interface PublicReportCardProps {
   reportCard: PublicReportCardType;
+  hasExistingReview: boolean;
 }
 
 /**
  * PublicReportCard - Main component that orchestrates all report card sections
  * Client component that receives data from the server page
  */
-export function PublicReportCard({ reportCard }: PublicReportCardProps) {
+export function PublicReportCard({
+  reportCard,
+  hasExistingReview,
+}: PublicReportCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -65,6 +70,14 @@ export function PublicReportCard({ reportCard }: PublicReportCardProps) {
           date={reportCard.created_at}
         />
       )}
+
+      {/* Review Prompt */}
+      <div className="container mx-auto px-4">
+        <ReviewPrompt
+          reportCardId={reportCard.id}
+          hasExistingReview={hasExistingReview}
+        />
+      </div>
 
       {/* Share Buttons */}
       <ShareButtons reportCard={reportCard} />

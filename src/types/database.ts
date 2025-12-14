@@ -429,6 +429,7 @@ export interface Database {
   appointment_addons: AppointmentAddon;
   waitlist: WaitlistEntry;
   report_cards: ReportCard;
+  reviews: import('@/types/review').Review;
   memberships: Membership;
   customer_memberships: CustomerMembership;
   loyalty_points: LoyaltyPoints;
