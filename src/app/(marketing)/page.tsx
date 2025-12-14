@@ -19,6 +19,7 @@ import type {
   GalleryImage,
   SiteContent,
 } from '@/types/database';
+import GroomingToolDecoration from '@/components/marketing/grooming-tool-decoration';
 
 // SEO Metadata
 export const metadata: Metadata = {
@@ -160,16 +161,11 @@ export default async function MarketingPage() {
       )}
 
       {/* Services Section */}
-      <section id="services" className="relative py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#FFFBF7]">
-        {/* Subtle decorative element */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#434E54]/10 to-transparent"></div>
-
+      <section id="services" className="relative py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#EAE0D5]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <ServiceGrid services={data.services} />
+          <GroomingToolDecoration/>
         </div>
-
-        {/* Bottom decorative element */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#434E54]/10 to-transparent"></div>
       </section>
 
       {/* Gallery Section */}
@@ -193,7 +189,7 @@ export default async function MarketingPage() {
       )}
 
       {/* Booking Widget Section */}
-      <section id="book" className="relative py-20 md:py-32 bg-gradient-to-b from-[#FFFBF7] via-[#F8EEE5] to-[#FFFBF7] overflow-hidden">
+      <section id="book" className="relative py-20 md:py-32 bg-[#EAE0D5] overflow-hidden">
         {/* Decorative background elements */}
         <div className="absolute top-20 right-10 w-80 h-80 bg-[#434E54]/5 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#434E54]/5 rounded-full blur-3xl"></div>
@@ -230,29 +226,25 @@ export default async function MarketingPage() {
       </section>
 
       {/* About Section */}
-      <div className="relative bg-gradient-to-b from-[#EAE0D5] to-[#FFFBF7]">
-        <AboutSection
-          title={data.aboutTitle || 'About Puppy Day'}
-          description={data.aboutDescription || 'At Puppy Day, we provide professional grooming services that promote your dog\'s health, comfort, and happiness. We use gentle techniques and premium hypoallergenic products suitable for sensitive skin. Our day care offers a safe, social experience with supervised playtime.'}
-          differentiators={data.aboutDifferentiators.length > 0 ? data.aboutDifferentiators : [
-            'Gentle techniques and premium hypoallergenic products',
-            'Safe, supervised daycare environment',
-            'Experienced and caring staff',
-            'Health-focused grooming services',
-            'Social playtime for dogs',
-            'Comfortable and clean facilities'
-          ]}
-        />
-      </div>
+      <AboutSection
+        title={data.aboutTitle || 'About Puppy Day'}
+        description={data.aboutDescription || 'At Puppy Day, we provide professional grooming services that promote your dog\'s health, comfort, and happiness. We use gentle techniques and premium hypoallergenic products suitable for sensitive skin. Our day care offers a safe, social experience with supervised playtime.'}
+        differentiators={data.aboutDifferentiators.length > 0 ? data.aboutDifferentiators : [
+          'Gentle techniques and premium hypoallergenic products',
+          'Safe, supervised daycare environment',
+          'Experienced and caring staff',
+          'Health-focused grooming services',
+          'Social playtime for dogs',
+          'Comfortable and clean facilities'
+        ]}
+      />
 
       {/* Contact Section */}
-      <div className="relative bg-gradient-to-b from-[#F8EEE5] to-[#EAE0D5]">
-        <ContactSection
-          phone="(657) 252-2903"
-          email="puppyday14936@gmail.com"
-          address="14936 Leffingwell Rd, La Mirada, CA 90638"
-        />
-      </div>
+      <ContactSection
+        phone="(657) 252-2903"
+        email="puppyday14936@gmail.com"
+        address="14936 Leffingwell Rd, La Mirada, CA 90638"
+      />
 
       {/* Structured Data for SEO */}
       <script

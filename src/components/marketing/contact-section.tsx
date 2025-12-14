@@ -20,7 +20,7 @@ export function ContactSection({
   address,
 }: ContactSectionProps) {
   return (
-    <section id="contact" className="py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#EAE0D5]">
+    <section id="contact" className="py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#EAE0D5]">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Section Header */}
