@@ -15,7 +15,7 @@ export type AppointmentStatus =
   | 'cancelled'
   | 'no_show';
 export type PaymentStatus = 'pending' | 'deposit_paid' | 'paid' | 'refunded';
-export type WaitlistStatus = 'active' | 'notified' | 'booked' | 'expired' | 'cancelled';
+export type WaitlistStatus = 'active' | 'notified' | 'booked' | 'expired' | 'expired_offer' | 'cancelled';
 export type TimePreference = 'morning' | 'afternoon' | 'any';
 export type ReportCardMood = 'happy' | 'nervous' | 'calm' | 'energetic';
 export type CoatCondition = 'excellent' | 'good' | 'matted' | 'needs_attention';
@@ -182,10 +182,29 @@ export interface WaitlistEntry extends BaseEntity {
   time_preference: TimePreference;
   status: WaitlistStatus;
   notified_at: string | null;
+  offer_expires_at: string | null;
+  offer_id: string | null;
   notes?: string;
   // Joined data
   customer?: User;
   pet?: Pet;
+  service?: Service;
+}
+
+// Waitlist Slot Offers
+export type SlotOfferStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
+
+export interface WaitlistSlotOffer extends BaseEntity {
+  appointment_date: string;
+  appointment_time: string;
+  service_id: string;
+  discount_percentage: number;
+  response_window_hours: number;
+  expires_at: string;
+  status: SlotOfferStatus;
+  accepted_by_customer_id: string | null;
+  accepted_at: string | null;
+  // Joined data
   service?: Service;
 }
 
