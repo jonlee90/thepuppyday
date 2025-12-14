@@ -15,6 +15,9 @@ import { CustomerTypeChart } from './charts/CustomerTypeChart';
 import { RetentionChart } from './charts/RetentionChart';
 import { OperationalMetricsChart } from './charts/OperationalMetricsChart';
 import { ExportMenu } from './ExportMenu';
+import ReportCardAnalytics from './ReportCardAnalytics';
+import WaitlistAnalytics from './WaitlistAnalytics';
+import MarketingAnalytics from './MarketingAnalytics';
 
 interface DateRange {
   start: Date;
@@ -86,6 +89,24 @@ export default function AnalyticsDashboard() {
       <div className="card bg-white shadow-md p-6">
         <h2 className="text-xl font-bold text-[#434E54] mb-4">Operational Metrics</h2>
         <OperationalMetricsChart dateRange={dateRange} />
+      </div>
+
+      {/* Report Card Analytics - Task 0058 */}
+      <div className="card bg-white shadow-md p-6">
+        <h2 className="text-xl font-bold text-[#434E54] mb-4">Report Card Performance</h2>
+        <ReportCardAnalytics dateRange={dateRange} />
+      </div>
+
+      {/* Waitlist Analytics - Task 0059 */}
+      <div className="card bg-white shadow-md p-6">
+        <h2 className="text-xl font-bold text-[#434E54] mb-4">Waitlist Performance</h2>
+        <WaitlistAnalytics dateRange={dateRange} />
+      </div>
+
+      {/* Marketing Analytics - Task 0060 */}
+      <div className="card bg-white shadow-md p-6">
+        <h2 className="text-xl font-bold text-[#434E54] mb-4">Marketing Campaign Performance</h2>
+        <MarketingAnalytics dateRange={dateRange} />
       </div>
     </div>
   );
