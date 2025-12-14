@@ -13,6 +13,9 @@ export const metadata = {
   description: 'Business analytics and performance metrics',
 };
 
+// Force dynamic rendering to allow authentication checks
+export const dynamic = 'force-dynamic';
+
 export default async function AnalyticsPage() {
   const supabase = await createServerSupabaseClient();
 

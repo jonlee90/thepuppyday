@@ -66,7 +66,8 @@
       "Bash(npx prettier:*)",
       "Bash(timeout 60 npm run build:*)",
       "Bash(cd:*)",
-      "Bash(/mcp supabase schema:*)"
+      "Bash(/mcp supabase schema:*)",
+      "Bash(timeout 10 tail:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
