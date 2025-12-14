@@ -18,6 +18,9 @@ import { ExportMenu } from './ExportMenu';
 import ReportCardAnalytics from './ReportCardAnalytics';
 import WaitlistAnalytics from './WaitlistAnalytics';
 import MarketingAnalytics from './MarketingAnalytics';
+import { GroomerPerformanceDashboard } from './GroomerPerformanceDashboard';
+import { GroomerComparisonTable } from './GroomerComparisonTable';
+import { GroomerLeaderboard } from './GroomerLeaderboard';
 
 interface DateRange {
   start: Date;
@@ -107,6 +110,37 @@ export default function AnalyticsDashboard() {
       <div className="card bg-white shadow-md p-6">
         <h2 className="text-xl font-bold text-[#434E54] mb-4">Marketing Campaign Performance</h2>
         <MarketingAnalytics dateRange={dateRange} />
+      </div>
+
+      {/* Groomer Performance Dashboard - Task 0061 */}
+      <div className="card bg-white shadow-md p-6">
+        <h2 className="text-xl font-bold text-[#434E54] mb-4">Groomer Performance</h2>
+        <GroomerPerformanceDashboard
+          dateRange={{
+            start: dateRange.start.toISOString(),
+            end: dateRange.end.toISOString(),
+          }}
+        />
+      </div>
+
+      {/* Groomer Leaderboard - Task 0062 */}
+      <div className="card bg-white shadow-md p-6">
+        <GroomerLeaderboard
+          dateRange={{
+            start: dateRange.start.toISOString(),
+            end: dateRange.end.toISOString(),
+          }}
+        />
+      </div>
+
+      {/* Groomer Comparison Table - Task 0062 */}
+      <div className="card bg-white shadow-md p-6">
+        <GroomerComparisonTable
+          dateRange={{
+            start: dateRange.start.toISOString(),
+            end: dateRange.end.toISOString(),
+          }}
+        />
       </div>
     </div>
   );
