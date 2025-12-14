@@ -3,47 +3,39 @@
  * Phase 6: Enhanced Waitlist Management with Automated Slot Offering
  */
 
-import type { BaseEntity, User, Pet, Service } from "./database";
+import type {
+  BaseEntity,
+  User,
+  Pet,
+  Service,
+  WaitlistSlotOffer,
+} from "./database";
 
 // Import types for internal use with aliases
 import type {
   WaitlistStatus as WaitlistStatusType,
   TimePreference as TimePreferenceType,
+  SlotOfferStatus as SlotOfferStatusType,
 } from "./database";
 
 // Re-export types from database.ts to avoid duplication
-export type { WaitlistStatus, TimePreference } from "./database";
+export type {
+  WaitlistStatus,
+  TimePreference,
+  WaitlistSlotOffer,
+  SlotOfferStatus,
+} from "./database";
 
 /**
- * Waitlist slot offer status
+ * Waitlist slot offer status (legacy type alias)
+ * @deprecated Use SlotOfferStatus from database.ts instead
  */
-export type WaitlistSlotOfferStatus =
-  | "pending"
-  | "accepted"
-  | "expired"
-  | "cancelled";
+export type WaitlistSlotOfferStatus = SlotOfferStatusType;
 
 /**
  * Priority level for waitlist entries
  */
 export type WaitlistPriority = "low" | "normal" | "high" | "urgent";
-
-/**
- * Slot offer entity
- * Tracks individual slot offers sent to waitlist customers
- */
-export interface WaitlistSlotOffer extends BaseEntity {
-  waitlist_entry_id: string;
-  offered_slot_start: string;
-  offered_slot_end: string;
-  status: WaitlistSlotOfferStatus;
-  expires_at: string;
-  accepted_at: string | null;
-  cancelled_at: string | null;
-  cancellation_reason: string | null;
-  // Joined data
-  waitlist_entry?: EnhancedWaitlistEntry;
-}
 
 /**
  * Enhanced waitlist entry

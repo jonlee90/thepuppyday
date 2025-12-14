@@ -22,6 +22,7 @@ const STATUS_STYLES: Record<WaitlistStatus, string> = {
   notified: 'badge-warning',
   booked: 'badge-success',
   expired: 'badge-ghost',
+  expired_offer: 'badge-ghost',
   cancelled: 'badge-error',
 };
 

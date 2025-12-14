@@ -24,6 +24,7 @@ const STATUS_OPTIONS: Array<{ value: WaitlistStatus; label: string; color: strin
   { value: 'notified', label: 'Notified', color: 'badge-warning' },
   { value: 'booked', label: 'Booked', color: 'badge-success' },
   { value: 'expired', label: 'Expired', color: 'badge-ghost' },
+  { value: 'expired_offer', label: 'Expired Offer', color: 'badge-ghost' },
   { value: 'cancelled', label: 'Cancelled', color: 'badge-error' },
 ];
 
