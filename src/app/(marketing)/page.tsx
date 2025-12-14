@@ -22,8 +22,8 @@ import type {
 
 // SEO Metadata
 export const metadata: Metadata = {
-  title: 'Puppy Day - Dog Grooming & Day Care in La Mirada, CA',
-  description: 'Professional dog grooming and day care services in La Mirada, CA. We use gentle techniques and premium hypoallergenic products. Book your appointment today!',
+  title: 'Puppy Day - Best Dog Grooming & Day Care in La Mirada, CA',
+  description: 'Best dog grooming and day care services in La Mirada, CA 90638. Book your appointment today! Hours Mon-Sat 9:00AM - 5:00pm',
   keywords: [
     'pet grooming',
     'dog grooming',
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'The Puppy Day' }],
   openGraph: {
-    title: 'Puppy Day - Dog Grooming & Day Care',
+    title: 'Puppy Day - BestDog Grooming & Day Care',
     description: 'We treat your dogs like family. Expert grooming and engaging daycare services in La Mirada, CA.',
     url: 'https://thepuppyday.com',
     siteName: 'Puppy Day',

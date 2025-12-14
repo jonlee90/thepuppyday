@@ -31,6 +31,16 @@ export function HeroSection({ headline, tagline, imageUrl }: HeroSectionProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             >
+              {/* Trust badge */}
+            <div className="inline-flex items-center gap-2 bg-[#FFFBF7]/60 backdrop-blur-sm rounded-full px-4 py-2 text-sm font-body text-secondary-foreground animate-fade-up">
+              <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                ))}
+              </div>
+              <span>5 stars on Yelp! Trusted by 100+ dog parents</span>
+            </div>
+            
               {/* Content - positioned above background */}
               <div className="relative z-10">
                 {/* Headline */}
@@ -92,8 +102,8 @@ export function HeroSection({ headline, tagline, imageUrl }: HeroSectionProps) {
             {/* Floating card - repositioned */}
             <div className="mt-5 left-6 w-full lg:w-fit  bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-lg">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-yellow-400/20 flex items-center justify-center shrink-0">
-                  <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
+                  <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                 </div>
                 <div>
                   <p className="font-display text-base font-semibold text-foreground">"Best dog grooming in La Mirada!"</p>
