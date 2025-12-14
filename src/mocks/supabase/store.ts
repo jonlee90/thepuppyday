@@ -78,6 +78,7 @@ class MockStore {
       'appointment_addons',
       'waitlist',
       'report_cards',
+      'reviews',
       'memberships',
       'customer_memberships',
       'loyalty_points',
