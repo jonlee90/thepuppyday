@@ -18,6 +18,9 @@ interface PageProps {
   }>;
 }
 
+// Force dynamic rendering to allow authentication checks
+export const dynamic = 'force-dynamic';
+
 export default async function CampaignDetailPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createServerSupabaseClient();
