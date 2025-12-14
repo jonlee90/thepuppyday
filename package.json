@@ -24,6 +24,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.86.2",
+    "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "daisyui": "^5.5.8",
     "date-fns": "^4.1.0",

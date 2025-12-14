@@ -36,6 +36,7 @@ export const seedServices: Service[] = [
     is_active: true,
     display_order: 1,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: generateId(),
@@ -46,6 +47,7 @@ export const seedServices: Service[] = [
     is_active: true,
     display_order: 2,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: generateId(),
@@ -56,6 +58,7 @@ export const seedServices: Service[] = [
     is_active: true,
     display_order: 3,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
 ];
 
@@ -77,6 +80,8 @@ export function generateServicePrices(services: Service[]): ServicePrice[] {
           service_id: service.id,
           size: size as 'small' | 'medium' | 'large' | 'xlarge',
           price,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         });
       }
     }

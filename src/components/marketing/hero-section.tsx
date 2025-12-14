@@ -7,8 +7,8 @@
 
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Phone } from 'lucide-react';
-
+import { Phone, Calendar, Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 interface HeroSectionProps {
   headline: string;
   tagline: string;
@@ -49,21 +49,11 @@ export function HeroSection({ headline, tagline, imageUrl }: HeroSectionProps) {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mt-8">
                   {/* Book Appointment Button */}
                   <a
-                    href="/login"
+                    href="#booking"
                     className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-white bg-[#434E54] rounded-xl shadow-lg hover:bg-[#363F44] hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
                   >
+                  <Calendar className="w-5 h-5" strokeWidth={2} />
                     Book Appointment
-                    <svg
-                      className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                    </svg>
                   </a>
 
                   {/* Call Button */}
@@ -87,29 +77,32 @@ export function HeroSection({ headline, tagline, imageUrl }: HeroSectionProps) {
             >
               <motion.div
                 className="relative w-full max-w-md mx-auto lg:max-w-none"
-                animate={{
-                  y: [0, -15, 0],
-                }}
-                transition={{
-                  duration: 6,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  ease: "easeInOut"
-                }}
+    
               >
-                {/* Dog image with gradient fade to blend with background */}
-                <div className="relative aspect-[3/4]">
-                  <Image
-                    src="/images/main-dog-hero.png"
-                    alt="Happy groomed dog at Puppy Day"
-                    fill
-                    className="object-contain"
-                    sizes="(max-width: 768px) 90vw, 50vw"
-                    priority
-                  />
-                  {/* Subtle gradient overlay at bottom to blend with background */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#F8EEE5] via-transparent to-transparent pointer-events-none"></div>
+                 {/* Main hero image with dog centered in lobby */}
+            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl">
+              <img
+                src={"/images/puppyday-lobby.jpg"}
+                alt="Adorable groomed dog with bowtie in the Puppy Day salon lobby"
+                className="w-full h-[400px] lg:h-[500px] object-cover"
+              />
+           
+              {/* Overlay gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-hero-overlay/30 to-transparent" />
+            </div>
+            
+            {/* Floating card - repositioned */}
+            <div className="absolute bottom-6 left-6 max-w-[55%] bg-background/90 backdrop-blur-md rounded-2xl p-4 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#434E54]/20 flex items-center justify-center shrink-0">
+                  <Star className="w-5 h-5 text-[#434E54] fill-[#434E54]" />
                 </div>
+                <div>
+                  <p className="font-display text-base font-semibold text-foreground">"Best grooming in town!"</p>
+                  <p className="text-sm font-body text-muted-foreground">— Sarah M.</p>
+                </div>
+              </div>
+            </div>
               </motion.div>
             </motion.div>
           </div>
