@@ -24,6 +24,7 @@ import {
   BarChart3,
   Megaphone,
   Clock,
+  Bell,
 } from 'lucide-react';
 
 interface NavItem {
@@ -81,6 +82,12 @@ const navSections: NavSection[] = [
         label: 'Campaigns',
         href: '/admin/marketing/campaigns',
         icon: Megaphone,
+        ownerOnly: true,
+      },
+      {
+        label: 'Notifications',
+        href: '/admin/notifications',
+        icon: Bell,
         ownerOnly: true,
       },
     ],

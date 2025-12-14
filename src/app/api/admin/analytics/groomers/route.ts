@@ -158,7 +158,7 @@ async function getGroomerComparison(
 
   // Calculate metrics for each groomer
   const groomerStats = await Promise.all(
-    groomers.map(async (groomer) => {
+    groomers.map(async (groomer: any) => {
       const metrics = await calculateGroomerMetrics(
         supabase,
         groomer.id,
@@ -215,7 +215,7 @@ async function getGroomerLeaderboard(
 
   // Calculate metrics for each groomer
   const groomerStats = await Promise.all(
-    groomers.map(async (groomer) => {
+    groomers.map(async (groomer: any) => {
       const metrics = await calculateGroomerMetrics(
         supabase,
         groomer.id,
@@ -293,7 +293,7 @@ async function getAggregatePerformance(
 
   // Aggregate metrics across all groomers
   const allMetrics = await Promise.all(
-    groomers.map(groomer =>
+    groomers.map((groomer: any) =>
       calculateGroomerMetrics(supabase, groomer.id, start, end)
     )
   );
@@ -359,7 +359,7 @@ async function calculateGroomerMetrics(
   const appointmentsCompleted = appointmentsList.length;
 
   // Calculate revenue
-  const revenueTotal = appointmentsList.reduce((sum, apt) => {
+  const revenueTotal = appointmentsList.reduce((sum: number, apt: any) => {
     const servicePrice = apt.service_price?.price || 0;
     const addonPrice = apt.appointment_addons?.reduce(
       (addonSum: number, aa: any) => addonSum + (aa.addon?.price || 0),
@@ -374,7 +374,7 @@ async function calculateGroomerMetrics(
 
   // Calculate addon attachment rate
   const appointmentsWithAddons = appointmentsList.filter(
-    apt => apt.appointment_addons && apt.appointment_addons.length > 0
+    (apt: any) => apt.appointment_addons && apt.appointment_addons.length > 0
   ).length;
   const addonAttachmentRate = appointmentsCompleted > 0
     ? (appointmentsWithAddons / appointmentsCompleted) * 100
@@ -390,7 +390,7 @@ async function calculateGroomerMetrics(
 
   const reviewsList = reviews || [];
   const averageRating = reviewsList.length > 0
-    ? reviewsList.reduce((sum, r) => sum + r.rating, 0) / reviewsList.length
+    ? reviewsList.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviewsList.length
     : 0;
 
   // Calculate on-time percentage
