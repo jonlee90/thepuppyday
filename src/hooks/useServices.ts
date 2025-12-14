@@ -46,6 +46,7 @@ export function useServices(): UseServicesReturn {
 
   useEffect(() => {
     const fetchServices = async () => {
+      console.log('[useServices] Starting fetch, useMocks:', config.useMocks);
       setIsLoading(true);
       setError(null);
 
@@ -72,25 +73,19 @@ export function useServices(): UseServicesReturn {
 
           setServices(servicesWithPrices);
         } else {
-          // Fetch from Supabase
-          const supabase = createClient();
-          const { data, error: supabaseError } = await (supabase as any)
-            .from('services')
-            .select('*, prices:service_prices(*)')
-            .eq('is_active', true)
-            .order('display_order', { ascending: true });
+          // Fetch from API endpoint
+          console.log('[useServices] Fetching from API...');
+          const response = await fetch('/api/services');
 
-          if (supabaseError) {
-            throw new Error(`Failed to fetch services: ${supabaseError.message}`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch services: ${response.statusText}`);
           }
 
-          // Transform data to match ServiceWithPrices type
-          const servicesWithPrices: ServiceWithPrices[] = (data || []).map((service: any) => ({
-            ...service,
-            prices: service.prices || [],
-          }));
+          const data = await response.json();
+          console.log('[useServices] API response:', data);
 
-          setServices(servicesWithPrices);
+          setServices(data.services || []);
+          console.log('[useServices] Setting services:', data.services?.length || 0);
         }
       } catch (err) {
         console.error('Failed to fetch services:', err);

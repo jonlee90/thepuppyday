@@ -26,6 +26,14 @@ export function AddonsStep() {
   // Get pet breed for upsell matching
   const petBreedId = selectedPet?.breed_id || null;
 
+  // Debug logging
+  console.log('[AddonsStep] Component mounted/updated');
+  console.log('[AddonsStep] isLoading:', isLoading);
+  console.log('[AddonsStep] error:', error);
+  console.log('[AddonsStep] addons:', addons);
+  console.log('[AddonsStep] selectedPet:', selectedPet);
+  console.log('[AddonsStep] petBreedId:', petBreedId);
+
   // Separate upsell add-ons (matching pet's breed)
   const upsellAddons = getUpsellAddons(petBreedId);
 

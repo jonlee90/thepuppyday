@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { appointmentCreationSchema } from '@/lib/booking/validation';
 import type { Appointment } from '@/types/database';
 import { z } from 'zod';
@@ -76,7 +76,9 @@ export async function POST(req: NextRequest) {
     // Validate request body
     const validated = appointmentRequestSchema.parse(body);
 
-    const supabase = await createServerSupabaseClient();
+    // Use service role client for all appointment operations (bypasses RLS)
+    // This is needed because guests are creating appointments without being authenticated
+    const supabase = createServiceRoleClient();
 
     // Handle guest user creation if guest_info provided
     let customerId = validated.customer_id;

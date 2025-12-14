@@ -21,6 +21,9 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  BarChart3,
+  Megaphone,
+  Clock,
 } from 'lucide-react';
 
 interface NavItem {
@@ -44,6 +47,11 @@ const navSections: NavSection[] = [
         href: '/admin/dashboard',
         icon: LayoutDashboard,
       },
+      {
+        label: 'Analytics',
+        href: '/admin/analytics',
+        icon: BarChart3,
+      },
     ],
   },
   {
@@ -55,9 +63,25 @@ const navSections: NavSection[] = [
         icon: Calendar,
       },
       {
+        label: 'Waitlist',
+        href: '/admin/waitlist',
+        icon: Clock,
+      },
+      {
         label: 'Customers',
         href: '/admin/customers',
         icon: Users,
+      },
+    ],
+  },
+  {
+    title: 'Marketing',
+    items: [
+      {
+        label: 'Campaigns',
+        href: '/admin/marketing/campaigns',
+        icon: Megaphone,
+        ownerOnly: true,
       },
     ],
   },

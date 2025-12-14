@@ -7,7 +7,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getMockStore } from '@/mocks/supabase/store';
-import { createClient } from '@/lib/supabase/client';
 import { config } from '@/lib/config';
 import type { Addon, Breed } from '@/types/database';
 
@@ -49,11 +48,13 @@ export function useAddons(): UseAddonsReturn {
 
   useEffect(() => {
     const fetchAddons = async () => {
+      console.log('[useAddons] Starting fetch...');
       setIsLoading(true);
       setError(null);
 
       try {
         if (config.useMocks) {
+          console.log('[useAddons] Using mock mode');
           // Fetch from mock store
           const store = getMockStore();
 
@@ -67,39 +68,44 @@ export function useAddons(): UseAddonsReturn {
           // Also fetch breeds for matching
           const breedsData = store.select('breeds') as unknown as Breed[];
 
+          console.log('[useAddons] Mock addons loaded:', addonsData.length);
+          console.log('[useAddons] Mock breeds loaded:', breedsData.length);
           setAddons(addonsData);
           setBreeds(breedsData);
         } else {
-          // Fetch from Supabase
-          const supabase = createClient();
+          console.log('[useAddons] Using real Supabase via API routes');
 
-          // Fetch addons
-          const { data: addonsData, error: addonsError } = await (supabase as any)
-            .from('addons')
-            .select('*')
-            .eq('is_active', true)
-            .order('display_order', { ascending: true });
-
-          if (addonsError) {
-            throw new Error(`Failed to fetch add-ons: ${addonsError.message}`);
+          // Fetch addons from API
+          console.log('[useAddons] Fetching from /api/addons...');
+          const addonsResponse = await fetch('/api/addons');
+          if (!addonsResponse.ok) {
+            throw new Error(`Failed to fetch add-ons: ${addonsResponse.statusText}`);
           }
+          const addonsJson = await addonsResponse.json();
+          console.log('[useAddons] Addons response:', addonsJson);
 
-          // Fetch breeds for upsell matching
-          const { data: breedsData, error: breedsError } = await (supabase as any)
-            .from('breeds')
-            .select('*');
-
-          if (breedsError) {
-            throw new Error(`Failed to fetch breeds: ${breedsError.message}`);
+          // Fetch breeds from API for upsell matching
+          console.log('[useAddons] Fetching from /api/breeds...');
+          const breedsResponse = await fetch('/api/breeds');
+          if (!breedsResponse.ok) {
+            throw new Error(`Failed to fetch breeds: ${breedsResponse.statusText}`);
           }
+          const breedsJson = await breedsResponse.json();
+          console.log('[useAddons] Breeds response:', breedsJson);
 
-          setAddons(addonsData || []);
-          setBreeds(breedsData || []);
+          const addonsData = addonsJson.addons || [];
+          const breedsData = breedsJson.breeds || [];
+
+          console.log('[useAddons] Addons loaded:', addonsData.length);
+          console.log('[useAddons] Breeds loaded:', breedsData.length);
+          setAddons(addonsData);
+          setBreeds(breedsData);
         }
       } catch (err) {
-        console.error('Failed to fetch add-ons:', err);
+        console.error('[useAddons] Error fetching data:', err);
         setError(err instanceof Error ? err : new Error('Unknown error'));
       } finally {
+        console.log('[useAddons] Fetch complete, setting loading to false');
         setIsLoading(false);
       }
     };
