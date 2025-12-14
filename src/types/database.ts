@@ -200,6 +200,14 @@ export interface ReportCard extends BaseEntity {
   after_photo_url: string | null;
   rating: number | null;
   feedback: string | null;
+  groomer_id: string | null;
+  view_count: number;
+  last_viewed_at: string | null;
+  sent_at: string | null;
+  expires_at: string | null;
+  dont_send: boolean;
+  is_draft: boolean;
+  updated_at: string;
 }
 
 export interface CreateReportCardInput {
