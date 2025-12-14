@@ -104,17 +104,17 @@ export interface MarketingCampaign extends BaseEntity {
  * Tracks each message sent to a customer
  */
 export interface CampaignSend extends BaseEntity {
-  campaign_id: string;
-  customer_id: string;
-  channel: "email" | "sms";
-  variant: "a" | "b" | "control";
-  recipient: string; // email or phone
-  status: "pending" | "sent" | "delivered" | "failed" | "bounced";
+  campaign_id: string | null; // Nullable for non-campaign sends (e.g., breed reminders)
+  user_id: string; // Maps to customer_id
+  notification_log_id: string | null;
+  variant: string | null; // 'A' or 'B' for A/B tests, NULL otherwise
   sent_at: string | null;
   delivered_at: string | null;
-  opened_at: string | null;
   clicked_at: string | null;
-  error_message: string | null;
+  booking_id: string | null; // Track conversion to appointment
+  pet_id: string | null; // Track which pet the reminder was for
+  tracking_id: string | null; // Unique tracking ID for click tracking
+  attempt_count: number; // Track how many times we've sent this reminder
   // Joined data
   campaign?: MarketingCampaign;
   customer?: User;
