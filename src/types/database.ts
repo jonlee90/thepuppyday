@@ -182,6 +182,7 @@ export interface WaitlistEntry extends BaseEntity {
   time_preference: TimePreference;
   status: WaitlistStatus;
   notified_at: string | null;
+  notes?: string;
   // Joined data
   customer?: User;
   pet?: Pet;
