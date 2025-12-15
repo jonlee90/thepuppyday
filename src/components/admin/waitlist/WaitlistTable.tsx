@@ -1,7 +1,8 @@
 'use client';
 
 import { WaitlistRow } from './WaitlistRow';
-import { ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { EmptyState } from '@/components/ui/EmptyState';
 import type { WaitlistEntry } from '@/types/database';
 
 interface WaitlistTableProps {
@@ -44,15 +45,12 @@ export function WaitlistTable({
   // Empty state
   if (entries.length === 0) {
     return (
-      <div className="card bg-base-100 border border-base-300">
-        <div className="card-body items-center justify-center py-16">
-          <Inbox className="h-16 w-16 text-gray-300 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700">No waitlist entries</h3>
-          <p className="text-gray-500 text-center max-w-md mt-2">
-            Waitlist entries will appear here when customers request dates that are fully
-            booked.
-          </p>
-        </div>
+      <div className="bg-white rounded-xl shadow-md p-12">
+        <EmptyState
+          icon="calendar"
+          title="No waitlist entries"
+          description="Waitlist entries will appear here when customers request dates that are fully booked."
+        />
       </div>
     );
   }

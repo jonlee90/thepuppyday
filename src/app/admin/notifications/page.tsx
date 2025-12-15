@@ -65,7 +65,8 @@ export default function NotificationCenterPage() {
       const response = await fetch(`/api/admin/notifications?${params.toString()}`);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch notifications');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch notifications');
       }
 
       const data: NotificationListResponse = await response.json();
@@ -76,7 +77,13 @@ export default function NotificationCenterPage() {
       setTotalPages(data.pagination.totalPages);
     } catch (err) {
       console.error('[Notification Center] Error fetching notifications:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load notifications');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load notifications';
+      setError(errorMessage);
+
+      // Show user-friendly error toast if available
+      if (typeof window !== 'undefined') {
+        // Toast notification would go here if implemented
+      }
     } finally {
       setLoading(false);
     }
@@ -186,6 +193,7 @@ export default function NotificationCenterPage() {
           total={total}
           onPageChange={setPage}
           onRowClick={handleRowClick}
+          onRetry={fetchNotifications}
         />
       </div>
 

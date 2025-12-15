@@ -14,10 +14,12 @@ import interactionPlugin from '@fullcalendar/interaction';
 import type { EventClickArg, DateSelectArg } from '@fullcalendar/core';
 import { getCalendarEventColor } from '@/lib/admin/appointment-status';
 import type { Appointment } from '@/types/database';
+import { Clock } from 'lucide-react';
 
 interface AppointmentCalendarProps {
   onEventClick: (appointmentId: string) => void;
   onDateRangeChange?: (start: Date, end: Date) => void;
+  onFillFromWaitlist?: (slotTime: Date) => void;
 }
 
 interface CalendarEvent {
@@ -35,11 +37,14 @@ interface CalendarEvent {
 export function AppointmentCalendar({
   onEventClick,
   onDateRangeChange,
+  onFillFromWaitlist,
 }: AppointmentCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<'dayGridMonth' | 'timeGridWeek' | 'timeGridDay'>('timeGridDay');
+  const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
+  const [slotWaitlistCount, setSlotWaitlistCount] = useState(0);
 
   // Fetch appointments for visible date range
   const fetchAppointments = useCallback(async (start: Date, end: Date) => {
@@ -163,6 +168,51 @@ export function AppointmentCalendar({
     [onEventClick]
   );
 
+  // Handle date/time selection (empty slot clicked)
+  const handleDateSelect = useCallback(
+    async (selectInfo: DateSelectArg) => {
+      const slotTime = selectInfo.start;
+
+      // Only allow selection in day/week view and for future slots
+      if (currentView === 'dayGridMonth') {
+        return;
+      }
+
+      if (slotTime < new Date()) {
+        return; // Don't show modal for past times
+      }
+
+      setSelectedSlot(slotTime);
+
+      // Fetch waitlist count for this slot
+      try {
+        const response = await fetch(
+          `/api/admin/waitlist/count?date=${slotTime.toISOString()}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setSlotWaitlistCount(data.count || 0);
+        } else {
+          setSlotWaitlistCount(0);
+        }
+      } catch (error) {
+        console.error('[AppointmentCalendar] Error fetching waitlist count:', error);
+        setSlotWaitlistCount(0);
+      }
+    },
+    [currentView]
+  );
+
+  // Handle fill from waitlist
+  const handleFillSlot = useCallback(() => {
+    if (selectedSlot && onFillFromWaitlist) {
+      onFillFromWaitlist(selectedSlot);
+      setSelectedSlot(null);
+      setSlotWaitlistCount(0);
+    }
+  }, [selectedSlot, onFillFromWaitlist]);
+
   return (
     <div className="bg-white rounded-xl shadow-md p-6">
       {/* View Toggle */}
@@ -253,8 +303,11 @@ export function AppointmentCalendar({
           allDaySlot={false}
           nowIndicator={true}
           height="auto"
+          selectable={true}
+          selectMirror={true}
           events={events}
           eventClick={handleEventClick}
+          select={handleDateSelect}
           datesSet={handleDatesSet}
           loading={(isLoading) => setLoading(isLoading)}
           eventTimeFormat={{
@@ -269,6 +322,68 @@ export function AppointmentCalendar({
         <div className="flex items-center justify-center py-8">
           <span className="loading loading-spinner loading-lg text-[#434E54]" />
         </div>
+      )}
+
+      {/* Fill from Waitlist Modal */}
+      {selectedSlot && (
+        <dialog className="modal modal-open">
+          <div className="modal-box bg-white">
+            <h3 className="font-bold text-xl text-[#434E54] mb-4">Fill Time Slot</h3>
+            <p className="text-[#6B7280] mb-2">
+              Selected time:{' '}
+              <span className="font-semibold text-[#434E54]">
+                {selectedSlot.toLocaleString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </span>
+            </p>
+
+            {slotWaitlistCount > 0 && (
+              <div className="alert bg-[#EAE0D5] border-none mb-4">
+                <Clock className="w-5 h-5 text-[#434E54]" />
+                <span className="text-[#434E54]">
+                  <strong>{slotWaitlistCount}</strong> customer{slotWaitlistCount !== 1 ? 's' : ''} on
+                  waitlist for this time
+                </span>
+              </div>
+            )}
+
+            <div className="modal-action">
+              <button
+                onClick={() => {
+                  setSelectedSlot(null);
+                  setSlotWaitlistCount(0);
+                }}
+                className="btn btn-ghost text-[#434E54]"
+              >
+                Cancel
+              </button>
+              {slotWaitlistCount > 0 && (
+                <button
+                  onClick={handleFillSlot}
+                  className="btn bg-[#434E54] text-white hover:bg-[#363F44]"
+                >
+                  Fill from Waitlist
+                </button>
+              )}
+            </div>
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button
+              onClick={() => {
+                setSelectedSlot(null);
+                setSlotWaitlistCount(0);
+              }}
+            >
+              close
+            </button>
+          </form>
+        </dialog>
       )}
 
       <style jsx global>{`

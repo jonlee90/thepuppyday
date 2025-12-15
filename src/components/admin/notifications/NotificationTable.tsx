@@ -7,6 +7,7 @@
 
 import { Mail, MessageSquare, CheckCircle, Eye, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
+import { EmptyState } from '@/components/ui/EmptyState';
 import type { NotificationWithCustomer } from '@/types/notifications';
 import { getNotificationTypeLabel } from '@/types/notifications';
 
@@ -19,6 +20,7 @@ interface NotificationTableProps {
   total: number;
   onPageChange: (page: number) => void;
   onRowClick: (notification: NotificationWithCustomer) => void;
+  onRetry?: () => void;
 }
 
 export function NotificationTable({
@@ -30,6 +32,7 @@ export function NotificationTable({
   total,
   onPageChange,
   onRowClick,
+  onRetry,
 }: NotificationTableProps) {
   // Loading state
   if (loading) {
@@ -46,9 +49,18 @@ export function NotificationTable({
   if (error) {
     return (
       <div className="card bg-white border border-gray-200 rounded-lg shadow-sm">
-        <div className="flex items-center justify-center py-12 text-red-600">
-          <AlertCircle className="w-6 h-6 mr-2" />
-          <span>{error}</span>
+        <div className="flex flex-col items-center justify-center py-12">
+          <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+          <h3 className="text-lg font-semibold text-[#434E54] mb-2">Error Loading Notifications</h3>
+          <p className="text-[#6B7280] mb-4 text-center max-w-md">{error}</p>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="btn bg-[#434E54] text-white hover:bg-[#363F44]"
+            >
+              Try Again
+            </button>
+          )}
         </div>
       </div>
     );
@@ -57,14 +69,12 @@ export function NotificationTable({
   // Empty state
   if (notifications.length === 0) {
     return (
-      <div className="card bg-white border border-gray-200 rounded-lg shadow-sm">
-        <div className="flex flex-col items-center justify-center py-16">
-          <Mail className="w-16 h-16 text-gray-300 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700">No notifications found</h3>
-          <p className="text-gray-500 text-center max-w-md mt-2">
-            Notifications will appear here as they are sent through the system.
-          </p>
-        </div>
+      <div className="bg-white rounded-xl shadow-md p-12">
+        <EmptyState
+          icon="search"
+          title="No notifications found"
+          description="Notifications will appear here as they are sent through the system."
+        />
       </div>
     );
   }

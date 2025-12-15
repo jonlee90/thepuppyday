@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Mail, MessageSquare, Calendar, Users, MoreVertical, Edit, Copy, Trash2, Send, BarChart3 } from 'lucide-react';
+import { Plus, Mail, MessageSquare, Calendar, Users, MoreVertical, Edit, Copy, Trash2, Send, BarChart3, AlertCircle } from 'lucide-react';
 import { CreateCampaignModal } from './CreateCampaignModal';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { toast } from '@/hooks/use-toast';
 import type { MarketingCampaign, CampaignStatus } from '@/types/marketing';
 
@@ -18,6 +19,7 @@ interface CampaignListProps {
 export function CampaignList({ initialStatus }: CampaignListProps) {
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [statusFilter, setStatusFilter] = useState<CampaignStatus | ''>( initialStatus || '');
@@ -27,6 +29,7 @@ export function CampaignList({ initialStatus }: CampaignListProps) {
   // Fetch campaigns
   const fetchCampaigns = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -41,7 +44,8 @@ export function CampaignList({ initialStatus }: CampaignListProps) {
 
       const response = await fetch(`/api/admin/campaigns?${params}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch campaigns');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch campaigns');
       }
 
       const data = await response.json();
@@ -49,8 +53,10 @@ export function CampaignList({ initialStatus }: CampaignListProps) {
       setTotal(data.pagination?.total || 0);
     } catch (error) {
       console.error('Error fetching campaigns:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load campaigns';
+      setError(errorMessage);
       toast.error('Failed to load campaigns', {
-        description: 'Please try refreshing the page.',
+        description: 'Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -265,32 +271,44 @@ export function CampaignList({ initialStatus }: CampaignListProps) {
         </div>
       )}
 
-      {/* Empty State */}
-      {!isLoading && campaigns.length === 0 && (
-        <div className="card bg-white shadow-md">
-          <div className="card-body items-center text-center py-12">
-            <Mail className="w-16 h-16 text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-[#434E54] mb-2">
-              {statusFilter ? `No ${statusFilter} campaigns` : 'No campaigns yet'}
-            </h3>
-            <p className="text-[#6B7280] mb-6 max-w-md">
-              {statusFilter
-                ? `You don't have any ${statusFilter} campaigns. Try changing the filter or create a new campaign.`
-                : 'Get started by creating your first marketing campaign to engage with your customers.'}
-            </p>
+      {/* Error State */}
+      {!isLoading && error && (
+        <div className="bg-white rounded-xl shadow-md p-12">
+          <div className="flex flex-col items-center justify-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+            <h3 className="text-lg font-semibold text-[#434E54] mb-2">Error Loading Campaigns</h3>
+            <p className="text-[#6B7280] mb-4 text-center max-w-md">{error}</p>
             <button
-              onClick={handleCreateCampaign}
-              className="btn btn-primary gap-2"
+              onClick={fetchCampaigns}
+              className="btn bg-[#434E54] text-white hover:bg-[#363F44]"
             >
-              <Plus className="w-5 h-5" />
-              Create Your First Campaign
+              Try Again
             </button>
           </div>
         </div>
       )}
 
+      {/* Empty State */}
+      {!isLoading && !error && campaigns.length === 0 && (
+        <div className="bg-white rounded-xl shadow-md p-12">
+          <EmptyState
+            icon="search"
+            title={statusFilter ? `No ${statusFilter} campaigns` : 'No campaigns yet'}
+            description={
+              statusFilter
+                ? `You don't have any ${statusFilter} campaigns. Try changing the filter or create a new campaign.`
+                : 'Get started by creating your first marketing campaign to engage with your customers.'
+            }
+            action={{
+              label: 'Create Campaign',
+              onClick: handleCreateCampaign,
+            }}
+          />
+        </div>
+      )}
+
       {/* Campaigns Grid */}
-      {!isLoading && campaigns.length > 0 && (
+      {!isLoading && !error && campaigns.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {campaigns.map((campaign) => (
             <div
