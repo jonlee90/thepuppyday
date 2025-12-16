@@ -13,7 +13,7 @@ import type { Service } from '@/types/database';
 import type { LucideIcon } from 'lucide-react';
 
 interface ServiceCardProps {
-  service: Service;
+  service: Service | 'add-ons-info'; // Can be a Service object or special add-ons identifier
   onLearnMore?: () => void;
   isFeatured?: boolean;
 }
@@ -85,14 +85,30 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false }: Servic
   const router = useRouter();
   const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
 
-  // Determine which service type this is
-  const serviceName = service.name.toLowerCase();
-  let serviceType: 'basic' | 'premium' | 'addons' = 'basic';
+  // Check if this is the special add-ons info card
+  const isAddOnsInfoCard = service === 'add-ons-info';
 
-  if (serviceName.includes('premium')) {
-    serviceType = 'premium';
-  } else if (serviceName.includes('add')) {
+  // Determine which service type this is
+  let serviceType: 'basic' | 'premium' | 'addons' = 'basic';
+  let serviceName = '';
+  let serviceDescription = '';
+  let serviceId = '';
+
+  if (isAddOnsInfoCard) {
     serviceType = 'addons';
+    serviceName = 'Add-On Services';
+    serviceDescription = 'Enhance your grooming experience with our premium add-ons';
+  } else {
+    serviceName = service.name.toLowerCase();
+    serviceDescription = service.description || '';
+    serviceId = service.id;
+
+    if (serviceName.includes('premium')) {
+      serviceType = 'premium';
+    } else if (serviceName.includes('add')) {
+      serviceType = 'addons';
+    }
+    serviceName = service.name;
   }
 
   const data = SERVICE_DATA[serviceType];
@@ -129,12 +145,12 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false }: Servic
 
           {/* Service Name */}
           <h3 className="text-2xl font-bold text-[#434E54] text-center mb-3">
-            {service.name}
+            {serviceName}
           </h3>
 
           {/* Service Description */}
           <p className="text-[#6B7280] text-center text-sm mb-6">
-            {service.description}
+            {serviceDescription}
           </p>
         </div>
 
@@ -231,19 +247,25 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false }: Servic
 
         {/* CTA Button - Fixed at bottom */}
         <div className="flex-shrink-0 mt-auto">
-          <button
-            className={`w-full px-6 py-4 text-base font-semibold rounded-xl shadow-md transition-all duration-200 ${
-              isFeatured
-                ? 'bg-[#434E54] text-white hover:bg-[#363F44] hover:shadow-lg'
-                : 'bg-gradient-to-r from-[#434E54] to-[#5A6670] text-white hover:shadow-lg'
-            }`}
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/booking?service=${service.id}`);
-            }}
-          >
-            Book This Service
-          </button>
+          {isAddOnsInfoCard ? (
+            <div className="w-full px-6 py-4 text-base font-semibold rounded-xl bg-[#EAE0D5] text-[#434E54] text-center border border-[#434E54]/20">
+              Available during booking
+            </div>
+          ) : (
+            <button
+              className={`w-full px-6 py-4 text-base font-semibold rounded-xl shadow-md transition-all duration-200 ${
+                isFeatured
+                  ? 'bg-[#434E54] text-white hover:bg-[#363F44] hover:shadow-lg'
+                  : 'bg-gradient-to-r from-[#434E54] to-[#5A6670] text-white hover:shadow-lg'
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/booking?service=${serviceId}`);
+              }}
+            >
+              Book This Service
+            </button>
+          )}
         </div>
       </div>
     </motion.div>

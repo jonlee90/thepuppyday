@@ -11,13 +11,19 @@ interface ServiceGridProps {
 }
 
 export function ServiceGrid({ services }: ServiceGridProps) {
-  // Filter to show only Basic, Premium, and Add-ons services
-  const displayServices = services.filter((service) => {
+  // Filter to show only Basic and Premium services (not database add-ons)
+  const groomingServices = services.filter((service) => {
     const name = service.name.toLowerCase();
-    return name.includes('basic') || name.includes('premium') || name.includes('add');
-  }).slice(0, 3); // Ensure we only show 3 services
+    return name.includes('basic') || name.includes('premium');
+  }).slice(0, 2); // Only show Basic and Premium
 
-  if (displayServices.length === 0) {
+  // Always include the hardcoded add-ons info card
+  const displayServices: Array<Service | 'add-ons-info'> = [
+    ...groomingServices,
+    'add-ons-info', // Always add the informational add-ons card
+  ];
+
+  if (groomingServices.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="bg-white rounded-2xl p-8 shadow-md max-w-md mx-auto">
@@ -29,7 +35,7 @@ export function ServiceGrid({ services }: ServiceGridProps) {
   }
 
   // Determine which service is featured (Premium)
-  const featuredIndex = displayServices.findIndex((s) =>
+  const featuredIndex = groomingServices.findIndex((s) =>
     s.name.toLowerCase().includes('premium')
   );
 
@@ -50,7 +56,7 @@ export function ServiceGrid({ services }: ServiceGridProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-stretch">
         {displayServices.map((service, index) => (
           <ServiceCard
-            key={service.id}
+            key={service === 'add-ons-info' ? 'add-ons-info' : service.id}
             service={service}
             isFeatured={index === featuredIndex}
           />
