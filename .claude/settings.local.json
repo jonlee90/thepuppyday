@@ -70,7 +70,9 @@
       "Bash(timeout 10 tail:*)",
       "Bash(git branch:*)",
       "Bash(npx tsx:*)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(psql:*)",
+      "Bash(timeout 2 tail:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

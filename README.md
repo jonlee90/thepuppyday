@@ -1,24 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The Puppy Day
+
+Full-stack dog grooming SaaS application for Puppy Day in La Mirada, CA.
+
+Built with Next.js 14+, TypeScript, Tailwind CSS, DaisyUI, and Supabase.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 18+ and npm
+- Supabase account and project
+- Environment variables configured (see `.env.local`)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Initial Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Configure environment variables:**
+   - Copy `.env.example` to `.env.local`
+   - Add your Supabase credentials
+   - Set `NEXT_PUBLIC_USE_MOCKS=false` for production Supabase
+
+3. **Set up Supabase Storage:**
+   ```bash
+   # Create required storage buckets
+   node scripts/setup-storage-buckets.js
+   ```
+
+   Then execute the storage policies SQL:
+   - Open Supabase SQL Editor
+   - Run the SQL from `scripts/setup-storage-policies.sql`
+
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open [http://localhost:3000](http://localhost:3000)** in your browser.
+
+### Project Structure
+
+See `CLAUDE.md` for detailed project documentation, including:
+- Tech stack details
+- Database schema
+- Development phases
+- Design system guidelines
+
+### Scripts
+
+See `scripts/README.md` for utility scripts including:
+- Storage bucket setup
+- Storage policy configuration
 
 ## Learn More
 

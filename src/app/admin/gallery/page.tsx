@@ -13,17 +13,8 @@ export default async function GalleryPage() {
   // Fetch initial gallery images server-side
   const { data: initialImages } = (await (supabase as any)
     .from('gallery_images')
-    .select(`
-      *,
-      breed:breeds(name)
-    `)
-    .order('display_order')) as { data: any[] | null; error: Error | null };
-
-  // Transform data to include breed name
-  const imagesWithBreed = (initialImages || []).map(image => ({
-    ...image,
-    breed_name: image.breed?.name || null,
-  }));
+    .select('*')
+    .order('display_order', { ascending: true })) as { data: any[] | null; error: Error | null };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -36,7 +27,7 @@ export default async function GalleryPage() {
       </div>
 
       {/* Gallery Grid */}
-      <GalleryGrid initialImages={imagesWithBreed} />
+      <GalleryGrid initialImages={initialImages || []} />
     </div>
   );
 }

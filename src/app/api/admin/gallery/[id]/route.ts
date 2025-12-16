@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { GalleryImage } from '@/types/database';
 import {
@@ -219,6 +219,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Use regular client for auth check
     const supabase = await createServerSupabaseClient();
     await requireAdmin(supabase);
     const { id } = await params;
@@ -228,8 +229,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Invalid image ID format' }, { status: 400 });
     }
 
+    // Use service role client for database and storage operations
+    const serviceSupabase = createServiceRoleClient();
+
     // Fetch the image first to get the URL
-    const { data: image, error: fetchError } = (await (supabase as any)
+    const { data: image, error: fetchError } = (await (serviceSupabase as any)
       .from('gallery_images')
       .select('*')
       .eq('id', id)
@@ -246,7 +250,7 @@ export async function DELETE(
     }
 
     // Delete from database first
-    const { error: deleteError } = await (supabase as any)
+    const { error: deleteError } = await (serviceSupabase as any)
       .from('gallery_images')
       .delete()
       .eq('id', id);
@@ -266,8 +270,8 @@ export async function DELETE(
         // Get the file name (last part of path)
         const fileName = pathParts[pathParts.length - 1];
 
-        // Delete from storage
-        const { error: storageError } = await (supabase as any)
+        // Delete from storage using service role client
+        const { error: storageError } = await (serviceSupabase as any)
           .storage
           .from('gallery-images')
           .remove([fileName]);
@@ -275,6 +279,8 @@ export async function DELETE(
         if (storageError) {
           console.error('[Delete] Storage deletion failed:', storageError);
           // Continue anyway - database entry is already deleted
+        } else {
+          console.log(`[Delete] Successfully deleted ${fileName} from storage`);
         }
       }
     } catch (urlError) {

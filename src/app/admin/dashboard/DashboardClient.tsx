@@ -9,6 +9,7 @@ import { useState, useCallback } from 'react';
 import { DashboardStats } from '@/components/admin/dashboard/DashboardStats';
 import { TodayAppointments } from '@/components/admin/dashboard/TodayAppointments';
 import { ActivityFeed } from '@/components/admin/dashboard/ActivityFeed';
+import { QuickAccess } from '@/components/admin/dashboard/QuickAccess';
 import { useDashboardRealtime } from '@/hooks/admin/use-dashboard-realtime';
 import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import type { Appointment, NotificationLog } from '@/types/database';
@@ -106,6 +107,9 @@ export function DashboardClient({
 
       {/* Stats Grid */}
       <DashboardStats initialStats={stats} onRetry={handleRetry} />
+
+      {/* Quick Access Cards */}
+      <QuickAccess />
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

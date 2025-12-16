@@ -128,11 +128,9 @@ export function GalleryGrid({ initialImages = [] }: GalleryGridProps) {
     })
   );
 
-  // Only fetch when filter changes from default
+  // Fetch images whenever filter changes
   useEffect(() => {
-    if (filter !== 'all') {
-      fetchImages();
-    }
+    fetchImages();
   }, [filter]);
 
   const fetchImages = async () => {
