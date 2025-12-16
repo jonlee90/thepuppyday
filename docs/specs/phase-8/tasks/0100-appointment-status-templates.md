@@ -4,12 +4,15 @@
 Create SMS templates for appointment status updates (Checked In and Ready for Pickup).
 
 ## Acceptance Criteria
-- [ ] Create "Checked In" SMS template: "We've got {pet_name}!"
-- [ ] Create "Ready for Pickup" SMS template: "{pet_name} is ready for pickup!"
-- [ ] Include business address in both
-- [ ] Keep under 160 characters each
-- [ ] Insert templates into database
-- [ ] Write tests for template rendering
+- [x] Create "Checked In" SMS template: "We've got {pet_name}!"
+- [x] Create "Ready for Pickup" SMS template: "{pet_name} is ready for pickup!"
+- [x] Include business address in both
+- [x] Keep under 160 characters each
+- [x] Insert templates into database
+- [x] Write tests for template rendering
+
+## Status
+✅ Completed - Implemented in commit 35558e8
 
 ## References
 - Req 6.1, Req 6.2, Req 6.3

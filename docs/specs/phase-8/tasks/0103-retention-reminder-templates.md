@@ -4,11 +4,14 @@
 Create email and SMS templates for automated grooming retention reminders.
 
 ## Acceptance Criteria
-- [ ] Create email template with pet_name, weeks_since_last, breed_name, booking_url
-- [ ] Include engaging message about time for grooming
-- [ ] Create concise SMS template with booking link
-- [ ] Insert templates into database
-- [ ] Write tests for template rendering
+- [x] Create email template with pet_name, weeks_since_last, breed_name, booking_url
+- [x] Include engaging message about time for grooming
+- [x] Create concise SMS template with booking link
+- [x] Insert templates into database
+- [x] Write tests for template rendering
+
+## Status
+✅ Completed - Implemented in commit 35558e8
 
 ## References
 - Req 9.3, Req 9.4

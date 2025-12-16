@@ -4,11 +4,14 @@
 Create email and SMS templates for report card completion notifications.
 
 ## Acceptance Criteria
-- [ ] Create email template with pet_name, report card link, before/after images placeholder
-- [ ] Include message encouraging customer to leave a review
-- [ ] Create concise SMS template with link
-- [ ] Insert templates into database
-- [ ] Write tests for template rendering
+- [x] Create email template with pet_name, report card link, before/after images placeholder
+- [x] Include message encouraging customer to leave a review
+- [x] Create concise SMS template with link
+- [x] Insert templates into database
+- [x] Write tests for template rendering
+
+## Status
+✅ Completed - Implemented in commit 35558e8
 
 ## References
 - Req 7.2, Req 7.3, Req 7.4, Req 7.5
