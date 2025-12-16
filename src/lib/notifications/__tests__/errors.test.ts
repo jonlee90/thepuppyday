@@ -13,7 +13,7 @@ import {
   calculateRetryTimestamp,
   hasExceededMaxRetries,
 } from '../errors';
-import { ErrorType, DEFAULT_RETRY_CONFIG } from '../types';
+import { ErrorType } from '../types';
 
 describe('Error Classification', () => {
   // ==========================================================================

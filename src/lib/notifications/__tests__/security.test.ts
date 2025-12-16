@@ -3,11 +3,10 @@
  * Tests XSS prevention, HTML escaping, and input validation
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import {
   createBookingConfirmationEmail,
   createReportCardEmail,
-  createRetentionReminderEmail,
   createPaymentFailedEmail,
   createAppointmentReminderSms,
   createBookingConfirmationSms,

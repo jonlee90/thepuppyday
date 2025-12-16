@@ -67,7 +67,10 @@
       "Bash(timeout 60 npm run build:*)",
       "Bash(cd:*)",
       "Bash(/mcp supabase schema:*)",
-      "Bash(timeout 10 tail:*)"
+      "Bash(timeout 10 tail:*)",
+      "Bash(git branch:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx supabase:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
