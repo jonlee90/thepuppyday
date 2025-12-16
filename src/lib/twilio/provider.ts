@@ -75,7 +75,8 @@ export class TwilioProvider implements SMSProvider {
         : this.fromPhone;
 
       // Send SMS via Twilio SDK
-      const message = await this.client.messages.create({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const message = await (this.client as any).messages.create({
         body: params.body,
         to: toPhone,
         from: fromPhone,

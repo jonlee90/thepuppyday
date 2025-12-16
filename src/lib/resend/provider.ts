@@ -74,7 +74,8 @@ export class ResendProvider implements EmailProvider {
       };
 
       // Send email via Resend SDK
-      const response = await this.resend.emails.send(emailData);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response = await (this.resend as any).emails.send(emailData);
 
       // Check for errors in response
       if (response.error) {

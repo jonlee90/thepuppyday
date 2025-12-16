@@ -77,7 +77,8 @@ export function getEmailProvider(): EmailProvider {
     }
 
     console.log('[Provider Factory] Using ResendProvider for email (production)');
-    emailProviderInstance = new ResendProvider();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    emailProviderInstance = new (ResendProvider as any)() as EmailProvider;
   }
 
   return emailProviderInstance;
@@ -119,7 +120,8 @@ export function getSMSProvider(): SMSProvider {
     }
 
     console.log('[Provider Factory] Using TwilioProvider for SMS (production)');
-    smsProviderInstance = new TwilioProvider();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    smsProviderInstance = new (TwilioProvider as any)() as SMSProvider;
   }
 
   return smsProviderInstance;

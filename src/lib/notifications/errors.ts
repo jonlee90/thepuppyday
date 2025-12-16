@@ -6,6 +6,9 @@
 
 import { ErrorType, type ClassifiedError, type RetryConfig, DEFAULT_RETRY_CONFIG } from './types';
 
+// Re-export for convenience
+export { DEFAULT_RETRY_CONFIG };
+
 // ============================================================================
 // ERROR CLASSIFICATION
 // ============================================================================
