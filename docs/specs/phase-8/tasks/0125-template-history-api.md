@@ -4,11 +4,11 @@
 Create API endpoint to retrieve version history for templates.
 
 ## Acceptance Criteria
-- [ ] Create GET `/api/admin/notifications/templates/:id/history`
-- [ ] Return list of versions with version number, changed_by user info, change_reason, timestamp
-- [ ] Order by version descending
-- [ ] Require admin authentication
-- [ ] Write unit tests
+- [x] Create GET `/api/admin/notifications/templates/:id/history`
+- [x] Return list of versions with version number, changed_by user info, change_reason, timestamp
+- [x] Order by version descending
+- [x] Require admin authentication
+- [x] Write unit tests
 
 ## References
 - Req 11.8
@@ -18,3 +18,7 @@ Small
 
 ## Category
 Admin Template Management APIs
+
+## Status
+✅ **COMPLETED** - 2025-01-15
+

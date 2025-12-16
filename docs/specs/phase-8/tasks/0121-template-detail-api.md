@@ -4,11 +4,11 @@
 Create API endpoint to retrieve full details of a specific template.
 
 ## Acceptance Criteria
-- [ ] Create GET `/api/admin/notifications/templates/:id`
-- [ ] Return full template including subject_template, html_template, text_template
-- [ ] Include variables with descriptions
-- [ ] Require admin authentication
-- [ ] Write unit tests
+- [x] Create GET `/api/admin/notifications/templates/:id`
+- [x] Return full template including subject_template, html_template, text_template
+- [x] Include variables with descriptions
+- [x] Require admin authentication
+- [x] Write unit tests
 
 ## References
 - Req 11.2
@@ -18,3 +18,7 @@ Small
 
 ## Category
 Admin Template Management APIs
+
+## Status
+✅ **COMPLETED** - 2025-01-15
+
