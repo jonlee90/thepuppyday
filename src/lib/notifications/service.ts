@@ -97,11 +97,36 @@ export class DefaultNotificationService implements NotificationService {
       }
 
       // Step 2: Check user preferences (if userId provided)
-      // TODO: Implement user preferences check in later tasks (Tasks 0116-0119)
       if (message.userId) {
-        // Placeholder for future implementation
-        // const userPrefs = await this.getUserPreferences(message.userId);
-        // if (!userPrefs.enabled) return { success: false, error: 'User opted out' };
+        const { checkNotificationAllowed } = await import('./preferences');
+        const allowedCheck = await checkNotificationAllowed(
+          this.supabase,
+          message.userId,
+          message.type,
+          message.channel
+        );
+
+        if (!allowedCheck.allowed) {
+          console.log(
+            `[NotificationService] Notification blocked by user preference: ${allowedCheck.reason}`
+          );
+
+          // Log the skipped notification
+          await this.logger.create({
+            customerId: message.userId,
+            type: message.type,
+            channel: message.channel,
+            recipient: message.recipient,
+            status: 'failed',
+            errorMessage: allowedCheck.reason || 'customer_preference',
+            isTest: false,
+          });
+
+          return {
+            success: false,
+            error: allowedCheck.reason || 'customer_preference',
+          };
+        }
       }
 
       // Step 3: Load template by type and channel
