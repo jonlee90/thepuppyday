@@ -4,11 +4,11 @@
 Create API endpoints for customers to manage their notification preferences.
 
 ## Acceptance Criteria
-- [ ] Create GET `/api/customer/preferences/notifications` endpoint
-- [ ] Create PUT `/api/customer/preferences/notifications` endpoint
-- [ ] Validate preference values
-- [ ] Require customer authentication
-- [ ] Write unit tests
+- [x] Create GET `/api/customer/preferences/notifications` endpoint
+- [x] Create PUT `/api/customer/preferences/notifications` endpoint
+- [x] Validate preference values
+- [x] Require customer authentication
+- [x] Write unit tests
 
 ## References
 - Req 19.1
