@@ -20,3 +20,6 @@ Medium
 
 ## Category
 Notification Triggers
+## Status
+✅ Completed - Implemented in commit 5d90a28
+
