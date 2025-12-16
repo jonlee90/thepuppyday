@@ -1,0 +1,374 @@
+/**
+ * Phase 8: Template Helper Functions
+ * Utility functions for working with email and SMS templates
+ */
+
+import {
+  emailTemplates,
+  smsTemplates,
+  type EmailTemplate,
+  type BookingConfirmationData,
+  type ReportCardData,
+  type RetentionReminderData,
+  type PaymentFailedData,
+  type PaymentReminderData,
+  type PaymentSuccessData,
+  type PaymentFinalNoticeData,
+  type AppointmentReminderData,
+  type AppointmentStatusData,
+  type WaitlistNotificationData,
+} from './email-templates';
+
+// ============================================================================
+// TEMPLATE TYPE MAPPING
+// ============================================================================
+
+/**
+ * Map notification types to their corresponding template data types
+ */
+export type TemplateDataMap = {
+  booking_confirmation: BookingConfirmationData;
+  report_card_notification: ReportCardData;
+  retention_reminder: RetentionReminderData;
+  payment_failed: PaymentFailedData;
+  payment_reminder: PaymentReminderData;
+  payment_success: PaymentSuccessData;
+  payment_final_notice: PaymentFinalNoticeData;
+  appointment_reminder: AppointmentReminderData;
+  appointment_checked_in: AppointmentStatusData;
+  appointment_ready_for_pickup: AppointmentStatusData;
+  waitlist_notification: WaitlistNotificationData;
+};
+
+/**
+ * Notification type keys
+ */
+export type NotificationType = keyof TemplateDataMap;
+
+// ============================================================================
+// TEMPLATE RENDERING FUNCTIONS
+// ============================================================================
+
+/**
+ * Render an email template for a specific notification type
+ */
+export function renderEmailTemplate<T extends NotificationType>(
+  type: T,
+  data: TemplateDataMap[T]
+): EmailTemplate | null {
+  switch (type) {
+    case 'booking_confirmation':
+      return emailTemplates.bookingConfirmation(data as BookingConfirmationData);
+
+    case 'report_card_notification':
+      return emailTemplates.reportCard(data as ReportCardData);
+
+    case 'retention_reminder':
+      return emailTemplates.retentionReminder(data as RetentionReminderData);
+
+    case 'payment_failed':
+      return emailTemplates.paymentFailed(data as PaymentFailedData);
+
+    case 'payment_reminder':
+      return emailTemplates.paymentReminder(data as PaymentReminderData);
+
+    case 'payment_success':
+      return emailTemplates.paymentSuccess(data as PaymentSuccessData);
+
+    case 'payment_final_notice':
+      return emailTemplates.paymentFinalNotice(data as PaymentFinalNoticeData);
+
+    default:
+      // These notification types don't have dedicated email templates
+      return null;
+  }
+}
+
+/**
+ * Render an SMS template for a specific notification type
+ */
+export function renderSmsTemplate<T extends NotificationType>(
+  type: T,
+  data: TemplateDataMap[T]
+): string | null {
+  switch (type) {
+    case 'appointment_reminder':
+      return smsTemplates.appointmentReminder(data as AppointmentReminderData);
+
+    case 'appointment_checked_in':
+      return smsTemplates.checkedIn(data as AppointmentStatusData);
+
+    case 'appointment_ready_for_pickup':
+      return smsTemplates.readyForPickup(data as AppointmentStatusData);
+
+    case 'waitlist_notification':
+      return smsTemplates.waitlistNotification(data as WaitlistNotificationData);
+
+    case 'booking_confirmation':
+      return smsTemplates.bookingConfirmation(data as BookingConfirmationData);
+
+    case 'report_card_notification':
+      return smsTemplates.reportCard(data as ReportCardData);
+
+    case 'retention_reminder':
+      return smsTemplates.retentionReminder(data as RetentionReminderData);
+
+    default:
+      // These notification types don't have SMS templates
+      return null;
+  }
+}
+
+// ============================================================================
+// TEMPLATE DATA VALIDATION
+// ============================================================================
+
+/**
+ * Validate that all required fields are present in template data
+ */
+export function validateTemplateData<T extends NotificationType>(
+  type: T,
+  data: unknown
+): data is TemplateDataMap[T] {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+
+  const typedData = data as Record<string, unknown>;
+
+  switch (type) {
+    case 'booking_confirmation':
+      return !!(
+        typedData.customer_name &&
+        typedData.pet_name &&
+        typedData.appointment_date &&
+        typedData.appointment_time &&
+        typedData.service_name &&
+        typedData.total_price
+      );
+
+    case 'report_card_notification':
+      return !!(typedData.pet_name && typedData.report_card_link);
+
+    case 'retention_reminder':
+      return !!(
+        typedData.pet_name &&
+        typeof typedData.weeks_since_last === 'number' &&
+        typedData.breed_name &&
+        typedData.booking_url
+      );
+
+    case 'payment_failed':
+      return !!(
+        typedData.failure_reason &&
+        typedData.amount_due &&
+        typedData.retry_link
+      );
+
+    case 'payment_reminder':
+      return !!(
+        typedData.charge_date &&
+        typedData.amount &&
+        typedData.payment_method
+      );
+
+    case 'payment_success':
+      return !!(
+        typedData.amount &&
+        typedData.payment_date &&
+        typedData.payment_method
+      );
+
+    case 'payment_final_notice':
+      return !!(
+        typedData.amount_due &&
+        typedData.retry_link &&
+        typedData.suspension_date
+      );
+
+    case 'appointment_reminder':
+      return !!(typedData.pet_name && typedData.appointment_time);
+
+    case 'appointment_checked_in':
+    case 'appointment_ready_for_pickup':
+      return !!typedData.pet_name;
+
+    case 'waitlist_notification':
+      return !!(
+        typedData.available_date &&
+        typedData.available_time &&
+        typedData.claim_link
+      );
+
+    default:
+      return false;
+  }
+}
+
+// ============================================================================
+// SMS CHARACTER COUNT HELPERS
+// ============================================================================
+
+/**
+ * Calculate SMS segment count (GSM 7-bit encoding)
+ */
+export function calculateSmsSegments(text: string): number {
+  const length = text.length;
+
+  if (length === 0) return 0;
+  if (length <= 160) return 1;
+
+  // Multi-segment messages use 153 characters per segment
+  return Math.ceil(length / 153);
+}
+
+/**
+ * Check if SMS text fits in a single segment
+ */
+export function isSingleSegment(text: string): boolean {
+  return text.length <= 160;
+}
+
+/**
+ * Get SMS length info
+ */
+export function getSmsLengthInfo(text: string): {
+  length: number;
+  segments: number;
+  remaining: number;
+  isSingleSegment: boolean;
+} {
+  const length = text.length;
+  const segments = calculateSmsSegments(text);
+  const isSingle = isSingleSegment(text);
+
+  let remaining: number;
+  if (isSingle) {
+    remaining = 160 - length;
+  } else {
+    const nextSegmentStart = segments * 153;
+    remaining = nextSegmentStart - length;
+  }
+
+  return {
+    length,
+    segments,
+    remaining,
+    isSingleSegment: isSingle,
+  };
+}
+
+// ============================================================================
+// UNSUBSCRIBE LINK HELPER
+// ============================================================================
+
+/**
+ * Replace unsubscribe placeholder with actual link
+ */
+export function insertUnsubscribeLink(
+  html: string,
+  customerId: string,
+  baseUrl: string = 'https://thepuppyday.com'
+): string {
+  const unsubscribeUrl = `${baseUrl}/unsubscribe?customer=${customerId}`;
+  return html.replace(/\{\{unsubscribe_link\}\}/g, unsubscribeUrl);
+}
+
+// ============================================================================
+// DATE/TIME FORMATTING HELPERS
+// ============================================================================
+
+/**
+ * Format date for email templates
+ * Example: "Monday, December 18, 2025"
+ */
+export function formatEmailDate(date: Date): string {
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+/**
+ * Format date for SMS templates (shorter)
+ * Example: "Dec 18"
+ */
+export function formatSmsDate(date: Date): string {
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+/**
+ * Format time for templates
+ * Example: "10:00 AM"
+ */
+export function formatTime(date: Date): string {
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+/**
+ * Format price for templates
+ * Example: "$95.00"
+ */
+export function formatPrice(cents: number): string {
+  const dollars = cents / 100;
+  return `$${dollars.toFixed(2)}`;
+}
+
+// ============================================================================
+// TEMPLATE PREVIEW HELPERS
+// ============================================================================
+
+/**
+ * Generate preview data for a notification type
+ */
+export function generatePreviewData<T extends NotificationType>(
+  type: T
+): TemplateDataMap[T] {
+  const baseData = {
+    customer_name: 'Sarah Johnson',
+    pet_name: 'Max',
+    appointment_date: 'Monday, December 18, 2025',
+    appointment_time: '10:00 AM',
+    service_name: 'Premium Grooming',
+    total_price: '$95.00',
+    weeks_since_last: 8,
+    breed_name: 'Golden Retriever',
+    booking_url: 'https://thepuppyday.com/book',
+    report_card_link: 'https://thepuppyday.com/report-cards/preview',
+    before_image_url: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400',
+    after_image_url: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400',
+    failure_reason: 'Your card was declined. Please update your payment method.',
+    amount_due: '$95.00',
+    retry_link: 'https://thepuppyday.com/account/payment',
+    charge_date: 'December 20, 2025',
+    amount: '$95.00',
+    payment_method: 'Visa ending in 4242',
+    payment_date: 'December 15, 2025',
+    suspension_date: 'December 25, 2025',
+    available_date: 'Dec 18',
+    available_time: '2:00 PM',
+    claim_link: 'https://thepuppyday.com/claim/preview',
+  };
+
+  // Return type-specific subset of data
+  // TypeScript will ensure we return the correct type
+  return baseData as TemplateDataMap[T];
+}
+
+// ============================================================================
+// EXPORTS
+// ============================================================================
+
+export {
+  emailTemplates,
+  smsTemplates,
+};
