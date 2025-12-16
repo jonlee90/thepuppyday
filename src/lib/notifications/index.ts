@@ -11,3 +11,6 @@ export * from './database-types';
 
 // Export query helpers
 export * from './query-helpers';
+
+// Export template engine
+export * from './template-engine';
