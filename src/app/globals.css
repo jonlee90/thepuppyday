@@ -156,3 +156,23 @@ h1, h2, h3, h4, h5, h6 {
   outline-color: rgba(255, 107, 107, 0.3);
   border-color: #FF6B6B;
 }
+
+/* ============================================
+   Custom Animations
+   ============================================ */
+
+/* Toast slide-in animation */
+@keyframes slide-in-right {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
