@@ -3,10 +3,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { appointmentCreationSchema } from '@/lib/booking/validation';
 import type { Appointment } from '@/types/database';
 import { z } from 'zod';
+import { randomBytes } from 'crypto';
 
 /**
  * Extended schema for appointment creation with guest_info support
@@ -24,14 +25,15 @@ const appointmentRequestSchema = appointmentCreationSchema.extend({
 });
 
 /**
- * Generate a unique booking reference number
+ * Generate a cryptographically secure unique booking reference number
  * Format: APT-YYYY-NNNNNN
+ * Uses crypto.randomBytes for secure random number generation
  */
 function generateBookingReference(): string {
   const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 1000000)
-    .toString()
-    .padStart(6, '0');
+  // Generate 3 random bytes, convert to number, and take last 6 digits
+  const randomValue = randomBytes(3).readUIntBE(0, 3) % 1000000;
+  const random = randomValue.toString().padStart(6, '0');
   return `APT-${year}-${random}`;
 }
 
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
     let customerId = validated.customer_id;
     if (validated.guest_info) {
       // Check if user exists (case-insensitive email match)
-      const { data: existingUsers } = await (supabase as any)
+      const { data: existingUsers } = await supabase
         .from('users')
         .select('*')
         .ilike('email', validated.guest_info.email);
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest) {
         customerId = existingUsers[0].id;
       } else {
         // Create guest user
-        const { data: guestUser, error: userError } = await (supabase as any)
+        const { data: guestUser, error: userError } = await supabase
           .from('users')
           .insert({
             email: validated.guest_info.email.toLowerCase(),
@@ -126,7 +128,7 @@ export async function POST(req: NextRequest) {
     const dateEnd = new Date(slotDate);
     dateEnd.setHours(23, 59, 59, 999);
 
-    const { data: allAppointments } = await (supabase as any)
+    const { data: allAppointments } = await supabase
       .from('appointments')
       .select('*')
       .gte('scheduled_at', dateStart.toISOString())
@@ -146,32 +148,36 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate unique booking reference
+    // Use .maybeSingle() for more efficient uniqueness check
     let reference = generateBookingReference();
     let attempts = 0;
     const maxAttempts = 10;
 
-    // Ensure uniqueness
+    // Ensure uniqueness with efficient query
     while (attempts < maxAttempts) {
-      const { data: existing } = await (supabase as any)
+      const { data: existing, error: checkError } = await supabase
         .from('appointments')
         .select('id')
         .eq('booking_reference', reference)
-        .single();
+        .maybeSingle();
 
-      if (!existing) break;
+      // maybeSingle returns null if not found (no error), which is what we want
+      if (!existing && !checkError) break;
 
       reference = generateBookingReference();
       attempts++;
     }
 
-    // If we couldn't generate a unique reference, use timestamp-based
+    // If we couldn't generate a unique reference after max attempts,
+    // use timestamp-based fallback (extremely unlikely with crypto random)
     if (attempts >= maxAttempts) {
       const timestamp = Date.now().toString().slice(-6);
       reference = `APT-${new Date().getFullYear()}-${timestamp}`;
     }
 
-    // Create appointment record
-    const { data: appointment, error: apptError } = await (supabase as any)
+    // Create appointment record with full details for notification
+    // Fetch related data in a single query to avoid N+1
+    const { data: appointment, error: apptError } = await supabase
       .from('appointments')
       .insert({
         customer_id: customerId,
@@ -186,7 +192,14 @@ export async function POST(req: NextRequest) {
         notes: validated.notes || null,
         booking_reference: reference,
       })
-      .select()
+      .select(
+        `
+        *,
+        customer:users!customer_id(id, first_name, last_name, email, phone),
+        pet:pets!pet_id(id, name),
+        service:services(id, name)
+      `
+      )
       .single();
 
     if (apptError || !appointment) {
@@ -200,19 +213,19 @@ export async function POST(req: NextRequest) {
     // Create appointment_addon records
     if (validated.addon_ids && validated.addon_ids.length > 0) {
       // Get addon prices
-      const { data: addons } = await (supabase as any)
+      const { data: addons } = await supabase
         .from('addons')
         .select('*')
         .in('id', validated.addon_ids);
 
       if (addons && addons.length > 0) {
-        const addonInserts = addons.map((addon: any) => ({
+        const addonInserts = addons.map((addon) => ({
           appointment_id: appointment.id,
           addon_id: addon.id,
           price: addon.price,
         }));
 
-        const { error: addonError } = await (supabase as any)
+        const { error: addonError } = await supabase
           .from('appointment_addons')
           .insert(addonInserts);
 
@@ -223,7 +236,51 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // TODO: Send confirmation email
+    // Send booking confirmation notifications (Task 0107)
+    // Use already-fetched appointment data to avoid N+1 query
+    try {
+      // Type assertion for nested joined data
+      const customer = appointment.customer as unknown as {
+        id: string;
+        first_name: string;
+        last_name: string;
+        email: string;
+        phone: string | null;
+      };
+      const pet = appointment.pet as unknown as { id: string; name: string };
+      const service = appointment.service as unknown as { id: string; name: string };
+
+      const { triggerBookingConfirmation } = await import(
+        '@/lib/notifications/triggers'
+      );
+
+      const notificationResult = await triggerBookingConfirmation(supabase, {
+        appointmentId: appointment.id,
+        customerId: customer.id,
+        customerName: `${customer.first_name} ${customer.last_name}`,
+        customerEmail: customer.email,
+        customerPhone: customer.phone,
+        petName: pet.name,
+        serviceName: service.name,
+        scheduledAt: appointment.scheduled_at,
+        totalPrice: appointment.total_price,
+      });
+
+      if (!notificationResult.success) {
+        console.error(
+          '[Appointments API] Booking notification failed:',
+          notificationResult.errors
+        );
+        // Don't fail the booking if notification fails
+      } else {
+        console.log(
+          `[Appointments API] Booking confirmation sent - Email: ${notificationResult.emailSent}, SMS: ${notificationResult.smsSent}`
+        );
+      }
+    } catch (error) {
+      console.error('[Appointments API] Error sending booking confirmation:', error);
+      // Don't fail the booking if notification fails
+    }
 
     return NextResponse.json({
       success: true,

@@ -7,7 +7,6 @@
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import { scheduleReportCardNotification } from '@/lib/admin/report-card-scheduler';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -103,33 +102,77 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
 
-    // Send the report card notification
-    const result = await scheduleReportCardNotification(
-      supabase,
-      reportCard.id,
-      reportCard.appointment_id
-    );
+    // Send the report card notification using new trigger (Task 0109)
+    try {
+      // Fetch appointment with customer and pet details
+      const { data: appointment, error: appointmentError } = await (supabase as any)
+        .from('appointments')
+        .select(
+          `
+          *,
+          customer:users!customer_id(id, first_name, last_name, email, phone),
+          pet:pets!pet_id(id, name)
+        `
+        )
+        .eq('id', reportCard.appointment_id)
+        .single();
 
-    if (!result.success) {
+      if (appointmentError || !appointment) {
+        return NextResponse.json(
+          { error: 'Appointment not found' },
+          { status: 404 }
+        );
+      }
+
+      // Get report card images
+      const { data: fullReportCard } = await (supabase as any)
+        .from('report_cards')
+        .select('before_photo_url, after_photo_url')
+        .eq('id', reportCard.id)
+        .single();
+
+      const { triggerReportCardCompletion } = await import(
+        '@/lib/notifications/triggers'
+      );
+
+      const result = await triggerReportCardCompletion(supabase, {
+        reportCardId: reportCard.id,
+        appointmentId: reportCard.appointment_id,
+        customerId: appointment.customer.id,
+        customerEmail: appointment.customer.email,
+        customerPhone: appointment.customer.phone,
+        petName: appointment.pet.name,
+        beforeImageUrl: fullReportCard?.before_photo_url,
+        afterImageUrl: fullReportCard?.after_photo_url,
+      });
+
+      if (!result.success) {
+        return NextResponse.json(
+          {
+            error: result.errors.length > 0
+              ? result.errors.join(', ')
+              : 'Failed to send report card',
+          },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json(
         {
-          error: result.errors.length > 0
-            ? result.errors.join(', ')
-            : 'Failed to send report card',
+          success: true,
+          message: `Report card ${action === 'resend' ? 'resent' : 'sent'} successfully`,
+          sms_sent: result.smsSent,
+          email_sent: result.emailSent,
         },
+        { status: 200 }
+      );
+    } catch (error) {
+      console.error('[Report Card Send] Error sending notification:', error);
+      return NextResponse.json(
+        { error: 'Failed to send report card notification' },
         { status: 500 }
       );
     }
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: `Report card ${action === 'resend' ? 'resent' : 'sent'} successfully`,
-        sms_sent: result.smsSent,
-        email_sent: result.emailSent,
-      },
-      { status: 200 }
-    );
   } catch (error) {
     console.error('Error sending report card:', error);
     return NextResponse.json(

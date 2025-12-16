@@ -132,31 +132,56 @@ export async function POST(
       }
 
       // Send notifications if requested
-      if (sendNotification && (newStatus === 'confirmed' || newStatus === 'cancelled' || newStatus === 'completed')) {
+      if (sendNotification) {
         const customer = store.selectById('users', appointment.customer_id) as User | null;
         const pet = store.selectById('pets', appointment.pet_id) as Pet | null;
         const service = store.selectById('services', appointment.service_id) as Service | null;
 
         if (customer && pet && service) {
-          await sendAppointmentNotification(
-            supabase,
-            {
+          // Use new notification triggers for checked_in and ready statuses (Task 0108)
+          if (newStatus === 'checked_in' || newStatus === 'ready') {
+            const { triggerAppointmentStatus } = await import(
+              '@/lib/notifications/triggers'
+            );
+
+            const statusResult = await triggerAppointmentStatus(supabase, {
               appointmentId: id,
               customerId: appointment.customer_id,
-              customerName: `${customer.first_name} ${customer.last_name}`,
-              customerEmail: customer.email,
               customerPhone: customer.phone,
               petName: pet.name,
-              serviceName: service.name,
-              scheduledAt: appointment.scheduled_at,
               status: newStatus,
-              cancellationReason,
-            },
-            {
-              sendEmail,
-              sendSms,
+              manualOverride: true, // Manual trigger from admin
+            });
+
+            if (!statusResult.success && !statusResult.skipped) {
+              console.error(
+                '[Admin API] Status notification failed:',
+                statusResult.errors
+              );
             }
-          );
+          }
+          // Use legacy notification for other statuses (confirmed, cancelled, completed)
+          else if (newStatus === 'confirmed' || newStatus === 'cancelled' || newStatus === 'completed') {
+            await sendAppointmentNotification(
+              supabase,
+              {
+                appointmentId: id,
+                customerId: appointment.customer_id,
+                customerName: `${customer.first_name} ${customer.last_name}`,
+                customerEmail: customer.email,
+                customerPhone: customer.phone,
+                petName: pet.name,
+                serviceName: service.name,
+                scheduledAt: appointment.scheduled_at,
+                status: newStatus,
+                cancellationReason,
+              },
+              {
+                sendEmail,
+                sendSms,
+              }
+            );
+          }
         }
       }
 
@@ -247,7 +272,7 @@ export async function POST(
     }
 
     // Send notifications if requested
-    if (sendNotification && (newStatus === 'confirmed' || newStatus === 'cancelled' || newStatus === 'completed')) {
+    if (sendNotification) {
       const { data: customer } = await (supabase as any)
         .from('users')
         .select('*')
@@ -267,25 +292,50 @@ export async function POST(
         .single();
 
       if (customer && pet && service) {
-        await sendAppointmentNotification(
-          supabase,
-          {
+        // Use new notification triggers for checked_in and ready statuses (Task 0108)
+        if (newStatus === 'checked_in' || newStatus === 'ready') {
+          const { triggerAppointmentStatus } = await import(
+            '@/lib/notifications/triggers'
+          );
+
+          const statusResult = await triggerAppointmentStatus(supabase, {
             appointmentId: id,
             customerId: appointment.customer_id,
-            customerName: `${customer.first_name} ${customer.last_name}`,
-            customerEmail: customer.email,
             customerPhone: customer.phone,
             petName: pet.name,
-            serviceName: service.name,
-            scheduledAt: appointment.scheduled_at,
             status: newStatus,
-            cancellationReason,
-          },
-          {
-            sendEmail,
-            sendSms,
+            manualOverride: true, // Manual trigger from admin
+          });
+
+          if (!statusResult.success && !statusResult.skipped) {
+            console.error(
+              '[Admin API] Status notification failed:',
+              statusResult.errors
+            );
           }
-        );
+        }
+        // Use legacy notification for other statuses (confirmed, cancelled, completed)
+        else if (newStatus === 'confirmed' || newStatus === 'cancelled' || newStatus === 'completed') {
+          await sendAppointmentNotification(
+            supabase,
+            {
+              appointmentId: id,
+              customerId: appointment.customer_id,
+              customerName: `${customer.first_name} ${customer.last_name}`,
+              customerEmail: customer.email,
+              customerPhone: customer.phone,
+              petName: pet.name,
+              serviceName: service.name,
+              scheduledAt: appointment.scheduled_at,
+              status: newStatus,
+              cancellationReason,
+            },
+            {
+              sendEmail,
+              sendSms,
+            }
+          );
+        }
       }
     }
 

@@ -8,14 +8,49 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { NextResponse } from 'next/server';
-
-// Import based on environment
-const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === 'true';
-const { sendWaitlistOfferSMS } = useMocks
-  ? require('@/mocks/twilio/waitlist-sms')
-  : require('@/lib/twilio/waitlist-sms');
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
+
+// ============================================================================
+// VALIDATION SCHEMA
+// ============================================================================
+
+const fillSlotSchema = z.object({
+  service_id: z.string().uuid('service_id must be a valid UUID'),
+  appointment_date: z
+    .string()
+    .regex(
+      /^\d{4}-\d{2}-\d{2}$/,
+      'appointment_date must be in YYYY-MM-DD format'
+    )
+    .refine(
+      (date) => {
+        const parsed = new Date(date);
+        return !isNaN(parsed.getTime()) && parsed >= new Date(new Date().setHours(0, 0, 0, 0));
+      },
+      { message: 'appointment_date must be a valid future date' }
+    ),
+  appointment_time: z
+    .string()
+    .regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, 'appointment_time must be in HH:MM format'),
+  waitlist_entry_ids: z
+    .array(z.string().uuid('Each waitlist entry ID must be a valid UUID'))
+    .min(1, 'At least one waitlist entry ID is required')
+    .max(10, 'Maximum 10 waitlist entries can be processed at once'),
+  discount_percentage: z
+    .number()
+    .int('discount_percentage must be an integer')
+    .min(0, 'discount_percentage must be at least 0')
+    .max(100, 'discount_percentage cannot exceed 100')
+    .default(10),
+  response_window_hours: z
+    .number()
+    .int('response_window_hours must be an integer')
+    .positive('response_window_hours must be positive')
+    .max(168, 'response_window_hours cannot exceed 168 (1 week)')
+    .default(2),
+});
 
 /**
  * POST /api/admin/waitlist/fill-slot
@@ -49,40 +84,43 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Parse request body
+    // Parse and validate request body
     const body = await request.json();
+
+    let validated;
+    try {
+      validated = fillSlotSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            error: 'Validation error',
+            details: error.issues.map(issue => ({
+              path: issue.path.join('.'),
+              message: issue.message,
+            }))
+          },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
+
     const {
       service_id,
       appointment_date,
       appointment_time,
       waitlist_entry_ids,
-      discount_percentage = 10,
-      response_window_hours = 2,
-    } = body;
-
-    // Validate required fields
-    if (
-      !service_id ||
-      !appointment_date ||
-      !appointment_time ||
-      !waitlist_entry_ids ||
-      waitlist_entry_ids.length === 0
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            'Missing required fields: service_id, appointment_date, appointment_time, waitlist_entry_ids',
-        },
-        { status: 400 }
-      );
-    }
+      discount_percentage,
+      response_window_hours,
+    } = validated;
 
     // Calculate expiration time
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + response_window_hours);
 
     // Create slot offer record
-    const { data: slotOffer, error: offerError } = await (supabase as any)
+    const { data: slotOffer, error: offerError } = await supabase
       .from('waitlist_slot_offers')
       .insert({
         appointment_date,
@@ -105,7 +143,7 @@ export async function POST(request: Request) {
     }
 
     // Fetch waitlist entries with customer and pet data
-    const { data: entries, error: entriesError } = await (supabase as any)
+    const { data: entries, error: entriesError } = await supabase
       .from('waitlist')
       .select(
         `
@@ -125,9 +163,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Send SMS to each customer
+    // Send SMS to each customer using new notification trigger (Task 0110)
     let notificationsSent = 0;
     let notificationsFailed = 0;
+
+    const { triggerWaitlistNotification } = await import(
+      '@/lib/notifications/triggers'
+    );
 
     for (const entry of entries) {
       if (!entry.customer?.phone) {
@@ -137,32 +179,25 @@ export async function POST(request: Request) {
       }
 
       try {
-        const result = await sendWaitlistOfferSMS(supabase, {
-          customerName: `${entry.customer.first_name} ${entry.customer.last_name}`,
-          customerPhone: entry.customer.phone,
+        const result = await triggerWaitlistNotification(supabase, {
+          waitlistEntryId: entry.id,
           customerId: entry.customer_id,
+          customerPhone: entry.customer.phone,
           petName: entry.pet?.name || 'your pet',
-          serviceName: entry.service?.name || 'grooming',
-          appointmentDate: appointment_date,
-          appointmentTime: appointment_time,
-          discountPercentage: discount_percentage,
-          responseWindowHours: response_window_hours,
-          offerId: slotOffer.id,
+          availableDate: appointment_date,
+          availableTime: appointment_time,
+          serviceId: service_id,
+          expirationHours: response_window_hours,
         });
 
-        if (result.success) {
+        if (result.smsSent) {
           notificationsSent++;
-
-          // Update waitlist entry
-          await (supabase as any)
-            .from('waitlist')
-            .update({
-              status: 'notified',
-              notified_at: new Date().toISOString(),
-              offer_expires_at: expiresAt.toISOString(),
-              offer_id: slotOffer.id,
-            })
-            .eq('id', entry.id);
+          // Note: waitlist entry is updated inside triggerWaitlistNotification
+        } else if (result.skipped) {
+          console.warn(
+            `Notification skipped for ${entry.customer_id}: ${result.skipReason}`
+          );
+          notificationsFailed++;
         } else {
           notificationsFailed++;
         }
