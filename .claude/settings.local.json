@@ -72,7 +72,8 @@
       "Bash(npx tsx:*)",
       "Bash(npx supabase:*)",
       "Bash(psql:*)",
-      "Bash(timeout 2 tail:*)"
+      "Bash(timeout 2 tail:*)",
+      "Bash(grep:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

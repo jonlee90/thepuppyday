@@ -49,6 +49,33 @@ See `CLAUDE.md` for detailed project documentation, including:
 - Development phases
 - Design system guidelines
 
+### Documentation
+
+```
+docs/
+├── architecture/          # System design & diagrams
+│   ├── ARCHITECTURE_DIAGRAMS.md
+│   ├── AUTHENTICATION_FLOW_DIAGRAM.md
+│   ├── GALLERY_ARCHITECTURE.md
+│   └── REPORT_CARD_COMPONENT_TREE.md
+│
+├── guides/                # How-to guides
+│   ├── QUICK_START.md
+│   ├── AUTH_QUICK_REFERENCE.md
+│   ├── ADMIN_TEST_CREDENTIALS.md
+│   ├── testing/           # Testing guides
+│   └── features/          # Feature-specific guides
+│
+├── migrations/            # Database migration docs
+│   ├── MIGRATION_GUIDE.md
+│   └── MIGRATION_CHECKLIST.md
+│
+└── specs/                 # Kiro SDD specifications
+    ├── phase-01-foundation/
+    ├── phase-8/
+    └── ...
+```
+
 ### Scripts
 
 See `scripts/README.md` for utility scripts including:
