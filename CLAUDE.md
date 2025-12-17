@@ -47,6 +47,9 @@ src/
 ├── types/               # TypeScript types
 └── stores/              # Zustand state stores
 docs/
+├── architecture/        # System design & diagrams
+├── guides/              # How-to documentation
+├── migrations/          # Database migration docs
 └── specs/               # Kiro SDD specifications per phase
 ```
 
@@ -123,7 +126,7 @@ Before starting work, check `.claude/tasks/context_session_x.md` for current con
 - `supabase-nextjs-expert`: Supabase + Next.js integration expert for authentication flows, database patterns, realtime subscriptions, RLS policies, and React Server Components architecture
 ## Database Schema
 
-Key tables: `users`, `pets`, `breeds`, `services`, `service_prices`, `addons`, `appointments`, `appointment_addons`, `waitlist`, `report_cards`, `memberships`, `customer_memberships`, `loyalty_points`, `loyalty_transactions`, `customer_flags`, `payments`, `site_content`, `promo_banners`, `gallery_images`, `settings`, `notifications_log`
+Key tables: `users`, `pets`, `breeds`, `services`, `service_prices`, `addons`, `appointments`, `appointment_addons`, `waitlist`, `report_cards`, `memberships`, `customer_memberships`, `loyalty_points`, `loyalty_transactions`, `customer_flags`, `payments`, `site_content`, `promo_banners`, `gallery_images`, `settings`, `notifications_log`, `notification_templates`, `notification_settings`, `notification_template_history`
 
 ## Size-Based Pricing
 
@@ -178,8 +181,8 @@ Key tables: `users`, `pets`, `breeds`, `services`, `service_prices`, `addons`, `
 | 3 | Booking System | Completed |
 | 4 | Customer Portal | Completed |
 | 5 | Admin Panel Core | Completed |
-| 6 | Admin Panel Advanced | Pending |
+| 6 | Admin Panel Advanced | Completed |
 | 7 | Payments & Memberships | Pending |
-| 8 | Notifications | Pending |
+| 8 | Notifications | Completed |
 | 9 | Admin Settings | Pending |
 | 10 | Testing & Polish | Pending |
