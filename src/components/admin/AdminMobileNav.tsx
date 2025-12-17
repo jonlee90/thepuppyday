@@ -25,13 +25,18 @@ import {
   Megaphone,
   Clock,
   Bell,
+  FileText,
+  List,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface NavItem {
   label: string;
-  href: string;
+  href?: string;
   icon: React.ElementType;
   ownerOnly?: boolean;
+  children?: NavItem[];
 }
 
 const navItems: NavItem[] = [
@@ -68,9 +73,30 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Notifications',
-    href: '/admin/notifications',
     icon: Bell,
     ownerOnly: true,
+    children: [
+      {
+        label: 'Dashboard',
+        href: '/admin/notifications/dashboard',
+        icon: LayoutDashboard,
+      },
+      {
+        label: 'Templates',
+        href: '/admin/notifications/templates',
+        icon: FileText,
+      },
+      {
+        label: 'Settings',
+        href: '/admin/notifications/settings',
+        icon: Settings,
+      },
+      {
+        label: 'Log',
+        href: '/admin/notifications/log',
+        icon: List,
+      },
+    ],
   },
   {
     label: 'Services',
@@ -104,6 +130,7 @@ interface AdminMobileNavProps {
 
 export function AdminMobileNav({ user }: AdminMobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
   const { signOut } = useAuth();
 
@@ -112,6 +139,20 @@ export function AdminMobileNav({ user }: AdminMobileNavProps) {
       return pathname === '/admin/dashboard' || pathname === '/admin';
     }
     return pathname.startsWith(href);
+  };
+
+  const isParentActive = (item: NavItem) => {
+    if (item.children) {
+      return item.children.some((child) => child.href && isActive(child.href));
+    }
+    return false;
+  };
+
+  const toggleItem = (label: string) => {
+    setExpandedItems((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }));
   };
 
   const isOwner = user?.role === 'admin';
@@ -210,13 +251,74 @@ export function AdminMobileNav({ user }: AdminMobileNavProps) {
           <nav className="flex-1 px-3 py-4 overflow-y-auto">
             <ul className="space-y-1">
               {visibleItems.map((item) => {
-                const active = isActive(item.href);
                 const Icon = item.icon;
+                const hasChildren = item.children && item.children.length > 0;
+                const isExpanded = expandedItems[item.label] || isParentActive(item);
+                const parentActive = isParentActive(item);
+
+                if (hasChildren) {
+                  // Parent item with children
+                  return (
+                    <li key={item.label}>
+                      <button
+                        onClick={() => toggleItem(item.label)}
+                        className={`
+                          flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 w-full
+                          ${
+                            parentActive
+                              ? 'bg-[#434E54] text-white shadow-md'
+                              : 'text-[#434E54] hover:bg-[#EAE0D5]'
+                          }
+                        `}
+                      >
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        <span className="font-medium flex-1 text-left">{item.label}</span>
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 flex-shrink-0" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                        )}
+                      </button>
+                      {/* Child items */}
+                      {isExpanded && (
+                        <ul className="mt-1 space-y-1">
+                          {item.children?.map((child) => {
+                            const childActive = child.href ? isActive(child.href) : false;
+                            const ChildIcon = child.icon;
+
+                            return (
+                              <li key={child.href}>
+                                <Link
+                                  href={child.href || '#'}
+                                  onClick={handleLinkClick}
+                                  className={`
+                                    flex items-center gap-3 pl-12 pr-4 py-2.5 rounded-lg transition-all duration-200
+                                    ${
+                                      childActive
+                                        ? 'bg-[#434E54]/90 text-white shadow-sm'
+                                        : 'text-[#434E54] hover:bg-[#EAE0D5]'
+                                    }
+                                  `}
+                                >
+                                  <ChildIcon className="w-4 h-4 flex-shrink-0" />
+                                  <span className="text-sm font-medium">{child.label}</span>
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                }
+
+                // Regular item without children
+                const active = item.href ? isActive(item.href) : false;
 
                 return (
                   <li key={item.href}>
                     <Link
-                      href={item.href}
+                      href={item.href || '#'}
                       onClick={handleLinkClick}
                       className={`
                         flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
