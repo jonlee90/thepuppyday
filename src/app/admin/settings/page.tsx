@@ -1,78 +1,150 @@
 /**
- * Admin Settings Page
- * Server Component that fetches settings data and passes to client components
+ * Admin Settings Dashboard Page
+ * Task 0157: Settings dashboard page structure
+ * Hub page with navigation cards to different settings sections
  */
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { SettingsClient } from './SettingsClient';
+import { requireAdmin } from '@/lib/admin/auth';
+import { SettingsDashboardClient } from '@/components/admin/settings/SettingsDashboardClient';
+import type { SettingsSectionMetadata } from '@/types/settings-dashboard';
 
-interface Setting {
-  id: string;
-  key: string;
-  value: any;
-  updated_at: string;
-}
-
-interface BusinessHours {
-  monday: { is_open: boolean; open: string; close: string };
-  tuesday: { is_open: boolean; open: string; close: string };
-  wednesday: { is_open: boolean; open: string; close: string };
-  thursday: { is_open: boolean; open: string; close: string };
-  friday: { is_open: boolean; open: string; close: string };
-  saturday: { is_open: boolean; open: string; close: string };
-  sunday: { is_open: boolean; open: string; close: string };
-}
-
-async function getSettingsData() {
+async function getSettingsMetadata(): Promise<{
+  sections: SettingsSectionMetadata[];
+  error: boolean;
+}> {
   try {
     const supabase = await createServerSupabaseClient();
-    // Note: Admin access is already verified by the layout
 
-    // Fetch all settings
-    const { data: settings, error } = (await (supabase as any)
-      .from('settings')
-      .select('*')) as {
-      data: Setting[] | null;
-      error: Error | null;
-    };
+    // Fetch relevant data for status indicators
+    const [settingsResult, siteContentResult, bannersResult] = await Promise.all([
+      // Fetch key settings to determine status
+      (supabase as any)
+        .from('settings')
+        .select('key, updated_at')
+        .in('key', [
+          'booking_settings',
+          'loyalty_earning_rules',
+          'loyalty_redemption_rules',
+        ]),
 
-    if (error) {
-      console.error('[Settings Page] Error fetching settings:', error);
-      return {
-        businessHours: null,
-      };
-    }
+      // Fetch site content to determine status
+      (supabase as any)
+        .from('site_content')
+        .select('section, updated_at')
+        .in('section', ['hero', 'seo', 'business_info']),
 
-    // Extract business hours from settings
-    const businessHoursSetting = settings?.find((s) => s.key === 'business_hours');
-    const businessHours: BusinessHours | null = businessHoursSetting?.value || null;
+      // Fetch promo banners to count active banners
+      (supabase as any)
+        .from('promo_banners')
+        .select('id, is_active')
+        .eq('is_active', true),
+    ]);
 
-    return {
-      businessHours,
-    };
+    // Build metadata for each section
+    const sections: SettingsSectionMetadata[] = [
+      {
+        id: 'site-content',
+        title: 'Site Content',
+        description: 'Manage homepage content, SEO, and business information',
+        href: '/admin/settings/site-content',
+        icon: 'FileText',
+        status: siteContentResult.data && siteContentResult.data.length > 0
+          ? 'configured'
+          : 'needs_attention',
+        summary: siteContentResult.data
+          ? `${siteContentResult.data.length} content sections configured`
+          : 'No content configured',
+        lastUpdated: siteContentResult.data?.[0]?.updated_at || null,
+      },
+      {
+        id: 'banners',
+        title: 'Promo Banners',
+        description: 'Create and manage promotional banners',
+        href: '/admin/settings/banners',
+        icon: 'Image',
+        status: bannersResult.data && bannersResult.data.length > 0
+          ? 'configured'
+          : 'not_configured',
+        summary: bannersResult.data
+          ? `${bannersResult.data.length} active banner${bannersResult.data.length !== 1 ? 's' : ''}`
+          : 'No active banners',
+        lastUpdated: null, // We'd need to fetch this separately if needed
+      },
+      {
+        id: 'booking',
+        title: 'Booking Settings',
+        description: 'Configure appointment booking rules and policies',
+        href: '/admin/settings/booking',
+        icon: 'Calendar',
+        status: settingsResult.data?.some((s) => s.key === 'booking_settings')
+          ? 'configured'
+          : 'needs_attention',
+        summary: '24-hour cancellation policy',
+        lastUpdated: settingsResult.data?.find((s) => s.key === 'booking_settings')?.updated_at || null,
+      },
+      {
+        id: 'loyalty',
+        title: 'Loyalty Program',
+        description: 'Manage loyalty rewards and redemption rules',
+        href: '/admin/settings/loyalty',
+        icon: 'Gift',
+        status: settingsResult.data?.some((s) => s.key === 'loyalty_earning_rules')
+          ? 'configured'
+          : 'not_configured',
+        summary: 'Points earning and redemption rules',
+        lastUpdated: settingsResult.data?.find((s) => s.key === 'loyalty_earning_rules')?.updated_at || null,
+      },
+      {
+        id: 'staff',
+        title: 'Staff Management',
+        description: 'Manage staff accounts and permissions',
+        href: '/admin/settings/staff',
+        icon: 'Users',
+        status: 'configured',
+        summary: 'Team member access control',
+        lastUpdated: null,
+      },
+    ];
+
+    return { sections, error: false };
   } catch (error) {
-    console.error('[Settings Page] Error loading data:', error);
+    console.error('[Settings Dashboard] Error fetching metadata:', error);
     return {
-      businessHours: null,
+      sections: [],
+      error: true,
     };
   }
 }
 
+export const metadata = {
+  title: 'Settings | The Puppy Day',
+  description: 'Configure system settings and preferences',
+};
+
+// Force dynamic rendering for authentication
+export const dynamic = 'force-dynamic';
+
 export default async function SettingsPage() {
-  const { businessHours } = await getSettingsData();
+  const supabase = await createServerSupabaseClient();
+
+  // Verify admin access (optional, as layout already checks)
+  await requireAdmin(supabase);
+
+  const { sections, error } = await getSettingsMetadata();
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
+    <div className="space-y-6">
+      {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#434E54]">Settings</h1>
-        <p className="text-[#6B7280] mt-1">
-          Configure business hours and system preferences
+        <h1 className="text-3xl font-bold text-[#434E54]">Settings</h1>
+        <p className="mt-2 text-[#434E54]/60">
+          Configure system settings, content, and preferences
         </p>
       </div>
 
-      {/* Settings Client Component */}
-      <SettingsClient initialBusinessHours={businessHours} />
+      {/* Dashboard Client Component */}
+      <SettingsDashboardClient sections={sections} hasError={error} />
     </div>
   );
 }

@@ -2,6 +2,8 @@
  * Settings types for The Puppy Day
  */
 
+import { z } from 'zod';
+
 // ===== BUSINESS HOURS =====
 export interface DaySchedule {
   is_open: boolean;
@@ -285,4 +287,360 @@ export interface UpdateTemplatesRequest {
 
 export interface ResetTemplatesRequest {
   types?: NotificationTemplateType[];
+}
+
+// =============================================
+// PHASE 9: ADMIN SETTINGS & CONTENT MANAGEMENT
+// =============================================
+
+// ===== BOOKING SETTINGS =====
+
+/**
+ * Blocked date entry for calendar
+ */
+export interface BlockedDate {
+  date: string; // ISO date string
+  end_date?: string | null; // For multi-day blocks
+  reason: string;
+}
+
+export const BlockedDateSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  reason: z.string().min(1).max(200),
+});
+
+/**
+ * Booking window and policy settings
+ */
+export interface BookingSettings {
+  min_advance_hours: number; // Minimum hours in advance for booking
+  max_advance_days: number; // Maximum days in advance for booking
+  cancellation_cutoff_hours: number; // Hours before appointment when cancellation is allowed
+  buffer_minutes: number; // Buffer time between appointments
+  blocked_dates: BlockedDate[]; // Specific blocked dates
+  recurring_blocked_days: number[]; // Day of week (0=Sun, 6=Sat)
+}
+
+export const BookingSettingsSchema = z.object({
+  min_advance_hours: z.number().int().min(0).max(168),
+  max_advance_days: z.number().int().min(1).max(365),
+  cancellation_cutoff_hours: z.number().int().min(0).max(168),
+  buffer_minutes: z.number().int().min(0).max(120),
+  blocked_dates: z.array(BlockedDateSchema),
+  recurring_blocked_days: z.array(z.number().int().min(0).max(6)),
+});
+
+// ===== SITE CONTENT =====
+
+/**
+ * CTA button for hero section
+ */
+export interface CtaButton {
+  text: string;
+  url: string;
+  style: 'primary' | 'secondary';
+}
+
+export const CtaButtonSchema = z.object({
+  text: z.string().min(1).max(50),
+  url: z.string().min(1).max(200),
+  style: z.enum(['primary', 'secondary']),
+});
+
+/**
+ * Hero section content
+ */
+export interface HeroContent {
+  headline: string;
+  subheadline: string;
+  background_image_url: string | null;
+  cta_buttons: CtaButton[];
+}
+
+export const HeroContentSchema = z.object({
+  headline: z.string().min(1).max(100),
+  subheadline: z.string().min(1).max(200),
+  background_image_url: z.string().url().nullable(),
+  cta_buttons: z.array(CtaButtonSchema).max(3),
+});
+
+/**
+ * SEO and Open Graph settings
+ */
+export interface SeoSettings {
+  page_title: string;
+  meta_description: string;
+  og_title: string;
+  og_description: string;
+  og_image_url: string | null;
+}
+
+export const SeoSettingsSchema = z.object({
+  page_title: z.string().min(1).max(60),
+  meta_description: z.string().min(1).max(160),
+  og_title: z.string().min(1).max(60),
+  og_description: z.string().min(1).max(160),
+  og_image_url: z.string().url().nullable(),
+});
+
+/**
+ * Social media links
+ */
+export interface SocialLinks {
+  instagram?: string;
+  facebook?: string;
+  yelp?: string;
+  twitter?: string;
+}
+
+export const SocialLinksSchema = z.object({
+  instagram: z.string().url().optional(),
+  facebook: z.string().url().optional(),
+  yelp: z.string().url().optional(),
+  twitter: z.string().url().optional(),
+});
+
+/**
+ * Business contact information
+ */
+export interface BusinessInfo {
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+  email: string;
+  social_links: SocialLinks;
+}
+
+export const BusinessInfoSchema = z.object({
+  name: z.string().min(1).max(100),
+  address: z.string().min(1).max(200),
+  city: z.string().min(1).max(100),
+  state: z.string().length(2),
+  zip: z.string().regex(/^\d{5}(-\d{4})?$/),
+  phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/),
+  email: z.string().email(),
+  social_links: SocialLinksSchema,
+});
+
+// ===== LOYALTY PROGRAM =====
+
+/**
+ * Loyalty earning rules
+ */
+export interface LoyaltyEarningRules {
+  qualifying_services: string[]; // Service IDs or ['all']
+  minimum_spend: number; // Minimum spend to earn punch
+  first_visit_bonus: number; // Bonus punches for first visit
+}
+
+export const LoyaltyEarningRulesSchema = z.object({
+  qualifying_services: z.array(z.string()),
+  minimum_spend: z.number().min(0),
+  first_visit_bonus: z.number().int().min(0).max(10),
+});
+
+/**
+ * Loyalty redemption rules
+ */
+export interface LoyaltyRedemptionRules {
+  eligible_services: string[]; // Service IDs or ['all']
+  expiration_days: number; // Days until earned punches expire
+  max_value: number | null; // Maximum discount value or null for no limit
+}
+
+export const LoyaltyRedemptionRulesSchema = z.object({
+  eligible_services: z.array(z.string()),
+  expiration_days: z.number().int().min(1).max(3650),
+  max_value: z.number().min(0).nullable(),
+});
+
+/**
+ * Referral program configuration
+ */
+export interface ReferralProgram {
+  is_enabled: boolean;
+  referrer_bonus_punches: number; // Punches for referrer
+  referee_bonus_punches: number; // Punches for new customer
+}
+
+export const ReferralProgramSchema = z.object({
+  is_enabled: z.boolean(),
+  referrer_bonus_punches: z.number().int().min(0).max(10),
+  referee_bonus_punches: z.number().int().min(0).max(10),
+});
+
+// ===== STAFF MANAGEMENT =====
+
+/**
+ * Staff commission structure
+ */
+export interface StaffCommission {
+  id: string;
+  groomer_id: string;
+  rate_type: 'percentage' | 'flat_rate';
+  rate: number; // Percentage (0-100) or dollar amount
+  include_addons: boolean;
+  service_overrides: Record<string, { rate_type: string; rate: number }> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const StaffCommissionSchema = z.object({
+  groomer_id: z.string().uuid(),
+  rate_type: z.enum(['percentage', 'flat_rate']),
+  rate: z.number().min(0).max(100),
+  include_addons: z.boolean(),
+  service_overrides: z.record(z.object({
+    rate_type: z.enum(['percentage', 'flat_rate']),
+    rate: z.number().min(0).max(100),
+  })).nullable(),
+});
+
+// ===== REFERRAL SYSTEM =====
+
+/**
+ * Customer referral code
+ */
+export interface ReferralCode {
+  id: string;
+  customer_id: string;
+  code: string;
+  uses_count: number;
+  max_uses: number | null; // null = unlimited
+  is_active: boolean;
+  created_at: string;
+}
+
+export const ReferralCodeSchema = z.object({
+  customer_id: z.string().uuid(),
+  code: z.string().min(4).max(20).regex(/^[A-Z0-9]+$/),
+  max_uses: z.number().int().min(1).nullable(),
+  is_active: z.boolean(),
+});
+
+/**
+ * Referral relationship
+ */
+export interface Referral {
+  id: string;
+  referrer_id: string; // Customer who referred
+  referee_id: string; // Customer who was referred
+  referral_code_id: string;
+  status: 'pending' | 'completed' | 'cancelled';
+  referrer_bonus_awarded: boolean;
+  referee_bonus_awarded: boolean;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export const ReferralSchema = z.object({
+  referrer_id: z.string().uuid(),
+  referee_id: z.string().uuid(),
+  referral_code_id: z.string().uuid(),
+  status: z.enum(['pending', 'completed', 'cancelled']),
+});
+
+// ===== AUDIT LOG =====
+
+/**
+ * Settings change audit entry
+ */
+export interface SettingsAuditLog {
+  id: string;
+  admin_id: string | null;
+  setting_type: 'booking' | 'loyalty' | 'site_content' | 'banner' | 'staff';
+  setting_key: string;
+  old_value: Record<string, unknown> | null;
+  new_value: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export const SettingsAuditLogSchema = z.object({
+  admin_id: z.string().uuid().nullable(),
+  setting_type: z.enum(['booking', 'loyalty', 'site_content', 'banner', 'staff']),
+  setting_key: z.string().min(1).max(100),
+  old_value: z.record(z.unknown()).nullable(),
+  new_value: z.record(z.unknown()).nullable(),
+});
+
+// ===== SETTINGS DASHBOARD =====
+
+/**
+ * Settings card status indicator
+ */
+export type SettingsStatus = 'configured' | 'needs_attention' | 'not_configured';
+
+/**
+ * Settings section summary for dashboard
+ */
+export interface SettingsSectionSummary {
+  section: string;
+  title: string;
+  description: string;
+  icon: string;
+  status: SettingsStatus;
+  summary: string; // Quick summary text
+  last_updated: string | null;
+  url: string;
+}
+
+// ===== PROMO BANNER (extended) =====
+
+/**
+ * Promo banner analytics
+ */
+export interface BannerAnalytics {
+  banner_id: string;
+  impression_count: number;
+  click_count: number;
+  click_through_rate: number; // Percentage
+  date_range: {
+    start: string;
+    end: string;
+  };
+}
+
+// ===== HELPER TYPES =====
+
+/**
+ * Generic settings update request
+ */
+export interface SettingsUpdateRequest<T> {
+  settings: T;
+  audit_reason?: string;
+}
+
+/**
+ * Settings response with metadata
+ */
+export interface SettingsResponse<T> {
+  settings: T;
+  last_updated: string;
+  updated_by: string | null;
+}
+
+// ===== TYPE GUARDS =====
+
+export function isBookingSettings(value: unknown): value is BookingSettings {
+  const result = BookingSettingsSchema.safeParse(value);
+  return result.success;
+}
+
+export function isHeroContent(value: unknown): value is HeroContent {
+  const result = HeroContentSchema.safeParse(value);
+  return result.success;
+}
+
+export function isSeoSettings(value: unknown): value is SeoSettings {
+  const result = SeoSettingsSchema.safeParse(value);
+  return result.success;
+}
+
+export function isBusinessInfo(value: unknown): value is BusinessInfo {
+  const result = BusinessInfoSchema.safeParse(value);
+  return result.success;
 }

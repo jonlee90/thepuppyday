@@ -73,7 +73,9 @@
       "Bash(npx supabase:*)",
       "Bash(psql:*)",
       "Bash(timeout 2 tail:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(move \"C:\\Users\\Jon\\Documents\\claude projects\\thepuppyday\\src\\app\\admin\\settings\\page.tsx\" \"C:\\Users\\Jon\\Documents\\claude projects\\thepuppyday\\src\\app\\admin\\settings\\business-hours\\page.tsx\")",
+      "Bash(timeout 30 npm run dev:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
