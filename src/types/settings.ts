@@ -552,7 +552,7 @@ export const ReferralSchema = z.object({
 export interface SettingsAuditLog {
   id: string;
   admin_id: string | null;
-  setting_type: 'booking' | 'loyalty' | 'site_content' | 'banner' | 'staff';
+  setting_type: 'booking' | 'loyalty' | 'site_content' | 'banner' | 'staff' | 'referral' | 'notification' | 'other';
   setting_key: string;
   old_value: Record<string, unknown> | null;
   new_value: Record<string, unknown> | null;
@@ -561,7 +561,7 @@ export interface SettingsAuditLog {
 
 export const SettingsAuditLogSchema = z.object({
   admin_id: z.string().uuid().nullable(),
-  setting_type: z.enum(['booking', 'loyalty', 'site_content', 'banner', 'staff']),
+  setting_type: z.enum(['booking', 'loyalty', 'site_content', 'banner', 'staff', 'referral', 'notification', 'other']),
   setting_key: z.string().min(1).max(100),
   old_value: z.record(z.unknown()).nullable(),
   new_value: z.record(z.unknown()).nullable(),

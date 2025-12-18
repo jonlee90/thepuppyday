@@ -471,6 +471,7 @@ export interface Database {
   before_after_pairs: BeforeAfterPair;
   settings: Setting;
   notifications_log: NotificationLog;
+  settings_audit_log: import('@/types/settings').SettingsAuditLog;
   marketing_campaigns: import('@/types/marketing').MarketingCampaign;
   campaign_sends: import('@/types/marketing').CampaignSend;
   marketing_unsubscribes: import('@/types/marketing').MarketingUnsubscribe;
