@@ -1,9 +1,11 @@
 /**
  * Marketing homepage - integrates all marketing components
+ * Task 0168: Updated to use dynamic site content from database
  */
 
 import { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getSiteContent } from '@/lib/site-content';
 import { HeroSection } from '@/components/marketing/hero-section';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 import { ServiceGrid } from '@/components/marketing/service-grid';
@@ -21,106 +23,89 @@ import type {
 } from '@/types/database';
 import GroomingToolDecoration from '@/components/marketing/grooming-tool-decoration';
 
-// SEO Metadata
-export const metadata: Metadata = {
-  title: 'Puppy Day - Best Dog Grooming & Day Care in La Mirada, CA',
-  description: 'Best dog grooming and day care services in La Mirada, CA 90638. Book your appointment today! Hours Mon-Sat 9:00AM - 5:00pm',
-  keywords: [
-    'pet grooming',
-    'dog grooming',
-    'La Mirada pet grooming',
-    'professional pet care',
-    'dog spa',
-    'puppy grooming',
-    'pet salon',
-    'La Mirada CA',
-  ],
-  authors: [{ name: 'The Puppy Day' }],
-  openGraph: {
-    title: 'Puppy Day - BestDog Grooming & Day Care',
-    description: 'We treat your dogs like family. Expert grooming and engaging daycare services in La Mirada, CA.',
-    url: 'https://thepuppyday.com',
-    siteName: 'Puppy Day',
-    images: [
-      {
-        url: 'https://placedog.net/1200/630?id=og',
-        width: 1200,
-        height: 630,
-        alt: 'Puppy Day - Dog Grooming & Day Care',
-      },
+// Dynamic SEO Metadata - fetches from database
+export async function generateMetadata(): Promise<Metadata> {
+  const { seo } = await getSiteContent();
+
+  return {
+    title: seo.page_title,
+    description: seo.meta_description,
+    keywords: [
+      'pet grooming',
+      'dog grooming',
+      'La Mirada pet grooming',
+      'professional pet care',
+      'dog spa',
+      'puppy grooming',
+      'pet salon',
+      'La Mirada CA',
     ],
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Puppy Day - Dog Grooming & Day Care',
-    description: 'We treat your dogs like family. Expert grooming and engaging daycare services.',
-    images: ['https://placedog.net/1200/630?id=twitter'],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+    authors: [{ name: 'The Puppy Day' }],
+    openGraph: {
+      title: seo.og_title,
+      description: seo.og_description,
+      url: 'https://thepuppyday.com',
+      siteName: 'Puppy Day',
+      images: seo.og_image_url
+        ? [
+            {
+              url: seo.og_image_url,
+              width: 1200,
+              height: 630,
+              alt: seo.og_title,
+            },
+          ]
+        : [],
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: seo.og_title,
+      description: seo.og_description,
+      images: seo.og_image_url ? [seo.og_image_url] : [],
+    },
+    robots: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
-  },
-  verification: {
-    google: 'your-google-verification-code',
-  },
-};
+  };
+}
+
+// Revalidate every 5 seconds for near-instant updates
+export const revalidate = 5;
 
 async function getMarketingData() {
   const supabase = await createServerSupabaseClient();
 
-  const [
-    servicesRes,
-    bannersRes,
-    beforeAfterRes,
-    galleryRes,
-    contentRes,
-    settingsRes,
-  ] = await Promise.all([
-    (supabase as any).from('services').select('*').eq('is_active', true).order('display_order'),
-    (supabase as any).from('promo_banners').select('*').order('display_order'),
-    (supabase as any).from('before_after_pairs').select('*').order('display_order'),
-    (supabase as any).from('gallery_images').select('*').eq('is_published', true).order('display_order'),
-    (supabase as any).from('site_content').select('*'),
-    (supabase as any).from('settings').select('*').single(),
-  ]);
-
-  // Helper to get site content by key
-  const getContent = (key: string): string => {
-    const item = (contentRes.data as SiteContent[])?.find((c) => c.key === key);
-    return item ? String(item.content) : '';
-  };
-
-  // Helper to get parsed JSON content
-  const getJSONContent = (key: string): string[] => {
-    const item = (contentRes.data as SiteContent[])?.find((c) => c.key === key);
-    if (!item) return [];
-    try {
-      return JSON.parse(String(item.content));
-    } catch {
-      return [];
-    }
-  };
+  // Fetch site content and other marketing data in parallel
+  const [siteContent, servicesRes, bannersRes, beforeAfterRes, galleryRes, settingsRes] =
+    await Promise.all([
+      getSiteContent(),
+      (supabase as any).from('services').select('*').eq('is_active', true).order('display_order'),
+      (supabase as any).from('promo_banners').select('*').order('display_order'),
+      (supabase as any).from('before_after_pairs').select('*').order('display_order'),
+      (supabase as any)
+        .from('gallery_images')
+        .select('*')
+        .eq('is_published', true)
+        .order('display_order'),
+      (supabase as any).from('settings').select('*').single(),
+    ]);
 
   return {
+    siteContent,
     services: (servicesRes.data as Service[]) || [],
     banners: (bannersRes.data as PromoBannerType[]) || [],
     beforeAfterPairs: (beforeAfterRes.data as BeforeAfterPair[]) || [],
     galleryImages: (galleryRes.data as GalleryImage[]) || [],
-    heroHeadline: getContent('hero_headline'),
-    heroTagline: getContent('hero_tagline'),
-    heroImageUrl: getContent('hero_image_url'),
-    aboutTitle: getContent('about_title'),
-    aboutDescription: getContent('about_description'),
-    aboutDifferentiators: getJSONContent('about_differentiators'),
     businessHours: settingsRes.data?.business_hours || {},
   };
 }
@@ -133,12 +118,8 @@ export default async function MarketingPage() {
       {/* Promotional Banner */}
       {data.banners.length > 0 && <PromoBanner banners={data.banners} />}
 
-      {/* Hero Section */}
-      <HeroSection
-        headline={data.heroHeadline || 'Dog Grooming & Day Care'}
-        tagline={data.heroTagline || 'Welcome to Puppy Day, where we treat your dogs like family. We offer expert grooming and engaging daycare services for dogs.'}
-        imageUrl={data.heroImageUrl || 'https://placedog.net/1920/1080?id=hero'}
-      />
+      {/* Hero Section - Dynamic content from database */}
+      <HeroSection heroContent={data.siteContent.hero} />
 
       {/* Before/After Transformations Section */}
       {data.beforeAfterPairs.length > 0 && (
@@ -239,14 +220,14 @@ export default async function MarketingPage() {
         ]}
       />
 
-      {/* Contact Section */}
+      {/* Contact Section - Dynamic from database */}
       <ContactSection
-        phone="(657) 252-2903"
-        email="puppyday14936@gmail.com"
-        address="14936 Leffingwell Rd, La Mirada, CA 90638"
+        phone={data.siteContent.business.phone}
+        email={data.siteContent.business.email}
+        address={`${data.siteContent.business.address}, ${data.siteContent.business.city}, ${data.siteContent.business.state} ${data.siteContent.business.zip}`}
       />
 
-      {/* Structured Data for SEO */}
+      {/* Structured Data for SEO - Dynamic from database */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -254,17 +235,17 @@ export default async function MarketingPage() {
             '@context': 'https://schema.org',
             '@type': 'LocalBusiness',
             '@id': 'https://thepuppyday.com',
-            name: 'Puppy Day',
-            description: 'Professional dog grooming and day care services in La Mirada, CA',
+            name: data.siteContent.business.name,
+            description: `Professional dog grooming and day care services in ${data.siteContent.business.city}, ${data.siteContent.business.state}`,
             url: 'https://thepuppyday.com',
-            telephone: '(657) 252-2903',
-            email: 'puppyday14936@gmail.com',
+            telephone: data.siteContent.business.phone,
+            email: data.siteContent.business.email,
             address: {
               '@type': 'PostalAddress',
-              streetAddress: '14936 Leffingwell Rd',
-              addressLocality: 'La Mirada',
-              addressRegion: 'CA',
-              postalCode: '90638',
+              streetAddress: data.siteContent.business.address,
+              addressLocality: data.siteContent.business.city,
+              addressRegion: data.siteContent.business.state,
+              postalCode: data.siteContent.business.zip,
               addressCountry: 'US',
             },
             geo: {
@@ -288,9 +269,10 @@ export default async function MarketingPage() {
               reviewCount: '127',
             },
             sameAs: [
-              'https://www.instagram.com/puppyday_lm',
-              'https://www.yelp.com/biz/puppy-day-la-mirada',
-            ],
+              data.siteContent.business.social_links.instagram,
+              data.siteContent.business.social_links.yelp,
+              data.siteContent.business.social_links.facebook,
+            ].filter(Boolean),
           }),
         }}
       />

@@ -1,16 +1,20 @@
 /**
  * Marketing site layout
+ * Task 0168: Updated to use dynamic business info from database
  */
 
 import { Header } from '@/components/marketing/header';
 import { Footer } from '@/components/marketing/footer';
 import { AnnouncementBars } from '@/components/marketing/announcement-bars';
+import { getBusinessInfo } from '@/lib/site-content';
 
-export default function MarketingLayout({
+export default async function MarketingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const businessInfo = await getBusinessInfo();
+
   return (
     <>
       <AnnouncementBars />
@@ -18,7 +22,7 @@ export default function MarketingLayout({
       <main className="min-h-screen">
         {children}
       </main>
-      <Footer />
+      <Footer businessInfo={businessInfo} />
     </>
   );
 }

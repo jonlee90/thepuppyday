@@ -2,21 +2,22 @@
 
 /**
  * Hero section for marketing homepage - Clean & Elegant Professional
- * Simplified design with essential CTAs and business images
+ * Task 0168: Updated to use dynamic hero content from database
  */
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Phone, Calendar, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PawDecoration from './paw-decoration';
+import type { HeroContent } from '@/types/settings';
+
 interface HeroSectionProps {
-  headline: string;
-  tagline: string;
-  imageUrl: string;
+  heroContent: HeroContent;
 }
 
-export function HeroSection({ headline, tagline, imageUrl }: HeroSectionProps) {
+export function HeroSection({ heroContent }: HeroSectionProps) {
   return (
     <section id="home" className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-[#F8EEE5] via-[#FFFBF7] to-[#F8EEE5] pt-5 mt-[160px] lg:mt-5">
 <PawDecoration />
@@ -46,32 +47,36 @@ export function HeroSection({ headline, tagline, imageUrl }: HeroSectionProps) {
                 {/* Headline */}
                 <div>
                   <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#434E54] mb-6 leading-tight">
-                    {headline}
+                    {heroContent.headline}
                   </h1>
                   <p className="text-xl sm:text-2xl text-[#6B7280] leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                    {tagline}
+                    {heroContent.subheadline}
                   </p>
                 </div>
 
-                {/* CTA Buttons */}
+                {/* CTA Buttons - Dynamic from database */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mt-8">
-                  {/* Book Appointment Button */}
-                  <a
-                    href="#booking"
-                    className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-white bg-[#434E54] rounded-xl shadow-lg hover:bg-[#363F44] hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
-                  >
-                  <Calendar className="w-5 h-5" strokeWidth={2} />
-                    Book Appointment
-                  </a>
-
-                  {/* Call Button */}
-                  <a
-                    href="tel:6572522903"
-                    className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-[#434E54] bg-white/90 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-xl hover:bg-white transition-all duration-200 hover:-translate-y-1 border border-gray-200"
-                  >
-                    <Phone className="w-5 h-5" strokeWidth={2} />
-                    (657) 252-2903
-                  </a>
+                  {heroContent.cta_buttons.map((button, index) => (
+                    <Link
+                      key={index}
+                      href={button.url}
+                      className={`
+                        inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg
+                        transition-all duration-200 hover:-translate-y-1 hover:shadow-xl
+                        ${
+                          button.style === 'primary'
+                            ? 'text-white bg-[#434E54] hover:bg-[#363F44]'
+                            : 'text-[#434E54] bg-white/90 backdrop-blur-sm hover:bg-white border border-gray-200'
+                        }
+                      `}
+                    >
+                      {index === 0 && <Calendar className="w-5 h-5" strokeWidth={2} />}
+                      {index === 1 && button.text.toLowerCase().includes('call') && (
+                        <Phone className="w-5 h-5" strokeWidth={2} />
+                      )}
+                      {button.text}
+                    </Link>
+                  ))}
                 </div>
               </div>
             </motion.div>
