@@ -129,6 +129,24 @@ export async function PUT(request: Request) {
 
     // Validate service IDs exist if provided
     if (qualifying_services.length > 0) {
+      // INPUT SANITIZATION: Validate UUID format before database query
+      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const invalidFormatIds = qualifying_services.filter(id => !UUID_REGEX.test(id));
+
+      if (invalidFormatIds.length > 0) {
+        console.error('[Earning Rules API] Invalid UUID format:', invalidFormatIds);
+        return NextResponse.json(
+          {
+            error: 'Invalid service ID format',
+            details: invalidFormatIds.map(id => ({
+              field: 'qualifying_services',
+              message: `Invalid UUID format: ${id}`,
+            })),
+          },
+          { status: 400 }
+        );
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: services, error: servicesError } = (await (supabase as any)
         .from('services')

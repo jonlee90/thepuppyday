@@ -64,6 +64,10 @@ export async function awardPunchForAppointment(
   serviceId: string,
   appointmentTotal: number
 ): Promise<PunchAwardResult> {
+  // TRANSACTION SAFETY: This multi-step operation should use the PostgreSQL stored procedure
+  // 'award_punch_for_appointment' (see migration 20250119000001) for ACID guarantees.
+  // Current implementation risks data inconsistency if DB operations fail partway through.
+  // TODO: Replace with: supabase.rpc('award_punch_for_appointment', { ... })
   try {
     console.log(`[Punch Award] Processing award for appointment ${appointmentId}`);
 
@@ -281,7 +285,8 @@ export async function isFirstVisitCustomer(
       .eq('customer_id', customerId)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
+    // ERROR HANDLING: Check error object properties safely
+    if (error && (error as { code?: string }).code !== 'PGRST116') {
       throw error;
     }
 
@@ -324,7 +329,8 @@ export async function getCustomerLoyaltyStatus(
       .eq('customer_id', customerId)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
+    // ERROR HANDLING: Check error object properties safely
+    if (error && (error as { code?: string }).code !== 'PGRST116') {
       throw error;
     }
 

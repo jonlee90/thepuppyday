@@ -162,6 +162,24 @@ export async function PUT(request: Request) {
       );
     }
 
+    // INPUT SANITIZATION: Validate UUID format before database query
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const invalidFormatIds = eligible_services.filter(id => !UUID_REGEX.test(id));
+
+    if (invalidFormatIds.length > 0) {
+      console.error('[Redemption Rules API] Invalid UUID format:', invalidFormatIds);
+      return NextResponse.json(
+        {
+          error: 'Invalid service ID format',
+          details: invalidFormatIds.map(id => ({
+            field: 'eligible_services',
+            message: `Invalid UUID format: ${id}`,
+          })),
+        },
+        { status: 400 }
+      );
+    }
+
     // Validate all service IDs exist in the database
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: services, error: servicesError } = (await (supabase as any)

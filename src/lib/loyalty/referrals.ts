@@ -388,6 +388,10 @@ export async function awardReferralBonuses(
     }
 
     // 4. Award bonus punches to referrer
+    // TRANSACTION SAFETY: This multi-step operation should use the PostgreSQL stored procedure
+    // 'award_referral_bonuses' (see migration 20250119000001) for ACID guarantees.
+    // Current implementation risks data inconsistency if any step fails.
+    // TODO: Replace with: supabase.rpc('award_referral_bonuses', { ... })
     let referrerBonusAwarded = 0;
     if (settings.referral.referrer_bonus_punches > 0 && referrerLoyalty) {
       const newReferrerPunches =
