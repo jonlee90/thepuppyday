@@ -73,7 +73,7 @@ export async function canRedeemForService(
     console.log(`[Redemption] Checking redemption eligibility for customer ${customerId}`);
 
     // 1. Fetch settings
-    const settings = await getLoyaltySettings();
+    const settings = await getLoyaltySettings(supabase);
 
     // 2. Check if service is eligible for redemption
     if (!isServiceEligibleForRedemption(serviceId, settings.redemption_rules.eligible_services)) {
@@ -328,7 +328,7 @@ export async function getAvailableRewards(
   }>
 > {
   try {
-    const settings = await getLoyaltySettings();
+    const settings = await getLoyaltySettings(supabase);
 
     // Get loyalty record
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -384,7 +384,7 @@ export async function getAvailableRewards(
  */
 export async function markExpiredRewards(supabase: AppSupabaseClient): Promise<number> {
   try {
-    const settings = await getLoyaltySettings();
+    const settings = await getLoyaltySettings(supabase);
 
     // If expiration is disabled (0 days), don't mark anything as expired
     if (settings.redemption_rules.expiration_days === 0) {

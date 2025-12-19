@@ -1,6 +1,7 @@
 /**
  * Tests for Loyalty Settings Utilities
  * Task 0201: Loyalty system integration
+ * FIXED: Updated to use Supabase mocks instead of fetch
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
@@ -14,9 +15,10 @@ import {
   calculateRedemptionValue,
 } from '@/lib/admin/loyalty-settings';
 
-// Mock fetch globally
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+// Mock Supabase client
+const mockSupabase = {
+  from: vi.fn(),
+};
 
 describe('Loyalty Settings Utilities', () => {
   const mockSettings = {
@@ -52,125 +54,141 @@ describe('Loyalty Settings Utilities', () => {
 
   describe('getLoyaltySettings', () => {
     it('should fetch and bundle all loyalty settings', async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ data: mockSettings.program }),
+      // Mock Supabase responses
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockSingle = vi.fn();
+
+      mockSupabase.from.mockReturnValue({
+        select: mockSelect,
       });
 
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.program }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.earning_rules }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.redemption_rules }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.referral }),
-        });
+      mockSelect.mockReturnValue({
+        eq: mockEq,
+      });
 
-      const settings = await getLoyaltySettings();
+      mockEq.mockReturnValue({
+        single: mockSingle,
+      });
 
-      expect(settings).toEqual(mockSettings);
-      expect(mockFetch).toHaveBeenCalledTimes(4);
+      mockSingle
+        .mockResolvedValueOnce({ data: { value: mockSettings.program }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.earning_rules }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.redemption_rules }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.referral }, error: null });
+
+      const settings = await getLoyaltySettings(mockSupabase as any);
+
+      expect(settings.program).toEqual(mockSettings.program);
+      expect(settings.earning_rules).toEqual(mockSettings.earning_rules);
+      expect(settings.redemption_rules).toEqual(mockSettings.redemption_rules);
+      expect(settings.referral).toEqual(mockSettings.referral);
     });
 
     it('should cache settings for 5 minutes', async () => {
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.program }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.earning_rules }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.redemption_rules }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.referral }),
-        });
+      // Mock Supabase responses
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockSingle = vi.fn();
+
+      mockSupabase.from.mockReturnValue({
+        select: mockSelect,
+      });
+
+      mockSelect.mockReturnValue({
+        eq: mockEq,
+      });
+
+      mockEq.mockReturnValue({
+        single: mockSingle,
+      });
+
+      mockSingle
+        .mockResolvedValueOnce({ data: { value: mockSettings.program }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.earning_rules }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.redemption_rules }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.referral }, error: null });
 
       // First call
-      await getLoyaltySettings();
-      expect(mockFetch).toHaveBeenCalledTimes(4);
+      await getLoyaltySettings(mockSupabase as any);
+      expect(mockSingle).toHaveBeenCalledTimes(4);
 
       vi.clearAllMocks();
 
       // Second call (should use cache)
-      await getLoyaltySettings();
-      expect(mockFetch).not.toHaveBeenCalled();
+      await getLoyaltySettings(mockSupabase as any);
+      expect(mockSingle).not.toHaveBeenCalled();
     });
 
-    it('should throw error if any fetch fails', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        json: async () => ({ error: 'Failed' }),
+    it('should return default settings on error', async () => {
+      // Mock Supabase error
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockSingle = vi.fn().mockRejectedValue(new Error('Database error'));
+
+      mockSupabase.from.mockReturnValue({
+        select: mockSelect,
       });
 
-      await expect(getLoyaltySettings()).rejects.toThrow('Failed to fetch loyalty settings');
+      mockSelect.mockReturnValue({
+        eq: mockEq,
+      });
+
+      mockEq.mockReturnValue({
+        single: mockSingle,
+      });
+
+      const settings = await getLoyaltySettings(mockSupabase as any);
+
+      // Should return default settings instead of throwing
+      expect(settings.program.is_enabled).toBe(true);
+      expect(settings.program.punch_threshold).toBe(9);
     });
   });
 
   describe('clearLoyaltySettingsCache', () => {
     it('should force fresh fetch after cache clear', async () => {
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.program }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.earning_rules }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.redemption_rules }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.referral }),
-        });
+      // Mock Supabase responses
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockSingle = vi.fn();
+
+      mockSupabase.from.mockReturnValue({
+        select: mockSelect,
+      });
+
+      mockSelect.mockReturnValue({
+        eq: mockEq,
+      });
+
+      mockEq.mockReturnValue({
+        single: mockSingle,
+      });
+
+      mockSingle
+        .mockResolvedValueOnce({ data: { value: mockSettings.program }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.earning_rules }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.redemption_rules }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.referral }, error: null });
 
       // First call
-      await getLoyaltySettings();
-      expect(mockFetch).toHaveBeenCalledTimes(4);
+      await getLoyaltySettings(mockSupabase as any);
+      expect(mockSingle).toHaveBeenCalledTimes(4);
 
       vi.clearAllMocks();
 
       // Clear cache
       clearLoyaltySettingsCache();
 
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.program }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.earning_rules }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.redemption_rules }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ data: mockSettings.referral }),
-        });
+      mockSingle
+        .mockResolvedValueOnce({ data: { value: mockSettings.program }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.earning_rules }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.redemption_rules }, error: null })
+        .mockResolvedValueOnce({ data: { value: mockSettings.referral }, error: null });
 
       // Second call (should fetch again)
-      await getLoyaltySettings();
-      expect(mockFetch).toHaveBeenCalledTimes(4);
+      await getLoyaltySettings(mockSupabase as any);
+      expect(mockSingle).toHaveBeenCalledTimes(4);
     });
   });
 

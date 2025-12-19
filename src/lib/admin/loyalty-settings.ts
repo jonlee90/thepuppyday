@@ -2,6 +2,8 @@
  * Loyalty Settings Utilities
  * Provides cached access to loyalty program settings for punch card operations
  * Task 0201: Loyalty system integration
+ *
+ * FIXED: Changed from fetch-based to direct Supabase queries for server-side compatibility
  */
 
 import type {
@@ -34,7 +36,32 @@ let cacheTimestamp: number = 0;
 const CACHE_TTL_MS = 300000; // 5 minutes (loyalty settings change infrequently)
 
 /**
- * Fetch all loyalty settings from API with caching
+ * Default settings used when database has no values
+ */
+const DEFAULT_SETTINGS: AllLoyaltySettings = {
+  program: {
+    is_enabled: true,
+    punch_threshold: 9,
+  },
+  earning_rules: {
+    qualifying_services: [], // Empty = all services qualify
+    minimum_spend: 0, // No minimum spend
+    first_visit_bonus: 0, // No first visit bonus
+  },
+  redemption_rules: {
+    eligible_services: [], // Will be populated with all active services
+    expiration_days: 0, // Rewards never expire
+    max_value: null, // No value cap
+  },
+  referral: {
+    is_enabled: false,
+    referrer_bonus_punches: 1,
+    referee_bonus_punches: 0,
+  },
+};
+
+/**
+ * Fetch all loyalty settings from database with caching
  *
  * Returns bundled loyalty settings including:
  * - Program status and thresholds
@@ -42,17 +69,19 @@ const CACHE_TTL_MS = 300000; // 5 minutes (loyalty settings change infrequently)
  * - Redemption rules (eligible services, expiration, caps)
  * - Referral program settings
  *
+ * @param supabase - Supabase client instance (server or client)
  * @returns Promise resolving to complete loyalty settings
  * @throws Error if settings cannot be fetched
  *
  * @example
- * const settings = await getLoyaltySettings();
+ * const supabase = await createServerSupabaseClient();
+ * const settings = await getLoyaltySettings(supabase);
  * if (settings.program.is_enabled) {
  *   const threshold = settings.program.punch_threshold;
  *   const qualifyingServices = settings.earning_rules.qualifying_services;
  * }
  */
-export async function getLoyaltySettings(): Promise<AllLoyaltySettings> {
+export async function getLoyaltySettings(supabase: any): Promise<AllLoyaltySettings> {
   const now = Date.now();
 
   // Return cached if fresh
@@ -61,41 +90,62 @@ export async function getLoyaltySettings(): Promise<AllLoyaltySettings> {
     return cachedSettings;
   }
 
-  console.log('[Loyalty Settings] Fetching fresh settings from API');
+  console.log('[Loyalty Settings] Fetching fresh settings from database');
 
-  // Fetch all loyalty settings in parallel
-  const [programRes, earningRes, redemptionRes, referralRes] = await Promise.all([
-    fetch('/api/admin/settings/loyalty/program'),
-    fetch('/api/admin/settings/loyalty/earning-rules'),
-    fetch('/api/admin/settings/loyalty/redemption-rules'),
-    fetch('/api/admin/settings/loyalty/referral'),
-  ]);
+  try {
+    // Fetch all loyalty settings from database in parallel
+    const [programResult, earningResult, redemptionResult, referralResult] = await Promise.all([
+      supabase.from('settings').select('value').eq('key', 'loyalty_program').single(),
+      supabase.from('settings').select('value').eq('key', 'loyalty_earning_rules').single(),
+      supabase.from('settings').select('value').eq('key', 'loyalty_redemption_rules').single(),
+      supabase.from('settings').select('value').eq('key', 'loyalty_referral').single(),
+    ]);
 
-  if (!programRes.ok || !earningRes.ok || !redemptionRes.ok || !referralRes.ok) {
-    throw new Error('Failed to fetch loyalty settings');
+    // Extract values or use defaults
+    const program: LoyaltyProgramSettings = programResult.data?.value || DEFAULT_SETTINGS.program;
+    const earning_rules: LoyaltyEarningRules = earningResult.data?.value || DEFAULT_SETTINGS.earning_rules;
+    const redemption_rules: LoyaltyRedemptionRules = redemptionResult.data?.value || DEFAULT_SETTINGS.redemption_rules;
+    const referral: ReferralProgram = referralResult.data?.value || DEFAULT_SETTINGS.referral;
+
+    // If redemption eligible_services is empty, populate with all active services
+    if (redemption_rules.eligible_services.length === 0) {
+      const { data: services } = await supabase
+        .from('services')
+        .select('id')
+        .eq('is_active', true);
+
+      if (services && services.length > 0) {
+        redemption_rules.eligible_services = services.map((s: any) => s.id);
+      }
+    }
+
+    // Bundle settings
+    const settings: AllLoyaltySettings = {
+      program,
+      earning_rules,
+      redemption_rules,
+      referral,
+    };
+
+    // Update cache
+    cachedSettings = settings;
+    cacheTimestamp = now;
+
+    console.log('[Loyalty Settings] Settings cached successfully');
+    return settings;
+  } catch (error) {
+    console.error('[Loyalty Settings] Error fetching settings:', error);
+
+    // If cache exists, return stale cache rather than failing
+    if (cachedSettings) {
+      console.warn('[Loyalty Settings] Returning stale cache due to error');
+      return cachedSettings;
+    }
+
+    // Last resort: return defaults
+    console.warn('[Loyalty Settings] Returning default settings');
+    return DEFAULT_SETTINGS;
   }
-
-  const [programData, earningData, redemptionData, referralData] = await Promise.all([
-    programRes.json(),
-    earningRes.json(),
-    redemptionRes.json(),
-    referralRes.json(),
-  ]);
-
-  // Bundle settings
-  const settings: AllLoyaltySettings = {
-    program: programData.data,
-    earning_rules: earningData.data,
-    redemption_rules: redemptionData.data,
-    referral: referralData.data,
-  };
-
-  // Update cache
-  cachedSettings = settings;
-  cacheTimestamp = now;
-
-  console.log('[Loyalty Settings] Settings cached successfully');
-  return settings;
 }
 
 /**

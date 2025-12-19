@@ -66,7 +66,7 @@ export async function generateReferralCodeForCustomer(
     console.log(`[Referrals] Generating referral code for customer ${customerId}`);
 
     // 1. Check if referral program is enabled
-    const settings = await getLoyaltySettings();
+    const settings = await getLoyaltySettings(supabase);
     if (!settings.referral.is_enabled) {
       console.log('[Referrals] Referral program is disabled');
       return {
@@ -172,7 +172,7 @@ export async function applyReferralCode(
     }
 
     // 2. Check if referral program is enabled
-    const settings = await getLoyaltySettings();
+    const settings = await getLoyaltySettings(supabase);
     if (!settings.referral.is_enabled) {
       console.log('[Referrals] Referral program is disabled');
       return {
@@ -334,7 +334,7 @@ export async function awardReferralBonuses(
     );
 
     // 1. Check if referral program is enabled
-    const settings = await getLoyaltySettings();
+    const settings = await getLoyaltySettings(supabase);
     if (!settings.referral.is_enabled) {
       console.log('[Referrals] Referral program is disabled');
       return {

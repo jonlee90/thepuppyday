@@ -68,7 +68,7 @@ export async function awardPunchForAppointment(
     console.log(`[Punch Award] Processing award for appointment ${appointmentId}`);
 
     // 1. Fetch loyalty settings
-    const settings = await getLoyaltySettings();
+    const settings = await getLoyaltySettings(supabase);
 
     // Check if loyalty program is enabled
     if (!settings.program.is_enabled) {
@@ -315,7 +315,7 @@ export async function getCustomerLoyaltyStatus(
   total_visits: number;
 } | null> {
   try {
-    const settings = await getLoyaltySettings();
+    const settings = await getLoyaltySettings(supabase);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: loyalty, error } = await (supabase as any)
