@@ -221,9 +221,9 @@ export default async function MarketingPage() {
 
       {/* About Section */}
       <AboutSection
-        title={data.aboutTitle || 'About Puppy Day'}
-        description={data.aboutDescription || 'At Puppy Day, we provide professional grooming services that promote your dog\'s health, comfort, and happiness. We use gentle techniques and premium hypoallergenic products suitable for sensitive skin. Our day care offers a safe, social experience with supervised playtime.'}
-        differentiators={data.aboutDifferentiators.length > 0 ? data.aboutDifferentiators : [
+        title="About Puppy Day"
+        description="At Puppy Day, we provide professional grooming services that promote your dog's health, comfort, and happiness. We use gentle techniques and premium hypoallergenic products suitable for sensitive skin. Our day care offers a safe, social experience with supervised playtime."
+        differentiators={[
           'Gentle techniques and premium hypoallergenic products',
           'Safe, supervised daycare environment',
           'Experienced and caring staff',

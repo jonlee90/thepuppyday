@@ -5,20 +5,64 @@
 import { z } from 'zod';
 
 // ===== BUSINESS HOURS =====
+
+/**
+ * Time range for a single period (e.g., 9:00-12:00)
+ */
+export interface TimeRange {
+  start: string; // "09:00" format (HH:mm)
+  end: string; // "17:00" format (HH:mm)
+}
+
+export const TimeRangeSchema = z.object({
+  start: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/),
+  end: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/),
+});
+
+/**
+ * Hours configuration for a single day
+ * Supports multiple time ranges for split shifts/lunch breaks
+ */
+export interface DayHours {
+  isOpen: boolean;
+  ranges: TimeRange[]; // Can have 1-3 ranges per day
+}
+
+export const DayHoursSchema = z.object({
+  isOpen: z.boolean(),
+  ranges: z.array(TimeRangeSchema).min(0).max(3),
+});
+
+/**
+ * Complete weekly business hours
+ */
+export interface BusinessHours {
+  monday: DayHours;
+  tuesday: DayHours;
+  wednesday: DayHours;
+  thursday: DayHours;
+  friday: DayHours;
+  saturday: DayHours;
+  sunday: DayHours;
+}
+
+export const BusinessHoursSchema = z.object({
+  monday: DayHoursSchema,
+  tuesday: DayHoursSchema,
+  wednesday: DayHoursSchema,
+  thursday: DayHoursSchema,
+  friday: DayHoursSchema,
+  saturday: DayHoursSchema,
+  sunday: DayHoursSchema,
+});
+
+/**
+ * @deprecated Legacy format - use DayHours instead
+ */
 export interface DaySchedule {
   is_open: boolean;
   open: string;
   close: string;
-}
-
-export interface BusinessHours {
-  monday: DaySchedule;
-  tuesday: DaySchedule;
-  wednesday: DaySchedule;
-  thursday: DaySchedule;
-  friday: DaySchedule;
-  saturday: DaySchedule;
-  sunday: DaySchedule;
 }
 
 // ===== PHASE 6 SETTINGS =====
@@ -320,6 +364,7 @@ export interface BookingSettings {
   buffer_minutes: number; // Buffer time between appointments
   blocked_dates: BlockedDate[]; // Specific blocked dates
   recurring_blocked_days: number[]; // Day of week (0=Sun, 6=Sat)
+  business_hours?: BusinessHours; // Weekly business hours (optional for backward compatibility)
 }
 
 export const BookingSettingsSchema = z.object({
@@ -329,6 +374,7 @@ export const BookingSettingsSchema = z.object({
   buffer_minutes: z.number().int().min(0).max(120),
   blocked_dates: z.array(BlockedDateSchema),
   recurring_blocked_days: z.array(z.number().int().min(0).max(6)),
+  business_hours: BusinessHoursSchema.optional(),
 });
 
 // ===== SITE CONTENT =====

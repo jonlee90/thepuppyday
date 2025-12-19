@@ -3,6 +3,8 @@
  */
 
 import type { Appointment } from '@/types/database';
+import type { BookingSettings } from '@/types/settings';
+import { isDateBlocked, isWithinBookingWindow } from '@/lib/admin/booking-settings';
 
 export interface BusinessHoursDay {
   open: string; // "09:00"
@@ -135,7 +137,8 @@ export function getAvailableSlots(
   date: string,
   serviceDuration: number,
   existingAppointments: Appointment[],
-  businessHours: BusinessHours
+  businessHours: BusinessHours,
+  bookingSettings?: BookingSettings
 ): TimeSlot[] {
   const dateObj = new Date(date + 'T00:00:00');
   const dayName = getDayName(dateObj);
@@ -146,33 +149,64 @@ export function getAvailableSlots(
     return [];
   }
 
+  // Check if date is blocked
+  if (bookingSettings && isDateBlocked(date, bookingSettings.blocked_dates, bookingSettings.recurring_blocked_days)) {
+    return [];
+  }
+
   // Generate all possible slots
   const allSlots = generateTimeSlots(dayHours.open, dayHours.close);
 
   // Check if today and filter past slots
   const now = new Date();
   const isToday = dateObj.toDateString() === now.toDateString();
+
+  // Use min_advance_hours from settings or default 30 min
+  const minAdvanceMinutes = bookingSettings
+    ? bookingSettings.min_advance_hours * 60
+    : 30;
+
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
   // Filter and check availability
   const slots: TimeSlot[] = allSlots
     .filter((slotTime) => {
-      // Filter out past slots if today
+      const slotMinutes = timeToMinutes(slotTime);
+
+      // Filter out past slots if today with min advance
       if (isToday) {
-        const slotMinutes = timeToMinutes(slotTime);
-        // Add 30 min buffer for booking ahead
-        if (slotMinutes <= currentMinutes + 30) return false;
+        if (slotMinutes <= currentMinutes + minAdvanceMinutes) return false;
+      }
+
+      // Check booking window
+      if (bookingSettings) {
+        const windowCheck = isWithinBookingWindow(
+          date,
+          slotTime,
+          bookingSettings.min_advance_hours,
+          bookingSettings.max_advance_days
+        );
+        if (!windowCheck.allowed) return false;
       }
 
       // Check if slot + duration fits within business hours
-      const slotMinutes = timeToMinutes(slotTime);
       const closeMinutes = timeToMinutes(dayHours.close);
-      if (slotMinutes + serviceDuration > closeMinutes) return false;
+
+      // Add buffer_minutes from settings
+      const bufferMinutes = bookingSettings?.buffer_minutes || 0;
+      if (slotMinutes + serviceDuration + bufferMinutes > closeMinutes) return false;
 
       return true;
     })
     .map((slotTime) => {
-      const isAvailable = !hasConflict(slotTime, serviceDuration, existingAppointments, date);
+      // Pass buffer to conflict check
+      const bufferMinutes = bookingSettings?.buffer_minutes || 0;
+      const isAvailable = !hasConflict(
+        slotTime,
+        serviceDuration + bufferMinutes,
+        existingAppointments,
+        date
+      );
 
       return {
         time: slotTime,
@@ -206,12 +240,18 @@ export function isDateAvailable(date: string, businessHours: BusinessHours): boo
 export function getDisabledDates(
   startDate: Date,
   endDate: Date,
-  businessHours: BusinessHours
+  businessHours: BusinessHours,
+  bookingSettings?: BookingSettings
 ): string[] {
   const disabled: string[] = [];
   const current = new Date(startDate);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  // Calculate max bookable date
+  const maxDate = bookingSettings
+    ? new Date(today.getTime() + bookingSettings.max_advance_days * 24 * 60 * 60 * 1000)
+    : null;
 
   while (current <= endDate) {
     const dateStr = current.toISOString().split('T')[0];
@@ -219,10 +259,20 @@ export function getDisabledDates(
     // Past dates
     if (current < today) {
       disabled.push(dateStr);
-    } else {
-      // Check if business is closed
+    }
+    // Dates beyond max advance
+    else if (maxDate && current > maxDate) {
+      disabled.push(dateStr);
+    }
+    // Closed days
+    else {
       const dayName = getDayName(current);
       if (!businessHours[dayName].is_open) {
+        disabled.push(dateStr);
+      }
+
+      // Blocked dates
+      if (bookingSettings && isDateBlocked(dateStr, bookingSettings.blocked_dates, bookingSettings.recurring_blocked_days)) {
         disabled.push(dateStr);
       }
     }
