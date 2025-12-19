@@ -388,6 +388,8 @@ export interface PromoBanner extends BaseEntity {
   is_active: boolean;
   display_order: number;
   click_count: number;
+  impression_count: number;
+  updated_at: string;
 }
 
 // Gallery Images

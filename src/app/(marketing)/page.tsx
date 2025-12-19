@@ -7,7 +7,7 @@ import { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getSiteContent } from '@/lib/site-content';
 import { HeroSection } from '@/components/marketing/hero-section';
-import { PromoBanner } from '@/components/marketing/promo-banner';
+import { PromoBannerCarousel } from '@/components/marketing/PromoBannerCarousel';
 import { ServiceGrid } from '@/components/marketing/service-grid';
 import { BeforeAfterCarousel } from '@/components/marketing/before-after-carousel';
 import { GalleryGrid } from '@/components/marketing/gallery-grid';
@@ -90,7 +90,7 @@ async function getMarketingData() {
     await Promise.all([
       getSiteContent(),
       (supabase as any).from('services').select('*').eq('is_active', true).order('display_order'),
-      (supabase as any).from('promo_banners').select('*').order('display_order'),
+      (supabase as any).from('promo_banners').select('*').eq('is_active', true).order('display_order'),
       (supabase as any).from('before_after_pairs').select('*').order('display_order'),
       (supabase as any)
         .from('gallery_images')
@@ -100,10 +100,23 @@ async function getMarketingData() {
       (supabase as any).from('settings').select('*').single(),
     ]);
 
+  // Filter banners by date range
+  const today = new Date().toISOString().split('T')[0];
+  const activeBanners = (bannersRes.data as PromoBannerType[])?.filter((banner) => {
+    // Include if no dates set
+    if (!banner.start_date && !banner.end_date) {
+      return true;
+    }
+    // Check if within date range
+    const afterStart = !banner.start_date || banner.start_date <= today;
+    const beforeEnd = !banner.end_date || banner.end_date >= today;
+    return afterStart && beforeEnd;
+  }) || [];
+
   return {
     siteContent,
     services: (servicesRes.data as Service[]) || [],
-    banners: (bannersRes.data as PromoBannerType[]) || [],
+    banners: activeBanners,
     beforeAfterPairs: (beforeAfterRes.data as BeforeAfterPair[]) || [],
     galleryImages: (galleryRes.data as GalleryImage[]) || [],
     businessHours: settingsRes.data?.business_hours || {},
@@ -115,8 +128,8 @@ export default async function MarketingPage() {
 
   return (
     <div className="bg-[#FFFBF7]">
-      {/* Promotional Banner */}
-      {data.banners.length > 0 && <PromoBanner banners={data.banners} />}
+      {/* Promotional Banner Carousel */}
+      <PromoBannerCarousel banners={data.banners} />
 
       {/* Hero Section - Dynamic content from database */}
       <HeroSection heroContent={data.siteContent.hero} />

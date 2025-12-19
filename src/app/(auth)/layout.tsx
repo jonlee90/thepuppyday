@@ -6,12 +6,14 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Footer } from '@/components/marketing/footer';
+import { getBusinessInfo } from '@/lib/site-content';
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const businessInfo = await getBusinessInfo();
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header matching marketing style */}
@@ -56,7 +58,7 @@ export default function AuthLayout({
       </main>
 
       {/* Marketing footer for consistency */}
-      <Footer />
+      <Footer businessInfo={businessInfo} />
     </div>
   );
 }

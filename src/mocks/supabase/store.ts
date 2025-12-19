@@ -323,6 +323,18 @@ class MockStore {
     }
     return result;
   }
+
+  /**
+   * Getter/Setter for promo_banners table
+   */
+  get promoBanners(): TableData[] {
+    return this.tables.get('promo_banners') || [];
+  }
+
+  set promoBanners(data: TableData[]) {
+    this.tables.set('promo_banners', data);
+    this.save();
+  }
 }
 
 // Singleton instance

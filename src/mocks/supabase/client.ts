@@ -709,6 +709,55 @@ export function createMockClient() {
         };
       },
     },
+
+    // RPC (Remote Procedure Call) mock
+    async rpc(
+      functionName: string,
+      params: Record<string, unknown> = {}
+    ): Promise<{ data: unknown; error: Error | null }> {
+      const store = getMockStore();
+
+      // Handle increment_banner_clicks RPC function
+      if (functionName === 'increment_banner_clicks') {
+        const bannerId = params.banner_id as string;
+
+        // Find the banner
+        const banner = store.promoBanners.find((b) => b.id === bannerId);
+
+        if (!banner) {
+          return {
+            data: null,
+            error: new Error('Banner not found or not active'),
+          };
+        }
+
+        if (!banner.is_active) {
+          return {
+            data: null,
+            error: new Error('Banner not found or not active'),
+          };
+        }
+
+        // Atomically increment click_count
+        banner.click_count += 1;
+        banner.updated_at = new Date().toISOString();
+
+        console.log(
+          `[Mock RPC] Incremented click count for banner ${bannerId} to ${banner.click_count}`
+        );
+
+        return {
+          data: banner.click_count,
+          error: null,
+        };
+      }
+
+      // Unknown RPC function
+      return {
+        data: null,
+        error: new Error(`RPC function '${functionName}' not implemented in mock`),
+      };
+    },
   };
 }
 
