@@ -99,6 +99,8 @@ class MockStore {
       'marketing_campaigns',
       'campaign_sends',
       'marketing_unsubscribes',
+      'staff_commissions',
+      'settings_audit_log',
     ];
 
     for (const table of tableNames) {

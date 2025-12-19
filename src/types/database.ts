@@ -426,6 +426,23 @@ export interface Setting {
   updated_at: string;
 }
 
+// Staff Commissions
+export type CommissionRateType = 'percentage' | 'flat_rate';
+
+export interface ServiceOverride {
+  service_id: string;
+  rate: number;
+}
+
+export interface StaffCommission extends BaseEntity {
+  groomer_id: string;
+  rate_type: CommissionRateType;
+  rate: number;
+  include_addons: boolean;
+  service_overrides: ServiceOverride[] | null;
+  updated_at: string;
+}
+
 // Notification Log
 export interface NotificationLog extends BaseEntity {
   customer_id: string | null;
@@ -470,6 +487,7 @@ export interface Database {
   site_content: SiteContent;
   promo_banners: PromoBanner;
   gallery_images: GalleryImage;
+  staff_commissions: StaffCommission;
   before_after_pairs: BeforeAfterPair;
   settings: Setting;
   notifications_log: NotificationLog;

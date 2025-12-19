@@ -34,6 +34,17 @@ interface CalendarEvent {
   };
 }
 
+// Groomer color palette
+const GROOMER_COLORS = [
+  '#3B82F6', // blue
+  '#10B981', // green
+  '#F59E0B', // amber
+  '#EF4444', // red
+  '#8B5CF6', // purple
+  '#EC4899', // pink
+  '#14B8A6', // teal
+];
+
 export function AppointmentCalendar({
   onEventClick,
   onDateRangeChange,
@@ -45,6 +56,52 @@ export function AppointmentCalendar({
   const [currentView, setCurrentView] = useState<'dayGridMonth' | 'timeGridWeek' | 'timeGridDay'>('timeGridDay');
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
   const [slotWaitlistCount, setSlotWaitlistCount] = useState(0);
+  const [groomers, setGroomers] = useState<any[]>([]);
+  const [selectedGroomerId, setSelectedGroomerId] = useState<string>('all');
+  const [groomerColorMap, setGroomerColorMap] = useState<Record<string, string>>({});
+
+  // Load groomer filter from localStorage on mount
+  useEffect(() => {
+    const savedFilter = localStorage.getItem('appointmentGroomerFilter');
+    if (savedFilter) {
+      setSelectedGroomerId(savedFilter);
+    }
+  }, []);
+
+  // Save groomer filter to localStorage when it changes
+  useEffect(() => {
+    if (selectedGroomerId) {
+      localStorage.setItem('appointmentGroomerFilter', selectedGroomerId);
+    }
+  }, [selectedGroomerId]);
+
+  // Fetch groomers and build color map
+  useEffect(() => {
+    fetchGroomers();
+  }, []);
+
+  const fetchGroomers = async () => {
+    try {
+      const response = await fetch('/api/admin/settings/staff?role=groomer&status=active');
+      const result = await response.json();
+
+      if (response.ok) {
+        const groomerList = result.data || [];
+        setGroomers(groomerList);
+
+        // Build color map
+        const colorMap: Record<string, string> = {};
+        groomerList.forEach((groomer: any, index: number) => {
+          colorMap[groomer.id] = GROOMER_COLORS[index % GROOMER_COLORS.length];
+        });
+        // Add color for unassigned
+        colorMap['unassigned'] = '#9CA3AF';
+        setGroomerColorMap(colorMap);
+      }
+    } catch (error) {
+      console.error('Error fetching groomers:', error);
+    }
+  };
 
   // Fetch appointments for visible date range
   const fetchAppointments = useCallback(async (start: Date, end: Date) => {
@@ -105,7 +162,18 @@ export function AppointmentCalendar({
 
       console.log('[AppointmentCalendar] Processing', appointments.length, 'appointments');
 
-      const calendarEvents: CalendarEvent[] = appointments.map((apt: any) => {
+      // Filter by selected groomer
+      let filteredAppointments = appointments;
+      if (selectedGroomerId !== 'all') {
+        filteredAppointments = appointments.filter((apt: any) => {
+          if (selectedGroomerId === 'unassigned') {
+            return !apt.groomer_id;
+          }
+          return apt.groomer_id === selectedGroomerId;
+        });
+      }
+
+      const calendarEvents: CalendarEvent[] = filteredAppointments.map((apt: any) => {
         const endTime = new Date(apt.scheduled_at);
         endTime.setMinutes(endTime.getMinutes() + apt.duration_minutes);
 
@@ -115,16 +183,25 @@ export function AppointmentCalendar({
           : 'Unknown Customer';
         const petName = apt.pet?.name || 'Unknown Pet';
         const serviceName = apt.service?.name || 'Unknown Service';
+        const groomerName = apt.groomer
+          ? `${apt.groomer.first_name} ${apt.groomer.last_name}`
+          : 'Unassigned';
+
+        // Get groomer color for border
+        const groomerKey = apt.groomer_id || 'unassigned';
+        const groomerColor = groomerColorMap[groomerKey] || '#9CA3AF';
 
         return {
           id: apt.id,
-          title: `${customerName} - ${petName}\n${serviceName}`,
+          title: `${customerName} - ${petName}\n${serviceName}\n${groomerName}`,
           start: apt.scheduled_at,
           end: endTime.toISOString(),
           backgroundColor: color,
-          borderColor: color,
+          borderColor: groomerColor,
           extendedProps: {
             appointment: apt,
+            groomerColor,
+            groomerName,
           },
         };
       });
@@ -136,7 +213,7 @@ export function AppointmentCalendar({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedGroomerId, groomerColorMap]);
 
   // Change calendar view when currentView state changes
   useEffect(() => {
@@ -215,69 +292,163 @@ export function AppointmentCalendar({
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6">
-      {/* View Toggle */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Header with View Toggle and Groomer Filter */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <h2 className="text-xl font-semibold text-[#434E54]">Appointment Calendar</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentView('timeGridDay')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              currentView === 'timeGridDay'
-                ? 'bg-[#434E54] text-white'
-                : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
-            }`}
-          >
-            Day
-          </button>
-          <button
-            onClick={() => setCurrentView('timeGridWeek')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              currentView === 'timeGridWeek'
-                ? 'bg-[#434E54] text-white'
-                : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
-            }`}
-          >
-            Week
-          </button>
-          <button
-            onClick={() => setCurrentView('dayGridMonth')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              currentView === 'dayGridMonth'
-                ? 'bg-[#434E54] text-white'
-                : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
-            }`}
-          >
-            Month
-          </button>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+          {/* Groomer Filter Dropdown */}
+          {groomers.length > 0 && (
+            <div className="form-control w-full sm:w-auto">
+              <select
+                value={selectedGroomerId}
+                onChange={(e) => setSelectedGroomerId(e.target.value)}
+                className="select select-bordered select-sm bg-white border-[#E5E5E5] focus:border-[#434E54] text-[#434E54]"
+                aria-label="Filter by groomer"
+              >
+                <option value="all">All Groomers</option>
+                <option value="unassigned">Unassigned</option>
+                {groomers.map((groomer) => (
+                  <option key={groomer.id} value={groomer.id}>
+                    {groomer.first_name} {groomer.last_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* View Toggle Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentView('timeGridDay')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                currentView === 'timeGridDay'
+                  ? 'bg-[#434E54] text-white'
+                  : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
+              }`}
+            >
+              Day
+            </button>
+            <button
+              onClick={() => setCurrentView('timeGridWeek')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                currentView === 'timeGridWeek'
+                  ? 'bg-[#434E54] text-white'
+                  : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
+              }`}
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setCurrentView('dayGridMonth')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                currentView === 'dayGridMonth'
+                  ? 'bg-[#434E54] text-white'
+                  : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
+              }`}
+            >
+              Month
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Quick Groomer Filter Chips (if 5 or fewer groomers) */}
+      {groomers.length > 0 && groomers.length <= 5 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={() => setSelectedGroomerId('all')}
+            className={`badge badge-lg transition-colors ${
+              selectedGroomerId === 'all'
+                ? 'bg-[#434E54] text-white border-[#434E54]'
+                : 'bg-white text-[#434E54] border-[#434E54] hover:bg-[#EAE0D5]'
+            }`}
+          >
+            All Groomers
+          </button>
+          <button
+            onClick={() => setSelectedGroomerId('unassigned')}
+            className={`badge badge-lg transition-colors ${
+              selectedGroomerId === 'unassigned'
+                ? 'bg-[#9CA3AF] text-white border-[#9CA3AF]'
+                : 'bg-white text-[#9CA3AF] border-[#9CA3AF] hover:bg-gray-100'
+            }`}
+          >
+            Unassigned
+          </button>
+          {groomers.map((groomer) => (
+            <button
+              key={groomer.id}
+              onClick={() => setSelectedGroomerId(groomer.id)}
+              className={`badge badge-lg transition-colors`}
+              style={{
+                backgroundColor: selectedGroomerId === groomer.id ? groomerColorMap[groomer.id] : 'white',
+                color: selectedGroomerId === groomer.id ? 'white' : groomerColorMap[groomer.id],
+                borderColor: groomerColorMap[groomer.id],
+              }}
+            >
+              {groomer.first_name} {groomer.last_name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 mb-4 text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#9CA3AF' }} />
-          <span className="text-[#6B7280]">Pending</span>
+      <div className="space-y-3 mb-4">
+        {/* Status Legend */}
+        <div>
+          <p className="text-xs font-semibold text-[#6B7280] mb-2">Status</p>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#9CA3AF' }} />
+              <span className="text-[#6B7280]">Pending</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#74B9FF' }} />
+              <span className="text-[#6B7280]">Confirmed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#FFB347' }} />
+              <span className="text-[#6B7280]">Checked In</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#6BCB77' }} />
+              <span className="text-[#6B7280]">In Progress</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#2D6A4F' }} />
+              <span className="text-[#6B7280]">Completed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#EF4444' }} />
+              <span className="text-[#6B7280]">Cancelled/No Show</span>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#74B9FF' }} />
-          <span className="text-[#6B7280]">Confirmed</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#FFB347' }} />
-          <span className="text-[#6B7280]">Checked In</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#6BCB77' }} />
-          <span className="text-[#6B7280]">In Progress</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#2D6A4F' }} />
-          <span className="text-[#6B7280]">Completed</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#EF4444' }} />
-          <span className="text-[#6B7280]">Cancelled/No Show</span>
-        </div>
+
+        {/* Groomer Legend (if multiple groomers) */}
+        {groomers.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-[#6B7280] mb-2">Groomer (Border Color)</p>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded border-2" style={{ borderColor: '#9CA3AF' }} />
+                <span className="text-[#6B7280]">Unassigned</span>
+              </div>
+              {groomers.map((groomer) => (
+                <div key={groomer.id} className="flex items-center gap-2">
+                  <div
+                    className="w-4 h-4 rounded border-2"
+                    style={{ borderColor: groomerColorMap[groomer.id] }}
+                  />
+                  <span className="text-[#6B7280]">
+                    {groomer.first_name} {groomer.last_name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Calendar */}
@@ -446,6 +617,8 @@ export function AppointmentCalendar({
           padding: 0.25rem 0.5rem;
           font-size: 0.875rem;
           white-space: pre-wrap;
+          border-left-width: 4px !important;
+          border-left-style: solid !important;
         }
 
         .fc-event:hover {

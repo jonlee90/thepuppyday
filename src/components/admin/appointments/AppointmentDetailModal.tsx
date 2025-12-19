@@ -55,11 +55,15 @@ export function AppointmentDetailModal({
   const [adminNotes, setAdminNotes] = useState('');
   const [reportCard, setReportCard] = useState<any>(null);
   const [loadingReportCard, setLoadingReportCard] = useState(false);
+  const [groomers, setGroomers] = useState<any[]>([]);
+  const [loadingGroomers, setLoadingGroomers] = useState(false);
+  const [assigningGroomer, setAssigningGroomer] = useState(false);
 
-  // Fetch appointment details
+  // Fetch appointment details and groomers
   useEffect(() => {
     if (appointmentId && isOpen) {
       fetchAppointmentDetails();
+      fetchGroomers();
     }
   }, [appointmentId, isOpen]);
 
@@ -111,6 +115,56 @@ export function AppointmentDetailModal({
       setReportCard(null);
     } finally {
       setLoadingReportCard(false);
+    }
+  };
+
+  const fetchGroomers = async () => {
+    setLoadingGroomers(true);
+
+    try {
+      const response = await fetch('/api/admin/settings/staff?role=groomer&status=active');
+      const result = await response.json();
+
+      if (response.ok) {
+        setGroomers(result.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching groomers:', err);
+      setGroomers([]);
+    } finally {
+      setLoadingGroomers(false);
+    }
+  };
+
+  const handleGroomerAssignment = async (groomerId: string | null) => {
+    if (!appointmentId) return;
+
+    setAssigningGroomer(true);
+
+    try {
+      const response = await fetch(`/api/admin/appointments/${appointmentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groomer_id: groomerId }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Show success toast
+        console.log('Groomer assigned successfully');
+        // Refresh appointment details
+        fetchAppointmentDetails();
+        if (onUpdate) {
+          onUpdate();
+        }
+      } else {
+        console.error('Failed to assign groomer:', result.error);
+      }
+    } catch (err) {
+      console.error('Error assigning groomer:', err);
+    } finally {
+      setAssigningGroomer(false);
     }
   };
 
@@ -194,6 +248,46 @@ export function AppointmentDetailModal({
                       {flag.description && ` - ${flag.description}`}
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Groomer Assignment */}
+            {appointment.status !== 'cancelled' && appointment.status !== 'no_show' && (
+              <div className="bg-[#FFFBF7] rounded-lg p-4">
+                <h4 className="font-semibold text-[#434E54] mb-3 flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Groomer Assignment
+                </h4>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text text-sm text-[#6B7280]">Assigned Groomer</span>
+                  </label>
+                  <select
+                    value={appointment.groomer_id || ''}
+                    onChange={(e) => handleGroomerAssignment(e.target.value || null)}
+                    disabled={assigningGroomer || loadingGroomers}
+                    className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] w-full"
+                  >
+                    <option value="">Unassigned</option>
+                    {groomers.map((groomer) => (
+                      <option key={groomer.id} value={groomer.id}>
+                        {groomer.first_name} {groomer.last_name}
+                      </option>
+                    ))}
+                  </select>
+                  {assigningGroomer && (
+                    <label className="label">
+                      <span className="label-text-alt text-[#6B7280]">Updating assignment...</span>
+                    </label>
+                  )}
+                  {appointment.groomer && (
+                    <label className="label">
+                      <span className="label-text-alt text-[#6B7280]">
+                        Currently assigned to {appointment.groomer.first_name} {appointment.groomer.last_name}
+                      </span>
+                    </label>
+                  )}
                 </div>
               </div>
             )}
