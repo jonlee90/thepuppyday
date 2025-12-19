@@ -499,8 +499,8 @@ export interface LoyaltyRedemptionRules {
 }
 
 export const LoyaltyRedemptionRulesSchema = z.object({
-  eligible_services: z.array(z.string()),
-  expiration_days: z.number().int().min(1).max(3650),
+  eligible_services: z.array(z.string().uuid()).min(1),
+  expiration_days: z.number().int().min(0).max(3650),
   max_value: z.number().min(0).nullable(),
 });
 
