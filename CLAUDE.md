@@ -118,15 +118,48 @@ Before starting work, check `.claude/tasks/context_session_x.md` for current con
 
 ## Available Agents
 
+### Kiro Workflow Agents
 - `kiro-requirement`: Requirements analysis (EARS format)
 - `kiro-design`: Technical design documents
 - `kiro-plan`: Implementation task planning
-- `daisyui-expert`: All task related to UI building & tweaking HAVE TO consult this agent
 - `kiro-executor`: Focused implementation
+
+### Frontend Workflow (Two-Step Orchestration)
+- `frontend-expert`: **STEP 1 - DESIGN** - Creates UI/UX design specifications (layout, visual hierarchy, user flows)
+- `daisyui-expert`: **STEP 2 - IMPLEMENT** - Implements design using DaisyUI + Tailwind, writes actual code
+
+### Specialized Agents
 - `nextjs-expert`: Next.js patterns and best practices
-- `frontend-expert`: React + TypeScript + Tailwind + DaisyUI (Clean & Elegant Professional design)
 - `code-reviewer`: Architecture and security review
 - `supabase-nextjs-expert`: Supabase + Next.js integration expert for authentication flows, database patterns, realtime subscriptions, RLS policies, and React Server Components architecture
+
+## Frontend Development Workflow
+
+For any UI/UX work, use the **two-step orchestration**:
+
+**Step 1 - Design (`@agent-frontend-expert`)**:
+- Creates comprehensive design specifications
+- Defines layout, visual hierarchy, user flows, interactions
+- Outputs: `.claude/design/[name].md`
+- Focus: **WHAT** to build and **WHY**
+
+**Step 2 - Implement (`@agent-daisyui-expert`)**:
+- Reads design spec from frontend-expert
+- Implements using DaisyUI components + Tailwind utilities
+- Writes actual React/TypeScript code
+- Focus: **HOW** to build with DaisyUI/Tailwind
+
+**Example Usage**:
+```bash
+# Step 1: Create design
+@agent-frontend-expert "Design a booking confirmation modal"
+# → Outputs: .claude/design/booking-confirmation-modal.md
+
+# Step 2: Implement design
+@agent-daisyui-expert "Implement the booking confirmation modal design"
+# → Reads design spec and writes the actual component code
+```
+
 ## Database Schema
 
 **Quick Reference**: Key tables: `users`, `pets`, `breeds`, `services`, `service_prices`, `addons`, `appointments`, `appointment_addons`, `waitlist`, `report_cards`, `memberships`, `customer_memberships`, `loyalty_points`, `loyalty_transactions`, `customer_flags`, `payments`, `site_content`, `promo_banners`, `gallery_images`, `settings`, `notifications_log`, `notification_templates`, `notification_settings`, `notification_template_history`
