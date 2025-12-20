@@ -1510,6 +1510,73 @@ npm run test:coverage     # Coverage report
    - Run tests (`npm test`)
    - Update documentation
 
+### Agent Workflows
+
+The Puppy Day uses specialized AI agents for different development tasks. Each agent is invoked with `@agent-{name}`.
+
+#### Available Agents
+
+**Kiro Workflow Agents** (Spec-Driven Development):
+- `kiro-requirement`: Requirements analysis in EARS format
+- `kiro-design`: Technical design documents with architecture and data models
+- `kiro-plan`: Implementation task planning and breakdown
+- `kiro-executor`: Focused task implementation
+
+**Frontend Workflow Agents** (Two-Step Orchestration):
+- `frontend-expert`: **STEP 1 - DESIGN** - UI/UX design specifications
+- `daisyui-expert`: **STEP 2 - IMPLEMENT** - DaisyUI + Tailwind implementation
+
+**Specialized Agents**:
+- `nextjs-expert`: Next.js patterns and best practices
+- `code-reviewer`: Architecture and security review
+- `supabase-nextjs-expert`: Supabase + Next.js integration expert
+
+#### Frontend Development Workflow
+
+For UI/UX work, use the **two-step orchestration**:
+
+**Step 1: Design with `@agent-frontend-expert`**
+- Creates comprehensive UI/UX design specifications
+- Defines layout, visual hierarchy, user flows, and interactions
+- Outputs: `.claude/design/[name].md`
+- Focus: **WHAT** to build and **WHY**
+
+**Step 2: Implement with `@agent-daisyui-expert`**
+- Reads design spec from frontend-expert
+- Implements design using DaisyUI components + Tailwind utilities
+- Writes production-ready React/TypeScript code
+- Focus: **HOW** to build with DaisyUI/Tailwind
+
+**Example Usage**:
+```bash
+# Step 1: Create design specification
+@agent-frontend-expert "Design a booking confirmation modal with appointment details and action buttons"
+
+# Output: .claude/design/booking-confirmation-modal.md
+# Contains: Layout structure, visual design, interaction patterns, responsive behavior
+
+# Step 2: Implement the design
+@agent-daisyui-expert "Implement the booking confirmation modal design"
+
+# Output: src/components/BookingConfirmationModal.tsx
+# Contains: Working React/TypeScript component with DaisyUI + Tailwind
+```
+
+**Benefits**:
+- **Separation of Concerns**: Design decisions separate from implementation
+- **Review Points**: Design can be approved before implementation
+- **Consistency**: Both agents reference The Puppy Day design system
+- **Speed**: Direct design-to-code workflow (no intermediate planning)
+
+**Design System Compliance**:
+Both agents enforce The Puppy Day design system:
+- **Colors**: Warm cream (#F8EEE5) background, charcoal (#434E54) primary
+- **Shadows**: Soft, blurred (`shadow-sm`, `shadow-md`, `shadow-lg`)
+- **Borders**: Subtle 1px or none, no bold borders
+- **Corners**: Rounded (`rounded-lg`, `rounded-xl`)
+- **Typography**: Professional hierarchy, regular to semibold weights
+- **Tone**: Professional yet warm, trustworthy, never corporate
+
 ### Testing Strategy
 
 **Unit Tests**:
