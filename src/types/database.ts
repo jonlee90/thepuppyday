@@ -14,6 +14,7 @@ export type AppointmentStatus =
   | 'completed'
   | 'cancelled'
   | 'no_show';
+export type AppointmentCreationMethod = 'customer_booking' | 'manual_admin' | 'csv_import';
 export type PaymentStatus = 'pending' | 'deposit_paid' | 'paid' | 'refunded';
 export type WaitlistStatus = 'active' | 'notified' | 'booked' | 'expired' | 'expired_offer' | 'cancelled';
 export type TimePreference = 'morning' | 'afternoon' | 'any';
@@ -42,6 +43,9 @@ export interface User extends BaseEntity {
   role: UserRole;
   avatar_url: string | null;
   preferences: Record<string, unknown>;
+  is_active: boolean;
+  created_by_admin: boolean;
+  activated_at: string | null;
   updated_at: string;
 }
 
@@ -143,6 +147,8 @@ export interface Appointment extends BaseEntity {
   notes: string | null;
   admin_notes: string | null;
   cancellation_reason: string | null;
+  creation_method: AppointmentCreationMethod;
+  created_by_admin_id: string | null;
   updated_at: string;
   // Joined data
   customer?: User;
@@ -151,6 +157,7 @@ export interface Appointment extends BaseEntity {
   groomer?: User;
   addons?: AppointmentAddon[];
   report_card?: ReportCard;
+  created_by_admin?: User;
 }
 
 export interface AppointmentAddon {
@@ -171,6 +178,8 @@ export interface CreateAppointmentInput {
   total_price: number;
   notes?: string;
   addon_ids?: string[];
+  creation_method?: AppointmentCreationMethod;
+  created_by_admin_id?: string;
 }
 
 // Waitlist

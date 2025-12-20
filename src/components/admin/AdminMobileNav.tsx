@@ -29,6 +29,12 @@ import {
   List,
   ChevronDown,
   ChevronUp,
+  Globe,
+  Tag,
+  BookOpen,
+  Building2,
+  Award,
+  UserCog,
 } from 'lucide-react';
 
 interface NavItem {
@@ -118,9 +124,45 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Settings',
-    href: '/admin/settings',
     icon: Settings,
     ownerOnly: true,
+    children: [
+      {
+        label: 'Overview',
+        href: '/admin/settings',
+        icon: LayoutDashboard,
+      },
+      {
+        label: 'Site Content',
+        href: '/admin/settings/site-content',
+        icon: Globe,
+      },
+      {
+        label: 'Banners',
+        href: '/admin/settings/banners',
+        icon: Tag,
+      },
+      {
+        label: 'Booking',
+        href: '/admin/settings/booking',
+        icon: BookOpen,
+      },
+      {
+        label: 'Business Hours',
+        href: '/admin/settings/business-hours',
+        icon: Building2,
+      },
+      {
+        label: 'Loyalty Program',
+        href: '/admin/settings/loyalty',
+        icon: Award,
+      },
+      {
+        label: 'Staff',
+        href: '/admin/settings/staff',
+        icon: UserCog,
+      },
+    ],
   },
 ];
 

@@ -6,16 +6,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, List } from 'lucide-react';
+import { Calendar, List, Plus, Upload } from 'lucide-react';
 import { useAdminStore } from '@/stores/admin-store';
 import { AppointmentCalendar } from '@/components/admin/appointments/AppointmentCalendar';
 import { AppointmentListView } from '@/components/admin/appointments/AppointmentListView';
 import { AppointmentDetailModal } from '@/components/admin/appointments/AppointmentDetailModal';
+import { ManualAppointmentModal } from '@/components/admin/appointments/ManualAppointmentModal';
+import { CSVImportModal } from '@/components/admin/appointments/CSVImportModal';
 
 export default function AppointmentsPage() {
   const { appointmentsView, setAppointmentsView } = useAdminStore();
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Handle appointment click from either view
@@ -35,15 +39,43 @@ export default function AppointmentsPage() {
     setRefreshKey((prev) => prev + 1);
   };
 
+  // Handle successful appointment creation
+  const handleCreateSuccess = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
+
+  // Handle successful CSV import
+  const handleImportSuccess = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
+
   return (
     <div className="min-h-screen bg-[#F8EEE5] p-6">
       <div className="max-w-7xl mx-auto">
         {/* Page Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-[#434E54] mb-2">Appointments</h1>
-          <p className="text-[#6B7280]">
-            Manage all grooming appointments, schedules, and customer bookings
-          </p>
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-[#434E54] mb-2">Appointments</h1>
+            <p className="text-[#6B7280]">
+              Manage all grooming appointments, schedules, and customer bookings
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="btn bg-white text-[#434E54] hover:bg-[#FFFBF7] border border-gray-200 shadow-sm"
+            >
+              <Upload className="w-5 h-5 mr-2" />
+              Import CSV
+            </button>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="btn bg-[#434E54] text-white hover:bg-[#363F44] shadow-md"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Create Appointment
+            </button>
+          </div>
         </div>
 
         {/* View Toggle */}
@@ -87,6 +119,20 @@ export default function AppointmentsPage() {
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onUpdate={handleAppointmentUpdate}
+        />
+
+        {/* Manual Appointment Creation Modal */}
+        <ManualAppointmentModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={handleCreateSuccess}
+        />
+
+        {/* CSV Import Modal */}
+        <CSVImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={handleImportSuccess}
         />
       </div>
     </div>
