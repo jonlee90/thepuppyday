@@ -6,6 +6,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **The Puppy Day** - Full-stack dog grooming SaaS application for a business in La Mirada, CA.
 
+### Architecture Documentation
+
+For comprehensive technical details, refer to **[docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)** which serves as the definitive Source of Truth for:
+
+- **Complete Tech Stack**: All dependencies with version numbers and purposes
+- **Database Schema**: Full table relationships, RLS policies, and stored procedures
+- **Security Model**: Authentication flows, RLS patterns, data validation
+- **Route Documentation**: Detailed guides for all route modules in `docs/architecture/routes/`
+- **Component Patterns**: UI components and booking flow in `docs/architecture/components/`
+- **Service Integration**: Supabase and notifications in `docs/architecture/services/`
+
+**When to use Architecture Documentation**:
+- Implementing new features that touch existing systems
+- Understanding data flow and state management
+- Setting up integrations (Supabase, notifications, etc.)
+- Reviewing security patterns and RLS policies
+- Needing exact type definitions and API contracts
+
 ## Tech Stack
 
 - **Framework**: Next.js 14+ (App Router) + TypeScript
@@ -47,11 +65,15 @@ src/
 ├── types/               # TypeScript types
 └── stores/              # Zustand state stores
 docs/
-├── architecture/        # System design & diagrams
-├── guides/              # How-to documentation
-├── migrations/          # Database migration docs
+├── architecture/        # 📖 Comprehensive architecture documentation (Source of Truth)
+│   ├── ARCHITECTURE.md  # Master document with tech stack, database, security
+│   ├── routes/          # Route-specific documentation (marketing, auth, admin, etc.)
+│   ├── components/      # Component architecture (UI, booking flow)
+│   └── services/        # Service integration guides (Supabase, notifications)
 └── specs/               # Kiro SDD specifications per phase
 ```
+
+📖 **For detailed route patterns, data flow, and implementation guides**, see route-specific docs in `docs/architecture/routes/`
 
 ## Commands
 
@@ -126,7 +148,9 @@ Before starting work, check `.claude/tasks/context_session_x.md` for current con
 - `supabase-nextjs-expert`: Supabase + Next.js integration expert for authentication flows, database patterns, realtime subscriptions, RLS policies, and React Server Components architecture
 ## Database Schema
 
-Key tables: `users`, `pets`, `breeds`, `services`, `service_prices`, `addons`, `appointments`, `appointment_addons`, `waitlist`, `report_cards`, `memberships`, `customer_memberships`, `loyalty_points`, `loyalty_transactions`, `customer_flags`, `payments`, `site_content`, `promo_banners`, `gallery_images`, `settings`, `notifications_log`, `notification_templates`, `notification_settings`, `notification_template_history`
+**Quick Reference**: Key tables: `users`, `pets`, `breeds`, `services`, `service_prices`, `addons`, `appointments`, `appointment_addons`, `waitlist`, `report_cards`, `memberships`, `customer_memberships`, `loyalty_points`, `loyalty_transactions`, `customer_flags`, `payments`, `site_content`, `promo_banners`, `gallery_images`, `settings`, `notifications_log`, `notification_templates`, `notification_settings`, `notification_template_history`
+
+📖 **For detailed schema with relationships, RLS policies, and stored procedures**, see [Database Schema section](docs/architecture/ARCHITECTURE.md#database-schema) in ARCHITECTURE.md
 
 ## Size-Based Pricing
 
