@@ -57,14 +57,16 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           'btn',
           variantClasses[variant],
           sizeClasses[size],
-          isLoading && 'loading',
           className
         )}
         disabled={disabled || isLoading}
         {...props}
       >
         {isLoading ? (
-          <span className="loading loading-spinner loading-sm" />
+          <>
+            <span className="loading loading-spinner loading-sm" />
+            {children}
+          </>
         ) : (
           <>
             {leftIcon && <span className="mr-2">{leftIcon}</span>}
