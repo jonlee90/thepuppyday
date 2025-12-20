@@ -32,22 +32,44 @@ export function DateTimeStep() {
   } = useBookingStore();
 
   // Fetch availability for selected date and service
-  const { slots, isLoading: slotsLoading, error } = useAvailability({
+  const { slots, isLoading: slotsLoading, error, bookingSettings } = useAvailability({
     date: selectedDate,
     serviceId: selectedService?.id || null,
   });
 
-  // TODO: In future, fetch business hours from settings
-  // For now, using default business hours
-  const businessHours: BusinessHours = DEFAULT_BUSINESS_HOURS;
+  // Use business hours from booking settings or default
+  const businessHours: BusinessHours = bookingSettings?.business_hours || DEFAULT_BUSINESS_HOURS;
 
-  // Calculate disabled dates
+  // Calculate disabled dates with booking settings
   const disabledDates = useMemo(() => {
     const today = new Date();
     const maxDate = new Date(today);
-    maxDate.setMonth(maxDate.getMonth() + 2);
-    return getDisabledDates(today, maxDate, businessHours);
-  }, [businessHours]);
+
+    // Use max_advance_days from settings if available
+    if (bookingSettings?.max_advance_days) {
+      maxDate.setDate(maxDate.getDate() + bookingSettings.max_advance_days);
+    } else {
+      maxDate.setMonth(maxDate.getMonth() + 2);
+    }
+
+    return getDisabledDates(today, maxDate, businessHours, bookingSettings || undefined);
+  }, [businessHours, bookingSettings]);
+
+  // Calculate min and max dates for calendar based on booking settings
+  const minDate = useMemo(() => {
+    if (!bookingSettings?.min_advance_hours) return undefined;
+    const now = new Date();
+    const minDateTime = new Date(now.getTime() + bookingSettings.min_advance_hours * 60 * 60 * 1000);
+    return minDateTime.toISOString().split('T')[0];
+  }, [bookingSettings]);
+
+  const maxDate = useMemo(() => {
+    if (!bookingSettings?.max_advance_days) return undefined;
+    const today = new Date();
+    const maxDateTime = new Date(today);
+    maxDateTime.setDate(maxDateTime.getDate() + bookingSettings.max_advance_days);
+    return maxDateTime.toISOString().split('T')[0];
+  }, [bookingSettings]);
 
   const handleDateSelect = (date: string) => {
     // Clear time when date changes
@@ -208,6 +230,8 @@ export function DateTimeStep() {
             selectedDate={selectedDate}
             onDateSelect={handleDateSelect}
             disabledDates={disabledDates}
+            minDate={minDate}
+            maxDate={maxDate}
           />
         </div>
 

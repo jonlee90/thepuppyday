@@ -174,15 +174,40 @@ Key tables: `users`, `pets`, `breeds`, `services`, `service_prices`, `addons`, `
 
 ## Development Phases
 
-| Phase | Name | Status |
-|-------|------|--------|
-| 1 | Foundation & Database | Completed |
-| 2 | Public Marketing Site | Completed |
-| 3 | Booking System | Completed |
-| 4 | Customer Portal | Completed |
-| 5 | Admin Panel Core | Completed |
-| 6 | Admin Panel Advanced | Completed |
-| 7 | Payments & Memberships | Pending |
-| 8 | Notifications | Completed |
-| 9 | Admin Settings | Pending |
-| 10 | Testing & Polish | Pending |
+| Phase | Name | Status | Tasks |
+|-------|------|--------|-------|
+| 1 | Foundation & Database | ✅ Completed | Database schema, auth, RLS |
+| 2 | Public Marketing Site | ✅ Completed | Homepage, gallery, SEO |
+| 3 | Booking System | ✅ Completed | Multi-step widget, waitlist |
+| 4 | Customer Portal | ✅ Completed | Dashboard, appointments, pets |
+| 5 | Admin Panel Core | ✅ Completed | Appointments, customers, reports |
+| 6 | Admin Panel Advanced | ✅ Completed | Analytics, marketing, flags |
+| 7 | Payments & Memberships | ⏸️ Pending | Stripe integration, subscriptions |
+| 8 | Notifications | ✅ Completed | Email/SMS templates, triggers, campaigns |
+| 9 | Admin Settings & Content | ✅ Completed | 66 tasks (0155-0220) |
+| 9.4 | - Loyalty Program Settings | ✅ Completed | Punch cards, earning/redemption rules, referrals |
+| 9.5 | - Staff Management | ✅ Completed | Staff CRUD, commissions, earnings, calendar filtering |
+| 9.6 | - Integration & Testing | ✅ Completed | Booking flow, marketing site, 375 tests |
+| 10 | Testing & Polish | 🔄 In Progress | E2E tests, performance, accessibility |
+
+### Phase 9 Highlights
+
+**Loyalty Program Settings (Tasks 0192-0201)**
+- Configurable punch card thresholds (5-20 punches)
+- Earning rules (qualifying services, minimum spend, first-visit bonus)
+- Redemption rules (eligible services, expiration, max value)
+- Referral program with unique codes and tracking
+
+**Staff Management (Tasks 0202-0213)**
+- Staff directory with grid/list views
+- Commission settings (percentage or flat rate per service)
+- Service-specific commission overrides
+- Earnings reports with charts and analytics
+- Groomer assignment in appointments
+- Calendar filtering by groomer with color coding
+
+**Integration & Testing (Tasks 0214-0220)**
+- Booking flow integration with settings enforcement
+- Marketing site dynamic content
+- 375 comprehensive tests (validation, services, APIs)
+- E2E test framework with Playwright

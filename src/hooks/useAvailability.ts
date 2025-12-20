@@ -15,6 +15,7 @@ import {
   type BusinessHours,
 } from '@/lib/booking/availability';
 import type { Appointment, Setting } from '@/types/database';
+import type { BookingSettings } from '@/types/settings';
 
 export interface UseAvailabilityParams {
   date: string | null;
@@ -26,6 +27,7 @@ export interface UseAvailabilityReturn {
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
+  bookingSettings: BookingSettings | null;
 }
 
 /**
@@ -66,6 +68,7 @@ export function useAvailability({
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [bookingSettings, setBookingSettings] = useState<BookingSettings | null>(null);
 
   const fetchAvailability = useCallback(async () => {
     // Don't fetch if date or service not selected
@@ -81,6 +84,20 @@ export function useAvailability({
     setError(null);
 
     try {
+      // Fetch booking settings first (used by both mock and API mode)
+      let settings: BookingSettings | null = null;
+      try {
+        const settingsResponse = await fetch('/api/booking/settings');
+        if (settingsResponse.ok) {
+          const settingsData = await settingsResponse.json();
+          settings = settingsData.data;
+          setBookingSettings(settings);
+          console.log('[useAvailability] Loaded booking settings:', settings);
+        }
+      } catch (settingsErr) {
+        console.warn('[useAvailability] Failed to load booking settings, using defaults:', settingsErr);
+      }
+
       if (config.useMocks) {
         console.log('[useAvailability] Using mock store');
         // Fetch from mock store
@@ -105,12 +122,13 @@ export function useAvailability({
         // Get all appointments for the date
         const allAppointments = store.select('appointments') as unknown as Appointment[];
 
-        // Calculate available slots using utility function
+        // Calculate available slots using utility function with booking settings
         const availableSlots = getAvailableSlots(
           date,
           (service as { duration_minutes: number }).duration_minutes,
           allAppointments,
-          businessHours
+          businessHours,
+          settings || undefined
         );
 
         console.log('[useAvailability] Mock slots generated:', availableSlots.length);
@@ -161,5 +179,6 @@ export function useAvailability({
     isLoading,
     error,
     refetch,
+    bookingSettings,
   };
 }
