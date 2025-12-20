@@ -1,8 +1,9 @@
-import { redirect } from 'next/navigation';
+import { permanentRedirect } from 'next/navigation';
 
 /**
  * Redirect /admin to /admin/dashboard
+ * Using permanentRedirect to avoid performance measurement issues
  */
-export default function AdminPage() {
-  redirect('/admin/dashboard');
+export default function Page() {
+  permanentRedirect('/admin/dashboard');
 }
