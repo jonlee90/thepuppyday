@@ -14,6 +14,7 @@ import { AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 
 function LoginForm() {
@@ -74,8 +75,14 @@ function LoginForm() {
       transition={{ duration: 0.4, ease: 'easeOut' }}
     >
       <div className="bg-white p-8 rounded-2xl shadow-lg">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#434E54] mb-2">Welcome Back</h1>
+        <div className="flex flex-col gap-6 items-center mb-8">
+          <Image
+            src="/images/logo.png"
+            alt="Puppy Day Logo"
+            width="200"
+            height="200"
+            priority
+          />
           <p className="text-[#6B7280]">
             Sign in to manage your appointments
           </p>

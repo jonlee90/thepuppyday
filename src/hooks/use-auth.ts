@@ -210,9 +210,18 @@ export function useAuth(): UseAuthReturn {
             return { error: null, user: userData as User };
           } else if (userError) {
             console.error('[Auth] Failed to fetch user data:', userError);
+            console.error('[Auth] Error details:', {
+              message: userError.message,
+              details: userError.details,
+              hint: userError.hint,
+              code: userError.code,
+            });
             // Sign out if we can't get user data
             await supabase.auth.signOut();
-            return { error: new Error('Failed to fetch user profile'), user: null };
+            return {
+              error: new Error(`Failed to fetch user profile: ${userError.message || 'Unknown error'}`),
+              user: null
+            };
           }
         }
 

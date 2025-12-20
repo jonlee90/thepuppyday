@@ -108,9 +108,9 @@ export function DashboardClient({
       {/* Stats Grid */}
       <DashboardStats initialStats={stats} onRetry={handleRetry} />
 
-      {/* Quick Access Cards */}
+      {/* Quick Access Cards 
       <QuickAccess />
-
+*/}
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Today's Appointments */}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Nunito, Inter } from 'next/font/google';
 import { AuthProvider } from '@/components/providers/auth-provider';
+import { ErrorFilter } from './ErrorFilter';
 import './globals.css';
 
 // Playful heading font for Neubrutalism design
@@ -43,6 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="light">
       <body className={`${nunito.variable} ${inter.variable} antialiased`}>
+        <ErrorFilter />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
