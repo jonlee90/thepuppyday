@@ -99,41 +99,15 @@ Before starting work, check `.claude/tasks/context_session_x.md` for current con
 
 ## Design System
 
-**Clean & Elegant Professional** - A refined, warm, trustworthy design aesthetic.
+**Clean & Elegant Professional** - Warm cream (#F8EEE5) background, charcoal (#434E54) primary, soft shadows, rounded corners.
 
-### Color Palette
-- **Background**: #F8EEE5 (warm cream)
-- **Primary/Buttons**: #434E54 (charcoal)
-- **Primary Hover**: #363F44
-- **Secondary**: #EAE0D5 (lighter cream)
-- **Text Primary**: #434E54
-- **Text Secondary**: #6B7280
-- **Cards**: #FFFFFF or #FFFBF7
+📖 **For complete design system with color codes, typography, and component patterns**, see [Global Design System](docs/architecture/ARCHITECTURE.md#global-design-system) in ARCHITECTURE.md
 
-### Design Principles
-- **Soft Shadows**: Use blurred shadows (`shadow-sm`, `shadow-md`, `shadow-lg`)
-- **Subtle Borders**: Very thin (1px) or no borders (`border-gray-200`)
-- **Gentle Corners**: `rounded-lg`, `rounded-xl`
-- **Professional Typography**: Regular to semibold weights (Nunito, Poppins, Inter)
-- **Clean Components**: Refined, uncluttered layouts with purposeful whitespace
-
-### Visual Style
-- Simple line-art dog silhouette logo
-- Clean, professional icons (Lucide React)
-- Organic blob shapes for visual interest
-- Soft, subtle hover transitions
-- NO bold borders, solid offset shadows, or chunky elements
-
-## Business Information
-
-- **Name**: Puppy Day
-- **Location**: 14936 Leffingwell Rd, La Mirada, CA 90638
-- **Phone**: (657) 252-2903
-- **Email**: puppyday14936@gmail.com
-- **Hours**: Monday-Saturday, 9:00 AM - 5:00 PM
-- **Social Media**:
-  - Instagram: @puppyday_lm
-  - Yelp: Puppy Day La Mirada
+**Quick Reference**:
+- Shadows: `shadow-sm`, `shadow-md`, `shadow-lg` (soft, blurred)
+- Corners: `rounded-lg`, `rounded-xl`
+- Icons: Lucide React
+- NO bold borders or chunky elements
 
 ## Available Agents
 
@@ -152,86 +126,20 @@ Before starting work, check `.claude/tasks/context_session_x.md` for current con
 
 📖 **For detailed schema with relationships, RLS policies, and stored procedures**, see [Database Schema section](docs/architecture/ARCHITECTURE.md#database-schema) in ARCHITECTURE.md
 
-## Size-Based Pricing
+## Business Information
 
-| Size | Weight Range |
-|------|--------------|
-| Small | 0-18 lbs |
-| Medium | 19-35 lbs |
-| Large | 36-65 lbs |
-| X-Large | 66+ lbs |
+📖 **For complete business details** (pricing, services, features, hours, contact), see [Business Information](docs/architecture/ARCHITECTURE.md#business-information) in ARCHITECTURE.md
 
-## Key Features
-
-- Multi-step booking widget with size-based pricing
-- Waitlist system for fully-booked slots
-- Report cards with photo before/after
-- Review routing (4-5 stars → Google, 1-3 stars → private feedback)
-- Loyalty program support
-- Breed-based grooming reminders
-
-## Services & Pricing
-
-### Grooming Packages
-
-**Basic Grooming** - Shampoo, conditioner, nail trimming, filing, ear plucking, anal gland sanitizing, sanitary cut
-- Small (0-18 lbs): $40
-- Medium (19-35 lbs): $55
-- Large (36-65 lbs): $70
-- X-Large (66+ lbs): $85
-
-**Premium Grooming** - Basic services plus styling
-- Small: $70
-- Medium: $95
-- Large: $125
-- X-Large: $150
-
-### Add-ons
-- Long Hair/Sporting: $10
-- Teeth Brushing: $10
-- Pawdicure: $15
-- Flea & Tick Treatment: $25
-- Tangle Removal: $5-$30
-
-### Additional Services
-- Day Care - Supervised playtime in safe, social environment
+**Quick Reference**:
+- Size-based pricing: Small (0-18 lbs), Medium (19-35 lbs), Large (36-65 lbs), X-Large (66+ lbs)
+- Core packages: Basic Grooming ($40-$85), Premium Grooming ($70-$150)
+- Key features: Multi-step booking, waitlist, report cards, review routing, loyalty program
 
 ## Development Phases
 
-| Phase | Name | Status | Tasks |
-|-------|------|--------|-------|
-| 1 | Foundation & Database | ✅ Completed | Database schema, auth, RLS |
-| 2 | Public Marketing Site | ✅ Completed | Homepage, gallery, SEO |
-| 3 | Booking System | ✅ Completed | Multi-step widget, waitlist |
-| 4 | Customer Portal | ✅ Completed | Dashboard, appointments, pets |
-| 5 | Admin Panel Core | ✅ Completed | Appointments, customers, reports |
-| 6 | Admin Panel Advanced | ✅ Completed | Analytics, marketing, flags |
-| 7 | Payments & Memberships | ⏸️ Pending | Stripe integration, subscriptions |
-| 8 | Notifications | ✅ Completed | Email/SMS templates, triggers, campaigns |
-| 9 | Admin Settings & Content | ✅ Completed | 66 tasks (0155-0220) |
-| 9.4 | - Loyalty Program Settings | ✅ Completed | Punch cards, earning/redemption rules, referrals |
-| 9.5 | - Staff Management | ✅ Completed | Staff CRUD, commissions, earnings, calendar filtering |
-| 9.6 | - Integration & Testing | ✅ Completed | Booking flow, marketing site, 375 tests |
-| 10 | Testing & Polish | 🔄 In Progress | E2E tests, performance, accessibility |
+📖 **For complete phase details with task breakdowns**, see [Development Phases](docs/architecture/ARCHITECTURE.md#development-phases) in ARCHITECTURE.md
 
-### Phase 9 Highlights
-
-**Loyalty Program Settings (Tasks 0192-0201)**
-- Configurable punch card thresholds (5-20 punches)
-- Earning rules (qualifying services, minimum spend, first-visit bonus)
-- Redemption rules (eligible services, expiration, max value)
-- Referral program with unique codes and tracking
-
-**Staff Management (Tasks 0202-0213)**
-- Staff directory with grid/list views
-- Commission settings (percentage or flat rate per service)
-- Service-specific commission overrides
-- Earnings reports with charts and analytics
-- Groomer assignment in appointments
-- Calendar filtering by groomer with color coding
-
-**Integration & Testing (Tasks 0214-0220)**
-- Booking flow integration with settings enforcement
-- Marketing site dynamic content
-- 375 comprehensive tests (validation, services, APIs)
-- E2E test framework with Playwright
+**Current Status**:
+- ✅ Completed: Phases 1-6, 8, 9 (Foundation through Admin Settings)
+- ⏸️ Pending: Phase 7 (Payments & Memberships)
+- 🔄 In Progress: Phase 10 (Testing & Polish)
