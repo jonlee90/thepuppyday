@@ -24,6 +24,13 @@ For comprehensive technical details, refer to **[docs/architecture/ARCHITECTURE.
 - Reviewing security patterns and RLS policies
 - Needing exact type definitions and API contracts
 
+**After completing a task**, update any architecture files that were affected:
+- Database schema changes → Update `docs/architecture/ARCHITECTURE.md` (Database Schema section)
+- New/modified routes → Update relevant file in `docs/architecture/routes/`
+- Component changes → Update `docs/architecture/components/`
+- Service integration changes → Update `docs/architecture/services/`
+- Phase completion → Update Development Phases in both `CLAUDE.md` and `ARCHITECTURE.md`
+
 ## Tech Stack
 
 - **Framework**: Next.js 14+ (App Router) + TypeScript
