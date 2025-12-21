@@ -130,8 +130,16 @@ export function CancellationPolicy() {
         throw new Error(errorData.error || 'Failed to save settings');
       }
 
-      // Update original value
-      setOriginalCutoffHours(cancellationCutoffHours);
+      // Refetch settings to confirm what was actually saved
+      const refreshResponse = await fetch('/api/admin/settings/booking');
+      if (refreshResponse.ok) {
+        const refreshResult = await refreshResponse.json();
+        if (refreshResult.data) {
+          const settings = refreshResult.data as BookingSettings;
+          setCancellationCutoffHours(settings.cancellation_cutoff_hours);
+          setOriginalCutoffHours(settings.cancellation_cutoff_hours);
+        }
+      }
 
       setSaveMessage({
         type: 'success',

@@ -326,9 +326,10 @@ export function RecurringBlockedDays({
         throw new Error(data.error || 'Failed to save recurring blocked days');
       }
 
-      // Success - update local state
+      // Success - update local state from server response
       setBookingSettings(data.data);
-      setOriginalBlockedDays(recurringBlockedDays);
+      setRecurringBlockedDays(data.data.recurring_blocked_days || []);
+      setOriginalBlockedDays(data.data.recurring_blocked_days || []);
       showToast('success', 'Recurring blocked days saved successfully');
     } catch (error) {
       console.error('Error saving recurring blocked days:', error);

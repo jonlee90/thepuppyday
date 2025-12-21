@@ -381,8 +381,16 @@ export function BusinessHoursEditor() {
         throw new Error(errorData.error || 'Failed to save business hours');
       }
 
-      // Update original values
-      setOriginalHours(businessHours);
+      // Refetch settings to confirm what was actually saved
+      const refreshResponse = await fetch('/api/admin/settings/booking');
+      if (refreshResponse.ok) {
+        const refreshResult = await refreshResponse.json();
+        if (refreshResult.data && refreshResult.data.business_hours) {
+          const savedHours = refreshResult.data.business_hours as BusinessHours;
+          setBusinessHours(savedHours);
+          setOriginalHours(savedHours);
+        }
+      }
 
       setSaveMessage({
         type: 'success',
