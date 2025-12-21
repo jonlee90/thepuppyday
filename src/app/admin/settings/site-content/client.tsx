@@ -38,26 +38,55 @@ export function SiteContentClient({ initialSettings }: SiteContentClientProps) {
   const form = useSettingsForm<SiteContentSettings>({
     initialData: initialSettings,
     onSave: async (data) => {
-      // TODO: Replace with actual API call when endpoint is created
-      // For now, simulate save with delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Save each section separately via the API
+      // The API expects { section: 'hero' | 'seo' | 'business_info', data: {...} }
 
-      /* Future implementation when API is ready:
-      const response = await fetch('/api/admin/settings/site-content', {
+      // Save hero section
+      const heroResponse = await fetch('/api/admin/settings/site-content', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          section: 'hero',
+          data: data.hero,
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to save settings');
+      if (!heroResponse.ok) {
+        const errorData = await heroResponse.json();
+        throw new Error(errorData.error || 'Failed to save hero content');
       }
 
-      const result = await response.json();
-      return result.data;
-      */
+      // Save SEO section
+      const seoResponse = await fetch('/api/admin/settings/site-content', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          section: 'seo',
+          data: data.seo,
+        }),
+      });
 
-      // For now, just return the data as-is
+      if (!seoResponse.ok) {
+        const seoErrorData = await seoResponse.json();
+        throw new Error(seoErrorData.error || 'Failed to save SEO settings');
+      }
+
+      // Save business info section
+      const businessResponse = await fetch('/api/admin/settings/site-content', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          section: 'business_info',
+          data: data.business,
+        }),
+      });
+
+      if (!businessResponse.ok) {
+        const businessErrorData = await businessResponse.json();
+        throw new Error(businessErrorData.error || 'Failed to save business info');
+      }
+
+      // Return the saved data
       return data;
     },
     onSuccess: (data) => {
