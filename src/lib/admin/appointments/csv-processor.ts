@@ -69,13 +69,21 @@ export class CSVProcessor {
 
   /**
    * Parse CSV file using PapaParse
+   *
+   * Note: We convert the File to text first because FileReaderSync is not available
+   * in the main browser thread or in Node.js server environments. PapaParse's direct
+   * File parsing uses FileReaderSync internally which causes errors.
    */
   async parseFile(file: File): Promise<ParseResult<CSVAppointmentRow>> {
     // Validate file
     this.validateFile(file);
 
+    // Convert File to text content first
+    // This works in both browser (main thread) and server environments
+    const csvText = await file.text();
+
     return new Promise((resolve, reject) => {
-      Papa.parse<CSVAppointmentRow>(file, {
+      Papa.parse<CSVAppointmentRow>(csvText, {
         header: true,
         skipEmptyLines: true,
         transformHeader: (header) => {
@@ -104,7 +112,7 @@ export class CSVProcessor {
 
           resolve(results);
         },
-        error: (error) => {
+        error: (error: Error) => {
           reject(new Error(`CSV parsing failed: ${error.message}`));
         },
       });
@@ -140,6 +148,12 @@ export class RowValidator {
       const row = rows[i];
       const rowNumber = i + 2; // Account for header row + 1-indexed
 
+      // Skip null/undefined rows that might come from PapaParse edge cases
+      if (!row) {
+        console.warn(`[CSV Processor] Skipping null/undefined row at index ${i}`);
+        continue;
+      }
+
       const result = await this.validateRow(row, rowNumber);
       validated.push(result);
     }
@@ -161,16 +175,21 @@ export class RowValidator {
       // 1. Basic schema validation
       const schemaResult = CSVAppointmentRowSchema.safeParse(row);
       if (!schemaResult.success) {
-        schemaResult.error.errors.forEach((err) => {
+        // Safely iterate over Zod issues (not errors - Zod uses .issues property)
+        const zodIssues = schemaResult.error?.issues ?? [];
+        for (const issue of zodIssues) {
           errors.push({
-            field: err.path.join('.'),
-            message: err.message,
+            field: issue.path.join('.'),
+            message: issue.message,
             severity: 'error',
           });
-        });
+        }
 
-        // Return early if basic validation fails
+        // Return early if basic validation fails - include original row data
         return {
+          ...row,
+          pet_breed: row.pet_breed || '', // Ensure pet_breed is a string
+          pet_weight: row.pet_weight || '',
           rowNumber,
           isValid: false,
           errors,
@@ -331,12 +350,15 @@ export class RowValidator {
       }
 
       return {
+        ...row,
+        pet_breed: row.pet_breed || '',
+        pet_weight: row.pet_weight || '',
         rowNumber,
         isValid: errors.length === 0,
         errors,
         warnings,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       errors.push({
         field: 'row',
         message: error instanceof Error ? error.message : 'Unknown processing error',
@@ -344,6 +366,9 @@ export class RowValidator {
       });
 
       return {
+        ...row,
+        pet_breed: row.pet_breed || '',
+        pet_weight: row.pet_weight || '',
         rowNumber,
         isValid: false,
         errors,
@@ -418,6 +443,9 @@ export class DuplicateDetector {
           if (emailMatch && petMatch && hourMatch) {
             duplicates.push({
               csvRow: {
+                ...row,
+                pet_breed: row.pet_breed || '',
+                pet_weight: row.pet_weight || '',
                 rowNumber,
                 isValid: true,
                 errors: [],

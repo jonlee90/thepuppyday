@@ -24,10 +24,11 @@ export const CSVCustomerSchema = z.object({
 /**
  * CSV-specific pet schema
  * Size is string in CSV, validated against enum
+ * Breed is optional for CSV imports (can be empty)
  */
 export const CSVPetSchema = z.object({
   pet_name: z.string().min(1, 'Pet name is required').max(100),
-  pet_breed: z.string().min(1, 'Pet breed is required'),
+  pet_breed: z.string().optional(), // Optional for CSV imports
   pet_size: z.string().min(1, 'Pet size is required'),
   pet_weight: z.string().optional(),
 });
@@ -44,7 +45,7 @@ export const CSVAppointmentRowSchema = z.object({
 
   // Pet fields
   pet_name: z.string().min(1, 'Pet name is required'),
-  pet_breed: z.string().min(1, 'Pet breed is required'),
+  pet_breed: z.string().optional(), // Optional for CSV imports - breed can be empty
   pet_size: z.string().min(1, 'Pet size is required'),
   pet_weight: z.string().optional(),
 
