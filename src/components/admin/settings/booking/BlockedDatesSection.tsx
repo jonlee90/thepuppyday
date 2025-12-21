@@ -13,17 +13,40 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BlockedDatesManager } from './BlockedDatesManager';
 import { BlockedDatesCalendar } from './BlockedDatesCalendar';
 import type { BlockedDate } from '@/types/settings';
 
 export function BlockedDatesSection() {
   const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
-  const [isCalendarLoading, setIsCalendarLoading] = useState(false);
-  const [isManagerLoading, setIsManagerLoading] = useState(false);
+  const [isCalendarLoading, setIsCalendarLoading] = useState(true);
+  const [isManagerLoading, setIsManagerLoading] = useState(true);
 
   const isLoading = isCalendarLoading || isManagerLoading;
+
+  // Fetch blocked dates on component mount
+  useEffect(() => {
+    fetchBlockedDates();
+  }, []);
+
+  const fetchBlockedDates = async () => {
+    setIsCalendarLoading(true);
+    setIsManagerLoading(true);
+    try {
+      const response = await fetch('/api/admin/settings/booking/blocked-dates');
+      if (!response.ok) throw new Error('Failed to fetch blocked dates');
+
+      const data = await response.json();
+      setBlockedDates(data.blocked_dates || []);
+    } catch (error) {
+      console.error('Error fetching blocked dates:', error);
+      setBlockedDates([]);
+    } finally {
+      setIsCalendarLoading(false);
+      setIsManagerLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">

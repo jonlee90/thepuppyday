@@ -28,16 +28,6 @@ import type { BookingSettings } from '@/types/settings';
 
 interface RecurringBlockedDaysProps {
   /**
-   * Current booking settings (includes recurring_blocked_days)
-   */
-  bookingSettings: BookingSettings;
-
-  /**
-   * Callback when settings are successfully saved
-   */
-  onSettingsSaved: (settings: BookingSettings) => void;
-
-  /**
    * Optional callback when loading state changes
    */
   onLoadingChange?: (loading: boolean) => void;
@@ -72,19 +62,17 @@ const DAYS_OF_WEEK: DayConfig[] = [
 const DAY_INDEX_TO_KEY = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 export function RecurringBlockedDays({
-  bookingSettings,
-  onSettingsSaved,
   onLoadingChange,
 }: RecurringBlockedDaysProps) {
+  // Settings state
+  const [bookingSettings, setBookingSettings] = useState<BookingSettings | null>(null);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+
   // Local state for recurring blocked days
-  const [recurringBlockedDays, setRecurringBlockedDays] = useState<number[]>(
-    bookingSettings.recurring_blocked_days || []
-  );
+  const [recurringBlockedDays, setRecurringBlockedDays] = useState<number[]>([]);
 
   // Original state for comparison
-  const [originalBlockedDays] = useState<number[]>(
-    bookingSettings.recurring_blocked_days || []
-  );
+  const [originalBlockedDays, setOriginalBlockedDays] = useState<number[]>([]);
 
   // Business hours state
   const [businessHours, setBusinessHours] = useState<BusinessHoursResponse | null>(null);
@@ -102,10 +90,16 @@ export function RecurringBlockedDays({
   const [showConflictWarning, setShowConflictWarning] = useState(false);
   const [conflictDayToToggle, setConflictDayToToggle] = useState<number | null>(null);
 
+  // Fetch booking settings on mount
+  useEffect(() => {
+    fetchBookingSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Notify parent of loading state
   useEffect(() => {
-    onLoadingChange?.(isSaving || isCheckingConflicts);
-  }, [isSaving, isCheckingConflicts, onLoadingChange]);
+    onLoadingChange?.(isSaving || isCheckingConflicts || isLoadingSettings);
+  }, [isSaving, isCheckingConflicts, isLoadingSettings, onLoadingChange]);
 
   // Fetch business hours on mount
   useEffect(() => {
@@ -118,15 +112,38 @@ export function RecurringBlockedDays({
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Fetch booking settings
+  const fetchBookingSettings = async () => {
+    setIsLoadingSettings(true);
+    try {
+      const response = await fetch('/api/admin/settings/booking');
+      if (!response.ok) throw new Error('Failed to fetch settings');
+
+      const result = await response.json();
+      if (result.data) {
+        const settings = result.data as BookingSettings;
+        setBookingSettings(settings);
+        setRecurringBlockedDays(settings.recurring_blocked_days || []);
+        setOriginalBlockedDays(settings.recurring_blocked_days || []);
+      }
+    } catch (error) {
+      console.error('Error fetching booking settings:', error);
+      showToast('error', 'Failed to load settings');
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
+
   // Fetch business hours
   const fetchBusinessHours = async () => {
     setIsLoadingBusinessHours(true);
     try {
-      // Fetch business hours from settings
-      const response = await fetch('/api/admin/settings/business-hours');
+      // Fetch business hours from booking settings
+      const response = await fetch('/api/admin/settings/booking');
       if (response.ok) {
         const data = await response.json();
-        setBusinessHours(data.businessHours || null);
+        // Extract business_hours from the booking settings data
+        setBusinessHours(data.data?.business_hours || null);
       }
     } catch (error) {
       console.error('Error fetching business hours:', error);
@@ -285,6 +302,11 @@ export function RecurringBlockedDays({
 
   // Save changes
   const handleSave = async () => {
+    if (!bookingSettings) {
+      showToast('error', 'Settings not loaded');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const updatedSettings: BookingSettings = {
@@ -304,8 +326,9 @@ export function RecurringBlockedDays({
         throw new Error(data.error || 'Failed to save recurring blocked days');
       }
 
-      // Success
-      onSettingsSaved(data.data);
+      // Success - update local state
+      setBookingSettings(data.data);
+      setOriginalBlockedDays(recurringBlockedDays);
       showToast('success', 'Recurring blocked days saved successfully');
     } catch (error) {
       console.error('Error saving recurring blocked days:', error);
@@ -314,6 +337,29 @@ export function RecurringBlockedDays({
       setIsSaving(false);
     }
   };
+
+  // Show loading state
+  if (isLoadingSettings) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-8">
+        <div className="flex items-center justify-center">
+          <span className="loading loading-spinner loading-lg text-[#434E54]"></span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if settings failed to load
+  if (!bookingSettings) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-8">
+        <div className="text-center text-[#6B7280]">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-red-500" />
+          <p>Failed to load booking settings. Please refresh the page.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

@@ -84,11 +84,8 @@ export function BlockedDatesManager({
     }
   };
 
-  // Load blocked dates on mount
-  useEffect(() => {
-    fetchBlockedDates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Note: Parent component (BlockedDatesSection) handles initial data loading
+  // This component only fetches to refresh after add/delete operations
 
   // Open add modal
   const handleOpenAddModal = (range: boolean) => {

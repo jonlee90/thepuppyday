@@ -11,24 +11,9 @@
 
 import { useState } from 'react';
 import { RecurringBlockedDays } from './RecurringBlockedDays';
-import type { BookingSettings } from '@/types/settings';
 
 export function RecurringBlockedDaysExample() {
-  const [bookingSettings, setBookingSettings] = useState<BookingSettings>({
-    min_advance_hours: 2,
-    max_advance_days: 90,
-    cancellation_cutoff_hours: 24,
-    buffer_minutes: 15,
-    blocked_dates: [],
-    recurring_blocked_days: [0], // Sundays blocked by default
-  });
-
   const [isLoading, setIsLoading] = useState(false);
-
-  const handleSettingsSaved = (updatedSettings: BookingSettings) => {
-    setBookingSettings(updatedSettings);
-    console.log('Settings updated:', updatedSettings);
-  };
 
   const handleLoadingChange = (loading: boolean) => {
     setIsLoading(loading);
@@ -48,8 +33,6 @@ export function RecurringBlockedDaysExample() {
 
       {/* Component */}
       <RecurringBlockedDays
-        bookingSettings={bookingSettings}
-        onSettingsSaved={handleSettingsSaved}
         onLoadingChange={handleLoadingChange}
       />
 
@@ -62,16 +45,6 @@ export function RecurringBlockedDaysExample() {
           </div>
         </div>
       )}
-
-      {/* Current State */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-[#434E54] mb-4">
-          Current Settings (Debug)
-        </h2>
-        <pre className="bg-[#F8EEE5] p-4 rounded-lg text-xs overflow-auto">
-          {JSON.stringify(bookingSettings, null, 2)}
-        </pre>
-      </div>
 
       {/* Usage Guide */}
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -100,7 +73,7 @@ export function RecurringBlockedDaysExample() {
               appointments
             </li>
             <li>
-              <strong>Unsaved Changes:</strong> Clear indicator when changes haven't been saved
+              <strong>Unsaved Changes:</strong> Clear indicator when changes haven&apos;t been saved
             </li>
           </ul>
 
@@ -108,12 +81,8 @@ export function RecurringBlockedDaysExample() {
           <pre className="bg-[#F8EEE5] p-4 rounded-lg text-xs overflow-auto">
 {`import { RecurringBlockedDays } from '@/components/admin/settings/booking';
 
+// Component fetches its own settings from the API
 <RecurringBlockedDays
-  bookingSettings={currentBookingSettings}
-  onSettingsSaved={(updatedSettings) => {
-    // Update your booking settings state
-    setBookingSettings(updatedSettings);
-  }}
   onLoadingChange={(loading) => {
     // Optional: handle loading state
     setIsLoading(loading);

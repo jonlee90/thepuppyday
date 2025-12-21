@@ -63,7 +63,7 @@ export function CustomerSelectionStep({
         );
         if (response.ok) {
           const data = await response.json();
-          setSearchResults(data.customers || []);
+          setSearchResults(data.data || []);
         }
       } catch (error) {
         console.error('Customer search error:', error);
@@ -125,7 +125,7 @@ export function CustomerSelectionStep({
         );
         if (response.ok) {
           const data = await response.json();
-          const existingCustomer = data.customers?.find(
+          const existingCustomer = data.data?.find(
             (c: Customer) => c.email.toLowerCase() === newCustomerForm.email.toLowerCase()
           );
           if (existingCustomer) {
