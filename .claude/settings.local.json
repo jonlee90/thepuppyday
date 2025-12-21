@@ -68,17 +68,8 @@
       "Bash(cd:*)",
       "Bash(/mcp supabase schema:*)",
       "Bash(timeout 10 tail:*)",
-      "Bash(git branch:*)",
-      "Bash(npx tsx:*)",
-      "Bash(npx supabase:*)",
-      "Bash(psql:*)",
-      "Bash(timeout 2 tail:*)",
-      "Bash(grep:*)",
-      "Bash(move \"C:\\Users\\Jon\\Documents\\claude projects\\thepuppyday\\src\\app\\admin\\settings\\page.tsx\" \"C:\\Users\\Jon\\Documents\\claude projects\\thepuppyday\\src\\app\\admin\\settings\\business-hours\\page.tsx\")",
-      "Bash(timeout 30 npm run dev:*)",
-      "Bash(timeout 120 npm run build)",
-      "Bash(xargs sed -i \"s|/api/admin/banners|/api/admin/settings/banners|g\")",
-      "Bash(npm run test:*)"
+      "Bash(pkill:*)",
+      "Bash(git stash:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
