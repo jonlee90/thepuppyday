@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import { isTransitionAllowed, isTerminalStatus } from '@/lib/admin/appointment-status';
+import { isTransitionAllowed } from '@/lib/admin/appointment-status';
 import { sendAppointmentNotification } from '@/lib/admin/notifications';
 import type { AppointmentStatus, Appointment, User, Pet, Service } from '@/types/database';
 
@@ -79,15 +79,8 @@ export async function POST(
         );
       }
 
-      // Validate transition
+      // Validate transition (allow reverse transitions from terminal states)
       const currentStatus = appointment.status;
-
-      if (isTerminalStatus(currentStatus)) {
-        return NextResponse.json(
-          { error: 'Cannot update appointment in terminal state' },
-          { status: 400 }
-        );
-      }
 
       if (!isTransitionAllowed(currentStatus, newStatus)) {
         return NextResponse.json(
@@ -205,15 +198,8 @@ export async function POST(
       );
     }
 
-    // Validate transition
+    // Validate transition (allow reverse transitions from terminal states)
     const currentStatus = appointment.status;
-
-    if (isTerminalStatus(currentStatus)) {
-      return NextResponse.json(
-        { error: 'Cannot update appointment in terminal state' },
-        { status: 400 }
-      );
-    }
 
     if (!isTransitionAllowed(currentStatus, newStatus)) {
       return NextResponse.json(

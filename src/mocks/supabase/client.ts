@@ -100,6 +100,16 @@ class MockQueryBuilder<T> {
     return this;
   }
 
+  ilike(column: string, pattern: string): this {
+    this.filters.push({ column, operator: 'ilike', value: pattern });
+    return this;
+  }
+
+  like(column: string, pattern: string): this {
+    this.filters.push({ column, operator: 'like', value: pattern });
+    return this;
+  }
+
   not(column: string, operator: string, value: unknown): this {
     // Handle .not('status', 'in', '(cancelled,no_show)')
     // The value is a string like '(cancelled,no_show)' which needs to be parsed
@@ -208,6 +218,23 @@ class MockQueryBuilder<T> {
               return (filter.value as unknown[]).includes(value);
             case 'not_in':
               return !(filter.value as unknown[]).includes(value);
+            case 'ilike': {
+              // Case-insensitive LIKE - convert SQL pattern to regex
+              const pattern = (filter.value as string)
+                .toLowerCase()
+                .replace(/%/g, '.*')
+                .replace(/_/g, '.');
+              const regex = new RegExp(`^${pattern}$`, 'i');
+              return typeof value === 'string' && regex.test(value);
+            }
+            case 'like': {
+              // Case-sensitive LIKE - convert SQL pattern to regex
+              const pattern = (filter.value as string)
+                .replace(/%/g, '.*')
+                .replace(/_/g, '.');
+              const regex = new RegExp(`^${pattern}$`);
+              return typeof value === 'string' && regex.test(value);
+            }
             default:
               return true;
           }

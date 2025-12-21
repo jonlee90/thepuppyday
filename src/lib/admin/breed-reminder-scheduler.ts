@@ -377,7 +377,7 @@ async function sendBreedReminder(
   attemptCount: number
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    let notificationLogId: string | null = null;
+    const notificationLogId: string | null = null;
     const now = new Date().toISOString();
 
     // Build booking URL with tracking parameter

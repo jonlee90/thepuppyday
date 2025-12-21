@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
       });
 
       // Calculate summary
-      let total_services = appointments.length;
+      const total_services = appointments.length;
       let total_revenue = 0;
       let total_commission = 0;
       let total_tips = 0;
@@ -328,7 +328,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate summary
-    let total_services = appointments?.length || 0;
+    const total_services = appointments?.length || 0;
     let total_revenue = 0;
     let total_commission = 0;
     let total_tips = 0;

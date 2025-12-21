@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Production implementation - build dynamic query
-    let query = (supabase as any)
+    const query = (supabase as any)
       .from('users')
       .select(
         `

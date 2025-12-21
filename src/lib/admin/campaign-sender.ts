@@ -36,7 +36,7 @@ export async function getAudienceFromSegment(
 
     // Start with all customers
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query = (supabase as any)
+    const query = (supabase as any)
       .from('users')
       .select(
         `

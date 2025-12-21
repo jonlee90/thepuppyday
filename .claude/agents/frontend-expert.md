@@ -273,12 +273,54 @@ Handoff to daisyui-expert for DaisyUI + Tailwind implementation
 
 ---
 
-## Tone of Voice in UI Copy
+## Dog Grooming Theme Elements
+
+### Visual Motifs to Incorporate
+
+- **Logo**: Simple line-art dog silhouette, clean and professional
+- **Icons**: Lucide React icons only - clean, professional, consistent stroke weight
+- **Photography**: High-quality photography of dogs (when applicable)
+- **Organic Shapes**: Subtle blob shapes for visual interest in hero sections
+- **Paw Accents**: Subtle paw print accents used **sparingly** (decorative, not overwhelming)
+- **Grooming Imagery**: Scissors, brushes, and grooming tools as subtle visual elements
+
+### Tone of Voice in UI Copy
 
 - **Professional yet warm**: "Book Your Appointment" not "Let's Get Started!"
 - **Clear and helpful**: "Choose your service" not "Pick one"
 - **Trustworthy**: "Professional care for your pet" not "We're the best!"
 - **Celebrate expertise**: Focus on quality and care, not just features
+- **Never corporate or overly casual**: Balance warmth with professionalism
+- **Clean CTAs**: "Book Appointment", "Get Started", "Schedule Now"
+- **Focus on trust and quality**: Emphasize expertise and care in every message
+
+### Micro-interactions
+
+When designing interactions, specify these patterns:
+
+**Hover Transitions**:
+- Subtle opacity shifts (0.9 → 1.0)
+- Smooth color transitions (200ms ease)
+- Gentle shadow elevation (shadow-sm → shadow-md)
+- Slight Y-axis movement (-2px lift on cards)
+
+**Loading States**:
+- Clean spinner animations (DaisyUI loading-spinner)
+- Skeleton loaders for content
+- Subtle pulse animations for placeholders
+- Never jarring or abrupt
+
+**Fade Animations**:
+- Gentle fade-in for modals (opacity 0 → 1, 200ms)
+- Smooth slide-up for toasts
+- Subtle scale transitions (0.95 → 1.0)
+- Ease-out timing functions for natural feel
+
+**Button Feedback**:
+- Immediate visual response on click
+- Subtle press effect (scale 0.98)
+- Loading spinner when processing
+- Success/error state transitions
 
 ---
 

@@ -68,6 +68,7 @@ export async function GET() {
 
       return NextResponse.json({
         data: defaultRules,
+        pending_rewards: 0,
         last_updated: null,
       });
     }
@@ -83,8 +84,20 @@ export async function GET() {
     // Parse and validate stored redemption rules
     const redemptionRules = settingRecord.value as LoyaltyRedemptionRules;
 
+    // Count pending rewards (customers with pending redemptions)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count: pendingRewardsCount, error: pendingError } = (await (supabase as any)
+      .from('loyalty_redemptions')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')) as { count: number | null; error: Error | null };
+
+    if (pendingError) {
+      console.error('[Redemption Rules API] Error counting pending rewards:', pendingError);
+    }
+
     return NextResponse.json({
       data: redemptionRules,
+      pending_rewards: pendingRewardsCount ?? 0,
       last_updated: settingRecord.updated_at,
     });
   } catch (error) {
@@ -290,6 +303,33 @@ export async function PUT(request: Request) {
       newRedemptionRules
     );
 
+    // Count pending rewards (customers with pending redemptions)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count: pendingRewardsCount, error: pendingError } = (await (supabase as any)
+      .from('loyalty_redemptions')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')) as { count: number | null; error: Error | null };
+
+    if (pendingError) {
+      console.error('[Redemption Rules API] Error counting pending rewards:', pendingError);
+    }
+
+    const pendingRewards = pendingRewardsCount ?? 0;
+
+    // Calculate affected rewards - rewards that may have reduced options due to service changes
+    const oldRules = oldValue as LoyaltyRedemptionRules | null;
+    let affectedRewards = 0;
+
+    if (oldRules && oldRules.eligible_services) {
+      // Count how many services were removed
+      const removedServices = oldRules.eligible_services.filter(
+        (id) => !eligible_services.includes(id)
+      );
+      if (removedServices.length > 0 && pendingRewards > 0) {
+        affectedRewards = pendingRewards; // Potentially all pending rewards could be affected
+      }
+    }
+
     console.log(
       `[Redemption Rules API] Redemption rules updated by admin ${admin.id}:`,
       `eligible_services=${eligible_services.length}, `,
@@ -314,6 +354,8 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({
       redemption_rules: newRedemptionRules,
+      pending_rewards: pendingRewards,
+      affected_rewards: affectedRewards,
       message,
     });
   } catch (error) {

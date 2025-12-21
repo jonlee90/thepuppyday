@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Production Supabase query
-    let query = (supabase as any)
+    const query = (supabase as any)
       .from('users')
       .select('*')
       .in('role', roleFilter === 'all' ? ['admin', 'groomer'] : [roleFilter]);

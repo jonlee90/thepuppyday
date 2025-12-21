@@ -5,10 +5,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { z } from 'zod';
 import { calculatePrice } from '@/lib/booking/pricing';
+import { generateWalkinEmail } from '@/lib/utils';
 import type { Appointment, User, Pet, Service, PetSize, ServiceWithPrices, Addon } from '@/types/database';
 import type { CreateAppointmentResponse } from '@/types/admin-appointments';
 
@@ -224,30 +225,36 @@ const CreateAppointmentSchema = z.object({
     id: z.string().uuid().optional(),
     first_name: z.string().min(1).max(100),
     last_name: z.string().min(1).max(100),
-    email: z.string().email().trim().toLowerCase(),
+    // Email is optional for walk-in customers
+    email: z.string().email().trim().toLowerCase().optional().or(z.literal('')),
     phone: z.string().min(10),
+    isNew: z.boolean().optional(), // Track if this is a new customer from walk-in
   }),
   pet: z.object({
     id: z.string().uuid().optional(),
     name: z.string().min(1).max(100),
-    breed_id: z.string().uuid().optional(),
+    breed_id: z
+      .union([z.string().uuid(), z.literal(''), z.null(), z.undefined()])
+      .transform((val) => (val && val !== '' ? val : undefined)),
     breed_name: z.string().optional(),
     size: z.enum(['small', 'medium', 'large', 'xlarge', 'x-large']),
     weight: z.number().min(0).max(300).optional(),
+    isNew: z.boolean().optional(), // Track if this is a new pet from walk-in
   }),
   service_id: z.string().uuid(),
   addon_ids: z.array(z.string().uuid()).default([]),
   appointment_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   appointment_time: z.string().regex(/^\d{2}:\d{2}$/),
   notes: z.string().max(1000).optional(),
-  payment_status: z.enum(['pending', 'paid', 'deposit_paid']).default('pending'),
+  payment_status: z.enum(['pending', 'paid', 'partially_paid']).default('pending'),
   payment_details: z
     .object({
       amount_paid: z.number().min(0),
-      payment_method: z.enum(['cash', 'card', 'other']),
+      payment_method: z.enum(['cash', 'card', 'check', 'venmo', 'zelle', 'other']),
     })
     .optional(),
   send_notification: z.boolean().default(true),
+  source: z.enum(['walk_in', 'phone', 'online', 'admin']).optional(), // Track appointment creation source
 });
 
 /**
@@ -255,12 +262,18 @@ const CreateAppointmentSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
-    const { user: adminUser } = await requireAdmin(supabase);
+    const authSupabase = await createServerSupabaseClient();
+    const { user: adminUser } = await requireAdmin(authSupabase);
+
+    // Use service role client for admin operations that bypass RLS
+    const supabase = createServiceRoleClient();
 
     // Parse and validate request body
     const body = await request.json();
+    console.log('[Create Appointment] Received body:', JSON.stringify(body, null, 2));
+
     const validationResult = CreateAppointmentSchema.safeParse(body);
+    console.log('[Create Appointment] Validation result:', validationResult.success, validationResult.error?.errors);
 
     if (!validationResult.success) {
       return NextResponse.json(
@@ -298,13 +311,30 @@ export async function POST(request: NextRequest) {
 
       customerStatus = existingCustomer?.is_active ? 'active' : 'inactive';
     } else {
-      // Search by email (case-insensitive)
-      const { data: existingCustomer } = await supabase
-        .from('users')
-        .select('id, is_active')
-        .ilike('email', data.customer.email)
-        .eq('role', 'customer')
-        .maybeSingle();
+      // Search for existing customer - by email if provided, otherwise by phone
+      let existingCustomer = null;
+
+      if (data.customer.email && data.customer.email !== '') {
+        // Search by email (case-insensitive)
+        const { data: customerByEmail } = await supabase
+          .from('users')
+          .select('id, is_active')
+          .ilike('email', data.customer.email)
+          .eq('role', 'customer')
+          .maybeSingle();
+        existingCustomer = customerByEmail;
+      }
+
+      // If no email or not found by email, try searching by phone
+      if (!existingCustomer && data.customer.phone) {
+        const { data: customerByPhone } = await supabase
+          .from('users')
+          .select('id, is_active')
+          .eq('phone', data.customer.phone)
+          .eq('role', 'customer')
+          .maybeSingle();
+        existingCustomer = customerByPhone;
+      }
 
       if (existingCustomer) {
         // Use existing customer
@@ -312,10 +342,24 @@ export async function POST(request: NextRequest) {
         customerStatus = existingCustomer.is_active ? 'active' : 'inactive';
       } else {
         // Create inactive profile
+        // For walk-in customers without email, generate a placeholder email
+        // This satisfies the NOT NULL constraint while keeping the customer identifiable by phone
+        const customerEmail = data.customer.email && data.customer.email !== ''
+          ? data.customer.email
+          : generateWalkinEmail(data.customer.phone);
+
+        console.log('[Create Appointment] Creating new customer with data:', {
+          email: customerEmail,
+          phone: data.customer.phone,
+          first_name: data.customer.first_name,
+          last_name: data.customer.last_name,
+          isWalkinPlaceholder: !data.customer.email || data.customer.email === '',
+        });
+
         const { data: newCustomer, error: customerError } = await supabase
           .from('users')
           .insert({
-            email: data.customer.email,
+            email: customerEmail,
             phone: data.customer.phone,
             first_name: data.customer.first_name,
             last_name: data.customer.last_name,
@@ -326,10 +370,24 @@ export async function POST(request: NextRequest) {
           .select('id')
           .single();
 
+        console.log('[Create Appointment] Customer insert result:', { newCustomer, customerError });
+
         if (customerError || !newCustomer) {
           console.error('Error creating customer:', customerError);
+          console.error('Customer data being inserted:', {
+            email: customerEmail,
+            phone: data.customer.phone,
+            first_name: data.customer.first_name,
+            last_name: data.customer.last_name,
+            role: 'customer',
+            is_active: false,
+            created_by_admin: true,
+          });
           return NextResponse.json(
-            { error: 'Failed to create customer profile' },
+            {
+              error: 'Failed to create customer profile',
+              details: customerError?.message || 'Unknown error - newCustomer is null'
+            },
             { status: 500 }
           );
         }
@@ -405,25 +463,69 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // In mock mode, relationship queries might not work, so fetch prices separately if needed
+    let servicePrices = service.prices;
+    if (!servicePrices || !Array.isArray(servicePrices)) {
+      const { data: pricesData } = await supabase
+        .from('service_prices')
+        .select('size, price')
+        .eq('service_id', data.service_id);
+      servicePrices = pricesData || [];
+    }
+
+    // Merge prices into service object for calculatePrice
+    const serviceWithPrices = { ...service, prices: servicePrices };
+
     // Fetch addons
     let addons: Addon[] = [];
-    if (data.addon_ids.length > 0) {
+    if (data.addon_ids && data.addon_ids.length > 0) {
       const { data: addonsData, error: addonsError } = await supabase
         .from('addons')
         .select('id, name, price')
         .in('id', data.addon_ids);
 
-      if (!addonsError && addonsData) {
-        addons = addonsData;
+      if (addonsError) {
+        console.error('[Create Appointment] Error fetching addons:', addonsError);
+        // Continue with empty addons array rather than failing
+      }
+
+      // Ensure we always have an array (Supabase can return null)
+      addons = Array.isArray(addonsData) ? (addonsData as Addon[]) : [];
+
+      console.log('[Create Appointment] Requested addon IDs:', data.addon_ids);
+      console.log('[Create Appointment] Fetched addons:', addons.length, 'addons');
+
+      // Warn if mismatch between requested and fetched addons
+      if (addons.length !== data.addon_ids.length) {
+        console.warn(
+          `[Create Appointment] Addon count mismatch: requested ${data.addon_ids.length}, fetched ${addons.length}`
+        );
       }
     }
 
-    // Calculate total price
-    const priceBreakdown = calculatePrice(
-      service as unknown as ServiceWithPrices,
-      petSize,
-      addons
-    );
+    // Calculate total price - ensure all parameters are valid
+    let priceBreakdown;
+    try {
+      priceBreakdown = calculatePrice(
+        serviceWithPrices as unknown as ServiceWithPrices,
+        petSize,
+        addons
+      );
+      console.log('[Create Appointment] Price breakdown calculated:', {
+        servicePrice: priceBreakdown.servicePrice,
+        addonsTotal: priceBreakdown.addonsTotal,
+        total: priceBreakdown.total,
+      });
+    } catch (priceError) {
+      console.error('[Create Appointment] Error calculating price:', priceError);
+      return NextResponse.json(
+        {
+          error: 'Failed to calculate appointment price',
+          details: priceError instanceof Error ? priceError.message : 'Unknown error'
+        },
+        { status: 500 }
+      );
+    }
 
     // 4. Create appointment
     const scheduledAt = new Date(`${data.appointment_date}T${data.appointment_time}:00`);
@@ -455,26 +557,39 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Create appointment addons
-    if (data.addon_ids.length > 0) {
-      const addonRecords = addons.map((addon) => ({
-        appointment_id: appointment.id,
-        addon_id: addon.id,
-        price: addon.price,
-      }));
+    if (data.addon_ids && Array.isArray(data.addon_ids) && data.addon_ids.length > 0) {
+      if (Array.isArray(addons) && addons.length > 0) {
+        try {
+          const addonRecords = addons.map((addon) => ({
+            appointment_id: appointment.id,
+            addon_id: addon.id,
+            price: addon.price,
+          }));
 
-      const { error: addonsInsertError } = await supabase
-        .from('appointment_addons')
-        .insert(addonRecords);
+          console.log('[Create Appointment] Inserting addon records:', addonRecords.length);
 
-      if (addonsInsertError) {
-        console.error('Error creating appointment addons:', addonsInsertError);
-        // Don't fail the entire operation
+          const { error: addonsInsertError } = await supabase
+            .from('appointment_addons')
+            .insert(addonRecords);
+
+          if (addonsInsertError) {
+            console.error('[Create Appointment] Error creating appointment addons:', addonsInsertError);
+            // Don't fail the entire operation - appointment is already created
+          } else {
+            console.log('[Create Appointment] Successfully inserted', addonRecords.length, 'addon records');
+          }
+        } catch (addonError) {
+          console.error('[Create Appointment] Exception during addon insertion:', addonError);
+          // Don't fail - appointment is already created
+        }
+      } else {
+        console.warn('[Create Appointment] Addon IDs provided but no addons fetched. Requested:', data.addon_ids);
       }
     }
 
     // 6. Create payment record if paid/partially paid
     if (
-      (data.payment_status === 'paid' || data.payment_status === 'deposit_paid') &&
+      (data.payment_status === 'paid' || data.payment_status === 'partially_paid') &&
       data.payment_details
     ) {
       const { error: paymentError } = await supabase

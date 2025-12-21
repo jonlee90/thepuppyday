@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { Search, ChevronLeft, ChevronRight, Users, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { CustomerFlagBadge } from './CustomerFlagBadge';
+import { isWalkinPlaceholderEmail } from '@/lib/utils';
 import type { User, CustomerFlag, CustomerMembership } from '@/types/database';
 
 /**
@@ -291,7 +292,13 @@ export function CustomerTable({ onCustomerClick, initialCustomers = [] }: Custom
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="text-sm text-gray-600">{highlightText(customer.email)}</div>
+                      <div className="text-sm text-gray-600">
+                        {isWalkinPlaceholderEmail(customer.email) ? (
+                          <span className="text-gray-400 italic">Walk-in (phone only)</span>
+                        ) : (
+                          highlightText(customer.email)
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="text-sm text-gray-600">

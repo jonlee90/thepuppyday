@@ -56,7 +56,9 @@ export function getServicePriceRange(service: ServiceWithPrices): {
   max: number;
   formatted: string;
 } {
-  const prices = service.prices?.map((p) => p.price) || [];
+  // Ensure prices is an array
+  const pricesArray = Array.isArray(service.prices) ? service.prices : [];
+  const prices = pricesArray.map((p) => p.price);
 
   if (prices.length === 0) {
     return { min: 0, max: 0, formatted: '$0' };
@@ -79,7 +81,10 @@ export function getServicePriceRange(service: ServiceWithPrices): {
 /**
  * Calculate total add-ons price
  */
-export function calculateAddonsTotal(addons: Addon[]): number {
+export function calculateAddonsTotal(addons: Addon[] | null | undefined): number {
+  if (!Array.isArray(addons) || addons.length === 0) {
+    return 0;
+  }
   return addons.reduce((sum, addon) => sum + addon.price, 0);
 }
 
@@ -89,17 +94,20 @@ export function calculateAddonsTotal(addons: Addon[]): number {
 export function calculatePrice(
   service: ServiceWithPrices | null,
   petSize: PetSize | null,
-  addons: Addon[],
+  addons: Addon[] | null | undefined,
   settings: PricingSettings = DEFAULT_SETTINGS
 ): PriceBreakdown {
   const serviceName = service?.name || '';
   const servicePrice = service && petSize ? getServicePriceForSize(service, petSize) : 0;
 
-  const addonItems = addons.map((addon) => ({
+  // Ensure addons is always an array
+  const safeAddons = Array.isArray(addons) ? addons : [];
+
+  const addonItems = safeAddons.map((addon) => ({
     name: addon.name,
     price: addon.price,
   }));
-  const addonsTotal = calculateAddonsTotal(addons);
+  const addonsTotal = calculateAddonsTotal(safeAddons);
 
   const subtotal = servicePrice + addonsTotal;
 
@@ -187,7 +195,7 @@ export const determineSizeFromWeight = getSizeFromWeight;
 /**
  * Calculate total from service price and addons (simplified version)
  */
-export function calculateTotal(servicePrice: number, addons: Addon[]): number {
+export function calculateTotal(servicePrice: number, addons: Addon[] | null | undefined): number {
   const addonsTotal = calculateAddonsTotal(addons);
   return servicePrice + addonsTotal;
 }

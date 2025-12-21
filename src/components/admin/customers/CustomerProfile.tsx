@@ -28,6 +28,7 @@ import {
 import { AppointmentHistoryList } from './AppointmentHistoryList';
 import { CustomerFlagBadge, SingleFlagBadge } from './CustomerFlagBadge';
 import { CustomerFlagForm, RemoveFlagConfirmation } from './CustomerFlagForm';
+import { isWalkinPlaceholderEmail } from '@/lib/utils';
 import type { User as UserType, Pet, CustomerFlag, CustomerMembership } from '@/types/database';
 
 interface CustomerDetail extends UserType {
@@ -293,17 +294,22 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
             {isEditingContact ? (
               <input
                 type="email"
-                value={editedContact.email}
+                value={isWalkinPlaceholderEmail(editedContact.email) ? '' : editedContact.email}
                 onChange={(e) =>
                   setEditedContact({ ...editedContact, email: e.target.value })
                 }
+                placeholder={isWalkinPlaceholderEmail(customer.email) ? 'Add email address...' : undefined}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200
                            focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]"
               />
             ) : (
               <div className="flex items-center gap-2 text-[#434E54]">
                 <Mail className="w-4 h-4" />
-                <p>{customer.email}</p>
+                {isWalkinPlaceholderEmail(customer.email) ? (
+                  <p className="text-gray-400 italic">Walk-in customer (phone only)</p>
+                ) : (
+                  <p>{customer.email}</p>
+                )}
               </div>
             )}
           </div>

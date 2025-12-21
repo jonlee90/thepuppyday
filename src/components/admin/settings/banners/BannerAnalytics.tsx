@@ -124,7 +124,7 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
 
   if (loading) {
     return (
-      <div className="bg-white p-6 rounded-xl shadow-sm">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-[#434E54]/10">
         <div className="animate-pulse space-y-4">
           <div className="h-6 bg-gray-200 rounded w-1/3"></div>
           <div className="h-32 bg-gray-200 rounded"></div>
@@ -136,10 +136,10 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
 
   if (error) {
     return (
-      <div className="bg-white p-6 rounded-xl shadow-sm">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-[#434E54]/10">
         <div className="text-center py-8">
           <p className="text-red-600 font-medium">Error loading analytics</p>
-          <p className="text-sm text-gray-500 mt-2">{error}</p>
+          <p className="text-sm text-[#6B7280] mt-2">{error}</p>
         </div>
       </div>
     );
@@ -152,7 +152,7 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
   const trendIsPositive = analytics.change_percent >= 0;
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm space-y-6">
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-[#434E54]/10 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -178,7 +178,7 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             period === '7d'
               ? 'bg-[#434E54] text-white'
-              : 'bg-gray-100 text-[#434E54] hover:bg-gray-200'
+              : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
           }`}
         >
           7 Days
@@ -188,7 +188,7 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             period === '30d'
               ? 'bg-[#434E54] text-white'
-              : 'bg-gray-100 text-[#434E54] hover:bg-gray-200'
+              : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
           }`}
         >
           30 Days
@@ -198,7 +198,7 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             period === '90d'
               ? 'bg-[#434E54] text-white'
-              : 'bg-gray-100 text-[#434E54] hover:bg-gray-200'
+              : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
           }`}
         >
           90 Days
@@ -208,7 +208,7 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             period === 'custom'
               ? 'bg-[#434E54] text-white'
-              : 'bg-gray-100 text-[#434E54] hover:bg-gray-200'
+              : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
           }`}
         >
           Custom Range
@@ -246,10 +246,12 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Clicks */}
-        <div className="bg-[#FFFBF7] p-5 rounded-xl">
+        <div className="bg-[#FFFBF7] p-5 rounded-xl border border-[#434E54]/10">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-[#6B7280]">Total Clicks</p>
-            <MousePointer className="w-5 h-5 text-[#434E54]" />
+            <div className="w-8 h-8 rounded-lg bg-[#EAE0D5] flex items-center justify-center">
+              <MousePointer className="w-4 h-4 text-[#434E54]" />
+            </div>
           </div>
           <p className="text-3xl font-bold text-[#434E54]">
             {analytics.total_clicks.toLocaleString()}
@@ -272,10 +274,12 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
         </div>
 
         {/* Total Impressions */}
-        <div className="bg-[#FFFBF7] p-5 rounded-xl">
+        <div className="bg-[#FFFBF7] p-5 rounded-xl border border-[#434E54]/10">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-[#6B7280]">Total Impressions</p>
-            <Eye className="w-5 h-5 text-[#434E54]" />
+            <div className="w-8 h-8 rounded-lg bg-[#EAE0D5] flex items-center justify-center">
+              <Eye className="w-4 h-4 text-[#434E54]" />
+            </div>
           </div>
           <p className="text-3xl font-bold text-[#434E54]">
             {analytics.total_impressions.toLocaleString()}
@@ -286,10 +290,10 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
         </div>
 
         {/* Click-Through Rate */}
-        <div className="bg-[#FFFBF7] p-5 rounded-xl">
+        <div className="bg-[#FFFBF7] p-5 rounded-xl border border-[#434E54]/10">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-[#6B7280]">Click-Through Rate</p>
-            <div className="w-5 h-5 flex items-center justify-center text-[#434E54] font-bold">
+            <div className="w-8 h-8 rounded-lg bg-[#EAE0D5] flex items-center justify-center text-[#434E54] font-bold text-sm">
               %
             </div>
           </div>
@@ -312,7 +316,7 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
           className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
             chartType === 'line'
               ? 'bg-[#434E54] text-white'
-              : 'bg-gray-100 text-[#434E54] hover:bg-gray-200'
+              : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
           }`}
         >
           Line
@@ -322,7 +326,7 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
           className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
             chartType === 'bar'
               ? 'bg-[#434E54] text-white'
-              : 'bg-gray-100 text-[#434E54] hover:bg-gray-200'
+              : 'bg-[#EAE0D5] text-[#434E54] hover:bg-[#DCD2C7]'
           }`}
         >
           Bar
@@ -330,7 +334,7 @@ export function BannerAnalytics({ bannerId, bannerName }: BannerAnalyticsProps) 
       </div>
 
       {/* Chart */}
-      <div className="bg-[#FFFBF7] p-6 rounded-xl">
+      <div className="bg-[#FFFBF7] p-6 rounded-xl border border-[#434E54]/10">
         <h4 className="text-lg font-semibold text-[#434E54] mb-4">Clicks Over Time</h4>
         <ResponsiveContainer width="100%" height={300}>
           {chartType === 'line' ? (

@@ -27,10 +27,14 @@ import type { MarketingCampaign } from '@/types/marketing';
 import { DEFAULT_PHASE6_SETTINGS, DEFAULT_NOTIFICATION_TEMPLATES } from '@/types/settings';
 import { generateId } from '@/lib/utils';
 
-// Default services - The Puppy Day actual services
+// Default services - The Puppy Day actual services - Stable IDs
+const SERVICE_BASIC_GROOM_ID = '20000000-0000-0000-0000-000000000001';
+const SERVICE_PREMIUM_GROOM_ID = '20000000-0000-0000-0000-000000000002';
+const SERVICE_ADDONS_ID = '20000000-0000-0000-0000-000000000003';
+
 export const seedServices: Service[] = [
   {
-    id: generateId(),
+    id: SERVICE_BASIC_GROOM_ID,
     name: 'Basic Groom',
     description: 'Essential grooming package for a clean and healthy pet',
     image_url: '/images/basic-plan.png',
@@ -41,7 +45,7 @@ export const seedServices: Service[] = [
     updated_at: new Date().toISOString(),
   },
   {
-    id: generateId(),
+    id: SERVICE_PREMIUM_GROOM_ID,
     name: 'Premium Groom',
     description: 'Complete grooming experience with full styling and extras',
     image_url: '/images/premium-plan.png',
@@ -52,7 +56,7 @@ export const seedServices: Service[] = [
     updated_at: new Date().toISOString(),
   },
   {
-    id: generateId(),
+    id: SERVICE_ADDONS_ID,
     name: 'Add-Ons',
     description: 'Enhance your grooming package with premium treatments',
     image_url: null,
@@ -91,10 +95,16 @@ export function generateServicePrices(services: Service[]): ServicePrice[] {
   return prices;
 }
 
-// Default add-ons - The Puppy Day actual add-ons
+// Default add-ons - The Puppy Day actual add-ons - Stable IDs
+const ADDON_LONG_HAIR_ID = '30000000-0000-0000-0000-000000000001';
+const ADDON_TEETH_BRUSHING_ID = '30000000-0000-0000-0000-000000000002';
+const ADDON_PAWDICURE_ID = '30000000-0000-0000-0000-000000000003';
+const ADDON_FLEA_TICK_ID = '30000000-0000-0000-0000-000000000004';
+const ADDON_TANGLES_ID = '30000000-0000-0000-0000-000000000005';
+
 export const seedAddons: Addon[] = [
   {
-    id: generateId(),
+    id: ADDON_LONG_HAIR_ID,
     name: 'Long Hair / Sporting',
     description: 'Additional grooming for long-haired or sporting breeds',
     price: 10,
@@ -105,7 +115,7 @@ export const seedAddons: Addon[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: generateId(),
+    id: ADDON_TEETH_BRUSHING_ID,
     name: 'Teeth Brushing',
     description: 'Fresh breath treatment for your pet',
     price: 10,
@@ -116,7 +126,7 @@ export const seedAddons: Addon[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: generateId(),
+    id: ADDON_PAWDICURE_ID,
     name: 'Pawdicure',
     description: 'Premium nail care with paw balm and polish',
     price: 15,
@@ -127,7 +137,7 @@ export const seedAddons: Addon[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: generateId(),
+    id: ADDON_FLEA_TICK_ID,
     name: 'Flea & Tick Treatment',
     description: 'Medicated bath treatment to protect against pests',
     price: 25,
@@ -138,7 +148,7 @@ export const seedAddons: Addon[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: generateId(),
+    id: ADDON_TANGLES_ID,
     name: 'Tangles (>20min. Matted. Neglected)',
     description: 'Gentle removal of severe tangles and mats - pricing varies based on severity',
     price: 5,
@@ -150,24 +160,41 @@ export const seedAddons: Addon[] = [
   },
 ];
 
-// Popular dog breeds
+// Popular dog breeds - Stable IDs (consistent across server restarts)
+const BREED_LABRADOR_ID = '10000000-0000-0000-0000-000000000001';
+const BREED_FRENCH_BULLDOG_ID = '10000000-0000-0000-0000-000000000002';
+const BREED_GOLDEN_RETRIEVER_ID = '10000000-0000-0000-0000-000000000003';
+const BREED_GERMAN_SHEPHERD_ID = '10000000-0000-0000-0000-000000000004';
+const BREED_POODLE_ID = '10000000-0000-0000-0000-000000000005';
+const BREED_BULLDOG_ID = '10000000-0000-0000-0000-000000000006';
+const BREED_BEAGLE_ID = '10000000-0000-0000-0000-000000000007';
+const BREED_YORKSHIRE_TERRIER_ID = '10000000-0000-0000-0000-000000000008';
+const BREED_SHIH_TZU_ID = '10000000-0000-0000-0000-000000000009';
+const BREED_SIBERIAN_HUSKY_ID = '10000000-0000-0000-0000-000000000010';
+const BREED_DACHSHUND_ID = '10000000-0000-0000-0000-000000000011';
+const BREED_BOXER_ID = '10000000-0000-0000-0000-000000000012';
+const BREED_CAVALIER_ID = '10000000-0000-0000-0000-000000000013';
+const BREED_MALTESE_ID = '10000000-0000-0000-0000-000000000014';
+const BREED_CHIHUAHUA_ID = '10000000-0000-0000-0000-000000000015';
+const BREED_MIXED_ID = '10000000-0000-0000-0000-000000000016';
+
 export const seedBreeds: Breed[] = [
-  { id: generateId(), name: 'Labrador Retriever', grooming_frequency_weeks: 8, reminder_message: 'for a healthy, shiny coat', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'French Bulldog', grooming_frequency_weeks: 6, reminder_message: 'to keep their wrinkles clean', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Golden Retriever', grooming_frequency_weeks: 6, reminder_message: 'to manage shedding', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'German Shepherd', grooming_frequency_weeks: 8, reminder_message: 'to control shedding', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Poodle', grooming_frequency_weeks: 4, reminder_message: 'to keep their curls mat-free', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Bulldog', grooming_frequency_weeks: 6, reminder_message: 'to keep their skin healthy', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Beagle', grooming_frequency_weeks: 8, reminder_message: 'for a clean, healthy coat', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Yorkshire Terrier', grooming_frequency_weeks: 4, reminder_message: 'to keep their coat tangle-free', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Shih Tzu', grooming_frequency_weeks: 4, reminder_message: 'to maintain their beautiful coat', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Siberian Husky', grooming_frequency_weeks: 8, reminder_message: 'to manage their double coat', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Dachshund', grooming_frequency_weeks: 8, reminder_message: 'for a healthy coat', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Boxer', grooming_frequency_weeks: 8, reminder_message: 'to keep their coat shiny', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Cavalier King Charles Spaniel', grooming_frequency_weeks: 6, reminder_message: 'to prevent matting', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Maltese', grooming_frequency_weeks: 4, reminder_message: 'to keep their white coat pristine', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Chihuahua', grooming_frequency_weeks: 8, reminder_message: 'for overall hygiene', created_at: new Date().toISOString() },
-  { id: generateId(), name: 'Mixed Breed', grooming_frequency_weeks: 6, reminder_message: 'for a fresh, clean look', created_at: new Date().toISOString() },
+  { id: BREED_LABRADOR_ID, name: 'Labrador Retriever', grooming_frequency_weeks: 8, reminder_message: 'for a healthy, shiny coat', created_at: new Date().toISOString() },
+  { id: BREED_FRENCH_BULLDOG_ID, name: 'French Bulldog', grooming_frequency_weeks: 6, reminder_message: 'to keep their wrinkles clean', created_at: new Date().toISOString() },
+  { id: BREED_GOLDEN_RETRIEVER_ID, name: 'Golden Retriever', grooming_frequency_weeks: 6, reminder_message: 'to manage shedding', created_at: new Date().toISOString() },
+  { id: BREED_GERMAN_SHEPHERD_ID, name: 'German Shepherd', grooming_frequency_weeks: 8, reminder_message: 'to control shedding', created_at: new Date().toISOString() },
+  { id: BREED_POODLE_ID, name: 'Poodle', grooming_frequency_weeks: 4, reminder_message: 'to keep their curls mat-free', created_at: new Date().toISOString() },
+  { id: BREED_BULLDOG_ID, name: 'Bulldog', grooming_frequency_weeks: 6, reminder_message: 'to keep their skin healthy', created_at: new Date().toISOString() },
+  { id: BREED_BEAGLE_ID, name: 'Beagle', grooming_frequency_weeks: 8, reminder_message: 'for a clean, healthy coat', created_at: new Date().toISOString() },
+  { id: BREED_YORKSHIRE_TERRIER_ID, name: 'Yorkshire Terrier', grooming_frequency_weeks: 4, reminder_message: 'to keep their coat tangle-free', created_at: new Date().toISOString() },
+  { id: BREED_SHIH_TZU_ID, name: 'Shih Tzu', grooming_frequency_weeks: 4, reminder_message: 'to maintain their beautiful coat', created_at: new Date().toISOString() },
+  { id: BREED_SIBERIAN_HUSKY_ID, name: 'Siberian Husky', grooming_frequency_weeks: 8, reminder_message: 'to manage their double coat', created_at: new Date().toISOString() },
+  { id: BREED_DACHSHUND_ID, name: 'Dachshund', grooming_frequency_weeks: 8, reminder_message: 'for a healthy coat', created_at: new Date().toISOString() },
+  { id: BREED_BOXER_ID, name: 'Boxer', grooming_frequency_weeks: 8, reminder_message: 'to keep their coat shiny', created_at: new Date().toISOString() },
+  { id: BREED_CAVALIER_ID, name: 'Cavalier King Charles Spaniel', grooming_frequency_weeks: 6, reminder_message: 'to prevent matting', created_at: new Date().toISOString() },
+  { id: BREED_MALTESE_ID, name: 'Maltese', grooming_frequency_weeks: 4, reminder_message: 'to keep their white coat pristine', created_at: new Date().toISOString() },
+  { id: BREED_CHIHUAHUA_ID, name: 'Chihuahua', grooming_frequency_weeks: 8, reminder_message: 'for overall hygiene', created_at: new Date().toISOString() },
+  { id: BREED_MIXED_ID, name: 'Mixed Breed', grooming_frequency_weeks: 6, reminder_message: 'for a fresh, clean look', created_at: new Date().toISOString() },
 ];
 
 // Default settings - The Puppy Day business configuration

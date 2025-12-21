@@ -474,7 +474,7 @@ function generateDateBuckets(
   granularity: 'day' | 'week' | 'month'
 ): Array<{ start: Date; end: Date }> {
   const buckets = [];
-  let current = new Date(start);
+  const current = new Date(start);
 
   while (current <= end) {
     const bucketStart = new Date(current);

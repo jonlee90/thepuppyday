@@ -41,9 +41,9 @@ export default async function BookingSettingsPage() {
 
       {/* Settings Sections */}
       <div className="space-y-6">
-        {/* Business Hours */}
+        {/* Booking Hours */}
         <section>
-          <h2 className="text-xl font-semibold text-[#434E54] mb-4">Business Hours</h2>
+          <h2 className="text-xl font-semibold text-[#434E54] mb-4">Booking Hours</h2>
           <BusinessHoursEditor />
         </section>
 

@@ -254,7 +254,11 @@ export function getDisabledDates(
     : null;
 
   while (current <= endDate) {
-    const dateStr = current.toISOString().split('T')[0];
+    // Format as YYYY-MM-DD without UTC conversion
+    const year = current.getFullYear();
+    const month = String(current.getMonth() + 1).padStart(2, '0');
+    const day = String(current.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
 
     // Past dates
     if (current < today) {

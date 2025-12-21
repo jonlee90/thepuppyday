@@ -48,14 +48,23 @@ export async function DELETE(
       );
     }
 
+    // Fetch booking settings to get cancellation policy
+    const { data: bookingSettingsData } = await (supabase as any)
+      .from('settings')
+      .select('value')
+      .eq('key', 'booking_settings')
+      .single();
+
+    const cancellationCutoffHours = bookingSettingsData?.value?.cancellation_cutoff_hours ?? 24;
+
     // Check if appointment can be cancelled
     const scheduledAt = new Date(appointment.scheduled_at);
     const now = new Date();
     const hoursUntil = (scheduledAt.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-    if (hoursUntil <= 24) {
+    if (hoursUntil <= cancellationCutoffHours) {
       return NextResponse.json(
-        { error: 'Appointments must be cancelled at least 24 hours in advance. Please call us at (657) 252-2903.' },
+        { error: `Appointments must be cancelled at least ${cancellationCutoffHours} hours in advance. Please call us at (657) 252-2903.` },
         { status: 400 }
       );
     }

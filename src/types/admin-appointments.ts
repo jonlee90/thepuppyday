@@ -31,7 +31,7 @@ export interface SelectedCustomer {
 export interface SelectedPet {
   id?: string; // undefined for new pets
   name: string;
-  breed_id: string;
+  breed_id: string | null; // null for pets without breed
   breed_name?: string;
   size: 'small' | 'medium' | 'large' | 'x-large';
   weight: number;
@@ -59,9 +59,11 @@ export interface SelectedDateTime {
 
 export type PaymentStatus = 'pending' | 'paid' | 'partially_paid';
 
+export type PaymentMethod = 'cash' | 'card' | 'check' | 'venmo' | 'zelle' | 'other';
+
 export interface PaymentDetails {
   amount_paid: number;
-  payment_method: string;
+  payment_method: PaymentMethod;
 }
 
 // ============================================================================

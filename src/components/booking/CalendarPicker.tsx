@@ -71,7 +71,11 @@ export function CalendarPicker({
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentMonth.year, currentMonth.month, day);
-      const dateString = date.toISOString().split('T')[0];
+      // Format as YYYY-MM-DD without UTC conversion
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const dayStr = String(date.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${dayStr}`;
       days.push({ date, dateString });
     }
 

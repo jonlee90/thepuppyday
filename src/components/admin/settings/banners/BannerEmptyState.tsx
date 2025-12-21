@@ -33,7 +33,7 @@ export function BannerEmptyState({ onCreate }: BannerEmptyStateProps) {
 
       <button
         onClick={onCreate}
-        className="btn btn-primary"
+        className="btn bg-[#434E54] hover:bg-[#363F44] text-white border-none"
       >
         <Plus className="w-5 h-5 mr-2" />
         Create First Banner

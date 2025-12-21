@@ -209,20 +209,20 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
                 return (
                   <div
                     key={key}
-                    className="flex items-center gap-4 p-4 rounded-lg border border-[#434E54]/10 bg-[#FFFBF7]"
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 p-4 rounded-lg border border-[#434E54]/10 bg-[#FFFBF7]"
                   >
                     {/* Day Toggle */}
-                    <div className="flex items-center gap-3 w-40">
+                    <div className="flex items-center gap-3 min-w-[140px]">
                       <input
                         type="checkbox"
                         id={`day-${key}`}
                         checked={schedule.is_open}
                         onChange={() => handleDayToggle(key)}
-                        className="toggle toggle-sm"
+                        className="toggle toggle-sm bg-gray-300"
                       />
                       <label
                         htmlFor={`day-${key}`}
-                        className="font-medium text-[#434E54] cursor-pointer"
+                        className="font-medium text-[#434E54] cursor-pointer whitespace-nowrap"
                       >
                         {label}
                       </label>
@@ -230,11 +230,11 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
 
                     {/* Time Inputs */}
                     {schedule.is_open ? (
-                      <div className="flex items-center gap-4 flex-1">
+                      <div className="flex items-center gap-3 sm:gap-4 flex-1 flex-wrap sm:flex-nowrap">
                         <div className="flex items-center gap-2">
                           <label
                             htmlFor={`${key}-open`}
-                            className="text-sm text-[#6B7280]"
+                            className="text-sm text-[#6B7280] whitespace-nowrap"
                           >
                             Open:
                           </label>
@@ -245,14 +245,14 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
                             onChange={(e) =>
                               handleTimeChange(key, 'open', e.target.value)
                             }
-                            className="input input-sm input-bordered bg-white border-[#434E54]/20 focus:border-[#434E54] focus:outline-none"
+                            className="input input-bordered bg-white border-[#434E54]/20 focus:border-[#434E54] focus:outline-none h-10 w-[160px] min-w-[160px] text-sm [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                           />
                         </div>
-                        <span className="text-[#6B7280]">-</span>
+                        <span className="text-[#6B7280] hidden sm:inline">-</span>
                         <div className="flex items-center gap-2">
                           <label
                             htmlFor={`${key}-close`}
-                            className="text-sm text-[#6B7280]"
+                            className="text-sm text-[#6B7280] whitespace-nowrap"
                           >
                             Close:
                           </label>
@@ -263,7 +263,7 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
                             onChange={(e) =>
                               handleTimeChange(key, 'close', e.target.value)
                             }
-                            className="input input-sm input-bordered bg-white border-[#434E54]/20 focus:border-[#434E54] focus:outline-none"
+                            className="input input-bordered bg-white border-[#434E54]/20 focus:border-[#434E54] focus:outline-none h-10 w-[160px] min-w-[160px] text-sm [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                           />
                         </div>
                       </div>

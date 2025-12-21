@@ -217,7 +217,7 @@ export function BusinessHoursEditor() {
         console.error('Error fetching business hours:', error);
         setSaveMessage({
           type: 'error',
-          text: 'Failed to load business hours',
+          text: 'Failed to load booking hours',
         });
       } finally {
         setIsLoading(false);
@@ -394,7 +394,7 @@ export function BusinessHoursEditor() {
 
       setSaveMessage({
         type: 'success',
-        text: 'Business hours updated successfully!',
+        text: 'Booking hours updated successfully!',
       });
 
       // Clear success message after 3 seconds
@@ -405,7 +405,7 @@ export function BusinessHoursEditor() {
       console.error('Error saving business hours:', error);
       setSaveMessage({
         type: 'error',
-        text: error instanceof Error ? error.message : 'Failed to save business hours. Please try again.',
+        text: error instanceof Error ? error.message : 'Failed to save booking hours. Please try again.',
       });
     } finally {
       setIsSaving(false);
@@ -445,7 +445,7 @@ export function BusinessHoursEditor() {
           <Clock className="w-5 h-5 text-[#434E54]" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-[#434E54]">Business Hours</h2>
+          <h2 className="text-lg font-semibold text-[#434E54]">Booking Hours</h2>
           <p className="text-sm text-[#6B7280]">
             Set your weekly schedule for customer bookings
           </p>
@@ -558,14 +558,14 @@ export function BusinessHoursEditor() {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
                         {/* Start Time */}
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-[130px]">
                           <label className="text-xs text-[#6B7280] mb-1 block">Start</label>
                           <select
                             value={range.start}
                             onChange={(e) => updateTimeRange(day, rangeIndex, 'start', e.target.value)}
-                            className="select select-sm select-bordered w-full bg-white border-[#434E54]/20 focus:border-[#434E54] focus:outline-none"
+                            className="select select-sm select-bordered w-full min-w-[120px] bg-white border-[#434E54]/20 focus:border-[#434E54] focus:outline-none text-sm"
                           >
                             {timeOptions.map((time) => (
                               <option key={time} value={time}>
@@ -575,15 +575,15 @@ export function BusinessHoursEditor() {
                           </select>
                         </div>
 
-                        <span className="text-[#6B7280] mt-5">to</span>
+                        <span className="text-[#6B7280] mt-5 hidden sm:inline">to</span>
 
                         {/* End Time */}
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-[130px]">
                           <label className="text-xs text-[#6B7280] mb-1 block">End</label>
                           <select
                             value={range.end}
                             onChange={(e) => updateTimeRange(day, rangeIndex, 'end', e.target.value)}
-                            className="select select-sm select-bordered w-full bg-white border-[#434E54]/20 focus:border-[#434E54] focus:outline-none"
+                            className="select select-sm select-bordered w-full min-w-[120px] bg-white border-[#434E54]/20 focus:border-[#434E54] focus:outline-none text-sm"
                           >
                             {timeOptions.map((time) => (
                               <option key={time} value={time}>
@@ -719,7 +719,7 @@ export function BusinessHoursEditor() {
           ) : (
             <>
               <Save className="w-4 h-4" />
-              Save Business Hours
+              Save Booking Hours
             </>
           )}
         </button>

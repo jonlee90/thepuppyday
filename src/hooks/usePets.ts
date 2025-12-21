@@ -23,11 +23,16 @@ export interface UsePetsReturn {
 /**
  * Fetch and manage authenticated user's active pets
  *
+ * @param {string | null | undefined} ownerId - Optional owner ID (for admin mode). Uses current user if not provided.
  * @returns {UsePetsReturn} Pets data with loading, error states, and CRUD operations
  *
  * @example
  * ```tsx
+ * // Regular customer mode
  * const { pets, isLoading, error, createPet, refetch } = usePets();
+ *
+ * // Admin mode - fetch pets for specific customer
+ * const { pets, isLoading, error } = usePets(customerId);
  *
  * if (isLoading) return <div>Loading pets...</div>;
  * if (error) return <div>Error: {error.message}</div>;
@@ -55,15 +60,18 @@ export interface UsePetsReturn {
  * );
  * ```
  */
-export function usePets(): UsePetsReturn {
+export function usePets(ownerId?: string | null): UsePetsReturn {
   const [pets, setPets] = useState<Pet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { user, isAuthenticated } = useAuthStore();
 
   const fetchPets = useCallback(async () => {
-    // Return empty array for unauthenticated users
-    if (!isAuthenticated || !user) {
+    // Determine which owner ID to use (provided ownerId or current user)
+    const effectiveOwnerId = ownerId || user?.id;
+
+    // Return empty array if no owner ID available
+    if (!effectiveOwnerId) {
       setPets([]);
       setIsLoading(false);
       return;
@@ -77,10 +85,10 @@ export function usePets(): UsePetsReturn {
         // Fetch from mock store
         const store = getMockStore();
 
-        // Get user's active pets
+        // Get owner's active pets
         const userPets = store.select('pets', {
           column: 'owner_id',
-          value: user.id,
+          value: effectiveOwnerId,
         }) as unknown as Pet[];
 
         // Filter only active pets
@@ -102,7 +110,7 @@ export function usePets(): UsePetsReturn {
         const { data, error: supabaseError } = await (supabase as any)
           .from('pets')
           .select('*, breed:breeds(*)')
-          .eq('owner_id', user.id)
+          .eq('owner_id', effectiveOwnerId)
           .eq('is_active', true)
           .order('created_at', { ascending: false });
 
@@ -119,7 +127,7 @@ export function usePets(): UsePetsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, ownerId]);
 
   useEffect(() => {
     fetchPets();

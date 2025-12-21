@@ -113,6 +113,36 @@ export const ALLOWED_TRANSITIONS: StatusTransition[] = [
     isDestructive: true,
     description: 'Cancel this appointment',
   },
+
+  // From cancelled (reverse transitions)
+  {
+    from: 'cancelled',
+    to: 'pending',
+    label: 'Restore to Pending',
+    requiresConfirmation: true,
+    isDestructive: false,
+    description: 'Restore this cancelled appointment to pending status',
+  },
+
+  // From completed (reverse transitions)
+  {
+    from: 'completed',
+    to: 'checked_in',
+    label: 'Reopen',
+    requiresConfirmation: true,
+    isDestructive: false,
+    description: 'Reopen this completed appointment',
+  },
+
+  // From no_show (reverse transitions)
+  {
+    from: 'no_show',
+    to: 'pending',
+    label: 'Restore to Pending',
+    requiresConfirmation: true,
+    isDestructive: false,
+    description: 'Restore this no-show appointment to pending status',
+  },
 ];
 
 /**

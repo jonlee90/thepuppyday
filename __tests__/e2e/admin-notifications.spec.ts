@@ -16,8 +16,8 @@ import { test, expect } from '@playwright/test';
 const ADMIN_BASE_URL = '/admin/notifications';
 
 // Mock admin user for authentication
-const MOCK_ADMIN_EMAIL = 'admin@puppyday.com';
-const MOCK_ADMIN_PASSWORD = 'admin123';
+const MOCK_ADMIN_EMAIL = 'jonalee90@yahoo.com';
+const MOCK_ADMIN_PASSWORD = 'Puppy12345';
 
 // ============================================================================
 // HELPER FUNCTIONS

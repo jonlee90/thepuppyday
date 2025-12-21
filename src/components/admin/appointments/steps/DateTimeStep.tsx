@@ -1,6 +1,7 @@
 /**
  * Date & Time Selection Step
  * Task 0017: Calendar picker, time slots, notes, and payment fields
+ * Redesigned with mobile-first, touch-friendly UI matching customer booking flow
  */
 
 'use client';
@@ -9,12 +10,22 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar, Clock, AlertTriangle, DollarSign } from 'lucide-react';
 import type {
   ManualAppointmentState,
-  SelectedDateTime,
   PaymentStatus,
-  PaymentDetails,
   TimeSlot,
 } from '@/types/admin-appointments';
 import { formatCurrency } from '@/lib/booking/pricing';
+
+/**
+ * Format 24h time to 12h AM/PM format
+ * e.g., "09:00" -> "9:00 AM", "14:30" -> "2:30 PM"
+ */
+function formatTimeToAMPM(time: string): string {
+  const [hourStr, minute] = time.split(':');
+  const hour = parseInt(hourStr, 10);
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${displayHour}:${minute} ${period}`;
+}
 
 interface DateTimeStepProps {
   state: ManualAppointmentState;
@@ -22,7 +33,7 @@ interface DateTimeStepProps {
   onNext: () => void;
 }
 
-export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) {
+export function DateTimeStep({ state, updateState }: DateTimeStepProps) {
   const [selectedDate, setSelectedDate] = useState<string>(
     state.selectedDateTime?.date || ''
   );
@@ -42,38 +53,35 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
     state.paymentDetails?.payment_method || ''
   );
   const [adminOverridePastDate, setAdminOverridePastDate] = useState(false);
-
-  // Calculate min date (today)
-  const minDate = useMemo(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  }, []);
+  const [dateBlockedReason, setDateBlockedReason] = useState<string | null>(null);
+  const [isDateClosed, setIsDateClosed] = useState(false);
 
   // Check if selected date is in the past
+  // Parse date string as local date to avoid UTC conversion issues
   const isPastDate = useMemo(() => {
     if (!selectedDate) return false;
-    const selected = new Date(selectedDate);
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const selected = new Date(year, month - 1, day); // month is 0-indexed
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return selected < today;
   }, [selectedDate]);
 
-  // Check if selected date is Sunday
-  const isSunday = useMemo(() => {
-    if (!selectedDate) return false;
-    const date = new Date(selectedDate);
-    return date.getDay() === 0;
-  }, [selectedDate]);
-
   // Load available time slots when date changes
+  // The API handles all blocking logic (recurring blocked days, specific blocked dates, business hours)
   useEffect(() => {
-    if (!selectedDate || isSunday) {
+    if (!selectedDate) {
       setAvailableSlots([]);
+      setDateBlockedReason(null);
+      setIsDateClosed(false);
       return;
     }
 
     const fetchSlots = async () => {
       setIsLoadingSlots(true);
+      setDateBlockedReason(null);
+      setIsDateClosed(false);
+
       try {
         const duration = state.selectedService?.duration_minutes || 60;
         const response = await fetch(
@@ -81,7 +89,15 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
         );
         if (response.ok) {
           const data = await response.json();
-          setAvailableSlots(data.slots || []);
+
+          // Check if date is closed/blocked
+          if (data.is_closed) {
+            setIsDateClosed(true);
+            setDateBlockedReason(data.reason || 'This date is not available for appointments');
+            setAvailableSlots([]);
+          } else {
+            setAvailableSlots(data.time_slots || []);
+          }
         }
       } catch (error) {
         console.error('Fetch slots error:', error);
@@ -91,7 +107,7 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
     };
 
     fetchSlots();
-  }, [selectedDate, isSunday, state.selectedService?.duration_minutes]);
+  }, [selectedDate, state.selectedService?.duration_minutes]);
 
   // Handle date change
   const handleDateChange = useCallback((date: string) => {
@@ -145,15 +161,6 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
     updateState,
   ]);
 
-  // Handle next button
-  const handleNext = useCallback(() => {
-    if (selectedDate && selectedTime && (paymentStatus === 'pending' || paymentAmount)) {
-      onNext();
-    }
-  }, [selectedDate, selectedTime, paymentStatus, paymentAmount, onNext]);
-
-  const canProceed = selectedDate && selectedTime && (paymentStatus === 'pending' || paymentAmount);
-
   // Calculate total price
   const totalPrice = useMemo(() => {
     const servicePrice = state.selectedService?.price || 0;
@@ -163,10 +170,28 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
 
   return (
     <div className="space-y-6">
+      {/* Header with icon badge and paw print decoration */}
+      <div className="relative">
+        {/* Subtle paw print decoration */}
+        <div className="absolute -top-2 -right-2 opacity-[0.04] pointer-events-none hidden lg:block">
+          <svg className="w-16 h-16 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
+          </svg>
+        </div>
+
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-[#EAE0D5] rounded-xl flex items-center justify-center shadow-sm">
+            <Calendar className="w-5 h-5 text-[#434E54]" />
+          </div>
+          <h2 className="text-2xl font-bold text-[#434E54]">Select Date & Time</h2>
+        </div>
+        <p className="text-[#434E54]/70">Pick the appointment date and time slot</p>
+      </div>
+
       {/* Date Selection */}
       <div>
         <label className="block text-sm font-semibold text-[#434E54] mb-2">
-          Select Date <span className="text-red-500">*</span>
+          Select Date <span className="text-[#EF4444]">*</span>
         </label>
         <div className="relative">
           <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF] pointer-events-none" />
@@ -174,41 +199,41 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
             type="date"
             value={selectedDate}
             onChange={(e) => handleDateChange(e.target.value)}
-            className="input input-bordered w-full pl-10 bg-white border-gray-200 focus:border-[#434E54] focus:outline-none"
+            className="input input-bordered w-full h-12 pl-10 bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 rounded-lg transition-all duration-150"
           />
         </div>
-        {isSunday && (
-          <div className="alert alert-warning mt-2">
-            <AlertTriangle className="w-4 h-4" />
-            <span className="text-sm">Business is closed on Sundays</span>
+        {isDateClosed && dateBlockedReason && (
+          <div className="alert bg-[#FFB347]/10 border border-[#FFB347] rounded-lg p-3 mt-2" role="alert">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            <span className="text-sm text-[#434E54]">{dateBlockedReason}</span>
           </div>
         )}
-        {isPastDate && !adminOverridePastDate && (
-          <div className="alert alert-warning mt-2">
-            <AlertTriangle className="w-4 h-4" />
+        {isPastDate && !adminOverridePastDate && !isDateClosed && (
+          <div className="alert bg-[#FFB347]/10 border border-[#FFB347] rounded-lg p-3 mt-2" role="alert">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             <div className="flex-1">
-              <span className="text-sm">This date is in the past</span>
+              <span className="text-sm text-[#434E54] block mb-2">This date is in the past</span>
               <button
                 onClick={() => setAdminOverridePastDate(true)}
-                className="btn btn-xs btn-ghost ml-2"
+                className="btn btn-xs bg-[#434E54] text-white hover:bg-[#363F44] border-none"
               >
-                Override
+                Override (Admin Only)
               </button>
             </div>
           </div>
         )}
         {isPastDate && adminOverridePastDate && (
-          <div className="alert alert-info mt-2">
-            <span className="text-sm">Admin override: past date allowed</span>
+          <div className="alert bg-[#74B9FF]/10 border border-[#74B9FF] rounded-lg p-3 mt-2" role="status">
+            <span className="text-sm text-[#434E54]">Admin override: past date allowed</span>
           </div>
         )}
       </div>
 
       {/* Time Selection */}
-      {selectedDate && !isSunday && (
+      {selectedDate && !isDateClosed && (
         <div>
           <label className="block text-sm font-semibold text-[#434E54] mb-2">
-            Select Time <span className="text-red-500">*</span>
+            Select Time <span className="text-[#EF4444]">*</span>
           </label>
 
           {isLoadingSlots ? (
@@ -227,19 +252,18 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
                     type="button"
                     onClick={() => !isFullyBooked && handleTimeSelection(slot.time)}
                     disabled={isFullyBooked}
-                    className={`btn btn-sm ${
+                    className={`btn btn-sm min-h-[44px] h-11 rounded-lg transition-all duration-200 ${
                       isSelected
-                        ? 'bg-[#434E54] text-white hover:bg-[#363F44]'
+                        ? 'bg-[#434E54] text-white hover:bg-[#363F44] border-none shadow-md'
                         : isFullyBooked
-                        ? 'btn-disabled bg-gray-200 text-gray-400'
-                        : 'btn-outline border-gray-200 hover:border-[#434E54] text-[#434E54]'
+                        ? 'bg-[#F5F5F5] text-[#9CA3AF] cursor-not-allowed border-[#E5E5E5]'
+                        : 'btn-outline border-[#E5E5E5] hover:border-[#434E54] text-[#434E54]'
                     }`}
+                    aria-label={`Select time ${formatTimeToAMPM(slot.time)}${isFullyBooked ? ' (Fully booked)' : ''}`}
+                    aria-pressed={isSelected}
                   >
-                    <Clock className="w-3 h-3 mr-1" />
-                    {slot.time}
-                    {isFullyBooked && (
-                      <span className="ml-1 text-xs">(Full)</span>
-                    )}
+                    <Clock className="w-3 h-3" />
+                    <span className="text-xs">{formatTimeToAMPM(slot.time)}</span>
                   </button>
                 );
               })}
@@ -264,7 +288,7 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
           onChange={(e) => setNotes(e.target.value)}
           maxLength={1000}
           rows={4}
-          className="textarea textarea-bordered w-full bg-white border-gray-200 focus:border-[#434E54] focus:outline-none"
+          className="textarea textarea-bordered w-full bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 rounded-lg transition-all duration-150"
           placeholder="Add any special instructions or notes..."
         />
         <div className="text-right text-xs text-[#9CA3AF] mt-1">
@@ -275,19 +299,20 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
       {/* Payment Status */}
       <div>
         <label className="block text-sm font-semibold text-[#434E54] mb-2">
-          Payment Status <span className="text-red-500">*</span>
+          Payment Status <span className="text-[#EF4444]">*</span>
         </label>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           {(['pending', 'paid', 'partially_paid'] as PaymentStatus[]).map((status) => (
             <button
               key={status}
               type="button"
               onClick={() => handlePaymentStatusChange(status)}
-              className={`btn flex-1 ${
+              className={`btn flex-1 min-h-[48px] h-12 rounded-lg transition-all duration-200 ${
                 paymentStatus === status
-                  ? 'bg-[#434E54] text-white hover:bg-[#363F44]'
-                  : 'btn-outline border-gray-200 hover:border-[#434E54] text-[#434E54]'
+                  ? 'bg-[#434E54] text-white hover:bg-[#363F44] border-none shadow-md'
+                  : 'btn-outline border-[#E5E5E5] hover:border-[#434E54] text-[#434E54]'
               }`}
+              aria-pressed={paymentStatus === status}
             >
               {status === 'pending' && 'Pending'}
               {status === 'paid' && 'Paid'}
@@ -299,10 +324,10 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
 
       {/* Payment Details (Conditional) */}
       {(paymentStatus === 'paid' || paymentStatus === 'partially_paid') && (
-        <div className="p-6 bg-[#FFFBF7] rounded-xl border border-gray-200 space-y-4">
+        <div className="p-4 md:p-6 bg-[#FFFBF7] rounded-xl border border-[#E5E5E5] space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#434E54] mb-1">
-              Amount Paid <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#434E54] mb-2">
+              Amount Paid <span className="text-[#EF4444]">*</span>
             </label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF] pointer-events-none" />
@@ -310,7 +335,7 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
                 type="number"
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
-                className="input input-bordered w-full pl-10 bg-white"
+                className="input input-bordered w-full h-12 pl-10 bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 rounded-lg"
                 placeholder="0.00"
                 min="0"
                 step="0.01"
@@ -323,13 +348,13 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#434E54] mb-1">
-              Payment Method <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#434E54] mb-2">
+              Payment Method <span className="text-[#EF4444]">*</span>
             </label>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="select select-bordered w-full bg-white"
+              className="select select-bordered w-full h-12 bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 rounded-lg"
             >
               <option value="">Select method...</option>
               <option value="cash">Cash</option>
@@ -342,21 +367,6 @@ export function DateTimeStep({ state, updateState, onNext }: DateTimeStepProps) 
           </div>
         </div>
       )}
-
-      {/* Next Button */}
-      <div className="flex justify-end pt-4">
-        <button
-          onClick={handleNext}
-          disabled={!canProceed}
-          className={`btn ${
-            canProceed
-              ? 'bg-[#434E54] text-white hover:bg-[#363F44]'
-              : 'btn-disabled bg-gray-300 text-gray-500'
-          }`}
-        >
-          Next: Review & Confirm
-        </button>
-      </div>
     </div>
   );
 }

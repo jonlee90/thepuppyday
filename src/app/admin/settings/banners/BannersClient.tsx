@@ -49,14 +49,14 @@ export function BannersClient() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#434E54]">Promo Banners</h1>
-          <p className="mt-2 text-[#434E54]/60">
+          <p className="mt-2 text-[#6B7280]">
             Create and manage promotional banners for your marketing site
           </p>
         </div>
 
         <button
           onClick={handleCreate}
-          className="btn btn-primary"
+          className="btn bg-[#434E54] hover:bg-[#363F44] text-white border-none"
         >
           <Plus className="w-5 h-5 mr-2" />
           Create Banner

@@ -47,11 +47,20 @@ export function PetForm({ onSubmit, onCancel, initialData, selectedService }: Pe
 
   // Load breeds on mount
   useEffect(() => {
-    const store = getMockStore();
-    const breedsData = store.select('breeds', {
-      order: { column: 'name', ascending: true },
-    }) as unknown as Breed[];
-    setBreeds(breedsData);
+    const loadBreeds = async () => {
+      try {
+        const response = await fetch('/api/breeds');
+        if (response.ok) {
+          const data = await response.json();
+          setBreeds(data.breeds || []);
+        } else {
+          console.error('Failed to load breeds:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error loading breeds:', error);
+      }
+    };
+    loadBreeds();
   }, []);
 
   // Clear custom breed when selecting from dropdown

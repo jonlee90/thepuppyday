@@ -223,7 +223,7 @@ export function BannerImageUpload({ isOpen, onClose, onSuccess }: BannerImageUpl
         <div className="flex items-center justify-end gap-3 p-6 border-t border-[#434E54]/10">
           <button
             onClick={handleClose}
-            className="btn btn-ghost"
+            className="btn bg-transparent hover:bg-[#EAE0D5] text-[#434E54] border border-[#434E54]/20"
             disabled={isUploading}
           >
             Cancel
@@ -231,7 +231,7 @@ export function BannerImageUpload({ isOpen, onClose, onSuccess }: BannerImageUpl
           <button
             onClick={handleUpload}
             disabled={!selectedFile || isUploading}
-            className="btn btn-primary"
+            className="btn bg-[#434E54] hover:bg-[#363F44] text-white border-none disabled:bg-gray-300 disabled:text-gray-500"
           >
             {isUploading ? (
               <>

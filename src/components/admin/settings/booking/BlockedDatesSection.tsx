@@ -23,8 +23,6 @@ export function BlockedDatesSection() {
   const [isCalendarLoading, setIsCalendarLoading] = useState(true);
   const [isManagerLoading, setIsManagerLoading] = useState(true);
 
-  const isLoading = isCalendarLoading || isManagerLoading;
-
   // Fetch blocked dates on component mount
   useEffect(() => {
     fetchBlockedDates();
@@ -79,10 +77,6 @@ export function BlockedDatesSection() {
         </div>
       </div>
 
-      {/* Global Loading Overlay (optional) */}
-      {isLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-20 z-40 pointer-events-none" />
-      )}
     </div>
   );
 }

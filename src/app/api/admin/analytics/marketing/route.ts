@@ -300,7 +300,7 @@ export async function GET(request: NextRequest) {
 
     let appointmentsList: Appointment[] = [];
     if (convertedAppointmentIds.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const { data: appointments, error: appointmentsError } = (await (
         supabase as any
       )

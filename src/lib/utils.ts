@@ -111,3 +111,38 @@ export function getInitials(firstName: string, lastName?: string): string {
   const last = lastName ? lastName.charAt(0).toUpperCase() : '';
   return first + last;
 }
+
+/**
+ * Placeholder email domain for walk-in customers without email addresses
+ * These customers are identified by phone only
+ */
+export const WALKIN_EMAIL_DOMAIN = 'walkin.thepuppyday.local';
+
+/**
+ * Generate a placeholder email for walk-in customers who don't provide an email.
+ * Format: walkin_<normalized_phone>@walkin.thepuppyday.local
+ *
+ * The placeholder email:
+ * - Satisfies the NOT NULL constraint on users.email
+ * - Is unique per phone number (since phone is unique for walk-ins)
+ * - Is clearly identifiable as a placeholder (not a real email)
+ * - Uses a .local TLD which is not routable (RFC 2606)
+ *
+ * @param phone - The customer's phone number
+ * @returns A placeholder email address
+ */
+export function generateWalkinEmail(phone: string): string {
+  // Normalize phone: remove all non-digit characters
+  const normalizedPhone = phone.replace(/\D/g, '');
+  return `walkin_${normalizedPhone}@${WALKIN_EMAIL_DOMAIN}`;
+}
+
+/**
+ * Check if an email is a walk-in placeholder email
+ * @param email - The email to check
+ * @returns true if the email is a placeholder for walk-in customers
+ */
+export function isWalkinPlaceholderEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return email.endsWith(`@${WALKIN_EMAIL_DOMAIN}`);
+}

@@ -43,6 +43,7 @@ export function DateTimeStep() {
   // Calculate disabled dates with booking settings
   const disabledDates = useMemo(() => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to midnight to avoid UTC conversion issues
     const maxDate = new Date(today);
 
     // Use max_advance_days from settings if available

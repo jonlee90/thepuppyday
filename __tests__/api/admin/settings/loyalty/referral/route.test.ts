@@ -42,7 +42,7 @@ vi.mock('@/lib/admin/audit-log', () => ({
 
 const mockAdminUser = {
   id: 'admin-123',
-  email: 'admin@puppyday.com',
+  email: 'jonalee90@yahoo.com',
   role: 'admin',
   first_name: 'Admin',
   last_name: 'User',

@@ -530,21 +530,30 @@ function MobileBannerCard({
           onClick={onToggleActive}
           disabled={isToggling}
           className={cn(
-            "flex-1 btn btn-sm",
-            banner.is_active ? "btn-success" : "btn-ghost"
+            "flex-1 btn btn-sm border-none",
+            banner.is_active
+              ? "bg-green-600 hover:bg-green-700 text-white"
+              : "bg-gray-100 hover:bg-gray-200 text-[#434E54]",
+            isToggling && "opacity-50 cursor-not-allowed"
           )}
         >
           {banner.is_active ? <Eye className="w-4 h-4 mr-1" /> : <EyeOff className="w-4 h-4 mr-1" />}
           {banner.is_active ? 'Active' : 'Inactive'}
         </button>
-        <button onClick={onEdit} className="btn btn-sm btn-primary">
+        <button
+          onClick={onEdit}
+          className="btn btn-sm bg-[#434E54] hover:bg-[#363F44] text-white border-none"
+        >
           <Edit className="w-4 h-4 mr-1" />
           Edit
         </button>
         <button
           onClick={onDelete}
           disabled={isDeleting}
-          className="btn btn-sm btn-error"
+          className={cn(
+            "btn btn-sm bg-red-600 hover:bg-red-700 text-white border-none",
+            isDeleting && "opacity-50 cursor-not-allowed"
+          )}
         >
           <Trash2 className="w-4 h-4" />
         </button>

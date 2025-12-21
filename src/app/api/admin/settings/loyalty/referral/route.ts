@@ -92,8 +92,10 @@ export async function GET() {
     };
 
     return NextResponse.json({
-      ...settings,
-      stats,
+      data: {
+        ...settings,
+        stats,
+      },
     });
   } catch (error) {
     console.error('[Referral API] Error fetching referral program settings:', error);
@@ -210,8 +212,10 @@ export async function PUT(request: NextRequest) {
     const message = `Referral program settings updated successfully. ${statusMessage}. Note: Disabling stops new codes but honors existing pending referrals.`;
 
     return NextResponse.json({
-      referral_program: newSettings,
-      stats,
+      data: {
+        ...newSettings,
+        stats,
+      },
       message,
     });
   } catch (error) {

@@ -290,8 +290,8 @@ export function BannerEditor({ bannerId, isOpen, onClose, onSuccess }: BannerEdi
                   value={formData.alt_text}
                   onChange={(e) => handleInputChange('alt_text', e.target.value)}
                   className={cn(
-                    "input input-bordered w-full",
-                    errors.alt_text && "input-error"
+                    "w-full py-2.5 px-4 rounded-lg border bg-white focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54] placeholder:text-gray-400 transition-colors duration-200",
+                    errors.alt_text ? "border-red-500" : "border-gray-200"
                   )}
                   placeholder="Describe the banner for accessibility"
                   maxLength={200}
@@ -322,8 +322,8 @@ export function BannerEditor({ bannerId, isOpen, onClose, onSuccess }: BannerEdi
                   value={formData.click_url}
                   onChange={(e) => handleInputChange('click_url', e.target.value)}
                   className={cn(
-                    "input input-bordered w-full",
-                    errors.click_url && "input-error"
+                    "w-full py-2.5 px-4 rounded-lg border bg-white focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54] placeholder:text-gray-400 transition-colors duration-200",
+                    errors.click_url ? "border-red-500" : "border-gray-200"
                   )}
                   placeholder="https://example.com/promotion"
                 />
@@ -373,8 +373,8 @@ export function BannerEditor({ bannerId, isOpen, onClose, onSuccess }: BannerEdi
                     value={formData.start_date}
                     onChange={(e) => handleInputChange('start_date', e.target.value)}
                     className={cn(
-                      "input input-bordered w-full",
-                      errors.start_date && "input-error"
+                      "w-full py-2.5 px-4 rounded-lg border bg-white focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54] transition-colors duration-200",
+                      errors.start_date ? "border-red-500" : "border-gray-200"
                     )}
                   />
                   {errors.start_date && (
@@ -396,8 +396,8 @@ export function BannerEditor({ bannerId, isOpen, onClose, onSuccess }: BannerEdi
                     value={formData.end_date}
                     onChange={(e) => handleInputChange('end_date', e.target.value)}
                     className={cn(
-                      "input input-bordered w-full",
-                      errors.end_date && "input-error"
+                      "w-full py-2.5 px-4 rounded-lg border bg-white focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54] transition-colors duration-200",
+                      errors.end_date ? "border-red-500" : "border-gray-200"
                     )}
                   />
                   {errors.end_date && (
@@ -441,7 +441,7 @@ export function BannerEditor({ bannerId, isOpen, onClose, onSuccess }: BannerEdi
         <div className="flex items-center justify-end gap-3 p-6 border-t border-[#434E54]/10">
           <button
             onClick={handleClose}
-            className="btn btn-ghost"
+            className="btn bg-transparent hover:bg-[#EAE0D5] text-[#434E54] border border-[#434E54]/20"
             disabled={isSaving}
           >
             Cancel
@@ -449,7 +449,7 @@ export function BannerEditor({ bannerId, isOpen, onClose, onSuccess }: BannerEdi
           <button
             onClick={handleSave}
             disabled={isSaving || isLoading}
-            className="btn btn-primary"
+            className="btn bg-[#434E54] hover:bg-[#363F44] text-white border-none disabled:bg-gray-300 disabled:text-gray-500"
           >
             {isSaving ? (
               <>

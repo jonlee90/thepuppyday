@@ -12,7 +12,13 @@ import { GuestInfoForm } from '../GuestInfoForm';
 import { formatCurrency, formatDuration, getSizeShortLabel } from '@/lib/booking/pricing';
 import { formatTimeDisplay } from '@/lib/booking/availability';
 
-export function ReviewStep() {
+interface ReviewStepProps {
+  onComplete?: () => Promise<void>;
+  adminMode?: boolean;
+  customerId?: string | null;
+}
+
+export function ReviewStep({ onComplete, adminMode = false, customerId }: ReviewStepProps = {}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [guestFormSubmitted, setGuestFormSubmitted] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
@@ -35,6 +41,7 @@ export function ReviewStep() {
     setStep,
     nextStep,
     prevStep,
+    setBookingResult,
   } = useBookingStore();
 
   const handleGuestInfoSubmit = (info: GuestInfo) => {
@@ -43,8 +50,8 @@ export function ReviewStep() {
   };
 
   const handleConfirm = async () => {
-    // For guests, trigger form submission if not yet submitted
-    if (!isAuthenticated && !guestInfo) {
+    // For guests (not admin mode), trigger form submission if not yet submitted
+    if (!adminMode && !isAuthenticated && !guestInfo) {
       // Submit the form programmatically
       const form = document.getElementById('guest-info-form') as HTMLFormElement;
       if (form) {
@@ -57,19 +64,108 @@ export function ReviewStep() {
     setBookingError(null);
 
     try {
-      const result = await createBooking();
-
-      if (result.success) {
-        nextStep();
+      // Admin mode uses different API endpoint
+      if (adminMode && customerId) {
+        const result = await createAdminBooking();
+        if (result.success) {
+          if (onComplete) {
+            await onComplete();
+          } else {
+            nextStep();
+          }
+        } else {
+          console.error('Admin booking failed:', result.error);
+          setBookingError(result.error || 'Failed to create booking. Please try again.');
+        }
       } else {
-        console.error('Booking failed:', result.error);
-        setBookingError(result.error || 'Failed to create booking. Please try again.');
+        // Regular customer booking
+        const result = await createBooking();
+        if (result.success) {
+          if (onComplete) {
+            await onComplete();
+          } else {
+            nextStep();
+          }
+        } else {
+          console.error('Booking failed:', result.error);
+          setBookingError(result.error || 'Failed to create booking. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Booking error:', error);
       setBookingError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Admin booking creation (calls /api/admin/appointments)
+  const createAdminBooking = async () => {
+    if (!selectedService || !selectedDate || !selectedTimeSlot || !customerId) {
+      return { success: false, error: 'Missing required booking information' };
+    }
+
+    // Get pet data
+    const pet = selectedPet || newPetData;
+    if (!pet) {
+      return { success: false, error: 'Pet information required' };
+    }
+
+    try {
+      // Get customer info from the booking store's guest info (set by CustomerSelectionStep)
+      // Note: In admin mode, guestInfo is repurposed to store the selected customer's info
+      const customerInfo = guestInfo || {
+        firstName: user?.first_name || '',
+        lastName: user?.last_name || '',
+        email: user?.email || '',
+        phone: user?.phone || '',
+      };
+
+      const payload = {
+        customer: {
+          id: customerId,
+          first_name: customerInfo.firstName,
+          last_name: customerInfo.lastName,
+          email: customerInfo.email,
+          phone: customerInfo.phone,
+        },
+        pet: {
+          id: selectedPet?.id,
+          name: pet.name,
+          breed_id: selectedPet?.breed_id || newPetData?.breed_id,
+          breed_name: selectedPet?.breed_custom || newPetData?.breed_custom,
+          size: petSize || pet.size,
+          weight: selectedPet?.weight || newPetData?.weight,
+        },
+        service_id: selectedService.id,
+        addon_ids: selectedAddons.map(addon => addon.id),
+        appointment_date: selectedDate,
+        appointment_time: selectedTimeSlot,
+        payment_status: 'pending' as const,
+        send_notification: false, // Don't send notifications for manually created appointments
+      };
+
+      const response = await fetch('/api/admin/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to create appointment' }));
+        return { success: false, error: errorData.error || 'Failed to create appointment' };
+      }
+
+      const data = await response.json();
+      setBookingResult(data.appointment_id, data.appointment_id);
+
+      return { success: true, appointmentId: data.appointment_id };
+    } catch (error) {
+      console.error('Admin booking creation failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   };
 

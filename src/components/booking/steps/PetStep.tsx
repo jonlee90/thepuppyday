@@ -13,11 +13,17 @@ import { usePets } from '@/hooks/usePets';
 import type { Pet, CreatePetInput } from '@/types/database';
 import type { PetFormData } from '@/lib/booking/validation';
 
-export function PetStep() {
+interface PetStepProps {
+  customerId?: string | null; // For admin mode - show pets for this customer
+}
+
+export function PetStep({ customerId }: PetStepProps = {}) {
   const [showForm, setShowForm] = useState(false);
 
   const { user, isAuthenticated } = useAuthStore();
-  const { pets, isLoading, error, refetch } = usePets();
+  // In admin mode, fetch pets for the selected customer; otherwise use current user
+  const effectiveOwnerId = customerId || user?.id;
+  const { pets, isLoading, error, refetch } = usePets(effectiveOwnerId);
   const {
     selectedPetId,
     newPetData,

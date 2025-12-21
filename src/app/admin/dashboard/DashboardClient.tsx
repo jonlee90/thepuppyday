@@ -10,6 +10,8 @@ import { DashboardStats } from '@/components/admin/dashboard/DashboardStats';
 import { TodayAppointments } from '@/components/admin/dashboard/TodayAppointments';
 import { ActivityFeed } from '@/components/admin/dashboard/ActivityFeed';
 import { QuickAccess } from '@/components/admin/dashboard/QuickAccess';
+import { WalkInButton } from '@/components/admin/dashboard/WalkInButton';
+import { WalkInModal } from '@/components/admin/appointments/WalkInModal';
 import { useDashboardRealtime } from '@/hooks/admin/use-dashboard-realtime';
 import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import type { Appointment, NotificationLog } from '@/types/database';
@@ -35,6 +37,7 @@ export function DashboardClient({
   const [stats, setStats] = useState<StatsData | null>(initialStats);
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [hasInitialErrors, setHasInitialErrors] = useState(errors?.stats || errors?.appointments || errors?.activity);
+  const [isWalkInModalOpen, setIsWalkInModalOpen] = useState(false);
 
   const handleStatsUpdate = useCallback((newStats: StatsData) => {
     setStats(newStats);
@@ -63,8 +66,24 @@ export function DashboardClient({
     }
   };
 
+  const handleWalkInSuccess = useCallback(() => {
+    // Refresh appointments list after successful walk-in creation
+    // The realtime hook will pick up the new appointment
+    setIsWalkInModalOpen(false);
+  }, []);
+
   return (
     <>
+      {/* Walk-In Button (FAB on mobile, inline on desktop) */}
+      <WalkInButton onClick={() => setIsWalkInModalOpen(true)} />
+
+      {/* Walk-In Modal */}
+      <WalkInModal
+        isOpen={isWalkInModalOpen}
+        onClose={() => setIsWalkInModalOpen(false)}
+        onSuccess={handleWalkInSuccess}
+      />
+
       {/* Initial Load Error Banner */}
       {hasInitialErrors && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">

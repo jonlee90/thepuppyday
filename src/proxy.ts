@@ -25,7 +25,7 @@ const adminRoutes = ['/admin'];
 const authRoutes = ['/login', '/register', '/forgot-password'];
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },

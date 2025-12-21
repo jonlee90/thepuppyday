@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { X } from 'lucide-react';
+import { X, CheckCircle } from 'lucide-react';
 import type { ManualAppointmentState } from '@/types/admin-appointments';
 import { CustomerSelectionStep } from './steps/CustomerSelectionStep';
 import { PetSelectionStep } from './steps/PetSelectionStep';
@@ -46,6 +46,8 @@ export function ManualAppointmentModal({
     paymentStatus: 'pending',
     paymentDetails: undefined,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Reset state on close
   const handleClose = useCallback(() => {
@@ -89,6 +91,90 @@ export function ManualAppointmentModal({
     handleClose();
     onSuccess();
   }, [handleClose, onSuccess]);
+
+  // Check if current step is valid (for enabling Next button)
+  const isCurrentStepValid = useCallback(() => {
+    switch (state.currentStep) {
+      case 1:
+        return !!state.selectedCustomer;
+      case 2:
+        return !!state.selectedPet;
+      case 3:
+        return !!state.selectedService;
+      case 4:
+        return !!state.selectedDateTime;
+      case 5:
+        return true; // Summary step - always valid for display
+      default:
+        return false;
+    }
+  }, [state.currentStep, state.selectedCustomer, state.selectedPet, state.selectedService, state.selectedDateTime]);
+
+  // Get next button label based on current step
+  const getNextButtonLabel = () => {
+    switch (state.currentStep) {
+      case 1:
+        return 'Next: Select Pet';
+      case 2:
+        return 'Next: Select Service';
+      case 3:
+        return 'Next: Choose Date & Time';
+      case 4:
+        return 'Next: Review';
+      default:
+        return 'Next';
+    }
+  };
+
+  // Handle final submission
+  const handleSubmit = useCallback(async () => {
+    if (!state.selectedCustomer || !state.selectedPet || !state.selectedService || !state.selectedDateTime) {
+      setSubmitError('Missing required information');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const addonIds = Array.isArray(state.selectedAddons)
+        ? state.selectedAddons.map((a) => a.id)
+        : [];
+
+      const payload = {
+        customer: state.selectedCustomer,
+        pet: state.selectedPet,
+        service_id: state.selectedService.id,
+        addon_ids: addonIds,
+        appointment_date: state.selectedDateTime.date,
+        appointment_time: state.selectedDateTime.time,
+        notes: state.notes || undefined,
+        payment_status: state.paymentStatus,
+        payment_details: state.paymentDetails,
+        send_notification: true,
+      };
+
+      const response = await fetch('/api/admin/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        const errorMessage = data.details
+          ? `${data.error}: ${data.details}`
+          : data.error || 'Failed to create appointment';
+        throw new Error(errorMessage);
+      }
+
+      handleCreationSuccess();
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [state, handleCreationSuccess]);
 
   if (!isOpen) return null;
 
@@ -171,14 +257,57 @@ export function ManualAppointmentModal({
           <button
             onClick={state.currentStep === 1 ? handleClose : handleBack}
             className="btn btn-ghost text-[#434E54] hover:bg-[#EAE0D5] font-medium"
+            disabled={isSubmitting}
           >
             {state.currentStep === 1 ? 'Cancel' : 'Back'}
           </button>
-          <div className="text-sm text-[#6B7280]">
-            Step {state.currentStep} of {TOTAL_STEPS}
-          </div>
-          {/* Next button is handled by individual step components */}
+
+          {/* Next / Create Appointment Button */}
+          {state.currentStep < TOTAL_STEPS ? (
+            <button
+              onClick={handleNext}
+              disabled={!isCurrentStepValid()}
+              className={`btn ${
+                isCurrentStepValid()
+                  ? 'bg-[#434E54] text-white hover:bg-[#363F44]'
+                  : 'btn-disabled bg-gray-300 text-gray-500'
+              }`}
+            >
+              {getNextButtonLabel()}
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className={`btn btn-lg ${
+                isSubmitting
+                  ? 'btn-disabled bg-gray-300 text-gray-500'
+                  : 'bg-[#6BCB77] text-white hover:bg-[#5BB967]'
+              }`}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  Create Appointment
+                </>
+              )}
+            </button>
+          )}
         </div>
+
+        {/* Submit Error Display */}
+        {submitError && (
+          <div className="px-6 pb-4">
+            <div className="alert alert-error">
+              <span>{submitError}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

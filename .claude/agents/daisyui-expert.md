@@ -378,6 +378,129 @@ interface ComponentProps {
 
 ---
 
+## Dog Grooming Theme Implementation
+
+### Visual Motifs
+
+When implementing components, incorporate these theme elements:
+
+**Icons (Lucide React Only)**:
+```tsx
+import { Scissors, Dog, Heart, Star, Clock, Calendar, Check } from 'lucide-react';
+
+// Icon styling - consistent size and weight
+<Scissors className="w-5 h-5 text-[#434E54]" />
+<Dog className="w-6 h-6 text-[#6B7280]" />
+```
+
+**Icon Containers** (for decorative icons):
+```tsx
+<div className="p-2.5 bg-[#EAE0D5] rounded-lg">
+  <Scissors className="w-5 h-5 text-[#434E54]" />
+</div>
+```
+
+**Organic Blob Shapes** (hero sections):
+```tsx
+// Decorative background blob
+<div className="absolute -z-10 top-0 right-0 w-72 h-72 bg-[#EAE0D5] rounded-full blur-3xl opacity-50" />
+```
+
+**Subtle Paw Accents** (use sparingly):
+```tsx
+// As decorative separator or background element
+<div className="opacity-10 text-[#434E54]">
+  {/* Paw icon or SVG - very subtle */}
+</div>
+```
+
+### Micro-interaction Implementation
+
+**Hover Transitions**:
+```tsx
+// Card hover - elevation + lift
+className="transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+
+// Button hover - color shift
+className="transition-colors duration-200 hover:bg-[#363F44]"
+
+// Link hover - opacity
+className="transition-opacity duration-200 hover:opacity-80"
+```
+
+**Shadow Elevation on Hover**:
+```tsx
+// Rest state → Hover state
+className="shadow-sm hover:shadow-md transition-shadow duration-200"
+className="shadow-md hover:shadow-lg transition-shadow duration-200"
+```
+
+**Loading States**:
+```tsx
+// Spinner in button
+<button className="btn btn-primary" disabled={loading}>
+  {loading && <span className="loading loading-spinner loading-sm" />}
+  {loading ? 'Saving...' : 'Save Changes'}
+</button>
+
+// Skeleton loader
+<div className="animate-pulse">
+  <div className="h-4 bg-[#EAE0D5] rounded w-3/4 mb-2" />
+  <div className="h-4 bg-[#EAE0D5] rounded w-1/2" />
+</div>
+```
+
+**Fade Animations**:
+```tsx
+// Modal fade-in (using Tailwind + DaisyUI)
+<dialog className={`modal ${isOpen ? 'modal-open' : ''}`}>
+  <div className="modal-box transition-all duration-200 scale-95 opacity-0
+                  modal-open:scale-100 modal-open:opacity-100">
+    {/* content */}
+  </div>
+</dialog>
+
+// Or with CSS custom properties
+className="animate-fadeIn" // defined in globals.css
+```
+
+**Button Press Feedback**:
+```tsx
+// Active state for tactile feel
+className="btn active:scale-[0.98] transition-transform duration-100"
+```
+
+**Success/Error State Transitions**:
+```tsx
+// Input with validation state
+<input
+  className={`input input-bordered transition-colors duration-200
+    ${error ? 'border-error focus:border-error' : 'border-[#E5E5E5] focus:border-[#434E54]'}
+    ${success ? 'border-success' : ''}
+  `}
+/>
+```
+
+### Tone of Voice in UI Copy
+
+When writing button text, labels, and messages:
+
+**Clean CTAs**:
+- ✅ "Book Appointment"
+- ✅ "Get Started"
+- ✅ "Schedule Now"
+- ✅ "Save Changes"
+- ❌ "Let's Go!" (too casual)
+- ❌ "Click Here" (too generic)
+
+**Professional Messages**:
+- ✅ "Your appointment has been confirmed"
+- ✅ "Professional grooming for your pet"
+- ❌ "Awesome! You're all set!" (too casual)
+- ❌ "We're the best groomers!" (too boastful)
+
+---
+
 ## Rules & Constraints
 
 ### DO:
