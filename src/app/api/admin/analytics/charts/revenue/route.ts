@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
+import { config } from '@/lib/config';
 
 /**
  * Determine period format based on date range
@@ -34,9 +35,6 @@ function formatPeriod(date: Date, format: 'monthly' | 'quarterly'): string {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
-    await requireAdmin(supabase);
-
     const searchParams = request.nextUrl.searchParams;
     const start = searchParams.get('start');
     const end = searchParams.get('end');
@@ -49,10 +47,8 @@ export async function GET(request: NextRequest) {
     const endDate = new Date(end);
     const periodFormat = determinePeriodFormat(startDate, endDate);
 
-    // Check if we're in mock mode
-    const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === 'true';
-
-    if (useMocks) {
+    // In mock mode, return mock data without auth check (for development)
+    if (config.useMocks) {
       // Generate mock revenue data
       const mockData = [];
       const months = periodFormat === 'monthly' ? 6 : 4;
@@ -79,27 +75,56 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ data: mockData });
     }
 
-    // Production implementation
-    // Fetch all completed appointments with pricing
+    // Production implementation - require admin auth
+    const supabase = await createServerSupabaseClient();
+    await requireAdmin(supabase);
+
+    // Fetch all completed appointments with basic data
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: appointments, error: apptError } = await (supabase as any)
       .from('appointments')
-      .select(
-        `
-        scheduled_at,
-        total_price,
-        service:services(base_price),
-        appointment_addons(
-          addon:addons(price)
-        )
-      `
-      )
+      .select('id, scheduled_at, total_price, service_id')
       .gte('scheduled_at', startDate.toISOString())
       .lte('scheduled_at', endDate.toISOString())
       .eq('status', 'completed');
 
     if (apptError) {
+      console.error('[Revenue API] Appointments query error:', apptError);
       throw new Error('Failed to fetch appointments');
+    }
+
+    // Fetch service prices for calculating breakdown
+    const serviceIds = [...new Set((appointments || []).map((a: { service_id: string }) => a.service_id).filter(Boolean))];
+    let servicesMap: Record<string, number> = {};
+
+    if (serviceIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: services } = await (supabase as any)
+        .from('services')
+        .select('id, base_price')
+        .in('id', serviceIds);
+
+      servicesMap = (services || []).reduce((acc: Record<string, number>, s: { id: string; base_price: number }) => {
+        acc[s.id] = s.base_price || 0;
+        return acc;
+      }, {});
+    }
+
+    // Fetch add-on totals for each appointment
+    const appointmentIds = (appointments || []).map((a: { id: string }) => a.id);
+    let addonsMap: Record<string, number> = {};
+
+    if (appointmentIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: appointmentAddons } = await (supabase as any)
+        .from('appointment_addons')
+        .select('appointment_id, price')
+        .in('appointment_id', appointmentIds);
+
+      // Sum add-on prices per appointment
+      (appointmentAddons || []).forEach((aa: { appointment_id: string; price: number }) => {
+        addonsMap[aa.appointment_id] = (addonsMap[aa.appointment_id] || 0) + (aa.price || 0);
+      });
     }
 
     // Group by period
@@ -114,7 +139,7 @@ export async function GET(request: NextRequest) {
       }
     > = {};
 
-    (appointments || []).forEach((apt: any) => {
+    (appointments || []).forEach((apt: { id: string; scheduled_at: string; total_price: number; service_id: string }) => {
       const date = new Date(apt.scheduled_at);
       const period = formatPeriod(date, periodFormat);
 
@@ -128,15 +153,12 @@ export async function GET(request: NextRequest) {
         };
       }
 
-      // Service revenue (base service price)
-      const servicePrice = apt.service?.base_price || 0;
+      // Service revenue (base service price from our map)
+      const servicePrice = servicesMap[apt.service_id] || 0;
       periodData[period].services += servicePrice;
 
-      // Add-on revenue
-      const addonRevenue =
-        apt.appointment_addons?.reduce((sum: number, aa: any) => {
-          return sum + (aa.addon?.price || 0);
-        }, 0) || 0;
+      // Add-on revenue from our map
+      const addonRevenue = addonsMap[apt.id] || 0;
       periodData[period].addons += addonRevenue;
 
       // Membership revenue (total - services - addons, assuming remainder is membership)
@@ -168,12 +190,16 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: chartData });
   } catch (error) {
-    console.error('Error fetching revenue data:', error);
+    console.error('[Revenue API] Error:', error);
+    console.error('[Revenue API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
 
     if (error instanceof Error && error.message.includes('Unauthorized')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

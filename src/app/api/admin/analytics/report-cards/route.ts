@@ -54,9 +54,6 @@ function calculateAvgTimeToOpen(reportCards: ReportCard[]): number {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
-    await requireAdmin(supabase);
-
     const searchParams = request.nextUrl.searchParams;
     const start = searchParams.get('start');
     const end = searchParams.get('end');
@@ -79,7 +76,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if we're in mock mode
+    // Check if we're in mock mode (return mock data without auth check for development)
     const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === 'true';
 
     if (useMocks) {
@@ -105,7 +102,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ data: mockData });
     }
 
-    // Production implementation
+    // Production implementation - require admin auth
+    const supabase = await createServerSupabaseClient();
+    await requireAdmin(supabase);
+
     // Fetch report cards within date range
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: reportCards, error } = (await (supabase as any)

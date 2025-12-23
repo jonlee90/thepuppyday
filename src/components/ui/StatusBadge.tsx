@@ -40,12 +40,6 @@ const statusConfig: Record<AppointmentStatus, {
     textColor: 'text-[#434E54]',
     dotColor: 'bg-[#434E54]',
   },
-  ready: {
-    label: 'Ready',
-    bgColor: 'bg-[#434E54]/30',
-    textColor: 'text-[#434E54]',
-    dotColor: 'bg-[#434E54]',
-  },
   completed: {
     label: 'Completed',
     bgColor: 'bg-[#EAE0D5]',

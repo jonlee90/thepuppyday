@@ -107,7 +107,8 @@ export function ReportCardAnalytics({ dateRange }: ReportCardAnalyticsProps) {
     fetchReportCardMetrics();
   }, [dateRange]);
 
-  const formatHours = (hours: number): string => {
+  const formatHours = (hours: number | undefined | null): string => {
+    if (hours == null) return '0 min';
     if (hours < 1) return `${Math.round(hours * 60)} min`;
     if (hours < 24) return `${hours.toFixed(1)} hrs`;
     return `${(hours / 24).toFixed(1)} days`;
@@ -205,7 +206,7 @@ export function ReportCardAnalytics({ dateRange }: ReportCardAnalyticsProps) {
           </div>
           <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-            Avg: {metrics.reviewed.avgRating.toFixed(1)} stars
+            Avg: {(metrics.reviewed.avgRating ?? 0).toFixed(1)} stars
           </div>
         </div>
 

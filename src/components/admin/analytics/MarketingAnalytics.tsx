@@ -125,6 +125,13 @@ export function MarketingAnalytics({ dateRange }: MarketingAnalyticsProps) {
     );
   }
 
+  // Safely access nested properties with defaults
+  const remindersSent = metrics.remindersSent ?? { count: 0, sms: 0, email: 0 };
+  const clickThroughRate = metrics.clickThroughRate ?? { clicks: 0, sent: 0, percentage: 0 };
+  const bookingConversion = metrics.bookingConversion ?? { bookings: 0, clicks: 0, percentage: 0 };
+  const revenue = metrics.revenue ?? { total: 0, fromReminders: 0, percentage: 0 };
+  const costPerAcquisition = metrics.costPerAcquisition ?? { totalCost: 0, totalBookings: 0, cpa: 0 };
+
   return (
     <div className="space-y-6">
       {/* Metrics Grid */}
@@ -138,10 +145,10 @@ export function MarketingAnalytics({ dateRange }: MarketingAnalyticsProps) {
             <div className="text-sm font-medium text-gray-600">Reminders Sent</div>
           </div>
           <div className="text-3xl font-bold text-[#434E54] mb-1">
-            {formatNumber(metrics.remindersSent.count)}
+            {formatNumber(remindersSent.count)}
           </div>
           <div className="text-sm text-gray-500">
-            {formatNumber(metrics.remindersSent.sms)} SMS, {formatNumber(metrics.remindersSent.email)} Email
+            {formatNumber(remindersSent.sms)} SMS, {formatNumber(remindersSent.email)} Email
           </div>
         </div>
 
@@ -154,10 +161,10 @@ export function MarketingAnalytics({ dateRange }: MarketingAnalyticsProps) {
             <div className="text-sm font-medium text-gray-600">Click-Through</div>
           </div>
           <div className="text-3xl font-bold text-[#434E54] mb-1">
-            {formatPercentage(metrics.clickThroughRate.percentage)}
+            {formatPercentage(clickThroughRate.percentage)}
           </div>
           <div className="text-sm text-gray-500">
-            {formatNumber(metrics.clickThroughRate.clicks)} clicks
+            {formatNumber(clickThroughRate.clicks)} clicks
           </div>
         </div>
 
@@ -170,10 +177,10 @@ export function MarketingAnalytics({ dateRange }: MarketingAnalyticsProps) {
             <div className="text-sm font-medium text-gray-600">Conversion</div>
           </div>
           <div className="text-3xl font-bold text-[#434E54] mb-1">
-            {formatPercentage(metrics.bookingConversion.percentage)}
+            {formatPercentage(bookingConversion.percentage)}
           </div>
           <div className="text-sm text-gray-500">
-            {formatNumber(metrics.bookingConversion.bookings)} bookings
+            {formatNumber(bookingConversion.bookings)} bookings
           </div>
         </div>
 
@@ -186,10 +193,10 @@ export function MarketingAnalytics({ dateRange }: MarketingAnalyticsProps) {
             <div className="text-sm font-medium text-gray-600">Revenue</div>
           </div>
           <div className="text-3xl font-bold text-[#434E54] mb-1">
-            {formatCurrency(metrics.revenue.fromReminders)}
+            {formatCurrency(revenue.fromReminders)}
           </div>
           <div className="text-sm text-gray-500">
-            {formatPercentage(metrics.revenue.percentage)} of total
+            {formatPercentage(revenue.percentage)} of total
           </div>
         </div>
 
@@ -202,10 +209,10 @@ export function MarketingAnalytics({ dateRange }: MarketingAnalyticsProps) {
             <div className="text-sm font-medium text-gray-600">CPA</div>
           </div>
           <div className="text-3xl font-bold text-[#434E54] mb-1">
-            {formatCurrency(metrics.costPerAcquisition.cpa)}
+            {formatCurrency(costPerAcquisition.cpa)}
           </div>
           <div className="text-sm text-gray-500">
-            Cost: {formatCurrency(metrics.costPerAcquisition.totalCost)}
+            Cost: {formatCurrency(costPerAcquisition.totalCost)}
           </div>
         </div>
       </div>
@@ -305,17 +312,17 @@ export function MarketingAnalytics({ dateRange }: MarketingAnalyticsProps) {
         <div className="card bg-gradient-to-br from-purple-50 to-white shadow-sm p-6">
           <div className="text-sm font-medium text-gray-600 mb-2">Engagement Quality</div>
           <div className="text-2xl font-bold text-[#434E54] mb-1">
-            {formatPercentage(metrics.clickThroughRate.percentage)}
+            {formatPercentage(clickThroughRate.percentage)}
           </div>
           <p className="text-xs text-gray-500">
-            Recipients are engaging with {formatPercentage(metrics.clickThroughRate.percentage)} of reminders sent
+            Recipients are engaging with {formatPercentage(clickThroughRate.percentage)} of reminders sent
           </p>
         </div>
 
         <div className="card bg-gradient-to-br from-green-50 to-white shadow-sm p-6">
           <div className="text-sm font-medium text-gray-600 mb-2">Booking Efficiency</div>
           <div className="text-2xl font-bold text-[#434E54] mb-1">
-            {formatPercentage(metrics.bookingConversion.percentage)}
+            {formatPercentage(bookingConversion.percentage)}
           </div>
           <p className="text-xs text-gray-500">
             Clicks converting to actual bookings, showing strong intent
@@ -325,7 +332,7 @@ export function MarketingAnalytics({ dateRange }: MarketingAnalyticsProps) {
         <div className="card bg-gradient-to-br from-orange-50 to-white shadow-sm p-6">
           <div className="text-sm font-medium text-gray-600 mb-2">Cost Efficiency</div>
           <div className="text-2xl font-bold text-[#434E54] mb-1">
-            {formatCurrency(metrics.costPerAcquisition.cpa)}
+            {formatCurrency(costPerAcquisition.cpa)}
           </div>
           <p className="text-xs text-gray-500">
             Average cost to acquire each booking through marketing

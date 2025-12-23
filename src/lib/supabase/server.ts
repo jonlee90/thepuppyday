@@ -15,11 +15,18 @@ export type AppSupabaseClient = MockSupabaseClient | SupabaseClient;
  * Create a Supabase client for server-side use (Server Components, Route Handlers)
  */
 export async function createServerSupabaseClient(): Promise<AppSupabaseClient> {
-  if (config.useMocks) {
-    return createMockClient();
-  }
-
   const cookieStore = await cookies();
+
+  if (config.useMocks) {
+    // Pass cookies to mock client for server-side auth
+    return createMockClient({
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+      },
+    });
+  }
 
   return createServerClient(
     config.supabase.url,

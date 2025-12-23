@@ -14,9 +14,6 @@ import { requireAdmin } from '@/lib/admin/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
-    await requireAdmin(supabase);
-
     const searchParams = request.nextUrl.searchParams;
     const start = searchParams.get('start');
     const end = searchParams.get('end');
@@ -33,7 +30,7 @@ export async function GET(request: NextRequest) {
     const prevStartDate = new Date(startDate.getTime() - periodLength);
     const prevEndDate = new Date(startDate.getTime());
 
-    // Check if we're in mock mode
+    // Check if we're in mock mode (return mock data without auth check for development)
     const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === 'true';
 
     if (useMocks) {
@@ -86,7 +83,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ data: mockData });
     }
 
-    // Production implementation
+    // Production implementation - require admin auth
+    const supabase = await createServerSupabaseClient();
+    await requireAdmin(supabase);
+
     // Calculate total revenue for current and previous periods
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: currentRevenue } = await (supabase as any)

@@ -11,9 +11,6 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
-    await requireAdmin(supabase);
-
     const { searchParams } = new URL(request.url);
     const start = searchParams.get('start');
     const end = searchParams.get('end');
@@ -28,6 +25,97 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Check if we're in mock mode (return mock data without auth check for development)
+    const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === 'true';
+
+    if (useMocks) {
+      // Generate mock groomer data
+      const mockGroomers = [
+        {
+          groomer_id: 'groomer-1',
+          groomer_name: 'Jessica Martinez',
+          groomer_email: 'staff@thepuppyday.com',
+          score: 12500,
+          rank: 1,
+          appointments: 45,
+          average_rating: 4.8,
+          revenue: 12500,
+          addon_rate: 65.2,
+          on_time_percentage: 92.5,
+        },
+        {
+          groomer_id: 'groomer-2',
+          groomer_name: 'Michael Chen',
+          groomer_email: 'michael@thepuppyday.com',
+          score: 9800,
+          rank: 2,
+          appointments: 38,
+          average_rating: 4.6,
+          revenue: 9800,
+          addon_rate: 58.4,
+          on_time_percentage: 88.2,
+        },
+        {
+          groomer_id: 'groomer-3',
+          groomer_name: 'Sarah Wilson',
+          groomer_email: 'sarah@thepuppyday.com',
+          score: 8200,
+          rank: 3,
+          appointments: 32,
+          average_rating: 4.9,
+          revenue: 8200,
+          addon_rate: 72.1,
+          on_time_percentage: 95.0,
+        },
+      ];
+
+      if (leaderboard) {
+        return NextResponse.json({ rankings: mockGroomers, metric });
+      }
+
+      if (comparison) {
+        return NextResponse.json({
+          groomers: mockGroomers,
+          averages: {
+            appointments: 38.3,
+            average_rating: 4.77,
+            revenue: 10166.67,
+            addon_rate: 65.23,
+            on_time_percentage: 91.9,
+          },
+        });
+      }
+
+      // Default aggregate
+      return NextResponse.json({
+        groomer_id: groomerId || 'all',
+        groomer_name: groomerId ? mockGroomers[0].groomer_name : 'All Groomers',
+        metrics: {
+          appointments_completed: 115,
+          average_rating: 4.77,
+          revenue_total: 30500,
+          revenue_per_appointment: 265.22,
+          addon_attachment_rate: 65.23,
+          on_time_percentage: 91.9,
+          appointments_trend: 8.5,
+          rating_trend: 0.2,
+          revenue_trend: 12.3,
+          addon_trend: 5.4,
+          on_time_trend: -1.2,
+        },
+        trends: {
+          dates: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+          appointments: [28, 32, 26, 29],
+          revenue: [7500, 8200, 6800, 8000],
+          ratings: [4.7, 4.8, 4.75, 4.8],
+        },
+      });
+    }
+
+    // Production implementation - require admin auth
+    const supabase = await createServerSupabaseClient();
+    await requireAdmin(supabase);
 
     // Handle comparison mode - returns all groomers with averages
     if (comparison) {
@@ -122,13 +210,15 @@ async function getIndividualGroomerPerformance(
   // Get groomer info
   const { data: groomer } = await supabase
     .from('users')
-    .select('id, full_name')
+    .select('id, first_name, last_name')
     .eq('id', groomerId)
     .single();
 
+  const fullName = groomer ? [groomer.first_name, groomer.last_name].filter(Boolean).join(' ') || 'Unknown' : 'Unknown';
+
   return {
     groomer_id: groomerId,
-    groomer_name: groomer?.full_name || 'Unknown',
+    groomer_name: fullName,
     metrics: {
       ...currentMetrics,
       ...trends,
@@ -148,9 +238,9 @@ async function getGroomerComparison(
   // Get all groomers
   const { data: groomers } = await supabase
     .from('users')
-    .select('id, full_name')
+    .select('id, first_name, last_name')
     .eq('role', 'groomer')
-    .order('full_name');
+    .order('first_name');
 
   if (!groomers || groomers.length === 0) {
     return { groomers: [], averages: {} };
@@ -166,9 +256,12 @@ async function getGroomerComparison(
         end
       );
 
+      // Construct full name from first_name and last_name
+      const fullName = [groomer.first_name, groomer.last_name].filter(Boolean).join(' ') || 'Unknown';
+
       return {
         groomer_id: groomer.id,
-        groomer_name: groomer.full_name,
+        groomer_name: fullName,
         appointments: metrics.appointments_completed,
         average_rating: metrics.average_rating,
         revenue: metrics.revenue_total,
@@ -205,9 +298,9 @@ async function getGroomerLeaderboard(
   // Get all groomers
   const { data: groomers } = await supabase
     .from('users')
-    .select('id, full_name, email')
+    .select('id, first_name, last_name, email')
     .eq('role', 'groomer')
-    .order('full_name');
+    .order('first_name');
 
   if (!groomers || groomers.length === 0) {
     return { rankings: [], metric };
@@ -245,9 +338,12 @@ async function getGroomerLeaderboard(
           score = metrics.revenue_total;
       }
 
+      // Construct full name from first_name and last_name
+      const fullName = [groomer.first_name, groomer.last_name].filter(Boolean).join(' ') || 'Unknown';
+
       return {
         groomer_id: groomer.id,
-        groomer_name: groomer.full_name,
+        groomer_name: fullName,
         groomer_email: groomer.email,
         score,
         appointments: metrics.appointments_completed,

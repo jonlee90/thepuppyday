@@ -10,7 +10,6 @@ export type AppointmentStatus =
   | 'confirmed'
   | 'checked_in'
   | 'in_progress'
-  | 'ready'
   | 'completed'
   | 'cancelled'
   | 'no_show';
@@ -149,6 +148,7 @@ export interface Appointment extends BaseEntity {
   cancellation_reason: string | null;
   creation_method: AppointmentCreationMethod;
   created_by_admin_id: string | null;
+  booking_reference: string | null;
   updated_at: string;
   // Joined data
   customer?: User;

@@ -42,8 +42,10 @@ export interface AppointmentStatusTriggerResult {
 
 /**
  * Statuses that trigger SMS notifications
+ * - checked_in: Customer has arrived
+ * - completed: Grooming done, ready for pickup
  */
-const SMS_NOTIFICATION_STATUSES: AppointmentStatus[] = ['checked_in', 'ready'];
+const SMS_NOTIFICATION_STATUSES: AppointmentStatus[] = ['checked_in', 'completed'];
 
 /**
  * Retry delay in seconds (30 seconds as per requirements)
@@ -56,7 +58,7 @@ const RETRY_DELAY_SECONDS = 30;
 
 /**
  * Trigger appointment status change notifications
- * Sends SMS for specific status changes (checked_in, ready)
+ * Sends SMS for specific status changes (checked_in, completed)
  *
  * @param supabase - Supabase client
  * @param data - Appointment status change data
@@ -173,7 +175,7 @@ export async function triggerAppointmentStatus(
 function getNotificationTypeForStatus(status: AppointmentStatus): string | null {
   const mapping: Record<string, string> = {
     checked_in: 'appointment_checked_in',
-    ready: 'appointment_ready_for_pickup',
+    completed: 'appointment_ready_for_pickup',
   };
 
   return mapping[status] || null;

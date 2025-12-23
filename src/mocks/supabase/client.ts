@@ -37,6 +37,10 @@ interface MockSession {
 
 // Storage keys
 const AUTH_STORAGE_KEY = 'thepuppyday_mock_auth';
+const ZUSTAND_AUTH_COOKIE = 'auth-storage';
+
+// Type for cookie getter function (for server-side use)
+type CookieGetter = () => { name: string; value: string }[];
 
 /**
  * Query builder class that mimics Supabase's query builder
@@ -466,12 +470,49 @@ class MockDeleteBuilder {
 class MockAuth {
   private currentSession: MockSession | null = null;
   private currentUser: MockAuthUser | null = null;
+  private cookieGetter: CookieGetter | null = null;
 
-  constructor() {
+  constructor(cookieGetter?: CookieGetter) {
+    this.cookieGetter = cookieGetter || null;
     this.loadSession();
   }
 
   private loadSession(): void {
+    // Try server-side cookie first (for API routes)
+    if (this.cookieGetter) {
+      const cookies = this.cookieGetter();
+      if (cookies) {
+        const authCookie = cookies.find(c => c.name === ZUSTAND_AUTH_COOKIE);
+        if (authCookie) {
+          try {
+            const authData = JSON.parse(decodeURIComponent(authCookie.value));
+            const user = authData.state?.user;
+            if (user && authData.state?.isAuthenticated) {
+              // Reconstruct auth user and session from Zustand cookie
+              this.currentUser = {
+                id: user.id,
+                email: user.email,
+                user_metadata: {
+                  first_name: user.first_name,
+                  last_name: user.last_name,
+                },
+              };
+              this.currentSession = {
+                access_token: `mock_token_${user.id}`,
+                refresh_token: `mock_refresh_${user.id}`,
+                expires_at: Date.now() + 3600000,
+                user: this.currentUser,
+              };
+              return;
+            }
+          } catch (error) {
+            console.error('[MockAuth] Error loading session from cookie:', error instanceof Error ? error.message : error);
+          }
+        }
+      }
+    }
+
+    // Fall back to client-side localStorage
     if (typeof window === 'undefined') return;
     const stored = localStorage.getItem(AUTH_STORAGE_KEY);
     if (stored) {
@@ -683,10 +724,20 @@ class MockAuth {
 }
 
 /**
+ * Options for creating a mock client
+ */
+export interface MockClientOptions {
+  cookies?: {
+    getAll: () => { name: string; value: string }[];
+  };
+}
+
+/**
  * Create mock Supabase client
  */
-export function createMockClient() {
-  const auth = new MockAuth();
+export function createMockClient(options?: MockClientOptions) {
+  const cookieGetter = options?.cookies?.getAll;
+  const auth = new MockAuth(cookieGetter);
 
   return {
     auth,

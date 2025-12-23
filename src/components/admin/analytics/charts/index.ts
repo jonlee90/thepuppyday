@@ -61,7 +61,8 @@ export const CHART_CONFIG = {
 };
 
 // Format currency for charts
-export const formatCurrency = (value: number): string => {
+export const formatCurrency = (value: number | undefined | null): string => {
+  if (value == null) return '$0';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -71,12 +72,14 @@ export const formatCurrency = (value: number): string => {
 };
 
 // Format percentage for charts
-export const formatPercentage = (value: number): string => {
+export const formatPercentage = (value: number | undefined | null): string => {
+  if (value == null) return '0.0%';
   return `${value.toFixed(1)}%`;
 };
 
 // Format number with commas
-export const formatNumber = (value: number): string => {
+export const formatNumber = (value: number | undefined | null): string => {
+  if (value == null) return '0';
   return new Intl.NumberFormat('en-US').format(value);
 };
 

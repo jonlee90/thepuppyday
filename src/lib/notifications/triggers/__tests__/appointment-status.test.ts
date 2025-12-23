@@ -39,12 +39,12 @@ describe('triggerAppointmentStatus', () => {
     status: 'checked_in',
   };
 
-  const validReadyData: AppointmentStatusTriggerData = {
+  const validCompletedData: AppointmentStatusTriggerData = {
     appointmentId: 'appt-123',
     customerId: 'customer-123',
     customerPhone: '+16572522903',
     petName: 'Max',
-    status: 'ready',
+    status: 'completed',
   };
 
   describe('Status Filtering', () => {
@@ -75,14 +75,14 @@ describe('triggerAppointmentStatus', () => {
       );
     });
 
-    it('should send SMS for ready status', async () => {
+    it('should send SMS for completed status (ready for pickup)', async () => {
       mockSendNotification.mockResolvedValueOnce({
         success: true,
         messageId: 'sms-123',
         logId: 'log-123',
       });
 
-      const result = await triggerAppointmentStatus(mockSupabase, validReadyData);
+      const result = await triggerAppointmentStatus(mockSupabase, validCompletedData);
 
       expect(result.success).toBe(true);
       expect(result.smsSent).toBe(true);
@@ -95,19 +95,6 @@ describe('triggerAppointmentStatus', () => {
           channel: 'sms',
         })
       );
-    });
-
-    it('should skip SMS for completed status (without manual override)', async () => {
-      const completedData = { ...validCheckedInData, status: 'completed' as any };
-
-      const result = await triggerAppointmentStatus(mockSupabase, completedData);
-
-      expect(result.success).toBe(true);
-      expect(result.smsSent).toBe(false);
-      expect(result.skipped).toBe(true);
-      expect(result.skipReason).toContain('does not trigger automatic notifications');
-
-      expect(mockSendNotification).not.toHaveBeenCalled();
     });
 
     it('should skip SMS for pending status (without manual override)', async () => {
@@ -239,12 +226,8 @@ describe('shouldSendStatusNotification', () => {
     expect(shouldSendStatusNotification('checked_in')).toBe(true);
   });
 
-  it('should return true for ready status', () => {
-    expect(shouldSendStatusNotification('ready')).toBe(true);
-  });
-
-  it('should return false for completed status', () => {
-    expect(shouldSendStatusNotification('completed')).toBe(false);
+  it('should return true for completed status (ready for pickup)', () => {
+    expect(shouldSendStatusNotification('completed')).toBe(true);
   });
 
   it('should return false for pending status', () => {

@@ -163,7 +163,8 @@ export function GroomerLeaderboard({ dateRange }: GroomerLeaderboardProps) {
     }
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | undefined | null) => {
+    if (!name) return '??';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -310,7 +311,7 @@ export function GroomerLeaderboard({ dateRange }: GroomerLeaderboardProps) {
                   {/* Name and Score */}
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-[#434E54] truncate">
-                      {groomer.groomer_name}
+                      {groomer.groomer_name || 'Unknown Groomer'}
                     </h4>
                     <p className="text-sm text-[#9CA3AF] truncate">
                       {groomer.groomer_email}
@@ -388,7 +389,7 @@ export function GroomerLeaderboard({ dateRange }: GroomerLeaderboardProps) {
                 key={groomer.groomer_id}
                 className="flex items-center justify-between text-sm"
               >
-                <span className="text-[#6B7280]">{groomer.groomer_name}</span>
+                <span className="text-[#6B7280]">{groomer.groomer_name || 'Unknown'}</span>
                 <span className="text-[#FFB347] font-medium">
                   Rank #{groomer.rank} - {getScoreDisplay(groomer)}
                 </span>
