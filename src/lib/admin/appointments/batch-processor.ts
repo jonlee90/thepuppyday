@@ -164,26 +164,21 @@ export class BatchProcessor {
       customerId = existingCustomer.id;
       customerStatus = existingCustomer.is_active ? 'active' : 'inactive';
     } else {
-      // Create inactive profile
-      const { data: newCustomer, error: customerError } = await this.supabase
-        .from('users')
-        .insert({
-          email: row.customer_email.trim().toLowerCase(),
-          phone: row.customer_phone.trim(),
-          first_name,
-          last_name,
-          role: 'customer',
-          is_active: false,
-          created_by_admin: true,
-        })
-        .select('id')
-        .single();
+      // Create inactive profile using database function
+      // This generates a UUID and creates the profile without an auth account
+      const { data: userId, error: customerError } = await this.supabase
+        .rpc('create_inactive_user_profile', {
+          p_email: row.customer_email.trim(),
+          p_first_name: first_name,
+          p_last_name: last_name,
+          p_phone: row.customer_phone.trim() || null,
+        });
 
-      if (customerError || !newCustomer) {
-        throw new Error(`Failed to create customer: ${customerError?.message}`);
+      if (customerError || !userId) {
+        throw new Error(`Failed to create customer: ${customerError?.message || 'Unknown error'}`);
       }
 
-      customerId = newCustomer.id;
+      customerId = userId;
       customerCreated = true;
       customerStatus = 'inactive';
     }
@@ -210,7 +205,7 @@ export class BatchProcessor {
       const { data: breedData } = await this.supabase
         .from('breeds')
         .select('id')
-        .ilike('name', row.pet_breed.trim())
+        .ilike('name', (row.pet_breed || '').trim())
         .maybeSingle();
 
       const { data: newPet, error: petError } = await this.supabase
@@ -219,7 +214,7 @@ export class BatchProcessor {
           owner_id: customerId,
           name: row.pet_name.trim(),
           breed_id: breedData?.id || null,
-          breed_custom: breedData ? null : row.pet_breed.trim(),
+          breed_custom: breedData ? null : (row.pet_breed || '').trim(),
           size: petSize,
           weight: !isNaN(weight!) ? weight : null,
         })
@@ -263,7 +258,7 @@ export class BatchProcessor {
           .maybeSingle();
 
         if (addon) {
-          addons.push(addon);
+          addons.push(addon as Addon);
         }
       }
     }

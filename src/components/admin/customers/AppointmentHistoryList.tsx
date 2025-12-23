@@ -47,7 +47,6 @@ const STATUS_COLORS: Record<AppointmentStatus, { bg: string; text: string; borde
   confirmed: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
   checked_in: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
   in_progress: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
-  ready: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200' },
   completed: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
   cancelled: { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' },
   no_show: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },

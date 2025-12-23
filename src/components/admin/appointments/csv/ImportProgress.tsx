@@ -69,7 +69,9 @@ export function ImportProgress({
           throw new Error(errorData.error || 'Import failed');
         }
 
-        const results: CSVImportResult = await response.json();
+        const responseData = await response.json();
+        // API returns { success: true, result: {...} }, extract the result
+        const results: CSVImportResult = responseData.result || responseData;
 
         // Update final stats
         setStats({

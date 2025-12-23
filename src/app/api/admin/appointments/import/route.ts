@@ -6,7 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import {
   CSVProcessor,
@@ -23,8 +24,13 @@ export const maxDuration = 300; // 5 minutes for large imports
  */
 export async function POST(request: NextRequest) {
   try {
+    // Use regular client for authentication check
     const supabase = await createServerSupabaseClient();
     const { user: adminUser } = await requireAdmin(supabase);
+
+    // Use service role client for data operations (bypasses RLS)
+    // This is needed because admin creates pets/customers for other users
+    const serviceClient = createServiceRoleClient() as SupabaseClient;
 
     // Parse multipart/form-data
     const formData = await request.formData();
@@ -44,11 +50,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize processors
+    // Initialize processors with service role client to bypass RLS
     const csvProcessor = new CSVProcessor();
-    const rowValidator = new RowValidator(supabase);
-    const duplicateDetector = new DuplicateDetector(supabase);
-    const batchProcessor = new BatchProcessor(supabase);
+    const rowValidator = new RowValidator(serviceClient);
+    const duplicateDetector = new DuplicateDetector(serviceClient);
+    const batchProcessor = new BatchProcessor(serviceClient);
 
     // 1. Parse CSV file
     let parseResult;

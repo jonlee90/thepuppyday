@@ -41,3 +41,4 @@ yarn-error.log*
 next-env.d.ts
 lighthouse-*.json
 analyze-lighthouse.js
+nul

@@ -47,7 +47,6 @@ export type PartialNotificationPreferences = Partial<NotificationPreferences>;
 export const TRANSACTIONAL_NOTIFICATION_TYPES = [
   'booking_confirmation',
   'appointment_status_checkin',
-  'appointment_status_ready',
   'report_card_completion',
   'waitlist_notification',
 ] as const;
