@@ -304,15 +304,27 @@ List appointments with filters and pagination.
 ```
 
 #### `POST /api/admin/appointments`
-Create appointment manually (admin-created).
+Create appointment manually (admin-created or walk-in).
 
 **Body**: Same as public appointment creation, plus:
 ```json
 {
   "internal_notes": "Admin-only notes",
-  "bypass_availability": true
+  "bypass_availability": true,
+  "source": "manual_admin" | "walk_in", // Creation method
+  "payment_status": "pending" | "paid" | "partially_paid",
+  "payment_details": {
+    "amount_paid": 50.00,
+    "payment_method": "cash" | "card" | "check" | "venmo" | "zelle" | "other"
+  }
 }
 ```
+
+**Walk-In Appointments**:
+- Set `source: 'walk_in'` to mark as walk-in customer
+- `scheduled_at` defaults to current time rounded to next slot
+- Email is optional (phone required for SMS contact)
+- Can create customer and pet inline during appointment creation
 
 #### `POST /api/admin/appointments/import`
 Bulk import appointments from CSV.
@@ -354,6 +366,271 @@ Fetch notification delivery log.
 - `type`: Notification type
 - `dateFrom`, `dateTo`: Date range
 - `customer_id`: Filter by customer
+
+---
+
+### Admin Settings Endpoints ✅
+
+#### Site Content Management
+
+**`GET /api/admin/settings/site-content`**
+Retrieve homepage and SEO content settings.
+
+**`PUT /api/admin/settings/site-content`**
+Update site content.
+
+**Body**:
+```json
+{
+  "hero_headline": "Professional Dog Grooming",
+  "hero_subheadline": "Making your pup look their best",
+  "hero_cta_text": "Book Now",
+  "hero_image_url": "https://...",
+  "seo_title": "Puppy Day - Dog Grooming La Mirada",
+  "seo_description": "Professional dog grooming services...",
+  "seo_keywords": "dog grooming, pet grooming, la mirada",
+  "business_name": "Puppy Day",
+  "business_address": "14936 Leffingwell Rd, La Mirada, CA 90638",
+  "business_phone": "(657) 252-2903",
+  "business_email": "puppyday14936@gmail.com"
+}
+```
+
+**`POST /api/admin/settings/site-content/upload`**
+Upload hero background images.
+
+---
+
+#### Promo Banner Management
+
+**`GET /api/admin/settings/banners`**
+List all promotional banners.
+
+**`POST /api/admin/settings/banners`**
+Create new banner.
+
+**Body**:
+```json
+{
+  "title": "Holiday Special",
+  "description": "20% off all services",
+  "image_url": "https://...",
+  "cta_text": "Book Now",
+  "cta_link": "/book",
+  "start_date": "2025-12-01",
+  "end_date": "2025-12-31",
+  "is_active": true
+}
+```
+
+**`PUT /api/admin/settings/banners/[id]`**
+Update banner.
+
+**`DELETE /api/admin/settings/banners/[id]`**
+Delete banner.
+
+**`PUT /api/admin/settings/banners/reorder`**
+Reorder banners via drag-and-drop.
+
+**Body**:
+```json
+{
+  "banner_ids": ["uuid1", "uuid2", "uuid3"]
+}
+```
+
+**`POST /api/admin/settings/banners/upload`**
+Upload banner images.
+
+**`GET /api/admin/settings/banners/[id]/analytics`**
+Get click analytics for specific banner.
+
+---
+
+#### Booking Settings
+
+**`GET /api/admin/settings/booking`**
+Get booking configuration.
+
+**`PUT /api/admin/settings/booking`**
+Update booking settings.
+
+**Body**:
+```json
+{
+  "advance_booking_days": 30,
+  "cancellation_hours": 24,
+  "buffer_time_minutes": 15,
+  "max_concurrent_appointments": 3,
+  "default_service_duration": 60
+}
+```
+
+**`GET /api/admin/settings/booking/blocked-dates`**
+List blocked dates (holidays, closures).
+
+**`POST /api/admin/settings/booking/blocked-dates`**
+Add blocked date.
+
+**Body**:
+```json
+{
+  "date": "2025-12-25",
+  "reason": "Christmas",
+  "is_recurring": false,
+  "recurrence_pattern": "yearly" | "monthly" | "weekly"
+}
+```
+
+**`DELETE /api/admin/settings/booking/blocked-dates/[id]`**
+Remove blocked date.
+
+---
+
+#### Business Hours
+
+**`GET /api/admin/settings/business-hours`**
+Get operating hours for all days.
+
+**`PUT /api/admin/settings/business-hours`**
+Update business hours.
+
+**Body**:
+```json
+{
+  "monday": { "open": "09:00", "close": "17:00", "is_closed": false },
+  "tuesday": { "open": "09:00", "close": "17:00", "is_closed": false },
+  "sunday": { "is_closed": true }
+}
+```
+
+---
+
+#### Loyalty Program Settings
+
+**`GET /api/admin/settings/loyalty`**
+Get loyalty program configuration.
+
+**`PUT /api/admin/settings/loyalty`**
+Update loyalty settings.
+
+**`GET /api/admin/settings/loyalty/earning-rules`**
+Get points earning rules.
+
+**`PUT /api/admin/settings/loyalty/earning-rules`**
+Update earning rules.
+
+**Body**:
+```json
+{
+  "points_per_dollar": 10,
+  "birthday_bonus": 500,
+  "eligible_services": ["uuid1", "uuid2"]
+}
+```
+
+**`GET /api/admin/settings/loyalty/redemption-rules`**
+Get redemption rules.
+
+**`PUT /api/admin/settings/loyalty/redemption-rules`**
+Update redemption rules.
+
+**Body**:
+```json
+{
+  "min_points_redemption": 100,
+  "point_value_dollars": 0.01,
+  "max_discount_percentage": 50
+}
+```
+
+**`GET /api/admin/settings/loyalty/referral`**
+Get referral program settings.
+
+**`PUT /api/admin/settings/loyalty/referral`**
+Update referral program.
+
+**Body**:
+```json
+{
+  "referrer_reward": 500,
+  "referred_discount": 10.00,
+  "min_purchase_for_reward": 50.00
+}
+```
+
+---
+
+#### Staff Management
+
+**`GET /api/admin/settings/staff`**
+List all staff members.
+
+**`POST /api/admin/settings/staff`**
+Create new staff member.
+
+**Body**:
+```json
+{
+  "first_name": "Jane",
+  "last_name": "Doe",
+  "email": "jane@example.com",
+  "phone": "(555) 123-4567",
+  "role": "groomer",
+  "hire_date": "2025-01-01",
+  "is_active": true
+}
+```
+
+**`GET /api/admin/settings/staff/[id]`**
+Get staff details.
+
+**`PUT /api/admin/settings/staff/[id]`**
+Update staff member.
+
+**`DELETE /api/admin/settings/staff/[id]`**
+Remove staff member.
+
+**`GET /api/admin/settings/staff/[id]/commission`**
+Get commission settings for staff.
+
+**`PUT /api/admin/settings/staff/[id]/commission`**
+Update commission settings.
+
+**Body**:
+```json
+{
+  "commission_type": "percentage",
+  "commission_rate": 40,
+  "applies_to_services": ["uuid1", "uuid2"]
+}
+```
+
+**`GET /api/admin/settings/staff/earnings`**
+Get earnings report.
+
+**Query Params**:
+- `staff_id`: Filter by staff member
+- `start_date`: Report start date
+- `end_date`: Report end date
+
+**Response**:
+```json
+{
+  "staff_id": "uuid",
+  "total_services": 45,
+  "total_revenue": 2500.00,
+  "total_commission": 1000.00,
+  "breakdown_by_service": [
+    {
+      "service_name": "Basic Grooming",
+      "count": 30,
+      "revenue": 1800.00,
+      "commission": 720.00
+    }
+  ]
+}
+```
 
 ---
 
@@ -578,4 +855,4 @@ describe('POST /api/appointments', () => {
 
 ---
 
-**Last Updated**: 2025-12-20
+**Last Updated**: 2025-12-22

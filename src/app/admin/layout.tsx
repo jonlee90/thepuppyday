@@ -6,6 +6,7 @@
 
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
+import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
 import { Toaster } from '@/components/ui/toaster';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getAuthenticatedAdmin } from '@/lib/admin/auth';
@@ -39,22 +40,24 @@ export default async function AdminLayout({
   const { user } = result;
 
   return (
-    <div className="min-h-screen bg-[#F8EEE5]">
-      {/* Desktop Sidebar - Pass user as prop */}
-      <AdminSidebar user={user} />
+    <AdminLayoutClient>
+      <div className="min-h-screen bg-[#F8EEE5]">
+        {/* Desktop Sidebar - Pass user as prop */}
+        <AdminSidebar user={user} />
 
-      {/* Mobile Navigation - Pass user as prop */}
-      <AdminMobileNav user={user} />
+        {/* Mobile Navigation - Pass user as prop */}
+        <AdminMobileNav user={user} />
 
-      {/* Main content area - adjusts for sidebar width */}
-      <main className="lg:pl-64 pt-16 lg:pt-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-          {children}
-        </div>
-      </main>
+        {/* Main content area - adjusts for sidebar width */}
+        <main className="lg:pl-64 pt-16 lg:pt-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+            {children}
+          </div>
+        </main>
 
-      {/* Toast notifications */}
-      <Toaster />
-    </div>
+        {/* Toast notifications */}
+        <Toaster />
+      </div>
+    </AdminLayoutClient>
   );
 }

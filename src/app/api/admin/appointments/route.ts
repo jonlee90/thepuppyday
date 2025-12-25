@@ -238,14 +238,14 @@ const CreateAppointmentSchema = z.object({
       .transform((val) => (val && val !== '' ? val : undefined)),
     breed_name: z.string().optional(),
     size: z.enum(['small', 'medium', 'large', 'xlarge', 'x-large']),
-    weight: z.number().min(0).max(300).optional(),
+    weight: z.number().min(0).max(300).optional().nullable().transform((val) => val ?? undefined),
     isNew: z.boolean().optional(), // Track if this is a new pet from walk-in
   }),
   service_id: z.string().uuid(),
   addon_ids: z.array(z.string().uuid()).default([]),
   appointment_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   appointment_time: z.string().regex(/^\d{2}:\d{2}$/),
-  notes: z.string().max(1000).optional(),
+  notes: z.string().max(1000).optional().nullable().transform((val) => val ?? undefined),
   payment_status: z.enum(['pending', 'paid', 'partially_paid']).default('pending'),
   payment_details: z
     .object({
@@ -273,20 +273,27 @@ export async function POST(request: NextRequest) {
     console.log('[Create Appointment] Received body:', JSON.stringify(body, null, 2));
 
     const validationResult = CreateAppointmentSchema.safeParse(body);
-    console.log('[Create Appointment] Validation result:', validationResult.success, validationResult.error?.errors);
 
     if (!validationResult.success) {
+      // Log full error for debugging
+      console.log('[Create Appointment] Validation failed:', JSON.stringify(validationResult.error?.format?.() || validationResult.error, null, 2));
+
+      // Safely extract validation errors
+      const validationErrors = validationResult.error?.errors?.map((err) => ({
+        field: err.path.join('.'),
+        message: err.message,
+      })) || [{ field: 'unknown', message: 'Validation failed' }];
+
       return NextResponse.json(
         {
           error: 'Validation failed',
-          validation_errors: validationResult.error.errors.map((err) => ({
-            field: err.path.join('.'),
-            message: err.message,
-          })),
+          validation_errors: validationErrors,
         },
         { status: 400 }
       );
     }
+
+    console.log('[Create Appointment] Validation passed');
 
     const data = validationResult.data;
 
@@ -530,6 +537,38 @@ export async function POST(request: NextRequest) {
     // 4. Create appointment
     const scheduledAt = new Date(`${data.appointment_date}T${data.appointment_time}:00`);
 
+    // Generate unique booking reference
+    const { randomBytes } = await import('crypto');
+    const generateBookingReference = (): string => {
+      const year = new Date().getFullYear();
+      const randomValue = randomBytes(3).readUIntBE(0, 3) % 1000000;
+      const random = randomValue.toString().padStart(6, '0');
+      return `APT-${year}-${random}`;
+    };
+
+    let bookingReference = generateBookingReference();
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    // Ensure uniqueness
+    while (attempts < maxAttempts) {
+      const { data: existing } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('booking_reference', bookingReference)
+        .maybeSingle();
+
+      if (!existing) break;
+
+      bookingReference = generateBookingReference();
+      attempts++;
+    }
+
+    if (attempts >= maxAttempts) {
+      const timestamp = Date.now().toString().slice(-6);
+      bookingReference = `APT-${new Date().getFullYear()}-${timestamp}`;
+    }
+
     const { data: appointment, error: appointmentError } = await supabase
       .from('appointments')
       .insert({
@@ -538,12 +577,13 @@ export async function POST(request: NextRequest) {
         service_id: data.service_id,
         scheduled_at: scheduledAt.toISOString(),
         duration_minutes: service.duration_minutes,
-        status: 'pending',
+        status: data.source === 'walk_in' ? 'checked_in' : 'pending',
         payment_status: data.payment_status,
         total_price: priceBreakdown.total,
         notes: data.notes || null,
         creation_method: 'manual_admin',
         created_by_admin_id: adminUser.id,
+        booking_reference: bookingReference,
       })
       .select('*')
       .single();
@@ -619,6 +659,7 @@ export async function POST(request: NextRequest) {
     const response: CreateAppointmentResponse = {
       success: true,
       appointment_id: appointment.id,
+      booking_reference: bookingReference,
       customer_created: customerCreated,
       customer_status: customerStatus,
       pet_created: petCreated,

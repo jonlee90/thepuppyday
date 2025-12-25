@@ -17,6 +17,9 @@ export interface BookingState {
   // Current step (0-5)
   currentStep: number;
 
+  // Admin/Walk-in: Selected customer
+  selectedCustomerId: string | null;
+
   // Step 1: Service
   selectedServiceId: string | null;
   selectedService: ServiceWithPrices | null;
@@ -78,6 +81,9 @@ export interface BookingActions {
   // Step 5: Guest info
   setGuestInfo: (info: GuestInfo) => void;
 
+  // Admin/Walk-in: Customer selection
+  setSelectedCustomerId: (customerId: string | null) => void;
+
   // Booking result
   setBookingResult: (id: string, reference: string) => void;
 
@@ -95,6 +101,7 @@ const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 const initialState: BookingState = {
   currentStep: 0,
+  selectedCustomerId: null,
   selectedServiceId: null,
   selectedService: null,
   selectedPetId: null,
@@ -258,6 +265,18 @@ export const useBookingStore = create<BookingStore>()(
       setGuestInfo: (info: GuestInfo) => {
         set({
           guestInfo: info,
+          lastActivityTimestamp: Date.now(),
+        });
+      },
+
+      // Admin/Walk-in: Customer selection
+      setSelectedCustomerId: (customerId: string | null) => {
+        set({
+          selectedCustomerId: customerId,
+          // Clear pet selection when customer changes
+          selectedPetId: null,
+          selectedPet: null,
+          newPetData: null,
           lastActivityTimestamp: Date.now(),
         });
       },

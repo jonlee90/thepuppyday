@@ -1,8 +1,8 @@
 # The Puppy Day - Master Architecture Documentation
 
-> **Version**: 1.0
-> **Last Updated**: 2025-12-20
-> **Status**: Production-Ready (Phases 1-6, 8-9 Complete)
+> **Version**: 1.1
+> **Last Updated**: 2025-12-22
+> **Status**: Production-Ready (Phases 1-6, 8-9 Complete | Phase 7 Pending)
 
 ## Table of Contents
 
@@ -52,7 +52,7 @@
 | 3 | Booking System | ✅ Completed | Multi-step booking wizard, availability, waitlist, guest users |
 | 4 | Customer Portal | ✅ Completed | Dashboard, appointments, pets, profile, report cards |
 | 5 | Admin Panel Core | ✅ Completed | Dashboard, appointments, customers, services, gallery |
-| 6 | Admin Panel Advanced | ✅ Completed | Analytics, marketing campaigns, admin appointment management with CSV import |
+| 6 | Admin Panel Advanced | ✅ Completed | Analytics, marketing campaigns, admin appointment management with CSV import and walk-in appointments |
 | 7 | Payments & Memberships | 🚧 Pending | Stripe integration, memberships, loyalty program |
 | 8 | Notifications | ✅ Completed | Templates, triggers, preferences, email/SMS providers, unsubscribe system |
 | 9 | Admin Settings | ✅ Completed | Business settings, staff management, site content, banners |
@@ -425,9 +425,18 @@ C:\Users\Jon\Documents\claude projects\thepuppyday\
 │   │   │   │   │   ├── templates/page.tsx
 │   │   │   │   │   ├── log/page.tsx
 │   │   │   │   │   └── settings/page.tsx
-│   │   │   │   └── settings/page.tsx
-│   │   │   └── settings/
-│   │   │       └── staff/page.tsx
+│   │   │   │   └── settings/          # Admin settings (Phase 9)
+│   │   │   │       ├── page.tsx       # Settings dashboard
+│   │   │   │       ├── banners/page.tsx # Promo banner management
+│   │   │   │       ├── booking/
+│   │   │   │       │   ├── page.tsx   # Booking configuration
+│   │   │   │       │   └── blocked-dates/page.tsx # Blocked dates
+│   │   │   │       ├── business-hours/page.tsx # Operating hours
+│   │   │   │       ├── loyalty/
+│   │   │   │       │   ├── page.tsx   # Loyalty program settings
+│   │   │   │       │   └── punch-card-demo/page.tsx
+│   │   │   │       ├── site-content/page.tsx # Homepage & SEO
+│   │   │   │       └── staff/page.tsx # Staff management
 │   │   ├── (public)/                # Public pages (no auth required)
 │   │   │   └── report-cards/
 │   │   │       └── [uuid]/page.tsx  # Public report card view
@@ -442,12 +451,41 @@ C:\Users\Jon\Documents\claude projects\thepuppyday\
 │   │   │   │   ├── services/route.ts
 │   │   │   │   ├── addons/route.ts
 │   │   │   │   ├── gallery/route.ts
-│   │   │   │   ├── analytics/
+│   │   │   │   ├── analytics/           # Analytics API routes
+│   │   │   │   │   ├── kpis/route.ts
+│   │   │   │   │   ├── charts/
+│   │   │   │   │   ├── groomers/route.ts
+│   │   │   │   │   ├── marketing/route.ts
+│   │   │   │   │   ├── report-cards/route.ts
+│   │   │   │   │   └── waitlist/route.ts
 │   │   │   │   ├── notifications/
 │   │   │   │   │   ├── templates/route.ts
 │   │   │   │   │   ├── log/route.ts
 │   │   │   │   │   └── settings/route.ts
-│   │   │   │   └── settings/route.ts
+│   │   │   │   └── settings/            # Admin settings API
+│   │   │   │       ├── site-content/
+│   │   │   │       │   ├── route.ts
+│   │   │   │       │   └── upload/route.ts
+│   │   │   │       ├── banners/
+│   │   │   │       │   ├── route.ts
+│   │   │   │       │   ├── [id]/route.ts
+│   │   │   │       │   ├── reorder/route.ts
+│   │   │   │       │   └── upload/route.ts
+│   │   │   │       ├── booking/
+│   │   │   │       │   ├── route.ts
+│   │   │   │       │   └── blocked-dates/route.ts
+│   │   │   │       ├── business-hours/route.ts
+│   │   │   │       ├── loyalty/
+│   │   │   │       │   ├── route.ts
+│   │   │   │       │   ├── earning-rules/route.ts
+│   │   │   │       │   ├── redemption-rules/route.ts
+│   │   │   │       │   └── referral/route.ts
+│   │   │   │       ├── staff/
+│   │   │   │       │   ├── route.ts
+│   │   │   │       │   ├── [id]/route.ts
+│   │   │   │       │   └── earnings/route.ts
+│   │   │   │       └── templates/
+│   │   │   │           └── reset/route.ts
 │   │   │   ├── customer/            # Customer API endpoints
 │   │   │   │   └── preferences/
 │   │   │   │       └── notifications/route.ts
@@ -772,7 +810,7 @@ interface ServicePrice {
 ```
 
 **Example Pricing**:
-- Basic Grooming: Small ($40), Medium ($55), Large ($70), X-Large ($85)
+- Basic Grooming: Small ($40), Medium ($55), Large ($65), X-Large ($85)
 - Premium Grooming: Small ($70), Medium ($95), Large ($125), X-Large ($150)
 
 #### 6. `addons` Table

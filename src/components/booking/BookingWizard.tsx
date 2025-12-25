@@ -1,5 +1,6 @@
 /**
  * Main booking wizard orchestrator
+ * Supports multiple modes with different step orders
  */
 
 'use client';
@@ -15,11 +16,15 @@ import { DateTimeStep } from './steps/DateTimeStep';
 import { AddonsStep } from './steps/AddonsStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { ConfirmationStep } from './steps/ConfirmationStep';
+import { CustomerStep } from './steps/CustomerStep';
+import { WalkinReviewStep } from './steps/WalkinReviewStep';
 import Link from 'next/link';
+import type { BookingModalMode } from '@/hooks/useBookingModal';
 
 interface BookingWizardProps {
   preSelectedServiceId?: string;
   embedded?: boolean; // Hide header/progress when embedded
+  mode?: BookingModalMode; // Modal mode affects step order
 }
 
 const stepVariants = {
@@ -37,7 +42,7 @@ const stepVariants = {
   }),
 };
 
-export function BookingWizard({ preSelectedServiceId, embedded = false }: BookingWizardProps) {
+export function BookingWizard({ preSelectedServiceId, embedded = false, mode = 'customer' }: BookingWizardProps) {
   const {
     currentStep,
     setStep,
@@ -48,6 +53,7 @@ export function BookingWizard({ preSelectedServiceId, embedded = false }: Bookin
     selectedAddons,
     servicePrice,
     totalPrice,
+    selectedCustomerId,
   } = useBookingStore();
 
   // Check session expiry on mount
@@ -66,29 +72,92 @@ export function BookingWizard({ preSelectedServiceId, embedded = false }: Bookin
     }
   };
 
+  /**
+   * Render step based on mode
+   * - customer mode: Service → DateTime → Customer → Pet → Addons → Review → Confirmation (7 steps)
+   * - admin mode: Service → DateTime → Customer → Pet → Addons → Review → Confirmation (7 steps)
+   * - walkin mode: Service → Customer → Pet → Review (combined addons+review) → Confirmation (5 steps, no DateTime)
+   */
   const renderStep = () => {
+    // Walk-in mode: Service → Customer → Pet → Review (combined addons+review) → Confirmation
+    if (mode === 'walkin') {
+      switch (currentStep) {
+        case 0:
+          return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
+        case 1:
+          return <CustomerStep />;
+        case 2:
+          return <PetStep customerId={selectedCustomerId} mode="walkin" />;
+        case 3:
+          return <WalkinReviewStep customerId={selectedCustomerId} />;
+        case 4:
+          return <ConfirmationStep />;
+        default:
+          return <ServiceStep />;
+      }
+    }
+
+    // Admin mode: Same order as customer mode
+    // Service → DateTime → Customer → Pet → Addons → Review → Confirmation
+    if (mode === 'admin') {
+      switch (currentStep) {
+        case 0:
+          return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
+        case 1:
+          return <DateTimeStep />;
+        case 2:
+          return <CustomerStep />;
+        case 3:
+          return <PetStep customerId={selectedCustomerId} mode="admin" />;
+        case 4:
+          return <AddonsStep />;
+        case 5:
+          return <ReviewStep />;
+        case 6:
+          return <ConfirmationStep />;
+        default:
+          return <ServiceStep />;
+      }
+    }
+
+    // Customer mode: Service → DateTime → Customer → Pet → Addons → Review → Confirmation
     switch (currentStep) {
       case 0:
         return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
       case 1:
-        return <PetStep />;
-      case 2:
         return <DateTimeStep />;
+      case 2:
+        return <CustomerStep />;
       case 3:
-        return <AddonsStep />;
+        return <PetStep customerId={selectedCustomerId} mode="customer" />;
       case 4:
-        return <ReviewStep />;
+        return <AddonsStep />;
       case 5:
+        return <ReviewStep />;
+      case 6:
         return <ConfirmationStep />;
       default:
         return <ServiceStep />;
     }
   };
 
+  // Get confirmation step index based on mode
+  // customer: 7 steps (0-6), confirmation is step 6
+  // admin: 7 steps (0-6), confirmation is step 6
+  // walkin: 5 steps (0-4), confirmation is step 4
+  const confirmationStep = mode === 'walkin' ? 4 : 6;
+
   // Don't show header/progress on confirmation step
-  const showProgress = currentStep < 5;
-  // Only show price summary on Addons (step 3) and Review (step 4)
-  const showPriceSummary = currentStep === 3 || currentStep === 4;
+  const showProgress = currentStep < confirmationStep;
+
+  // Only show price summary on Addons and Review steps
+  // walkin: Review (combined addons+review) is step 3
+  // admin: Addons is step 4, Review is step 5
+  // customer: Addons is step 4, Review is step 5
+  const showPriceSummary =
+    (mode === 'walkin' && currentStep === 3) ||
+    (mode === 'admin' && (currentStep === 4 || currentStep === 5)) ||
+    (mode === 'customer' && (currentStep === 4 || currentStep === 5));
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-[#EAE0D5]"}>
@@ -130,7 +199,7 @@ export function BookingWizard({ preSelectedServiceId, embedded = false }: Bookin
       )}
 
       {/* Main content */}
-      <div className={embedded ? "px-4 sm:px-6 py-6" : "container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 max-w-7xl"}>
+      <div className={embedded ? "px-4 sm:px-6 py-6 pt-0" : "container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 max-w-7xl"}>
         <div className={showPriceSummary ? 'md:grid md:grid-cols-3 md:gap-6 lg:gap-8' : ''}>
           {/* Step content */}
           <div className={showPriceSummary ? 'md:col-span-2' : ''}>

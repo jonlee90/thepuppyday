@@ -3,13 +3,13 @@
 /**
  * Hero section for marketing homepage - Clean & Elegant Professional
  * Task 0168: Updated to use dynamic hero content from database
+ * Updated: Integrated with booking modal for CTA
  */
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Phone, Calendar, Star } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { HeroBookingButton } from '@/components/booking';
 import PawDecoration from './paw-decoration';
 import type { HeroContent } from '@/types/settings';
 
@@ -56,27 +56,39 @@ export function HeroSection({ heroContent }: HeroSectionProps) {
 
                 {/* CTA Buttons - Dynamic from database */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mt-8">
-                  {heroContent.cta_buttons.map((button, index) => (
-                    <Link
-                      key={index}
-                      href={button.url}
-                      className={`
-                        inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg
-                        transition-all duration-200 hover:-translate-y-1 hover:shadow-xl
-                        ${
-                          button.style === 'primary'
-                            ? 'text-white bg-[#434E54] hover:bg-[#363F44]'
-                            : 'text-[#434E54] bg-white/90 backdrop-blur-sm hover:bg-white border border-gray-200'
-                        }
-                      `}
-                    >
-                      {index === 0 && <Calendar className="w-5 h-5" strokeWidth={2} />}
-                      {index === 1 && button.text.toLowerCase().includes('call') && (
-                        <Phone className="w-5 h-5" strokeWidth={2} />
-                      )}
-                      {button.text}
-                    </Link>
-                  ))}
+                  {heroContent.cta_buttons.map((button, index) => {
+                    // Use booking modal for primary booking CTA
+                    const isBookingButton = button.style === 'primary' &&
+                      (button.url === '#book' || button.text.toLowerCase().includes('book'));
+
+                    if (isBookingButton) {
+                      return (
+                        <HeroBookingButton key={index} />
+                      );
+                    }
+
+                    // Regular link for other CTAs
+                    return (
+                      <Link
+                        key={index}
+                        href={button.url}
+                        className={`
+                          inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg
+                          transition-all duration-200 hover:-translate-y-1 hover:shadow-xl
+                          ${
+                            button.style === 'primary'
+                              ? 'text-white bg-[#434E54] hover:bg-[#363F44]'
+                              : 'text-[#434E54] bg-white/90 backdrop-blur-sm hover:bg-white border border-gray-200'
+                          }
+                        `}
+                      >
+                        {button.text.toLowerCase().includes('call') && (
+                          <Phone className="w-5 h-5" strokeWidth={2} />
+                        )}
+                        {button.text}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </motion.div>

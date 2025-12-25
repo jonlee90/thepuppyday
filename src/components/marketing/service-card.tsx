@@ -93,6 +93,7 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false }: Servic
   let serviceName = '';
   let serviceDescription = '';
   let serviceId = '';
+  let dynamicPriceRanges: Array<{ size: string; weight: string; price: number }> | undefined;
 
   if (isAddOnsInfoCard) {
     serviceType = 'addons';
@@ -109,10 +110,34 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false }: Servic
       serviceType = 'addons';
     }
     serviceName = service.name;
+
+    // Convert database prices to display format
+    if (service.prices && service.prices.length > 0) {
+      const sizeLabels: Record<string, { label: string; weight: string }> = {
+        small: { label: 'Small', weight: '0-18 lbs' },
+        medium: { label: 'Medium', weight: '19-35 lbs' },
+        large: { label: 'Large', weight: '36-65 lbs' },
+        xlarge: { label: 'X-Large', weight: '66+ lbs' },
+      };
+
+      dynamicPriceRanges = service.prices
+        .sort((a, b) => {
+          const sizeOrder = ['small', 'medium', 'large', 'xlarge'];
+          return sizeOrder.indexOf(a.size) - sizeOrder.indexOf(b.size);
+        })
+        .map((price) => ({
+          size: sizeLabels[price.size]?.label || price.size,
+          weight: sizeLabels[price.size]?.weight || '',
+          price: price.price,
+        }));
+    }
   }
 
   const data = SERVICE_DATA[serviceType];
   const Icon = data.icon;
+
+  // Use database prices if available, otherwise fall back to hardcoded data
+  const priceRanges = dynamicPriceRanges || data.priceRanges;
 
   return (
     <motion.div
@@ -159,13 +184,13 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false }: Servic
         {/* Details Section (Flexible, takes remaining space) */}
         <div className="flex-grow mb-6 pb-6 border-t border-gray-200 pt-6">
           {/* Size Breakdown for Basic/Premium */}
-          {'priceRanges' in data && data.priceRanges && (
+          {priceRanges && priceRanges.length > 0 && (
             <div className="space-y-3 mb-6">
               <h4 className="font-bold text-[#434E54] text-sm mb-4 flex items-center gap-2">
                 <Scissors className="w-4 h-4" />
                 <span>Pricing by Size</span>
               </h4>
-              {data.priceRanges.map((range, idx) => (
+              {priceRanges.map((range, idx) => (
                 <div
                   key={idx}
                   className="flex items-center justify-between bg-[#F8EEE5]/50 rounded-xl px-4 py-3"

@@ -59,8 +59,8 @@ class MockQueryBuilder<T> {
   }
 
   select(columns = '*'): this {
-    // Handle joins in select (e.g., "*, customer_loyalty!inner(customer_id)")
-    if (columns.includes('!inner') || columns.includes('!left')) {
+    // Handle joins in select (e.g., "*, customer_loyalty!inner(customer_id)" or "*, prices:service_prices(*)")
+    if (columns.includes('!inner') || columns.includes('!left') || columns.includes(':')) {
       // Store the full select string for join processing
       this.selectColumns = columns === '*' ? [] : [columns];
     } else {
@@ -169,16 +169,51 @@ class MockQueryBuilder<T> {
     try {
       let records = store.select<Record<string, unknown>>(this.table);
 
-      // Handle joins in select (e.g., "*, customer_loyalty!inner(customer_id)")
+      // Handle joins in select (e.g., "*, customer_loyalty!inner(customer_id)" or "*, prices:service_prices(*)")
       // For joins, we need to filter based on related table
       const hasJoin = this.selectColumns.length > 0 &&
-                      (this.selectColumns[0].includes('!inner') || this.selectColumns[0].includes('!left'));
+                      (this.selectColumns[0].includes('!inner') ||
+                       this.selectColumns[0].includes('!left') ||
+                       this.selectColumns[0].includes(':'));
 
       if (hasJoin) {
-        // Parse join syntax: "*, customer_loyalty!inner(customer_id)"
-        const joinMatch = this.selectColumns[0].match(/(\w+)!inner\((\w+)\)/);
-        if (joinMatch) {
-          const [, joinTable, joinColumn] = joinMatch;
+        const selectString = this.selectColumns[0];
+
+        // Parse foreign key join syntax: "*, prices:service_prices(*)"
+        const foreignKeyJoinRegex = /(\w+):(\w+)\(\*\)/g;
+        let match;
+        const joins: { alias: string; table: string }[] = [];
+
+        while ((match = foreignKeyJoinRegex.exec(selectString)) !== null) {
+          joins.push({ alias: match[1], table: match[2] });
+        }
+
+        // Apply foreign key joins
+        if (joins.length > 0) {
+          records = records.map((record) => {
+            const enrichedRecord = { ...record };
+
+            for (const join of joins) {
+              // Get the related table data
+              const relatedRecords = store.select<Record<string, unknown>>(join.table);
+
+              // Find matching records based on foreign key
+              // Convention: service_prices table has service_id pointing to services.id
+              const fkColumn = `${this.table.slice(0, -1)}_id`; // e.g., 'service_id' from 'services'
+              const matches = relatedRecords.filter(r => r[fkColumn] === record.id);
+
+              // Add to record using alias
+              enrichedRecord[join.alias] = matches;
+            }
+
+            return enrichedRecord;
+          });
+        }
+
+        // Parse inner join syntax: "*, customer_loyalty!inner(customer_id)"
+        const innerJoinMatch = selectString.match(/(\w+)!inner\((\w+)\)/);
+        if (innerJoinMatch) {
+          const [, joinTable, joinColumn] = innerJoinMatch;
           // Get the related table data
           const relatedRecords = store.select<Record<string, unknown>>(joinTable);
 

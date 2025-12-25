@@ -89,7 +89,11 @@ async function getMarketingData() {
   const [siteContent, servicesRes, bannersRes, beforeAfterRes, galleryRes, settingsRes] =
     await Promise.all([
       getSiteContent(),
-      (supabase as any).from('services').select('*').eq('is_active', true).order('display_order'),
+      (supabase as any)
+        .from('services')
+        .select('*, prices:service_prices(*)')
+        .eq('is_active', true)
+        .order('display_order'),
       (supabase as any).from('promo_banners').select('*').eq('is_active', true).order('display_order'),
       (supabase as any).from('before_after_pairs').select('*').order('display_order'),
       (supabase as any)

@@ -6,6 +6,7 @@
 import { Header } from '@/components/marketing/header';
 import { Footer } from '@/components/marketing/footer';
 import { AnnouncementBars } from '@/components/marketing/announcement-bars';
+import { BookingModalProvider } from '@/components/booking';
 import { getBusinessInfo } from '@/lib/site-content';
 
 export default async function MarketingLayout({
@@ -16,13 +17,13 @@ export default async function MarketingLayout({
   const businessInfo = await getBusinessInfo();
 
   return (
-    <>
+    <BookingModalProvider>
       <AnnouncementBars />
       <Header />
       <main className="min-h-screen">
         {children}
       </main>
       <Footer businessInfo={businessInfo} />
-    </>
+    </BookingModalProvider>
   );
 }

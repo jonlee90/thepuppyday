@@ -9,9 +9,7 @@ import { useState, useCallback } from 'react';
 import { DashboardStats } from '@/components/admin/dashboard/DashboardStats';
 import { TodayAppointments } from '@/components/admin/dashboard/TodayAppointments';
 import { ActivityFeed } from '@/components/admin/dashboard/ActivityFeed';
-import { QuickAccess } from '@/components/admin/dashboard/QuickAccess';
-import { WalkInButton } from '@/components/admin/dashboard/WalkInButton';
-import { WalkInModal } from '@/components/admin/appointments/WalkInModal';
+import { DashboardWalkInButton } from '@/components/admin/dashboard/DashboardWalkInButton';
 import { useDashboardRealtime } from '@/hooks/admin/use-dashboard-realtime';
 import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import type { Appointment, NotificationLog } from '@/types/database';
@@ -37,7 +35,6 @@ export function DashboardClient({
   const [stats, setStats] = useState<StatsData | null>(initialStats);
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [hasInitialErrors, setHasInitialErrors] = useState(errors?.stats || errors?.appointments || errors?.activity);
-  const [isWalkInModalOpen, setIsWalkInModalOpen] = useState(false);
 
   const handleStatsUpdate = useCallback((newStats: StatsData) => {
     setStats(newStats);
@@ -66,23 +63,10 @@ export function DashboardClient({
     }
   };
 
-  const handleWalkInSuccess = useCallback(() => {
-    // Refresh appointments list after successful walk-in creation
-    // The realtime hook will pick up the new appointment
-    setIsWalkInModalOpen(false);
-  }, []);
-
   return (
     <>
-      {/* Walk-In Button (FAB on mobile, inline on desktop) */}
-      <WalkInButton onClick={() => setIsWalkInModalOpen(true)} />
-
-      {/* Walk-In Modal */}
-      <WalkInModal
-        isOpen={isWalkInModalOpen}
-        onClose={() => setIsWalkInModalOpen(false)}
-        onSuccess={handleWalkInSuccess}
-      />
+      {/* Walk-In Button (FAB on mobile, inline on desktop) - Uses booking modal */}
+      <DashboardWalkInButton />
 
       {/* Initial Load Error Banner */}
       {hasInitialErrors && (

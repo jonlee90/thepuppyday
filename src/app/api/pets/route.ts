@@ -1,5 +1,6 @@
 /**
  * GET /api/pets - Fetch authenticated user's pets
+ * GET /api/pets?owner_id=xxx - Fetch pets for specific owner (admin only)
  * POST /api/pets - Create a new pet profile
  */
 
@@ -7,21 +8,40 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { petFormSchema } from '@/lib/booking/validation';
 import { getAuthenticatedUserId, getUserIdFromRequest } from '@/lib/auth/mock-auth';
+import { requireAdmin } from '@/lib/admin/auth';
 import { z } from 'zod';
 
 export async function GET(req: NextRequest) {
   try {
-    // Get authenticated user (from mock auth or session)
-    const userId = await getAuthenticatedUserId(req);
-    if (!userId) {
+    const searchParams = req.nextUrl.searchParams;
+    const requestedOwnerId = searchParams.get('owner_id');
+
+    // Create Supabase client and get authenticated user
+    let supabase = await createServerSupabaseClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = await createServerSupabaseClient();
+    let ownerId = user.id;
+
+    // If requesting pets for a different owner, verify admin access
+    if (requestedOwnerId && requestedOwnerId !== user.id) {
+      try {
+        await requireAdmin(supabase);
+        // Use service role client to bypass RLS for admin queries
+        supabase = createServiceRoleClient();
+        ownerId = requestedOwnerId;
+      } catch {
+        return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+      }
+    }
+
     const { data: pets, error } = await (supabase as any)
       .from('pets')
-      .select('*')
-      .eq('owner_id', userId)
+      .select('*, breed:breeds(*)')
+      .eq('owner_id', ownerId)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 

@@ -1,107 +1,70 @@
 /**
- * Review step for booking wizard
+ * Walk-In Review Step - Combined Addons + Review
+ * Shows add-ons selection and booking summary in one step
  */
 
 'use client';
 
 import { useState } from 'react';
-import { useBookingStore, type GuestInfo } from '@/stores/bookingStore';
+import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
-import { useBooking } from '@/hooks/useBooking';
-import { GuestInfoForm } from '../GuestInfoForm';
 import { formatCurrency, formatDuration, getSizeShortLabel } from '@/lib/booking/pricing';
-import { formatTimeDisplay } from '@/lib/booking/availability';
+import { Scissors, Check } from 'lucide-react';
 
-interface ReviewStepProps {
+interface WalkinReviewStepProps {
   onComplete?: () => Promise<void>;
-  adminMode?: boolean;
   customerId?: string | null;
 }
 
-export function ReviewStep({ onComplete, adminMode = false, customerId }: ReviewStepProps = {}) {
+export function WalkinReviewStep({ onComplete, customerId }: WalkinReviewStepProps = {}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [guestFormSubmitted, setGuestFormSubmitted] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
-  const { isAuthenticated, user } = useAuthStore();
-  const { createBooking } = useBooking();
+  const { user } = useAuthStore();
   const {
     selectedService,
     selectedPet,
     newPetData,
     petSize,
-    selectedDate,
-    selectedTimeSlot,
     selectedAddons,
     servicePrice,
     addonsTotal,
     totalPrice,
     guestInfo,
-    setGuestInfo,
-    setStep,
+    availableAddons,
+    toggleAddon,
     nextStep,
     prevStep,
     setBookingResult,
   } = useBookingStore();
 
-  const handleGuestInfoSubmit = (info: GuestInfo) => {
-    setGuestInfo(info);
-    setGuestFormSubmitted(true);
-  };
-
   const handleConfirm = async () => {
-    // For guests (not admin mode), trigger form submission if not yet submitted
-    if (!adminMode && !isAuthenticated && !guestInfo) {
-      // Submit the form programmatically
-      const form = document.getElementById('guest-info-form') as HTMLFormElement;
-      if (form) {
-        form.requestSubmit();
-        return;
-      }
-    }
-
     setIsSubmitting(true);
     setBookingError(null);
 
     try {
-      // Admin mode uses different API endpoint
-      if (adminMode && customerId) {
-        const result = await createAdminBooking();
-        if (result.success) {
-          if (onComplete) {
-            await onComplete();
-          } else {
-            nextStep();
-          }
+      const result = await createWalkinBooking();
+      if (result.success) {
+        if (onComplete) {
+          await onComplete();
         } else {
-          console.error('Admin booking failed:', result.error);
-          setBookingError(result.error || 'Failed to create booking. Please try again.');
+          nextStep();
         }
       } else {
-        // Regular customer booking
-        const result = await createBooking();
-        if (result.success) {
-          if (onComplete) {
-            await onComplete();
-          } else {
-            nextStep();
-          }
-        } else {
-          console.error('Booking failed:', result.error);
-          setBookingError(result.error || 'Failed to create booking. Please try again.');
-        }
+        console.error('Walk-in booking failed:', result.error);
+        setBookingError(result.error || 'Failed to create walk-in appointment. Please try again.');
       }
     } catch (error) {
-      console.error('Booking error:', error);
+      console.error('Walk-in booking error:', error);
       setBookingError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Admin booking creation (calls /api/admin/appointments)
-  const createAdminBooking = async () => {
-    if (!selectedService || !selectedDate || !selectedTimeSlot || !customerId) {
+  // Walk-in booking creation (calls /api/admin/appointments with walk-in specific settings)
+  const createWalkinBooking = async () => {
+    if (!selectedService || !customerId) {
       return { success: false, error: 'Missing required booking information' };
     }
 
@@ -113,13 +76,17 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
 
     try {
       // Get customer info from the booking store's guest info (set by CustomerSelectionStep)
-      // Note: In admin mode, guestInfo is repurposed to store the selected customer's info
       const customerInfo = guestInfo || {
         firstName: user?.first_name || '',
         lastName: user?.last_name || '',
         email: user?.email || '',
         phone: user?.phone || '',
       };
+
+      // Set appointment to NOW for walk-in
+      const now = new Date();
+      const appointmentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const appointmentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`; // HH:MM:SS
 
       const payload = {
         customer: {
@@ -139,10 +106,11 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
         },
         service_id: selectedService.id,
         addon_ids: selectedAddons.map(addon => addon.id),
-        appointment_date: selectedDate,
-        appointment_time: selectedTimeSlot,
+        appointment_date: appointmentDate,
+        appointment_time: appointmentTime,
         payment_status: 'pending' as const,
-        send_notification: false, // Don't send notifications for manually created appointments
+        send_notification: false, // Don't send notifications for walk-ins
+        status: 'confirmed' as const, // Walk-ins are immediately confirmed
       };
 
       const response = await fetch('/api/admin/appointments', {
@@ -152,8 +120,8 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to create appointment' }));
-        return { success: false, error: errorData.error || 'Failed to create appointment' };
+        const errorData = await response.json().catch(() => ({ error: 'Failed to create walk-in appointment' }));
+        return { success: false, error: errorData.error || 'Failed to create walk-in appointment' };
       }
 
       const data = await response.json();
@@ -161,7 +129,7 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
 
       return { success: true, appointmentId: data.appointment_id };
     } catch (error) {
-      console.error('Admin booking creation failed:', error);
+      console.error('Walk-in booking creation failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -171,27 +139,79 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
 
   const petName = selectedPet?.name || newPetData?.name || 'Your pet';
 
-  // For guests: check if the form has valid data (even if not submitted yet)
-  // Button should always be enabled - clicking it will trigger form validation if needed
-  const canConfirm = true;
-
-  // Debug logging
-  console.log('[ReviewStep] State:', {
-    isAuthenticated,
-    hasGuestInfo: guestInfo !== null,
-    canConfirm,
-    isSubmitting,
-    user: user ? { email: user.email } : null,
-    guestInfo: guestInfo ? { email: guestInfo.email } : null
-  });
-
   return (
     <div className="space-y-6">
       {/* Subtitle */}
-      <p className="text-[#434E54]/70 leading-relaxed">Double-check everything looks perfect for your pup&apos;s visit</p>
+      <p className="text-[#434E54]/70 leading-relaxed">
+        Add any extras and review the walk-in appointment details
+      </p>
 
-      {/* Booking summary */}
+      {/* Add-ons Section */}
+      {availableAddons && availableAddons.length > 0 && (
+        <div className="bg-white rounded-xl border border-[#434E54]/20 overflow-hidden">
+          <div className="p-5 border-b border-[#434E54]/10">
+            <h3 className="text-lg font-semibold text-[#434E54] flex items-center gap-2">
+              <Scissors className="w-5 h-5 text-[#434E54]" />
+              Recommended for your pet
+            </h3>
+            <p className="text-sm text-[#434E54]/70 mt-1">
+              Optional services to pamper {petName}
+            </p>
+          </div>
+
+          <div className="divide-y divide-[#434E54]/10">
+            {availableAddons.map((addon) => {
+              const isSelected = selectedAddons.some((a) => a.id === addon.id);
+
+              return (
+                <button
+                  key={addon.id}
+                  onClick={() => toggleAddon(addon)}
+                  className="w-full p-5 flex items-center gap-4 hover:bg-[#EAE0D5]/30 transition-colors duration-200 text-left"
+                >
+                  {/* Checkbox */}
+                  <div
+                    className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+                      isSelected
+                        ? 'bg-[#434E54] border-[#434E54]'
+                        : 'border-[#434E54]/30 bg-white'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-4 h-4 text-white" />}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-[#434E54]">{addon.name}</p>
+                    {addon.description && (
+                      <p className="text-sm text-[#434E54]/70 mt-1">{addon.description}</p>
+                    )}
+                    {addon.duration_minutes && (
+                      <p className="text-xs text-[#434E54]/60 mt-1">
+                        +{formatDuration(addon.duration_minutes)}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Price */}
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-semibold text-[#434E54]">
+                      +{formatCurrency(addon.price)}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Booking Summary */}
       <div className="bg-white rounded-xl border border-[#434E54]/20 overflow-hidden">
+        <div className="p-5 border-b border-[#434E54]/10">
+          <h3 className="text-lg font-semibold text-[#434E54]">Walk-In Summary</h3>
+        </div>
+
         {/* Service */}
         <div className="p-4 border-b border-[#434E54]/20">
           <div className="flex items-start justify-between">
@@ -202,13 +222,6 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
                 {formatDuration(selectedService?.duration_minutes || 0)}
               </p>
             </div>
-            <button
-              onClick={() => setStep(0)}
-              className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
-                       hover:bg-[#EAE0D5] transition-colors duration-200"
-            >
-              Edit
-            </button>
           </div>
         </div>
 
@@ -225,41 +238,43 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
                 )}
               </p>
             </div>
-            <button
-              onClick={() => setStep(1)}
-              className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
-                       hover:bg-[#EAE0D5] transition-colors duration-200"
-            >
-              Edit
-            </button>
           </div>
         </div>
 
-        {/* Date & Time */}
+        {/* Customer */}
         <div className="p-4 border-b border-[#434E54]/20">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-[#434E54]/70">Date & Time</p>
+              <p className="text-sm text-[#434E54]/70">Customer</p>
               <p className="font-semibold text-[#434E54]">
-                {selectedDate &&
-                  new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+                {guestInfo?.firstName} {guestInfo?.lastName}
               </p>
+              {guestInfo?.phone && (
+                <p className="text-sm text-[#434E54]/70">{guestInfo.phone}</p>
+              )}
+              {guestInfo?.email && (
+                <p className="text-sm text-[#434E54]/70">{guestInfo.email}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Time */}
+        <div className="p-4 border-b border-[#434E54]/20">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-[#434E54]/70">Appointment Time</p>
+              <p className="font-semibold text-[#434E54]">Now (Walk-In)</p>
               <p className="text-sm text-[#434E54]/70">
-                {selectedTimeSlot && formatTimeDisplay(selectedTimeSlot)}
+                {new Date().toLocaleString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
               </p>
             </div>
-            <button
-              onClick={() => setStep(2)}
-              className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
-                       hover:bg-[#EAE0D5] transition-colors duration-200"
-            >
-              Edit
-            </button>
           </div>
         </div>
 
@@ -277,13 +292,6 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
                   ))}
                 </ul>
               </div>
-              <button
-                onClick={() => setStep(3)}
-                className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
-                         hover:bg-[#EAE0D5] transition-colors duration-200"
-              >
-                Edit
-              </button>
             </div>
           </div>
         )}
@@ -310,69 +318,6 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
           </div>
         </div>
       </div>
-
-      {/* Guest info form */}
-      {!isAuthenticated && (
-        <div className="bg-white rounded-xl border border-[#434E54]/20 p-6">
-          <h3 className="font-semibold text-[#434E54] mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-            Your Information
-          </h3>
-
-          {guestInfo ? (
-            <div className="space-y-2">
-              <p className="text-[#434E54]">
-                <span className="font-medium">{guestInfo.firstName} {guestInfo.lastName}</span>
-              </p>
-              <p className="text-sm text-[#434E54]/70">{guestInfo.email}</p>
-              <p className="text-sm text-[#434E54]/70">{guestInfo.phone}</p>
-              <button
-                onClick={() => {
-                  setGuestInfo(null as unknown as GuestInfo);
-                  setGuestFormSubmitted(false);
-                }}
-                className="text-[#434E54] font-medium py-1.5 px-3 rounded-lg text-sm mt-2
-                         hover:bg-[#EAE0D5] transition-colors duration-200"
-              >
-                Edit
-              </button>
-            </div>
-          ) : (
-            <GuestInfoForm onSubmit={handleGuestInfoSubmit} initialData={guestInfo || undefined} />
-          )}
-        </div>
-      )}
-
-      {/* Authenticated user info */}
-      {isAuthenticated && user && (
-        <div className="bg-white rounded-xl border border-[#434E54]/20 p-6">
-          <h3 className="font-semibold text-[#434E54] mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-            Your Information
-          </h3>
-          <div className="space-y-2">
-            <p className="text-[#434E54]">
-              <span className="font-medium">{user.first_name} {user.last_name}</span>
-            </p>
-            <p className="text-sm text-[#434E54]/70">{user.email}</p>
-            {user.phone && <p className="text-sm text-[#434E54]/70">{user.phone}</p>}
-          </div>
-        </div>
-      )}
 
       {/* Error display */}
       {bookingError && (
@@ -424,7 +369,7 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
         </button>
         <button
           onClick={handleConfirm}
-          disabled={!canConfirm || isSubmitting}
+          disabled={isSubmitting}
           className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
                    hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
                    disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
@@ -437,7 +382,7 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
             </>
           ) : (
             <>
-              Confirm Booking
+              Confirm Walk-In
               <svg
                 className="w-5 h-5"
                 fill="none"

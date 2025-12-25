@@ -622,7 +622,7 @@ const STEPS = [
 │                                                 │
 │  Main Service:                                  │
 │  ┌────────────────────────────────────────┐    │
-│  │ ● Basic Grooming               $70.00  │    │
+│  │ ● Basic Grooming               $65.00  │    │
 │  │   Shampoo, nails, ears, sanitary       │    │
 │  ├────────────────────────────────────────┤    │
 │  │ ○ Premium Grooming            $125.00  │    │
@@ -641,7 +641,7 @@ const STEPS = [
 │                                                 │
 │  ┌────────────────────────────────────────┐    │
 │  │ Running Total:               $85.00    │    │
-│  │ Service: $70.00                        │    │
+│  │ Service: $65.00                        │    │
 │  │ Add-ons: $15.00                        │    │
 │  └────────────────────────────────────────┘    │
 │                                                 │
@@ -726,7 +726,7 @@ const STEPS = [
 │  Max (Golden Retriever, Large, 55 lbs)        │
 │                                                 │
 │  Service:                                      │
-│  Basic Grooming                       $70.00  │
+│  Basic Grooming                       $65.00  │
 │                                                 │
 │  Add-ons:                                      │
 │  • Pawdicure                          $15.00  │

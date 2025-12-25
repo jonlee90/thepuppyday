@@ -58,10 +58,7 @@ export function AddonsStep() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Add Extra Services</h2>
-          <p className="text-[#434E54]/70">Enhance your pet&apos;s grooming experience</p>
-        </div>
+        <p className="text-[#434E54]/70">Enhance your pet&apos;s grooming experience</p>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="bg-white rounded-xl shadow-md p-4 animate-pulse">
@@ -82,10 +79,7 @@ export function AddonsStep() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Add Extra Services</h2>
-          <p className="text-[#434E54]/70">Enhance your pet&apos;s grooming experience</p>
-        </div>
+        <p className="text-[#434E54]/70">Enhance your pet&apos;s grooming experience</p>
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
           <div className="w-16 h-16 bg-[#434E54]/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
@@ -157,10 +151,7 @@ export function AddonsStep() {
   if (addons.length === 0) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Add Extra Services</h2>
-          <p className="text-[#434E54]/70">Enhance your pet&apos;s grooming experience</p>
-        </div>
+        <p className="text-[#434E54]/70">Enhance your pet&apos;s grooming experience</p>
 
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
           <div className="w-16 h-16 bg-[#EAE0D5] rounded-full flex items-center justify-center mx-auto mb-4">
@@ -224,25 +215,8 @@ export function AddonsStep() {
 
   return (
     <div className="space-y-6">
-      {/* Header with dog theme */}
-      <div className="relative">
-        {/* Subtle paw print decoration */}
-        <div className="absolute -bottom-2 left-1/2 opacity-[0.04] pointer-events-none hidden lg:block">
-          <svg className="w-16 h-16 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
-          </svg>
-        </div>
-
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-[#EAE0D5] rounded-xl flex items-center justify-center shadow-sm">
-            <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-[#434E54]">Add Extra Services</h2>
-        </div>
-        <p className="text-[#434E54]/70 leading-relaxed">Give your pup the ultimate spa experience with these add-ons</p>
-      </div>
+      {/* Subtitle */}
+      <p className="text-[#434E54]/70 leading-relaxed">Give your pup the ultimate spa experience with these add-ons</p>
 
       {/* Selected add-ons summary with animation */}
       <AnimatePresence>

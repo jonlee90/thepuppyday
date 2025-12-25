@@ -67,10 +67,13 @@ export function usePets(ownerId?: string | null): UsePetsReturn {
   const { user, isAuthenticated } = useAuthStore();
 
   const fetchPets = useCallback(async () => {
-    // Determine which owner ID to use (provided ownerId or current user)
-    const effectiveOwnerId = ownerId || user?.id;
+    // Determine which owner ID to use:
+    // - If ownerId is explicitly null, don't fetch (new customer case)
+    // - If ownerId is undefined (not passed), fall back to current user
+    // - If ownerId is a string, use it
+    const effectiveOwnerId = ownerId === undefined ? user?.id : ownerId;
 
-    // Return empty array if no owner ID available
+    // Return empty array if no owner ID available (null or undefined)
     if (!effectiveOwnerId) {
       setPets([]);
       setIsLoading(false);
@@ -105,20 +108,24 @@ export function usePets(ownerId?: string | null): UsePetsReturn {
 
         setPets(petsWithBreeds);
       } else {
-        // Fetch from Supabase
-        const supabase = createClient();
-        const { data, error: supabaseError } = await (supabase as any)
-          .from('pets')
-          .select('*, breed:breeds(*)')
-          .eq('owner_id', effectiveOwnerId)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
-
-        if (supabaseError) {
-          throw new Error(`Failed to fetch pets: ${supabaseError.message}`);
+        // Use API route to fetch pets (handles RLS bypass for admin)
+        const url = new URL('/api/pets', window.location.origin);
+        // Pass owner_id if fetching for a different user (admin mode)
+        if (effectiveOwnerId && effectiveOwnerId !== user?.id) {
+          url.searchParams.set('owner_id', effectiveOwnerId);
         }
 
-        setPets(data || []);
+        const response = await fetch(url.toString(), {
+          credentials: 'include', // Include cookies for authentication
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Failed to fetch pets: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setPets(data.pets || []);
       }
     } catch (err) {
       console.error('Failed to fetch pets:', err);
@@ -127,7 +134,7 @@ export function usePets(ownerId?: string | null): UsePetsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [user, isAuthenticated, ownerId]);
+  }, [user?.id, ownerId]);
 
   useEffect(() => {
     fetchPets();

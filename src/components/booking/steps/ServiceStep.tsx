@@ -16,7 +16,7 @@ interface ServiceStepProps {
 
 export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
   const { services, isLoading, error } = useServices();
-  const { selectedServiceId, selectService, nextStep } = useBookingStore();
+  const { selectedServiceId, selectService } = useBookingStore();
 
   // Filter out "Add-Ons" service - add-ons are handled separately in Step 4
   const bookableServices = services.filter((service) => service.name !== 'Add-Ons');
@@ -35,19 +35,10 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
     selectService(service);
   };
 
-  const handleContinue = () => {
-    if (selectedServiceId) {
-      nextStep();
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Select a Service</h2>
-          <p className="text-[#434E54]/70">Choose the grooming service for your pet</p>
-        </div>
+        <p className="text-[#434E54]/70">Choose the grooming service for your pet</p>
         <div className="flex justify-center">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
             {[1, 2].map((i) => (
@@ -69,10 +60,7 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
   if (error) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Select a Service</h2>
-          <p className="text-[#434E54]/70">Choose the grooming service for your pet</p>
-        </div>
+        <p className="text-[#434E54]/70">Choose the grooming service for your pet</p>
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
           <div className="w-16 h-16 bg-[#434E54]/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
@@ -106,10 +94,7 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
   if (bookableServices.length === 0) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-[#434E54] mb-2">Select a Service</h2>
-          <p className="text-[#434E54]/70">Choose the grooming service for your pet</p>
-        </div>
+        <p className="text-[#434E54]/70">Choose the grooming service for your pet</p>
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
           <div className="w-16 h-16 bg-[#EAE0D5] rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
@@ -137,26 +122,8 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header with dog theme */}
-      <div className="relative">
-        {/* Subtle paw print decoration */}
-        <div className="absolute -top-2 -right-2 opacity-[0.04] pointer-events-none hidden lg:block">
-          <svg className="w-16 h-16 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
-          </svg>
-        </div>
-
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-[#EAE0D5] rounded-xl flex items-center justify-center shadow-sm">
-            <svg className="w-5 h-5 text-[#434E54]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-[#434E54]">Select a Service</h2>
-        </div>
-        <p className="text-[#434E54]/70 leading-relaxed">Choose the perfect grooming experience for your furry friend</p>
-      </div>
-
+      {/* Subtitle */}
+      <p className="text-[#434E54]/70 leading-relaxed">Choose the perfect grooming experience for your furry friend</p>
 
       {/* Services grid - Optimized for 2 services */}
       <div className="flex justify-center">
@@ -170,29 +137,6 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
             />
           ))}
         </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex justify-end pt-4">
-        <button
-          onClick={handleContinue}
-          disabled={!selectedServiceId}
-          className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                   hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
-                   disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
-                   flex items-center gap-2 group"
-        >
-          Continue to Pet Selection
-          <svg
-            className="w-5 h-5 transition-transform group-hover:translate-x-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
       </div>
     </div>
   );

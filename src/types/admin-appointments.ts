@@ -86,6 +86,7 @@ export interface CreateAppointmentPayload {
 export interface CreateAppointmentResponse {
   success: boolean;
   appointment_id: string;
+  booking_reference: string;
   customer_created: boolean;
   customer_status: 'active' | 'inactive';
   pet_created: boolean;

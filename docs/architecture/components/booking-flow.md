@@ -1,56 +1,142 @@
 # Booking Flow - Architecture Documentation
 
 > **Module**: Booking Widget Components
-> **Location**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\components\booking\`
-> **Status**: ✅ Completed (Phase 3)
-> **Flow**: 6-step multi-step wizard
+> **Location**: `src/components/booking/`
+> **Status**: ✅ Completed (Phase 3, Updated Phase 10)
+> **Last Updated**: 2024-12-22
 
 ## Overview
 
-The booking widget is a multi-step form that guides customers through the appointment scheduling process. It supports both authenticated users and guest bookings with real-time availability checking and waitlist functionality.
+The booking widget is a multi-step form that guides users through the appointment scheduling process. It supports three different modes with mode-specific step orders:
+
+- **Customer Mode**: Public-facing booking for customers (7 steps)
+- **Admin Mode**: Admin creating scheduled appointments (7 steps)
+- **Walk-in Mode**: Quick registration for walk-in customers (5 steps)
+
+---
+
+## Booking Modes & Step Orders
+
+### Customer Mode (7 steps)
+Used on the marketing page for public bookings.
+
+| Step | Component | Description |
+|------|-----------|-------------|
+| 0 | ServiceStep | Select grooming service |
+| 1 | DateTimeStep | Choose appointment date/time |
+| 2 | CustomerStep | Enter contact information |
+| 3 | PetStep | Select or create pet profile |
+| 4 | AddonsStep | Select optional add-ons |
+| 5 | ReviewStep | Review and confirm booking |
+| 6 | ConfirmationStep | Success message |
+
+### Admin Mode (7 steps)
+Used in `/admin/appointments` for creating appointments.
+
+| Step | Component | Description |
+|------|-----------|-------------|
+| 0 | ServiceStep | Select grooming service |
+| 1 | DateTimeStep | Choose appointment date/time |
+| 2 | CustomerStep | Search/select or create customer |
+| 3 | PetStep | Select customer's pet or create new |
+| 4 | AddonsStep | Select optional add-ons |
+| 5 | ReviewStep | Review appointment details |
+| 6 | ConfirmationStep | Appointment created |
+
+### Walk-in Mode (5 steps)
+Used in `/admin/dashboard` for immediate walk-in appointments.
+
+| Step | Component | Description |
+|------|-----------|-------------|
+| 0 | ServiceStep | Select grooming service |
+| 1 | CustomerStep | Search/select or create customer |
+| 2 | PetStep | Select customer's pet or create new |
+| 3 | AddonsStep | Select optional add-ons |
+| 4 | ConfirmationStep | Walk-in confirmed |
+
+> **Note**: Walk-in mode skips Date/Time (auto-set to NOW) and Review steps for speed.
 
 ---
 
 ## Components
 
+### BookingModal (`BookingModal.tsx`)
+
+**Purpose**: Reusable modal wrapper that presents the booking flow.
+
+**Props**:
+```typescript
+interface BookingModalProps {
+  mode?: BookingModalMode; // 'customer' | 'admin' | 'walkin'
+  isOpen?: boolean;
+  onClose?: () => void;
+  preSelectedServiceId?: string;
+  preSelectedCustomerId?: string;
+  onSuccess?: (appointmentId: string) => void;
+}
+```
+
+**Features**:
+- Desktop: Centered modal (max 900px)
+- Tablet: Centered modal (max 700px)
+- Mobile: Bottom sheet (95vh, slides up)
+- Focus trap, escape key handling, body scroll lock
+
 ### BookingWizard (`BookingWizard.tsx`)
 
 **Purpose**: Main orchestrator component managing wizard state and step transitions.
 
-**State Management** (Zustand):
+**Props**:
 ```typescript
-interface BookingState {
-  currentStep: number;
-  selectedService: Service | null;
-  selectedPet: Pet | null;
-  selectedDate: Date | null;
-  selectedTime: string | null;
-  selectedAddons: Addon[];
-  customerInfo: CustomerInfo | null;
-  guestMode: boolean;
+interface BookingWizardProps {
+  preSelectedServiceId?: string;
+  embedded?: boolean; // Hide header/progress when in modal
+  mode?: BookingModalMode; // Affects step order
 }
 ```
 
-**Steps**:
-1. **ServiceStep** - Select grooming service
-2. **PetStep** - Select existing pet or create new (guest: create)
-3. **DateTimeStep** - Select date and time slot
-4. **AddonsStep** - Select optional add-ons
-5. **ReviewStep** - Review and confirm booking
-6. **ConfirmationStep** - Success message and next steps
+**State Management** (Zustand - `bookingStore.ts`):
+```typescript
+interface BookingState {
+  currentStep: number;
+  selectedCustomerId: string | null; // For admin/walkin modes
+  selectedService: ServiceWithPrices | null;
+  selectedPet: Pet | null;
+  newPetData: CreatePetInput | null;
+  petSize: PetSize | null;
+  selectedDate: string | null;
+  selectedTimeSlot: string | null;
+  selectedAddons: Addon[];
+  guestInfo: GuestInfo | null;
+  servicePrice: number;
+  addonsTotal: number;
+  totalPrice: number;
+}
+```
 
-**Navigation**:
-```tsx
-const handleNext = () => {
-  if (validateCurrentStep()) {
-    setCurrentStep(currentStep + 1);
+**Mode-Aware Step Rendering**:
+```typescript
+const renderStep = () => {
+  if (mode === 'walkin') {
+    // Service → Customer → Pet → Addons → Confirmation
   }
-};
-
-const handleBack = () => {
-  setCurrentStep(currentStep - 1);
+  if (mode === 'admin') {
+    // Service → DateTime → Customer → Pet → Addons → Review → Confirmation
+  }
+  // Customer mode (default):
+  // Service → DateTime → Customer → Pet → Addons → Review → Confirmation
 };
 ```
+
+### BookingModalTrigger (`BookingModalTrigger.tsx`)
+
+**Purpose**: Button component that opens the booking modal.
+
+**Pre-configured Variants**:
+- `HeroBookingButton` - Large CTA for marketing hero
+- `ServiceBookingButton` - Inline button on service cards
+- `AdminCreateButton` - Admin "Create Appointment" button
+- `WalkInButton` - Dashboard "Walk In" button
 
 ---
 
@@ -89,15 +175,70 @@ const { data: services } = await fetch('/api/services');
 
 ---
 
+### CustomerStep (`CustomerStep.tsx`)
+
+**Purpose**: Customer selection/creation for admin and walk-in modes.
+
+**Features**:
+- Search existing customers by name, email, or phone
+- Create new customer inline
+- Duplicate email detection
+- Form validation using Zod schema
+
+**Search Flow**:
+```tsx
+// Debounced search with 300ms delay
+const response = await fetch(
+  `/api/admin/customers?search=${encodeURIComponent(searchQuery)}`
+);
+```
+
+**New Customer Form Fields**:
+- First Name (required)
+- Last Name (required)
+- Email (required in customer/admin mode, optional in walk-in)
+- Phone (required)
+
+**Integration with Store**:
+```typescript
+// When customer selected
+setSelectedCustomerId(customer.id);
+setGuestInfo({
+  firstName: customer.first_name,
+  lastName: customer.last_name,
+  email: customer.email,
+  phone: customer.phone,
+});
+```
+
+**Validation**: Customer must be selected or new customer form completed before proceeding.
+
+---
+
 ### PetStep (`PetStep.tsx`)
 
 **Purpose**: Select existing pet or create new pet profile.
 
-**Authenticated User Flow**:
-```tsx
-const { data: pets } = await fetch('/api/customer/pets');
+**Props**:
+```typescript
+interface PetStepProps {
+  customerId?: string | null; // For admin/walk-in mode - load this customer's pets
+}
+```
 
-// Display existing pets
+**Mode-Aware Behavior**:
+- **Customer mode**: Loads current authenticated user's pets
+- **Admin/Walk-in mode**: Loads pets for `selectedCustomerId` from store
+
+**Pet Loading**:
+```tsx
+// Uses customerId if provided (admin/walkin), otherwise current user
+const effectiveOwnerId = customerId || user?.id;
+const { pets, isLoading, error } = usePets(effectiveOwnerId);
+```
+
+**Pet Selection**:
+```tsx
 {pets.map(pet => (
   <PetCard
     pet={pet}
@@ -107,15 +248,13 @@ const { data: pets } = await fetch('/api/customer/pets');
 ))}
 
 // Option to add new pet
-<Button onClick={() => setShowAddPetForm(true)}>
-  + Add New Pet
-</Button>
+<AddPetCard onClick={handleAddNewPet} />
 ```
 
-**Guest User Flow**:
+**Guest/New Pet Flow**:
 ```tsx
-// Show pet creation form directly
-<PetForm onSubmit={handleGuestPetCreate} />
+// Show pet creation form
+<PetForm onSubmit={handleFormSubmit} />
 ```
 
 **Pet Form Fields**:
@@ -479,25 +618,39 @@ interface BookingStore {
 
 ## Validation
 
-**Step-by-step validation**:
+Step validation is mode-aware and handled by `src/lib/booking/step-validation.ts`.
+
+**Validation Function**:
 ```typescript
-function validateStep(step: number): boolean {
-  switch (step) {
-    case 0: // Service
-      return selectedService !== null;
-    case 1: // Pet
-      return selectedPet !== null;
-    case 2: // DateTime
-      return selectedDate !== null && selectedTime !== null;
-    case 3: // Addons
-      return true; // Optional step
-    case 4: // Review
-      return validateAllFields();
-    default:
-      return false;
-  }
-}
+function canContinueFromStep(
+  currentStep: number,
+  bookingState: BookingStore,
+  mode: BookingModalMode = 'customer'
+): boolean
 ```
+
+**Customer Mode Validation** (Service → DateTime → Customer → Pet → Addons → Review → Confirmation):
+| Step | Validation |
+|------|------------|
+| 0 | Service selected |
+| 1 | Date and time selected |
+| 2 | Customer info valid (name, phone, email) |
+| 3 | Pet selected or new pet data complete |
+| 4 | Always valid (add-ons optional) |
+| 5 | All previous steps valid |
+
+**Admin Mode Validation** (Same as Customer):
+| Step | Validation |
+|------|------------|
+| 0-5 | Same as customer mode |
+
+**Walk-in Mode Validation** (Service → Customer → Pet → Addons → Confirmation):
+| Step | Validation |
+|------|------------|
+| 0 | Service selected |
+| 1 | Customer info valid |
+| 2 | Pet selected or new pet data complete |
+| 3 | Always valid (add-ons optional) |
 
 ---
 
@@ -539,4 +692,4 @@ function validateStep(step: number): boolean {
 
 ---
 
-**Last Updated**: 2025-12-20
+**Last Updated**: 2024-12-22

@@ -5,20 +5,19 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Calendar, List, Plus, Upload } from 'lucide-react';
+import { useState } from 'react';
+import { Calendar, List, Upload } from 'lucide-react';
 import { useAdminStore } from '@/stores/admin-store';
 import { AppointmentCalendar } from '@/components/admin/appointments/AppointmentCalendar';
 import { AppointmentListView } from '@/components/admin/appointments/AppointmentListView';
 import { AppointmentDetailModal } from '@/components/admin/appointments/AppointmentDetailModal';
-import { ManualAppointmentModal } from '@/components/admin/appointments/ManualAppointmentModal';
 import { CSVImportModal } from '@/components/admin/appointments/CSVImportModal';
+import { AdminCreateButton } from '@/components/booking';
 
 export default function AppointmentsPage() {
   const { appointmentsView, setAppointmentsView } = useAdminStore();
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -36,11 +35,6 @@ export default function AppointmentsPage() {
 
   // Handle appointment update (refresh views)
   const handleAppointmentUpdate = () => {
-    setRefreshKey((prev) => prev + 1);
-  };
-
-  // Handle successful appointment creation
-  const handleCreateSuccess = () => {
     setRefreshKey((prev) => prev + 1);
   };
 
@@ -68,13 +62,9 @@ export default function AppointmentsPage() {
               <Upload className="w-5 h-5 mr-2" />
               Import CSV
             </button>
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="btn bg-[#434E54] text-white hover:bg-[#363F44] shadow-md"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create Appointment
-            </button>
+            <AdminCreateButton
+              onSuccess={() => setRefreshKey((prev) => prev + 1)}
+            />
           </div>
         </div>
 
@@ -119,13 +109,6 @@ export default function AppointmentsPage() {
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onUpdate={handleAppointmentUpdate}
-        />
-
-        {/* Manual Appointment Creation Modal */}
-        <ManualAppointmentModal
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          onSuccess={handleCreateSuccess}
         />
 
         {/* CSV Import Modal */}
