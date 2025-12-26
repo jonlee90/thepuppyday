@@ -655,6 +655,82 @@ export async function POST(request: NextRequest) {
       console.log('Would send notification to active customer:', customerId);
     }
 
+    // 8. Trigger calendar sync (auto-sync) - Task 0025
+    // This runs asynchronously and won't block the response
+    try {
+      const { triggerAutoSyncInBackground } = await import(
+        '@/lib/calendar/sync/auto-sync-trigger'
+      );
+
+      // Fetch appointment with joined data for sync
+      const { data: appointmentForSync } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          customer:users!customer_id (
+            first_name,
+            last_name,
+            email,
+            phone
+          ),
+          pet:pets (
+            name,
+            size
+          ),
+          service:services (
+            name,
+            duration_minutes
+          ),
+          appointment_addons (
+            addon:addons (
+              id,
+              name,
+              duration_minutes
+            )
+          )
+        `)
+        .eq('id', appointment.id)
+        .single();
+
+      if (appointmentForSync) {
+        // Transform to AppointmentForSync format
+        const syncData = {
+          id: appointmentForSync.id,
+          customer_id: appointmentForSync.customer_id,
+          pet_id: appointmentForSync.pet_id,
+          service_id: appointmentForSync.service_id,
+          scheduled_at: appointmentForSync.scheduled_at,
+          status: appointmentForSync.status,
+          notes: appointmentForSync.notes,
+          customer: {
+            first_name: appointmentForSync.customer.first_name,
+            last_name: appointmentForSync.customer.last_name,
+            email: appointmentForSync.customer.email,
+            phone: appointmentForSync.customer.phone,
+          },
+          pet: {
+            name: appointmentForSync.pet.name,
+            size: appointmentForSync.pet.size,
+          },
+          service: {
+            name: appointmentForSync.service.name,
+            duration_minutes: appointmentForSync.service.duration_minutes,
+          },
+          addons: appointmentForSync.appointment_addons?.map((aa: any) => ({
+            addon_id: aa.addon.id,
+            addon_name: aa.addon.name,
+            duration_minutes: aa.addon.duration_minutes,
+          })) || [],
+        };
+
+        // Trigger sync in background (fire and forget)
+        triggerAutoSyncInBackground(supabase, syncData);
+      }
+    } catch (syncError) {
+      // Log error but don't fail the request
+      console.error('[Admin API] Calendar sync error:', syncError);
+    }
+
     // Return success response
     const response: CreateAppointmentResponse = {
       success: true,

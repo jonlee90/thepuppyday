@@ -38,9 +38,8 @@ describe('Token Manager', () => {
     scope: 'https://www.googleapis.com/auth/calendar.events',
   };
 
-  let mockSupabase: {
-    from: Mock;
-  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockSupabase: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -83,7 +82,7 @@ describe('Token Manager', () => {
         update: mockUpdate,
       });
 
-      await storeTokens(mockSupabase as any, mockConnectionId, mockTokens);
+      await storeTokens(mockSupabase, mockConnectionId, mockTokens);
 
       expect(mockSupabase.from).toHaveBeenCalledWith('calendar_connections');
       expect(mockUpdate).toHaveBeenCalledWith(
@@ -107,7 +106,7 @@ describe('Token Manager', () => {
       });
 
       await expect(
-        storeTokens(mockSupabase as any, mockConnectionId, mockTokens)
+        storeTokens(mockSupabase, mockConnectionId, mockTokens)
       ).rejects.toThrow('Failed to store tokens');
     });
   });
@@ -131,7 +130,7 @@ describe('Token Manager', () => {
         select: mockSelect,
       });
 
-      const result = await retrieveTokens(mockSupabase as any, mockConnectionId);
+      const result = await retrieveTokens(mockSupabase, mockConnectionId);
 
       expect(result.access_token).toBe('ya29.test-access-token');
       expect(result.refresh_token).toBe('1//test-refresh-token');
@@ -153,7 +152,7 @@ describe('Token Manager', () => {
       });
 
       await expect(
-        retrieveTokens(mockSupabase as any, mockConnectionId)
+        retrieveTokens(mockSupabase, mockConnectionId)
       ).rejects.toThrow('Calendar connection not found');
     });
 
@@ -172,7 +171,7 @@ describe('Token Manager', () => {
       });
 
       await expect(
-        retrieveTokens(mockSupabase as any, mockConnectionId)
+        retrieveTokens(mockSupabase, mockConnectionId)
       ).rejects.toThrow('Failed to retrieve tokens');
     });
   });
@@ -199,7 +198,7 @@ describe('Token Manager', () => {
         select: mockSelect,
       });
 
-      const result = await getValidAccessToken(mockSupabase as any, mockConnectionId);
+      const result = await getValidAccessToken(mockSupabase, mockConnectionId);
 
       expect(result).toBe('ya29.test-access-token');
       expect(refreshAccessToken).not.toHaveBeenCalled();
@@ -242,7 +241,7 @@ describe('Token Manager', () => {
 
       (refreshAccessToken as Mock).mockResolvedValue(newTokens);
 
-      const result = await getValidAccessToken(mockSupabase as any, mockConnectionId);
+      const result = await getValidAccessToken(mockSupabase, mockConnectionId);
 
       expect(refreshAccessToken).toHaveBeenCalledWith('1//test-refresh-token');
       expect(result).toBe('ya29.new-access-token');
@@ -280,7 +279,7 @@ describe('Token Manager', () => {
       );
 
       await expect(
-        getValidAccessToken(mockSupabase as any, mockConnectionId)
+        getValidAccessToken(mockSupabase, mockConnectionId)
       ).rejects.toThrow('Calendar connection is invalid');
 
       // Verify connection was marked inactive
@@ -323,7 +322,7 @@ describe('Token Manager', () => {
 
       (refreshAccessToken as Mock).mockResolvedValue(newTokens);
 
-      const result = await refreshTokens(mockSupabase as any, mockConnectionId);
+      const result = await refreshTokens(mockSupabase, mockConnectionId);
 
       expect(result).toEqual(newTokens);
       expect(refreshAccessToken).toHaveBeenCalledWith('1//test-refresh-token');
@@ -356,7 +355,7 @@ describe('Token Manager', () => {
       );
 
       await expect(
-        refreshTokens(mockSupabase as any, mockConnectionId)
+        refreshTokens(mockSupabase, mockConnectionId)
       ).rejects.toThrow('Refresh token is invalid');
     });
   });

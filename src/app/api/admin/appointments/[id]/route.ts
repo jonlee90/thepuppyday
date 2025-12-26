@@ -5,9 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient, type AppSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import type { Appointment, User, Pet, Service, Addon, CustomerFlag, AppointmentAddon } from '@/types/database';
+import type { Appointment, User, Pet, Service, Addon } from '@/types/database';
 
 interface AppointmentUpdateRequest {
   scheduled_at?: string;
@@ -58,16 +58,16 @@ export async function GET(
 
       // Get service prices
       const servicePrices = serviceData
-        ? store.select('service_prices').filter((sp: any) => sp.service_id === serviceData.id)
+        ? store.select('service_prices').filter((sp: { service_id: string }) => sp.service_id === serviceData.id)
         : [];
       const service = serviceData ? { ...serviceData, prices: servicePrices } : null;
 
       // Get appointment add-ons
       const appointmentAddons = store
         .select('appointment_addons')
-        .filter((aa: any) => aa.appointment_id === id);
+        .filter((aa: { appointment_id: string }) => aa.appointment_id === id);
 
-      const addonsWithDetails = appointmentAddons.map((aa: any) => ({
+      const addonsWithDetails = appointmentAddons.map((aa: { addon_id: string; [key: string]: unknown }) => ({
         ...aa,
         addon: store.selectById('addons', aa.addon_id),
       }));
@@ -76,7 +76,7 @@ export async function GET(
       const customerFlags = customer
         ? store
             .select('customer_flags')
-            .filter((cf: any) => cf.customer_id === customer.id && cf.is_active)
+            .filter((cf: { customer_id: string; is_active: boolean }) => cf.customer_id === customer.id && cf.is_active)
         : [];
 
       const enrichedAppointment = {
@@ -93,7 +93,7 @@ export async function GET(
     }
 
     // Production Supabase query
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (supabase as AppSupabaseClient)
       .from('appointments')
       .select(
         `
@@ -123,7 +123,7 @@ export async function GET(
     }
 
     // Get customer flags
-    const { data: customerFlags } = await (supabase as any)
+    const { data: customerFlags } = await (supabase as AppSupabaseClient)
       .from('customer_flags')
       .select('*')
       .eq('customer_id', data.customer_id)
@@ -201,7 +201,12 @@ export async function PUT(
         const endOfDay = new Date(newDate);
         endOfDay.setHours(23, 59, 59, 999);
 
-        const existingAppointments = store.select('appointments').filter((apt: any) => {
+        const existingAppointments = store.select('appointments').filter((apt: {
+          id: string;
+          status: string;
+          scheduled_at: string;
+          duration_minutes: number;
+        }) => {
           if (apt.id === id) return false; // Exclude current appointment
           if (!['pending', 'confirmed', 'checked_in', 'in_progress'].includes(apt.status)) return false;
           const aptDate = new Date(apt.scheduled_at);
@@ -239,7 +244,9 @@ export async function PUT(
       if (admin_notes !== undefined) updates.admin_notes = admin_notes;
 
       // Update appointment
-      const updatedAppointment = store.update('appointments', id, updates) as Appointment | null;
+      store.update('appointments', id, updates);
+
+      const updatedAppointment = store.selectById('appointments', id) as Appointment | null;
 
       if (!updatedAppointment) {
         return NextResponse.json(
@@ -252,7 +259,7 @@ export async function PUT(
       if (addon_ids !== undefined) {
         // Delete existing appointment_addons
         const existingAddons = store.select('appointment_addons').filter(
-          (aa: any) => aa.appointment_id === id
+          (aa: { appointment_id: string; id: string }) => aa.appointment_id === id
         );
         for (const aa of existingAddons) {
           store.delete('appointment_addons', aa.id);
@@ -283,16 +290,16 @@ export async function PUT(
 
       // Get service prices
       const servicePrices = serviceData
-        ? store.select('service_prices').filter((sp: any) => sp.service_id === serviceData.id)
+        ? store.select('service_prices').filter((sp: { service_id: string }) => sp.service_id === serviceData.id)
         : [];
       const service = serviceData ? { ...serviceData, prices: servicePrices } : null;
 
       // Get appointment add-ons
       const appointmentAddons = store
         .select('appointment_addons')
-        .filter((aa: any) => aa.appointment_id === id);
+        .filter((aa: { appointment_id: string }) => aa.appointment_id === id);
 
-      const addonsWithDetails = appointmentAddons.map((aa: any) => ({
+      const addonsWithDetails = appointmentAddons.map((aa: { addon_id: string; [key: string]: unknown }) => ({
         ...aa,
         addon: store.selectById('addons', aa.addon_id),
       }));
@@ -314,7 +321,7 @@ export async function PUT(
 
     // Production Supabase update
     // First fetch existing appointment
-    const { data: existingAppointment, error: fetchError } = await (supabase as any)
+    const { data: existingAppointment, error: fetchError } = await (supabase as AppSupabaseClient)
       .from('appointments')
       .select('*')
       .eq('id', id)
@@ -338,7 +345,7 @@ export async function PUT(
       const endOfDay = new Date(newDate);
       endOfDay.setHours(23, 59, 59, 999);
 
-      const { data: existingAppointments } = await (supabase as any)
+      const { data: existingAppointments } = await (supabase as AppSupabaseClient)
         .from('appointments')
         .select('id, scheduled_at, duration_minutes')
         .gte('scheduled_at', startOfDay.toISOString())
@@ -376,7 +383,7 @@ export async function PUT(
     if (admin_notes !== undefined) updates.admin_notes = admin_notes;
 
     // Update appointment
-    const { data: updatedAppointment, error: updateError } = await (supabase as any)
+    const { error: updateError } = await (supabase as AppSupabaseClient)
       .from('appointments')
       .update(updates)
       .eq('id', id)
@@ -394,7 +401,7 @@ export async function PUT(
     // Handle addon changes if provided
     if (addon_ids !== undefined) {
       // Delete existing appointment_addons
-      await (supabase as any)
+      await (supabase as AppSupabaseClient)
         .from('appointment_addons')
         .delete()
         .eq('appointment_id', id);
@@ -402,19 +409,19 @@ export async function PUT(
       // Insert new appointment_addons
       if (addon_ids.length > 0) {
         // Get addon prices
-        const { data: addons } = await (supabase as any)
+        const { data: addons } = await (supabase as AppSupabaseClient)
           .from('addons')
           .select('id, price')
           .in('id', addon_ids);
 
-        const newAddons = (addons || []).map((addon: any) => ({
+        const newAddons = (addons || []).map((addon: Addon) => ({
           appointment_id: id,
           addon_id: addon.id,
           price: addon.price,
         }));
 
         if (newAddons.length > 0) {
-          await (supabase as any)
+          await (supabase as AppSupabaseClient)
             .from('appointment_addons')
             .insert(newAddons);
         }
@@ -422,7 +429,7 @@ export async function PUT(
     }
 
     // Fetch enriched data for response
-    const { data: enrichedData } = await (supabase as any)
+    const { data: enrichedData } = await (supabase as AppSupabaseClient)
       .from('appointments')
       .select(`
         *,
@@ -440,6 +447,88 @@ export async function PUT(
       `)
       .eq('id', id)
       .single();
+
+    // Trigger calendar sync (auto-sync) - Task 0026
+    // This runs asynchronously and won't block the response
+    try {
+      const { triggerAutoSyncInBackground } = await import(
+        '@/lib/calendar/sync/auto-sync-trigger'
+      );
+
+      // Fetch appointment with joined data for sync
+      const { data: appointmentForSync } = await (supabase as AppSupabaseClient)
+        .from('appointments')
+        .select(`
+          *,
+          customer:users!customer_id (
+            first_name,
+            last_name,
+            email,
+            phone
+          ),
+          pet:pets (
+            name,
+            size
+          ),
+          service:services (
+            name,
+            duration_minutes
+          ),
+          appointment_addons (
+            addon:addons (
+              id,
+              name,
+              duration_minutes
+            )
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (appointmentForSync) {
+        // Transform to AppointmentForSync format
+        const syncData = {
+          id: appointmentForSync.id,
+          customer_id: appointmentForSync.customer_id,
+          pet_id: appointmentForSync.pet_id,
+          service_id: appointmentForSync.service_id,
+          scheduled_at: appointmentForSync.scheduled_at,
+          status: appointmentForSync.status,
+          notes: appointmentForSync.notes,
+          customer: {
+            first_name: appointmentForSync.customer.first_name,
+            last_name: appointmentForSync.customer.last_name,
+            email: appointmentForSync.customer.email,
+            phone: appointmentForSync.customer.phone,
+          },
+          pet: {
+            name: appointmentForSync.pet.name,
+            size: appointmentForSync.pet.size,
+          },
+          service: {
+            name: appointmentForSync.service.name,
+            duration_minutes: appointmentForSync.service.duration_minutes,
+          },
+          addons: appointmentForSync.appointment_addons?.map((aa: {
+            addon: {
+              id: string;
+              name: string;
+              duration_minutes: number;
+            };
+          }) => ({
+            addon_id: aa.addon.id,
+            addon_name: aa.addon.name,
+            duration_minutes: aa.addon.duration_minutes,
+          })) || [],
+        };
+
+        // Trigger sync in background (fire and forget)
+        triggerAutoSyncInBackground(supabase, syncData);
+      }
+    } catch (syncError) {
+      // Log error but don't fail the request
+      console.error('[Admin API] Calendar sync error:', syncError);
+    }
 
     return NextResponse.json({
       data: enrichedData,

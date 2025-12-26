@@ -67,6 +67,7 @@ describe('Calendar Connection Service', () => {
     updated_at: '2025-01-01T00:00:00Z',
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockSupabase: any;
 
   beforeEach(() => {
