@@ -21,23 +21,38 @@ Implement task specifications with automated review and testing.
 
 ## Execution
 
-Based on the task file, find out what agents are needed to implement the task:
-- **Supabase/Database work**: Use @agent-supabase-nextjs-expert (always use /mcp supabase commands)
-- **Frontend/UI components**: Use @agent-frontend-expert and @agent-daisyui-expert
-- **Next.js specific**: Use @agent-nextjs-expert
-- **Other tasks**: Use @general-purpose agent
+**Primary Implementation Agent**: @agent-kiro-executor
+The kiro-executor agent is the primary agent for implementing tasks from Kiro specs. It specializes in translating documented specifications into precise, working code with strict adherence to requirements.
 
-Code reviewer shall use @agent-code-reviewer.
+**Specialized Agent Delegation**:
+When @agent-kiro-executor encounters specific types of work, it MUST delegate to the appropriate specialized agent:
+
+| Work Type | Primary Agent | Purpose |
+|-----------|---------------|---------|
+| **Frontend/UI Components** | @agent-frontend-expert → @agent-daisyui-expert | First get design specs from frontend-expert, then implement with daisyui-expert |
+| **Database/Supabase** | @agent-supabase-nextjs-expert | All database operations, migrations, RLS policies, and Supabase integrations (always use MCP Supabase tools) |
+| **Next.js Specifics** | @agent-nextjs-expert | App Router patterns, Server/Client Components, API routes, middleware |
+| **Code Review** | @agent-code-reviewer | Review architecture, security, and best practices |
+| **General Tasks** | @agent-general-purpose | Research, exploration, and other non-specialized work |
+
+**Agent Workflow for Frontend Work**:
+```
+1. @agent-frontend-expert → Creates design specification (.claude/design/*.md)
+2. @agent-daisyui-expert → Implements the design using DaisyUI + Tailwind
+```
 
 **Implementation Steps:**
 
 1. **Read Task**: Find the task file under `./docs/specs/{feature-name}/tasks/`. Read it carefully.
 
-2. **Plan**: Think hard to form a detailed implementation plan.
+2. **Plan**: Think hard to form a detailed implementation plan. Identify which specialized agents are needed.
 
 3. **Implement**:
    - Create a new git branch for the implementation
-   - Implement based on the plan using the right coding agents
+   - **Delegate to specialized agents** based on work type (see table above)
+   - For frontend: Get design from @agent-frontend-expert FIRST, then implement with @agent-daisyui-expert
+   - For database: Use @agent-supabase-nextjs-expert with MCP Supabase tools
+   - For Next.js patterns: Use @agent-nextjs-expert
    - Write sufficient unit/integration tests (Vitest/Jest)
    - Ensure design system adherence (Clean & Elegant Professional)
 
