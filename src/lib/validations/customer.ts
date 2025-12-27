@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { emailSchema, phoneSchema, uuidSchema } from './index';
+import { emailSchema, phoneSchema, uuidSchema } from './common';
 
 // ============================================================================
 // Profile Update

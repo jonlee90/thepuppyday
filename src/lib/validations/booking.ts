@@ -11,7 +11,7 @@ import {
   futureDateSchema,
   timeSchema,
   petSizeSchema,
-} from './index';
+} from './common';
 
 // ============================================================================
 // Pet Information

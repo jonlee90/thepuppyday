@@ -13,7 +13,7 @@ import {
   notificationChannelSchema,
   petSizeSchema,
   positiveIntSchema,
-} from './index';
+} from './common';
 
 // ============================================================================
 // Service Management
