@@ -230,7 +230,7 @@ export const dynamic = 'force-dynamic';
 export default async function CalendarSettingsPage({
   searchParams,
 }: {
-  searchParams: { success?: string; error?: string };
+  searchParams: Promise<{ success?: string; error?: string }>;
 }) {
   const supabase = await createServerSupabaseClient();
 
@@ -239,6 +239,9 @@ export default async function CalendarSettingsPage({
 
   // Fetch calendar data (using direct DB queries, not HTTP fetch)
   const { connectionStatus, syncSettings, calendars, error } = await getCalendarData();
+
+  // Await searchParams (Next.js 15+ requirement)
+  const params = await searchParams;
 
   return (
     <div className="space-y-6">
@@ -267,8 +270,8 @@ export default async function CalendarSettingsPage({
         initialSyncSettings={syncSettings}
         initialCalendars={calendars}
         initialError={error}
-        oauthSuccess={searchParams.success === 'true'}
-        oauthError={searchParams.error}
+        oauthSuccess={params.success === 'true'}
+        oauthError={params.error}
       />
     </div>
   );
