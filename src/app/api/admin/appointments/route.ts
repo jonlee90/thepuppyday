@@ -242,6 +242,7 @@ const CreateAppointmentSchema = z.object({
     isNew: z.boolean().optional(), // Track if this is a new pet from walk-in
   }),
   service_id: z.string().uuid(),
+  groomer_id: z.string().uuid().optional().nullable(),
   addon_ids: z.array(z.string().uuid()).default([]),
   appointment_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   appointment_time: z.string().regex(/^\d{2}:\d{2}$/),
@@ -575,6 +576,7 @@ export async function POST(request: NextRequest) {
         customer_id: customerId,
         pet_id: petId,
         service_id: data.service_id,
+        groomer_id: data.groomer_id || null,
         scheduled_at: scheduledAt.toISOString(),
         duration_minutes: service.duration_minutes,
         status: data.source === 'walk_in' ? 'checked_in' : 'pending',
