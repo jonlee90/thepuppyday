@@ -28,6 +28,7 @@ export function useBooking() {
     selectedAddons,
     totalPrice,
     guestInfo,
+    selectedGroomerId,
     setBookingResult,
   } = useBookingStore();
 
@@ -60,6 +61,7 @@ export function useBooking() {
     selectedAddons,
     totalPrice,
     guestInfo,
+    selectedGroomerId,
     setBookingResult,
   ]);
 
@@ -132,7 +134,7 @@ export function useBooking() {
         customer_id: customerId,
         pet_id: petId,
         service_id: selectedService.id,
-        groomer_id: null, // Will be assigned later by admin
+        groomer_id: selectedGroomerId || null,
         scheduled_at: scheduledAt.toISOString(),
         duration_minutes: selectedService.duration_minutes,
         status: 'pending',
@@ -188,6 +190,7 @@ export function useBooking() {
     selectedAddons,
     totalPrice,
     guestInfo,
+    selectedGroomerId,
     setBookingResult,
   ]);
 
@@ -297,6 +300,11 @@ export function useBooking() {
         addon_ids: selectedAddons.map(addon => addon.id),
       };
 
+      // Add groomer if selected (for admin/walk-in bookings)
+      if (selectedGroomerId) {
+        payload.groomer_id = selectedGroomerId;
+      }
+
       // Add customer info
       if (isAuthenticated && user) {
         payload.customer_id = user.id;
@@ -364,6 +372,7 @@ export function useBooking() {
     selectedAddons,
     totalPrice,
     guestInfo,
+    selectedGroomerId,
     setBookingResult,
   ]);
 

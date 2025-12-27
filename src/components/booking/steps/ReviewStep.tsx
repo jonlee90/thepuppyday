@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useBooking } from '@/hooks/useBooking';
 import { GuestInfoForm } from '../GuestInfoForm';
 import { AddonCard } from '../AddonCard';
+import { GroomerSelect } from '../GroomerSelect';
 import { useAddons } from '@/hooks/useAddons';
 import { formatCurrency, formatDuration, getSizeShortLabel } from '@/lib/booking/pricing';
 import { formatTimeDisplay } from '@/lib/booking/availability';
@@ -43,6 +44,8 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
     totalPrice,
     guestInfo,
     setGuestInfo,
+    selectedGroomerId,
+    setSelectedGroomerId,
     setStep,
     nextStep,
     prevStep,
@@ -307,6 +310,16 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
           </div>
         </div>
       </div>
+
+      {/* Groomer Selection (Admin/Walk-in mode only) */}
+      {adminMode && (
+        <div className="bg-white rounded-xl border border-[#434E54]/20 p-6">
+          <GroomerSelect
+            value={selectedGroomerId}
+            onChange={setSelectedGroomerId}
+          />
+        </div>
+      )}
 
       {/* Add-ons Selection */}
       {!isLoadingAddons && addons.length > 0 && (
