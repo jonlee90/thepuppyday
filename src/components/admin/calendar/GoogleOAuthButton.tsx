@@ -10,7 +10,6 @@ import { Lock, Loader } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface GoogleOAuthButtonProps {
-  onSuccess?: () => void;
   onError?: (error: string) => void;
   disabled?: boolean;
   variant?: 'primary' | 'secondary';
@@ -19,7 +18,6 @@ interface GoogleOAuthButtonProps {
 }
 
 export function GoogleOAuthButton({
-  onSuccess,
   onError,
   disabled = false,
   variant = 'primary',
@@ -48,12 +46,9 @@ export function GoogleOAuthButton({
       }
 
       // Redirect to Google OAuth consent screen
+      // Note: onSuccess callback will be handled after OAuth redirect completes
+      // via the callback URL parameters (see CalendarSettingsClient)
       window.location.href = data.authUrl;
-
-      // onSuccess will be called after redirect back
-      if (onSuccess) {
-        onSuccess();
-      }
     } catch (error) {
       console.error('OAuth connection error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Connection failed. Please try again.';

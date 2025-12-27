@@ -1,6 +1,7 @@
 /**
  * Calendar Settings Client Component
  * Handles all interactive functionality for calendar settings
+ * FIXED: Critical #2 - Using Server Actions instead of fetch
  */
 
 'use client';
@@ -10,6 +11,12 @@ import { CalendarConnectionCard } from '@/components/admin/calendar/CalendarConn
 import { CalendarSelector } from '@/components/admin/calendar/CalendarSelector';
 import { SyncSettingsForm } from '@/components/admin/calendar/SyncSettingsForm';
 import { toast } from '@/hooks/use-toast';
+import {
+  disconnectCalendar,
+  updateSyncSettings,
+  updateSelectedCalendar,
+  refreshConnectionStatus,
+} from './actions';
 import type {
   CalendarConnectionStatus,
   CalendarSyncSettings,
@@ -68,35 +75,26 @@ export function CalendarSettingsClient({
 
   const handleRefreshStatus = async () => {
     try {
-      const response = await fetch('/api/admin/calendar/connection/status');
-      if (!response.ok) throw new Error('Failed to fetch status');
+      // Use Server Action for CSRF protection
+      const result = await refreshConnectionStatus();
 
-      const status: CalendarConnectionStatus = await response.json();
-      setConnectionStatus(status);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to refresh status');
+      }
 
-      if (status.connected && status.connection) {
-        setSelectedCalendarId(status.connection.calendar_id);
+      if (result.connectionStatus) {
+        setConnectionStatus(result.connectionStatus);
 
-        // Fetch additional data
-        const [settingsRes, calendarsRes] = await Promise.all([
-          fetch('/api/admin/calendar/settings'),
-          fetch('/api/admin/calendar/calendars'),
-        ]);
-
-        if (settingsRes.ok) {
-          const settings = await settingsRes.json();
-          setSyncSettings(settings);
-        }
-
-        if (calendarsRes.ok) {
-          const calendarsData = await calendarsRes.json();
-          setCalendars(calendarsData.calendars || []);
+        if (result.connectionStatus.connected && result.connectionStatus.connection) {
+          setSelectedCalendarId(result.connectionStatus.connection.calendar_id);
         }
       }
     } catch (error) {
       console.error('Failed to refresh status:', error);
-      toast.error('Refresh Failed', {
+      toast({
+        title: 'Refresh Failed',
         description: 'Failed to refresh connection status',
+        variant: 'destructive',
       });
     }
   };
@@ -109,15 +107,15 @@ export function CalendarSettingsClient({
   const handleDisconnect = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/admin/calendar/auth/disconnect', {
-        method: 'DELETE',
-      });
+      // Use Server Action for CSRF protection
+      const result = await disconnectCalendar();
 
-      if (!response.ok) {
-        throw new Error('Failed to disconnect');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to disconnect');
       }
 
-      toast.success('Disconnected', {
+      toast({
+        title: 'Disconnected',
         description: 'Google Calendar has been disconnected',
       });
 
@@ -128,8 +126,10 @@ export function CalendarSettingsClient({
       setSelectedCalendarId('');
     } catch (error) {
       console.error('Failed to disconnect:', error);
-      toast.error('Disconnect Failed', {
-        description: 'Failed to disconnect calendar. Please try again.',
+      toast({
+        title: 'Disconnect Failed',
+        description: error instanceof Error ? error.message : 'Failed to disconnect calendar. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -138,18 +138,11 @@ export function CalendarSettingsClient({
 
   const handleSelectCalendar = async (calendarId: string) => {
     try {
-      const response = await fetch('/api/admin/calendar/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          calendar_id: calendarId,
-        }),
-      });
+      // Use Server Action for CSRF protection
+      const result = await updateSelectedCalendar(calendarId);
 
-      if (!response.ok) {
-        throw new Error('Failed to update calendar');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update calendar');
       }
 
       setSelectedCalendarId(calendarId);
@@ -172,13 +165,16 @@ export function CalendarSettingsClient({
 
   const handleRefreshCalendars = async () => {
     try {
-      const response = await fetch('/api/admin/calendar/calendars');
-      if (!response.ok) {
-        throw new Error('Failed to fetch calendars');
+      // Use Server Action for CSRF protection
+      const result = await refreshConnectionStatus();
+
+      if (!result.success || !result.connectionStatus?.connection) {
+        throw new Error('Failed to refresh calendars');
       }
 
-      const data = await response.json();
-      setCalendars(data.calendars || []);
+      // Fetch calendars would need to be done server-side
+      // For now, trigger a full page refresh to reload calendars
+      window.location.reload();
     } catch (error) {
       console.error('Failed to refresh calendars:', error);
       throw error; // Re-throw to be handled by CalendarSelector
@@ -187,16 +183,11 @@ export function CalendarSettingsClient({
 
   const handleSaveSyncSettings = async (settings: CalendarSyncSettings) => {
     try {
-      const response = await fetch('/api/admin/calendar/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(settings),
-      });
+      // Use Server Action for CSRF protection
+      const result = await updateSyncSettings(settings);
 
-      if (!response.ok) {
-        throw new Error('Failed to save settings');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save settings');
       }
 
       setSyncSettings(settings);
