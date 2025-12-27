@@ -25,6 +25,9 @@ export interface Toast {
   duration?: number;
 }
 
+export type Breakpoint = 'mobile' | 'tablet' | 'desktop';
+export type BottomTab = 'home' | 'appointments' | 'customers';
+
 interface AdminState {
   // Sidebar state
   isSidebarCollapsed: boolean;
@@ -41,6 +44,11 @@ interface AdminState {
   // Toast notifications
   toasts: Toast[];
 
+  // Responsive state
+  currentBreakpoint: Breakpoint;
+  isMobileDrawerOpen: boolean;
+  activeBottomTab: BottomTab;
+
   // Actions
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -51,6 +59,10 @@ interface AdminState {
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   clearToasts: () => void;
+  setBreakpoint: (breakpoint: Breakpoint) => void;
+  toggleMobileDrawer: () => void;
+  setMobileDrawerOpen: (open: boolean) => void;
+  setActiveBottomTab: (tab: BottomTab) => void;
 }
 
 export const useAdminStore = create<AdminState>()(
@@ -65,6 +77,9 @@ export const useAdminStore = create<AdminState>()(
       appointmentFilters: {},
       appointmentsView: 'calendar',
       toasts: [],
+      currentBreakpoint: 'desktop',
+      isMobileDrawerOpen: false,
+      activeBottomTab: 'home',
 
       // Sidebar actions
       toggleSidebar: () =>
@@ -107,6 +122,19 @@ export const useAdminStore = create<AdminState>()(
 
       clearToasts: () =>
         set({ toasts: [] }),
+
+      // Responsive actions
+      setBreakpoint: (breakpoint) =>
+        set({ currentBreakpoint: breakpoint }),
+
+      toggleMobileDrawer: () =>
+        set((state) => ({ isMobileDrawerOpen: !state.isMobileDrawerOpen })),
+
+      setMobileDrawerOpen: (open) =>
+        set({ isMobileDrawerOpen: open }),
+
+      setActiveBottomTab: (tab) =>
+        set({ activeBottomTab: tab }),
     }),
     {
       name: 'admin-storage',
@@ -115,6 +143,7 @@ export const useAdminStore = create<AdminState>()(
         selectedDateRange: state.selectedDateRange,
         appointmentFilters: state.appointmentFilters,
         appointmentsView: state.appointmentsView,
+        activeBottomTab: state.activeBottomTab,
       }),
     }
   )

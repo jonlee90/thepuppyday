@@ -1,14 +1,15 @@
 /**
- * Admin Panel Mobile Navigation
- * Hamburger menu that opens a slide-in drawer with navigation
+ * Admin Panel Mobile Navigation Drawer
+ * Slide-in drawer with full navigation (triggered by header hamburger or bottom "More" tab)
  */
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
+import { useAdminStore } from '@/stores/admin-store';
 import type { User } from '@/types/database';
 import {
   LayoutDashboard,
@@ -18,7 +19,6 @@ import {
   Plus,
   Images,
   Settings,
-  Menu,
   X,
   LogOut,
   BarChart3,
@@ -171,7 +171,7 @@ interface AdminMobileNavProps {
 }
 
 export function AdminMobileNav({ user }: AdminMobileNavProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isMobileDrawerOpen, setMobileDrawerOpen } = useAdminStore();
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
   const { signOut } = useAuth();
@@ -204,43 +204,21 @@ export function AdminMobileNav({ user }: AdminMobileNavProps) {
 
   // Close drawer when route changes
   const handleLinkClick = () => {
-    setIsOpen(false);
+    setMobileDrawerOpen(false);
   };
+
+  // Close drawer on route change
+  useEffect(() => {
+    setMobileDrawerOpen(false);
+  }, [pathname, setMobileDrawerOpen]);
 
   return (
     <>
-      {/* Mobile Header with Hamburger */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-[#434E54]/10 shadow-sm">
-        <div className="h-16 flex items-center justify-between px-4">
-          <Link href="/admin/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#434E54] rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">P</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg text-[#434E54] leading-tight">
-                Puppy Day
-              </span>
-              <span className="text-xs text-[#434E54]/60">Admin Panel</span>
-            </div>
-          </Link>
-
-          {/* Hamburger Button - 44x44px tap target */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="w-11 h-11 flex items-center justify-center rounded-lg
-                     text-[#434E54] hover:bg-[#EAE0D5] transition-colors"
-            aria-label={isOpen ? 'Close menu' : 'Open menu'}
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-      </header>
-
       {/* Overlay */}
-      {isOpen && (
+      {isMobileDrawerOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/20 z-40"
-          onClick={() => setIsOpen(false)}
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setMobileDrawerOpen(false)}
           aria-hidden="true"
         />
       )}
@@ -248,17 +226,17 @@ export function AdminMobileNav({ user }: AdminMobileNavProps) {
       {/* Slide-in Drawer */}
       <aside
         className={`
-          lg:hidden fixed top-0 right-0 bottom-0 z-50 w-80 max-w-[85vw]
-          bg-white shadow-2xl transition-transform duration-300 ease-in-out
-          ${isOpen ? 'translate-x-0' : 'translate-x-full'}
+          md:hidden fixed top-0 right-0 bottom-0 z-50 w-80 max-w-[85vw]
+          bg-white shadow-2xl transition-transform duration-300 ease-out
+          ${isMobileDrawerOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
       >
         <div className="h-full flex flex-col">
           {/* Drawer Header */}
-          <div className="h-16 flex items-center justify-between px-4 border-b border-[#434E54]/10">
+          <div className="h-14 flex items-center justify-between px-4 border-b border-[#434E54]/10">
             <span className="font-semibold text-[#434E54]">Menu</span>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => setMobileDrawerOpen(false)}
               className="w-11 h-11 flex items-center justify-center rounded-lg
                        text-[#434E54]/60 hover:bg-[#EAE0D5] hover:text-[#434E54]
                        transition-colors"
@@ -385,7 +363,7 @@ export function AdminMobileNav({ user }: AdminMobileNavProps) {
             <button
               onClick={() => {
                 signOut();
-                setIsOpen(false);
+                setMobileDrawerOpen(false);
               }}
               className="flex items-center gap-3 w-full px-4 py-2 rounded-lg
                        text-[#434E54]/70 hover:bg-[#EAE0D5] hover:text-[#434E54]

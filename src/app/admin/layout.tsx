@@ -2,11 +2,13 @@
  * Admin Panel Layout
  * Server Component that fetches user data for admin/staff users
  * Authentication is enforced by middleware.ts
+ * Responsive layout with desktop sidebar, tablet icon sidebar, and mobile bottom tabs
  */
 
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
 import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
+import { TabletSidebar, MobileHeader, MobileBottomTabs } from '@/components/admin/layout';
 import { Toaster } from '@/components/ui/toaster';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getAuthenticatedAdmin } from '@/lib/admin/auth';
@@ -42,15 +44,33 @@ export default async function AdminLayout({
   return (
     <AdminLayoutClient>
       <div className="min-h-screen bg-[#F8EEE5]">
-        {/* Desktop Sidebar - Pass user as prop */}
+        {/* Desktop Sidebar (>1024px) - Full width 256px */}
         <AdminSidebar user={user} />
 
-        {/* Mobile Navigation - Pass user as prop */}
+        {/* Tablet Sidebar (768px-1023px) - Icon only 72px */}
+        <TabletSidebar user={user} />
+
+        {/* Mobile Header (<768px) - Fixed top */}
+        <MobileHeader user={user} />
+
+        {/* Mobile Navigation Drawer (<768px) - Slide-in from right */}
         <AdminMobileNav user={user} />
 
-        {/* Main content area - adjusts for sidebar width */}
-        <main className="lg:pl-64 pt-16 lg:pt-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        {/* Mobile Bottom Tabs (<768px) - Fixed bottom */}
+        <MobileBottomTabs />
+
+        {/* Main content area - Responsive padding for different layouts */}
+        <main className="
+          min-h-screen
+          pt-14 md:pt-0
+          pb-20 md:pb-0
+          md:pl-[72px] lg:pl-64
+        ">
+          <div className="
+            max-w-7xl mx-auto
+            px-4 md:px-6 lg:px-8
+            py-4 md:py-6 lg:py-8
+          ">
             {children}
           </div>
         </main>
