@@ -44,3 +44,4 @@ analyze-lighthouse.js
 nul
 
 .playwright-mcp/
+.claude\settings.json

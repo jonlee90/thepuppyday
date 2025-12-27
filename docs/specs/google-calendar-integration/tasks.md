@@ -448,61 +448,76 @@ This document contains the implementation task list for the admin-only Google Ca
 
 ## Phase 9: Import Wizard UI
 
-- [ ] 9. Create import wizard container component
-  - Create `src/components/admin/calendar/import/ImportWizard.tsx`
-  - Implement 4-step wizard flow with step indicator
-  - Step 1: Date range selection
-  - Step 2: Event selection
-  - Step 3: Mapping forms
-  - Step 4: Review and confirm
-  - Track wizard state and navigation
-  - Handle cancel to discard all selections
+- [⚠️] 9. Create import wizard container component (Task 0044) **WIP - API MISMATCH**
+  - ✅ Create `src/components/admin/calendar/import/ImportWizard.tsx`
+  - ✅ Implement 4-step wizard flow with step indicator
+  - ✅ Step 1: Date range selection
+  - ✅ Step 2: Event selection
+  - ✅ Step 3: Mapping forms
+  - ✅ Step 4: Review and confirm
+  - ✅ Track wizard state and navigation
+  - ✅ Handle cancel to discard all selections
+  - ⚠️ **CRITICAL**: Frontend/backend API schema mismatch - see README.md
   - Ref: Req 14 (Import Wizard Flow)
 
-- [ ] 9.1. Create date range step component
-  - Create `src/components/admin/calendar/import/DateRangeStep.tsx`
-  - Display date range picker (dateFrom, dateTo)
-  - Default to next 30 days
-  - Validate date range
-  - Fetch preview on "Next" click
-  - Show loading state during fetch
+- [⚠️] 9.1. Create date range step component (Task 0045) **WIP - API MISMATCH**
+  - ✅ Create `src/components/admin/calendar/import/DateRangeStep.tsx`
+  - ✅ Display date range picker (dateFrom, dateTo)
+  - ✅ Default to next 30 days
+  - ✅ Validate date range
+  - ✅ Fetch preview on "Next" click
+  - ✅ Show loading state during fetch
+  - ⚠️ API call works but confirm step incompatible
   - Ref: Req 14.2 (Step 1 - date range)
 
-- [ ] 9.2. Create event selection step component
-  - Create `src/components/admin/calendar/import/EventSelectionStep.tsx`
-  - Display fetched events with checkboxes
-  - Show event title, start time, duration, description preview
-  - Show warning badge for potential duplicates
-  - Show suggestion for matched customers/pets
-  - Allow multi-select for batch import
+- [⚠️] 9.2. Create event selection step component (Task 0046) **WIP - API MISMATCH**
+  - ✅ Create `src/components/admin/calendar/import/EventSelectionStep.tsx`
+  - ✅ Display fetched events with checkboxes
+  - ✅ Show event title, start time, duration, description preview
+  - ✅ Show warning badge for potential duplicates
+  - ✅ Show suggestion for matched customers/pets
+  - ✅ Allow multi-select for batch import
+  - ⚠️ XSS risk in description display - needs sanitization
   - Ref: Req 14.3 (Step 2 - event selection)
 
-- [ ] 9.3. Create event mapping form component
-  - Create `src/components/admin/calendar/import/EventMappingForm.tsx`
-  - For each selected event, display mapping form
-  - Customer selector (search existing or create new)
-  - Pet selector (filtered by customer, or create new)
-  - Service selector (from active services)
-  - Addon selector (multi-select)
-  - Notes input
-  - Show validation errors inline
+- [⚠️] 9.3. Create event mapping form component (Task 0047) **INCOMPATIBLE**
+  - ✅ Create `src/components/admin/calendar/import/EventMappingForm.tsx`
+  - ✅ For each selected event, display mapping form
+  - ✅ Customer selector (search existing or create new)
+  - ✅ Pet selector (filtered by customer, or create new)
+  - ✅ Service selector (from active services)
+  - ✅ Addon selector (multi-select)
+  - ✅ Notes input
+  - ✅ Show validation errors inline
+  - ⚠️ **INCOMPATIBLE**: Backend uses automatic matching, not manual mapping
+  - ⚠️ N+1 query problem in pet fetching
   - Ref: Req 14.4 (Step 3 - mapping), Req 27 (Validation)
 
-- [ ] 9.4. Create review step component
-  - Create `src/components/admin/calendar/import/ReviewStep.tsx`
-  - Display summary of all appointments to be created
-  - Show customer, pet, service, date/time for each
-  - Show warnings (past events, duration mismatch)
-  - "Confirm Import" button to execute
-  - Show import progress and results
+- [⚠️] 9.4. Create review step component (Task 0048) **WIP - API MISMATCH**
+  - ✅ Create `src/components/admin/calendar/import/ReviewStep.tsx`
+  - ✅ Display summary of all appointments to be created
+  - ✅ Show customer, pet, service, date/time for each
+  - ✅ Show warnings (past events, duration mismatch)
+  - ✅ "Confirm Import" button to execute
+  - ✅ Show import progress and results
+  - ⚠️ API call will fail due to schema mismatch
   - Ref: Req 14.5-14.6 (Review and confirm)
 
-- [ ] 9.5. Create import button and modal trigger
-  - Create `src/components/admin/calendar/ImportButton.tsx`
-  - Display "Import from Calendar" button
-  - Only show when calendar is connected
-  - Open ImportWizard in modal on click
+- [✅] 9.5. Create import button and modal trigger (Task 0049) **COMPLETE**
+  - ✅ Create `src/components/admin/calendar/ImportButton.tsx`
+  - ✅ Display "Import from Calendar" button
+  - ✅ Only show when calendar is connected
+  - ✅ Open ImportWizard in modal on click
   - Ref: Req 7 (Import from Google Calendar)
+
+**Phase 9 Status**: ⚠️ **BLOCKED - API Schema Mismatch**
+- All UI components implemented (6 components, 1,926 lines)
+- Design specification complete (`.claude/design/calendar-import-wizard.md`)
+- ESLint passing (0 errors, 0 warnings)
+- **Critical Issue**: Frontend assumes manual mapping, backend uses automatic matching
+- See `src/components/admin/calendar/import/README.md` for full details and resolution options
+- Branch: `feature/calendar-import-wizard`
+- Commit: 355a0cb
 
 ---
 
