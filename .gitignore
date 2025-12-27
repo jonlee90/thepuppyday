@@ -42,3 +42,5 @@ next-env.d.ts
 lighthouse-*.json
 analyze-lighthouse.js
 nul
+
+.playwright-mcp/
