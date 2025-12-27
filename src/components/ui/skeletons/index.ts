@@ -11,3 +11,4 @@ export {
   QuickActionsSkeleton,
   MembershipSkeleton,
 } from './DashboardSkeleton';
+export { TableSkeleton } from './TableSkeleton';

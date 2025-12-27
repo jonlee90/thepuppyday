@@ -11,6 +11,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'outline' | 'error' | 'success' | 'warning' | 'info';
   size?: 'xs' | 'sm' | 'md' | 'lg';
   isLoading?: boolean;
+  loadingText?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
@@ -22,6 +23,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = 'primary',
       size = 'md',
       isLoading = false,
+      loadingText,
       leftIcon,
       rightIcon,
       children,
@@ -65,7 +67,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {isLoading ? (
           <>
             <span className="loading loading-spinner loading-sm text-white" />
-            {children}
+            {loadingText || children}
           </>
         ) : (
           <>

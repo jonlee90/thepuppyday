@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { phoneSchema } from './common';
 
 export const loginSchema = z.object({
   email: z
@@ -30,13 +31,7 @@ export const registerSchema = z.object({
     .string()
     .min(1, 'Email is required')
     .email('Please enter a valid email address'),
-  phone: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || /^\+?[1-9]\d{1,14}$/.test(val.replace(/[\s-()]/g, '')),
-      'Please enter a valid phone number'
-    ),
+  phone: phoneSchema,
   password: z
     .string()
     .min(1, 'Password is required')

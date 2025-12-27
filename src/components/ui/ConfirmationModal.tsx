@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createFocusTrap } from '@/lib/accessibility/focus';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -39,21 +40,27 @@ export function ConfirmationModal({
 
   // Focus trap and escape key handling
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && modalRef.current) {
       // Store current focus
       previousActiveElement.current = document.activeElement as HTMLElement;
 
-      // Focus modal
-      modalRef.current?.focus();
-
       // Prevent body scroll
       document.body.style.overflow = 'hidden';
+
+      // Create and activate focus trap
+      const focusTrap = createFocusTrap(modalRef.current);
+      focusTrap.activate();
+
+      return () => {
+        // Deactivate focus trap and restore focus
+        focusTrap.deactivate();
+
+        // Restore body scroll
+        document.body.style.overflow = '';
+      };
     } else {
       // Restore body scroll
       document.body.style.overflow = '';
-
-      // Restore focus
-      previousActiveElement.current?.focus();
     }
 
     return () => {

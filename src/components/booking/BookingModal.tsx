@@ -18,6 +18,7 @@ import { useBookingStore } from '@/stores/bookingStore';
 import { canContinueFromStep } from '@/lib/booking/step-validation';
 import { submitBooking } from '@/lib/booking/submit';
 import { toast } from '@/hooks/use-toast';
+import { createFocusTrap } from '@/lib/accessibility/focus';
 
 interface BookingModalProps {
   mode?: BookingModalMode;
@@ -111,9 +112,9 @@ export function BookingModal({
     }
   }, [onClose, modalStore.canClose]);
 
-  // Lock body scroll when modal is open
+  // Lock body scroll when modal is open and setup focus trap
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && modalRef.current) {
       // Save current active element
       previousActiveElement.current = document.activeElement as HTMLElement;
 
@@ -124,22 +125,34 @@ export function BookingModal({
       // Add escape key listener
       document.addEventListener('keydown', handleEscapeKey);
 
-      // Focus the modal
-      setTimeout(() => {
-        modalRef.current?.focus();
+      // Create and activate focus trap after a short delay to allow modal content to render
+      let focusTrap: ReturnType<typeof createFocusTrap> | null = null;
+      const timeoutId = setTimeout(() => {
+        if (modalRef.current) {
+          focusTrap = createFocusTrap(modalRef.current);
+          focusTrap.activate();
+        }
       }, 100);
+
+      return () => {
+        clearTimeout(timeoutId);
+
+        // Deactivate focus trap
+        if (focusTrap) {
+          focusTrap.deactivate();
+        }
+
+        // Restore scroll
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+
+        // Remove escape key listener
+        document.removeEventListener('keydown', handleEscapeKey);
+      };
     } else {
       // Restore scroll
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
-
-      // Remove escape key listener
-      document.removeEventListener('keydown', handleEscapeKey);
-
-      // Return focus
-      if (previousActiveElement.current) {
-        previousActiveElement.current.focus();
-      }
     }
 
     return () => {

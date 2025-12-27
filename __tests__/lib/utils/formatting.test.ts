@@ -183,9 +183,9 @@ describe('getSizeFromWeight', () => {
   });
 
   it('handles decimal weights', () => {
-    expect(getSizeFromWeight(18.5)).toBe('medium');
-    expect(getSizeFromWeight(35.9)).toBe('medium');
-    expect(getSizeFromWeight(65.1)).toBe('xlarge');
+    expect(getSizeFromWeight(18.5)).toBe('medium'); // Just above small range (0-18)
+    expect(getSizeFromWeight(35.9)).toBe('large');  // Just above medium range (19-35)
+    expect(getSizeFromWeight(65.1)).toBe('xlarge'); // Just above large range (36-65)
   });
 
   it('handles very large weights', () => {
