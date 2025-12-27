@@ -17,7 +17,7 @@ async function getSettingsMetadata(): Promise<{
     const supabase = await createServerSupabaseClient();
 
     // Fetch relevant data for status indicators
-    const [settingsResult, siteContentResult, bannersResult] = await Promise.all([
+    const [settingsResult, siteContentResult, bannersResult, calendarConnectionResult] = await Promise.all([
       // Fetch key settings to determine status
       (supabase as any)
         .from('settings')
@@ -39,6 +39,13 @@ async function getSettingsMetadata(): Promise<{
         .from('promo_banners')
         .select('id, is_active')
         .eq('is_active', true),
+
+      // Fetch calendar connection status
+      (supabase as any)
+        .from('calendar_connections')
+        .select('is_active, last_sync_at')
+        .eq('is_active', true)
+        .maybeSingle(),
     ]);
 
     // Build metadata for each section
@@ -104,6 +111,21 @@ async function getSettingsMetadata(): Promise<{
         status: 'configured',
         summary: 'Team member access control',
         lastUpdated: null,
+      },
+      {
+        id: 'calendar',
+        title: 'Calendar Integration',
+        description: 'Connect and sync with Google Calendar',
+        href: '/admin/settings/calendar',
+        icon: 'Calendar',
+        status: calendarConnectionResult.data?.is_active
+          ? 'configured'
+          : 'not_configured',
+        summary: calendarConnectionResult.data?.is_active
+          ? 'Google Calendar connected'
+          : 'Not connected',
+        lastUpdated: calendarConnectionResult.data?.last_sync_at || null,
+        badge: 'New',
       },
     ];
 

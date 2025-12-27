@@ -82,9 +82,16 @@ export function SettingsCard({ section }: SettingsCardProps) {
 
             {/* Title */}
             <div>
-              <h3 className="text-lg font-semibold text-[#434E54] group-hover:text-[#363F44] transition-colors">
-                {section.title}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-[#434E54] group-hover:text-[#363F44] transition-colors">
+                  {section.title}
+                </h3>
+                {section.badge && (
+                  <span className="badge badge-sm bg-[#F59E0B] text-white border-none">
+                    {section.badge}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

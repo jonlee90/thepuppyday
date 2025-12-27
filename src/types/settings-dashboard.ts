@@ -16,4 +16,5 @@ export interface SettingsSectionMetadata {
   status: SettingsSectionStatus;
   summary: string;
   lastUpdated: string | null;
+  badge?: string; // Optional badge label (e.g., "New", "Beta")
 }
