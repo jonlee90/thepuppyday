@@ -13,6 +13,11 @@ import { revokeTokens } from '@/lib/calendar/oauth';
 import { getValidAccessToken } from '@/lib/calendar/token-manager';
 import { getQuotaStatus as getQuotaStatusUtil } from '@/lib/calendar/quota/tracker';
 import { resumeAutoSync as resumeAutoSyncUtil } from '@/lib/calendar/sync/pause-manager';
+import {
+  validateServiceAccountCredentials,
+  saveConnection,
+  type ServiceAccountCredentials,
+} from '@/lib/calendar/serviceAccount';
 import type { CalendarSyncSettings, CalendarConnectionStatus } from '@/types/calendar';
 
 /**
@@ -53,6 +58,76 @@ export async function disconnectCalendar(): Promise<{ success: boolean; error?: 
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to disconnect calendar',
+    };
+  }
+}
+
+/**
+ * Connect Google Calendar with Service Account
+ * Validates and saves service account credentials
+ */
+export async function connectServiceAccount(
+  credentialsString: string,
+  calendarId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { user: adminUser } = await requireAdmin(supabase);
+
+    // Validate inputs
+    if (!credentialsString || typeof credentialsString !== 'string') {
+      return {
+        success: false,
+        error: 'Service account credentials are required',
+      };
+    }
+
+    if (!calendarId || typeof calendarId !== 'string') {
+      return {
+        success: false,
+        error: 'Calendar ID is required',
+      };
+    }
+
+    // Parse and validate credentials
+    let credentials: ServiceAccountCredentials;
+    try {
+      credentials = JSON.parse(credentialsString);
+    } catch {
+      return {
+        success: false,
+        error: 'Invalid JSON format in credentials',
+      };
+    }
+
+    // Validate service account structure
+    if (!validateServiceAccountCredentials(credentials)) {
+      return {
+        success: false,
+        error:
+          'Invalid service account credentials. Please ensure you uploaded the correct JSON file from Google Cloud Console.',
+      };
+    }
+
+    // Save connection (this also tests the connection)
+    const result = await saveConnection(credentials, calendarId, adminUser.id);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error || 'Failed to connect to Google Calendar',
+      };
+    }
+
+    // Revalidate the page to show updated state
+    revalidatePath('/admin/settings/calendar');
+
+    return { success: true };
+  } catch (error) {
+    console.error('Service account connection error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to connect to Google Calendar',
     };
   }
 }

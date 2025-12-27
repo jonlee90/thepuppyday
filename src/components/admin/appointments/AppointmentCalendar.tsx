@@ -53,7 +53,7 @@ export function AppointmentCalendar({
   const calendarRef = useRef<FullCalendar>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentView, setCurrentView] = useState<'dayGridMonth' | 'timeGridWeek' | 'timeGridDay'>('timeGridDay');
+  const [currentView, setCurrentView] = useState<'dayGridMonth' | 'timeGridWeek' | 'timeGridDay'>('dayGridMonth');
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
   const [slotWaitlistCount, setSlotWaitlistCount] = useState(0);
   const [groomers, setGroomers] = useState<any[]>([]);
@@ -281,6 +281,14 @@ export function AppointmentCalendar({
     [currentView]
   );
 
+  // Handle event mounting to set custom CSS variables
+  const handleEventDidMount = useCallback((info: any) => {
+    // Set the event color as a CSS variable for the ::before pseudo-element
+    if (info.event.backgroundColor) {
+      info.el.style.setProperty('--event-color', info.event.backgroundColor);
+    }
+  }, []);
+
   // Handle fill from waitlist
   const handleFillSlot = useCallback(() => {
     if (selectedSlot && onFillFromWaitlist) {
@@ -478,6 +486,7 @@ export function AppointmentCalendar({
           selectMirror={true}
           events={events}
           eventClick={handleEventClick}
+          eventDidMount={handleEventDidMount}
           select={handleDateSelect}
           datesSet={handleDatesSet}
           loading={(isLoading) => setLoading(isLoading)}
@@ -629,6 +638,34 @@ export function AppointmentCalendar({
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          position: relative;
+          padding-left: 1.5rem !important;
+          background-color: transparent !important;
+          border: none !important;
+        }
+
+        .fc-daygrid-event::before {
+          content: '';
+          position: absolute;
+          left: 0.25rem;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: var(--event-color);
+        }
+
+        .fc-daygrid-event .fc-event-time {
+          font-weight: 600;
+          color: #434E54 !important;
+        }
+        .fc-daygrid-event-dot {
+          display: none;
+          margin: 0 !important;
+        }
+        .fc-daygrid-event .fc-event-title {
+          color: #6B7280 !important;
         }
 
         .fc-day-today {

@@ -15,6 +15,7 @@ import { PausedSyncBanner } from '@/components/admin/calendar/PausedSyncBanner';
 import { SyncErrorRecovery } from '@/components/admin/calendar/SyncErrorRecovery';
 import { toast } from '@/hooks/use-toast';
 import {
+  connectServiceAccount,
   disconnectCalendar,
   updateSyncSettings,
   updateSelectedCalendar,
@@ -165,9 +166,40 @@ export function CalendarSettingsClient({
     }
   };
 
-  const handleConnect = () => {
-    // OAuth flow is handled by GoogleOAuthButton
-    // This is a no-op callback
+  const handleConnect = async (
+    credentials: string,
+    calendarId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+    try {
+      // Use Server Action for CSRF protection
+      const result = await connectServiceAccount(credentials, calendarId);
+
+      if (!result.success) {
+        return {
+          success: false,
+          error: result.error || 'Failed to connect to Google Calendar',
+        };
+      }
+
+      toast({
+        title: 'Calendar Connected',
+        description: 'Google Calendar connected successfully!',
+      });
+
+      // Refresh connection status
+      await handleRefreshStatus();
+
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to connect calendar:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to connect calendar',
+      };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDisconnect = async () => {
