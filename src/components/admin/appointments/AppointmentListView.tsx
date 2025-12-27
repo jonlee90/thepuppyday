@@ -7,10 +7,13 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
-import { Search, Calendar, Filter, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, Calendar, ChevronLeft, ChevronRight, X, RefreshCw } from 'lucide-react';
 import { getStatusBadgeColor, getStatusLabel } from '@/lib/admin/appointment-status';
-import type { Appointment, AppointmentStatus } from '@/types/database';
+import type { AppointmentStatus } from '@/types/database';
 import { getTodayInBusinessTimezone } from '@/lib/utils/timezone';
+import { SyncStatusBadge } from '@/components/admin/calendar/SyncStatusBadge';
+import { SyncHistoryPopover } from '@/components/admin/calendar/SyncHistoryPopover';
+import type { SyncStatusMap } from '@/app/api/admin/appointments/sync-status/route';
 
 interface AppointmentListViewProps {
   onRowClick: (appointmentId: string) => void;
@@ -23,6 +26,28 @@ interface Filters {
   dateTo: string;
 }
 
+interface AppointmentListItem {
+  id: string;
+  scheduled_at: string;
+  status: AppointmentStatus;
+  customer: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | null;
+  pet: {
+    name: string;
+  } | null;
+  service: {
+    name: string;
+  } | null;
+}
+
+interface ServiceListItem {
+  id: string;
+  name: string;
+}
+
 const DATE_RANGE_PRESETS = [
   { label: 'Today', value: 'today' },
   { label: 'Tomorrow', value: 'tomorrow' },
@@ -32,7 +57,7 @@ const DATE_RANGE_PRESETS = [
 ] as const;
 
 export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
-  const [appointments, setAppointments] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -49,7 +74,14 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
   const [totalCount, setTotalCount] = useState(0);
   const [sortBy, setSortBy] = useState<'scheduled_at' | 'customer' | 'status'>('scheduled_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<ServiceListItem[]>([]);
+
+  // Calendar sync state
+  const [calendarConnected, setCalendarConnected] = useState(false);
+  const [syncStatusMap, setSyncStatusMap] = useState<SyncStatusMap>({});
+  const [loadingSyncStatus, setLoadingSyncStatus] = useState(false);
+  const [syncingAppointments, setSyncingAppointments] = useState<Set<string>>(new Set());
+  const [syncHistoryAppointmentId, setSyncHistoryAppointmentId] = useState<string | null>(null);
 
   // Debounce search query
   useEffect(() => {
@@ -60,6 +92,23 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Check calendar connection status
+  useEffect(() => {
+    async function checkCalendarConnection() {
+      try {
+        const response = await fetch('/api/admin/calendar/connection');
+        if (response.ok) {
+          const data = await response.json();
+          setCalendarConnected(data.connected || false);
+        }
+      } catch (error) {
+        console.error('[AppointmentListView] Error checking calendar connection:', error);
+        setCalendarConnected(false);
+      }
+    }
+    checkCalendarConnection();
+  }, []);
 
   // Fetch services for filter dropdown
   useEffect(() => {
@@ -127,6 +176,45 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
+
+  // Fetch sync status for visible appointments
+  const fetchSyncStatus = useCallback(async (appointmentIds: string[], signal?: AbortSignal) => {
+    if (!calendarConnected || appointmentIds.length === 0) {
+      return;
+    }
+
+    setLoadingSyncStatus(true);
+    try {
+      const idsParam = appointmentIds.join(',');
+      const response = await fetch(`/api/admin/appointments/sync-status?ids=${idsParam}`, { signal });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSyncStatusMap(data.syncStatus || {});
+      }
+    } catch (error) {
+      // Ignore abort errors
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+      console.error('[AppointmentListView] Error fetching sync status:', error);
+    } finally {
+      setLoadingSyncStatus(false);
+    }
+  }, [calendarConnected]);
+
+  // Fetch sync status when appointments change
+  useEffect(() => {
+    if (!calendarConnected || appointments.length === 0) {
+      return;
+    }
+
+    const abortController = new AbortController();
+    const appointmentIds = appointments.map((apt) => apt.id);
+    fetchSyncStatus(appointmentIds, abortController.signal);
+
+    return () => abortController.abort();
+  }, [appointments, calendarConnected, fetchSyncStatus]);
 
   // Handle date preset change
   const handleDatePresetChange = (preset: string) => {
@@ -221,6 +309,58 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
       setSortOrder('asc');
     }
     setPage(1);
+  };
+
+  // Handle manual sync
+  const handleManualSync = async (appointmentId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    // Add to syncing set
+    setSyncingAppointments((prev) => new Set(prev).add(appointmentId));
+
+    try {
+      const response = await fetch('/api/admin/calendar/sync/manual', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ appointmentId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Show success toast
+        console.log(`[AppointmentListView] Sync successful: ${data.operation}`);
+
+        // Refresh sync status for this appointment
+        const statusResponse = await fetch(`/api/admin/appointments/sync-status?ids=${appointmentId}`);
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          setSyncStatusMap((prev) => ({
+            ...prev,
+            ...statusData.syncStatus,
+          }));
+        }
+      } else {
+        // Show error toast
+        console.error(`[AppointmentListView] Sync failed:`, data.message || data.error);
+      }
+    } catch (error) {
+      console.error('[AppointmentListView] Error during manual sync:', error);
+    } finally {
+      // Remove from syncing set
+      setSyncingAppointments((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(appointmentId);
+        return newSet;
+      });
+    }
+  };
+
+  // Handle sync status badge click (open history popover)
+  const handleSyncStatusClick = (appointmentId: string) => {
+    setSyncHistoryAppointmentId(appointmentId);
   };
 
   const hasActiveFilters = useMemo(
@@ -390,19 +530,20 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
                   )}
                 </div>
               </th>
+              {calendarConnected && <th>Calendar Sync</th>}
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="text-center py-12">
+                <td colSpan={calendarConnected ? 7 : 6} className="text-center py-12">
                   <span className="loading loading-spinner loading-lg text-[#434E54]" />
                 </td>
               </tr>
             ) : appointments.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-12">
+                <td colSpan={calendarConnected ? 7 : 6} className="text-center py-12">
                   <div className="text-[#6B7280]">
                     <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
                     <p className="font-medium mb-1">No appointments found</p>
@@ -447,6 +588,41 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
                       {getStatusLabel(apt.status)}
                     </span>
                   </td>
+                  {calendarConnected && (
+                    <td>
+                      <div className="flex items-center gap-2">
+                        {syncStatusMap[apt.id] ? (
+                          <SyncStatusBadge
+                            appointmentId={apt.id}
+                            status={syncStatusMap[apt.id].status}
+                            lastSyncedAt={syncStatusMap[apt.id].lastSyncedAt}
+                            error={syncStatusMap[apt.id].error}
+                            onClick={() => handleSyncStatusClick(apt.id)}
+                          />
+                        ) : loadingSyncStatus ? (
+                          <span className="loading loading-spinner loading-xs text-[#434E54]" />
+                        ) : null}
+                        {/* Manual sync button - show if sync failed or not synced */}
+                        {syncStatusMap[apt.id] &&
+                          (syncStatusMap[apt.id].status === 'failed' ||
+                            syncStatusMap[apt.id].status === 'not_eligible') && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleManualSync(apt.id, e)}
+                              disabled={syncingAppointments.has(apt.id)}
+                              className="btn btn-xs btn-ghost text-[#434E54] hover:bg-[#EAE0D5] disabled:opacity-50"
+                              title="Sync to Google Calendar"
+                            >
+                              <RefreshCw
+                                className={`w-3.5 h-3.5 ${
+                                  syncingAppointments.has(apt.id) ? 'animate-spin' : ''
+                                }`}
+                              />
+                            </button>
+                          )}
+                      </div>
+                    </td>
+                  )}
                   <td>
                     <button
                       onClick={(e) => {
@@ -490,6 +666,15 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Sync History Popover */}
+      {syncHistoryAppointmentId && (
+        <SyncHistoryPopover
+          appointmentId={syncHistoryAppointmentId}
+          isOpen={!!syncHistoryAppointmentId}
+          onClose={() => setSyncHistoryAppointmentId(null)}
+        />
       )}
     </div>
   );

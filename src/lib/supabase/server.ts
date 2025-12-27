@@ -5,7 +5,7 @@
 import { config } from '@/lib/config';
 import { createMockClient, type MockSupabaseClient } from '@/mocks/supabase/client';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -61,10 +61,15 @@ export function createServiceRoleClient(): SupabaseClient | MockSupabaseClient {
     return createMockClient();
   }
 
-  return createClient(config.supabase.url, config.supabase.serviceRoleKey, {
+  return createSupabaseClient(config.supabase.url, config.supabase.serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
   });
 }
+
+/**
+ * Alias for createServerSupabaseClient for backward compatibility
+ */
+export const createClient = createServerSupabaseClient;
