@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/notifications/retry",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/calendar-webhook-renewal",
+      "schedule": "0 0 * * *"
     }
   ]
 }
