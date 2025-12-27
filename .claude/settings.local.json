@@ -79,7 +79,6 @@
       "mcp__playwright__browser_close",
       "mcp__playwright__browser_handle_dialog",
       "Bash(gh pr create:*)",
-      "Bash(ManualAppointmentModal \")",
       "mcp__playwright__browser_run_code"
     ]
   },

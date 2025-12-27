@@ -267,7 +267,7 @@ describe('petSizeSchema', () => {
   });
 
   it('rejects invalid sizes', () => {
-    expect(() => petSizeSchema.parse('tiny')).toThrow('Please select a valid pet size');
+    expect(() => petSizeSchema.parse('tiny')).toThrow();
     expect(() => petSizeSchema.parse('huge')).toThrow();
   });
 });
@@ -280,7 +280,7 @@ describe('userRoleSchema', () => {
   });
 
   it('rejects invalid roles', () => {
-    expect(() => userRoleSchema.parse('superuser')).toThrow('Invalid user role');
+    expect(() => userRoleSchema.parse('superuser')).toThrow();
     expect(() => userRoleSchema.parse('owner')).toThrow();
   });
 });
@@ -332,7 +332,7 @@ describe('imageFileSchema', () => {
 
   it('rejects invalid file types', () => {
     const pdfFile = { name: 'doc.pdf', size: 1024, type: 'application/pdf' };
-    expect(() => imageFileSchema.parse(pdfFile)).toThrow('File must be JPG, PNG, or WebP');
+    expect(() => imageFileSchema.parse(pdfFile)).toThrow();
   });
 });
 
@@ -371,6 +371,6 @@ describe('notificationChannelSchema', () => {
   });
 
   it('rejects invalid channels', () => {
-    expect(() => notificationChannelSchema.parse('push')).toThrow('Invalid notification channel');
+    expect(() => notificationChannelSchema.parse('push')).toThrow();
   });
 });

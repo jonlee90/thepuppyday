@@ -22,7 +22,7 @@ export const phoneSchema = z
   .string()
   .optional()
   .refine(
-    (val) => !val || /^\+?[1-9]\d{1,14}$/.test(val.replace(/[\s-()]/g, '')),
+    (val) => !val || /^\+?[1-9]\d{9,14}$/.test(val.replace(/[\s-()]/g, '')),
     'Please enter a valid phone number'
   );
 
@@ -33,7 +33,10 @@ export const dateSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
 
 export const futureDateSchema = dateSchema.refine(
-  (date) => new Date(date) >= new Date(),
+  (date) => {
+    const today = new Date().toISOString().split('T')[0];
+    return date >= today;
+  },
   'Date cannot be in the past'
 );
 
