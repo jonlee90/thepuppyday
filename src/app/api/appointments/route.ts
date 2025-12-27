@@ -10,19 +10,42 @@ import { z } from 'zod';
 import { randomBytes } from 'crypto';
 
 /**
- * Extended schema for appointment creation with guest_info support
+ * Extended schema for appointment creation with guest_info and new_pet support
  */
-const appointmentRequestSchema = appointmentCreationSchema.extend({
-  addon_ids: z.array(z.string().uuid()).optional().default([]),
-  guest_info: z
-    .object({
-      firstName: z.string().min(1),
-      lastName: z.string().min(1),
-      email: z.string().email(),
-      phone: z.string().min(10),
-    })
-    .optional(),
-});
+const appointmentRequestSchema = appointmentCreationSchema
+  .extend({
+    addon_ids: z.array(z.string().uuid()).optional().default([]),
+    guest_info: z
+      .object({
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        email: z.string().email(),
+        phone: z.string().min(10),
+      })
+      .optional(),
+    new_pet: z
+      .object({
+        name: z.string().min(1),
+        breed_id: z.string().uuid(),
+        size: z.enum(['small', 'medium', 'large', 'xlarge']),
+        weight: z.number().positive().optional(),
+        breed_custom: z.string().optional(),
+      })
+      .optional(),
+  })
+  .partial({
+    customer_id: true,
+    pet_id: true,
+  })
+  .refine(
+    (data) => {
+      // Either pet_id OR new_pet must be provided
+      return data.pet_id || data.new_pet;
+    },
+    {
+      message: 'Either pet_id or new_pet must be provided',
+    }
+  );
 
 /**
  * Generate a cryptographically secure unique booking reference number
@@ -120,6 +143,41 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Handle new pet creation if new_pet provided
+    let petId = validated.pet_id;
+    if (validated.new_pet && customerId) {
+      // Create new pet for the customer
+      const { data: newPet, error: petError } = await supabase
+        .from('pets')
+        .insert({
+          owner_id: customerId,
+          name: validated.new_pet.name,
+          breed_id: validated.new_pet.breed_id,
+          size: validated.new_pet.size,
+          weight: validated.new_pet.weight || null,
+          breed_custom: validated.new_pet.breed_custom || null,
+        })
+        .select()
+        .single();
+
+      if (petError || !newPet) {
+        console.error('Error creating pet:', petError);
+        return NextResponse.json(
+          { error: 'Failed to create pet information' },
+          { status: 500 }
+        );
+      }
+      petId = newPet.id;
+    }
+
+    // Validate we have a pet_id
+    if (!petId) {
+      return NextResponse.json(
+        { error: 'Pet information is required' },
+        { status: 400 }
+      );
+    }
+
     // Check for slot conflicts
     // Get appointments for the same day
     const slotDate = new Date(validated.scheduled_at);
@@ -181,7 +239,7 @@ export async function POST(req: NextRequest) {
       .from('appointments')
       .insert({
         customer_id: customerId,
-        pet_id: validated.pet_id,
+        pet_id: petId,
         service_id: validated.service_id,
         groomer_id: validated.groomer_id || null,
         scheduled_at: validated.scheduled_at,

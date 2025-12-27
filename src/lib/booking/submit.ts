@@ -95,29 +95,22 @@ async function submitCustomerAppointment(
   }
 
   // Handle new pet creation for guest users
-  if (newPetData && guestInfo && !petId) {
-    // We need to create the user first, then the pet, then the appointment
-    // Step 1: Create user via appointments API (it will return the user ID)
-    // Actually, the appointments API creates the user internally. We can't get the ID back easily.
+  // The appointments API now supports creating new pets along with the appointment
+  // We don't need to do anything special here - just pass the new_pet data
 
-    // Better approach: Create the pet with owner_id matching the guest email
-    // The /api/pets endpoint supports creating pets for guests via owner_id parameter
-    // But we don't have the user ID yet...
+  // Build new_pet object if we have new pet data
+  const newPet = newPetData
+    ? {
+        name: newPetData.name,
+        breed_id: newPetData.breed_id,
+        size: newPetData.size,
+        weight: newPetData.weight,
+        breed_custom: newPetData.breed_custom,
+      }
+    : undefined;
 
-    // The simplest solution: Use a temporary appointment creation that handles everything
-    // OR: Modify the appointments API to accept new_pet_data
-    // For now, let's return an error and require the booking flow to create the pet first
-
-    return {
-      success: false,
-      appointmentId: '',
-      reference: '',
-      error: 'Creating new pets during booking is not yet supported. Please contact us to complete your booking.',
-    };
-  }
-
-  // Ensure we have a pet_id - it's required for appointment creation
-  if (!petId) {
+  // Ensure we have either a pet_id or new_pet data
+  if (!petId && !newPet) {
     return {
       success: false,
       appointmentId: '',
@@ -126,17 +119,34 @@ async function submitCustomerAppointment(
     };
   }
 
-  const requestBody = {
-    customer_id: customerId || '', // Will be created from guest_info if empty
-    pet_id: petId,
+  const requestBody: any = {
     service_id: selectedService.id,
     scheduled_at: scheduledAt,
     duration_minutes: selectedService.duration_minutes,
     total_price: totalPrice,
     notes: null,
     addon_ids: selectedAddonIds || [],
-    guest_info: guestInfo || undefined,
   };
+
+  // Only include customer_id if we have one
+  if (customerId) {
+    requestBody.customer_id = customerId;
+  }
+
+  // Only include pet_id if we have one (otherwise use new_pet)
+  if (petId) {
+    requestBody.pet_id = petId;
+  }
+
+  // Include guest_info if provided
+  if (guestInfo) {
+    requestBody.guest_info = guestInfo;
+  }
+
+  // Include new_pet if provided
+  if (newPet) {
+    requestBody.new_pet = newPet;
+  }
 
   try {
     const response = await fetch('/api/appointments', {
