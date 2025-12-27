@@ -51,7 +51,7 @@ export default async function AuthLayout({
       </header>
 
       {/* Main content with gradient background */}
-      <main className="flex-1 flex items-center justify-center px-4 py-8 bg-gradient-to-br from-[#F8EEE5] via-[#FFFBF7] to-[#EAE0D5]">
+      <main id="main-content" className="flex-1 flex items-center justify-center px-4 py-8 bg-gradient-to-br from-[#F8EEE5] via-[#FFFBF7] to-[#EAE0D5]">
         <div className="w-full max-w-md">
           {children}
         </div>
