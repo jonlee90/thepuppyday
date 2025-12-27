@@ -4,22 +4,29 @@
 
 Phase 10 focuses on production readiness for The Puppy Day dog grooming SaaS application. This design document details the technical architecture and implementation strategies for performance optimization, security hardening, comprehensive error handling, user experience polish, and complete test coverage.
 
+**Implementation Status**: 42 of 65 tasks completed (65% complete)
+
+### Recent Major Updates
+
+This phase builds on 9 completed phases plus a major **Google Calendar Integration** feature (66 tasks) that was implemented outside the original phase scope. The calendar integration includes OAuth 2.0 authentication, two-way sync, webhook notifications, quota management, error recovery, and an import wizard - all of which require testing coverage in Phase 10.
+
 ### Key Architectural Decisions
 
-1. **Performance**: Leverage Next.js 14+ App Router features (ISR, streaming, parallel data fetching) combined with strategic caching layers
-2. **Security**: Defense-in-depth approach with RLS, middleware-based rate limiting, CSRF protection, and comprehensive security headers
-3. **Error Handling**: Centralized error boundary hierarchy with user-friendly messaging and Sentry integration for production monitoring
-4. **Testing**: Three-tier testing strategy with Vitest for unit/integration tests and Playwright for E2E critical flows
+1. **Performance**: Leverage Next.js 14+ App Router features (ISR, streaming, parallel data fetching) combined with InMemoryCache for strategic caching
+2. **Security**: Defense-in-depth approach with RLS policies (in progress), middleware-based rate limiting (✅ implemented), CSRF protection (✅ implemented), and security headers (pending CSP configuration)
+3. **Error Handling**: Centralized error boundary hierarchy (✅ implemented) with user-friendly messaging and Sentry integration infrastructure (awaiting package installation)
+4. **Testing**: Three-tier testing strategy with Vitest for unit/integration tests (✅ extensive coverage) and Playwright for E2E critical flows (✅ configured, tests in progress)
+5. **Accessibility**: WCAG 2.1 AA compliance with focus management utilities (✅ implemented), keyboard navigation patterns (in progress), and screen reader support (pending audit)
 
 ### Implementation Timeline
 
-| Milestone | Duration | Description |
-|-----------|----------|-------------|
-| 10.1 Performance | 3-4 days | Lighthouse optimization, caching, bundle analysis |
-| 10.2 Security | 3-4 days | RLS policies, rate limiting, security headers |
-| 10.3 Error Handling | 2-3 days | Error boundaries, API standardization, Sentry |
-| 10.4 Final Polish | 3-4 days | Loading states, empty states, accessibility |
-| 10.5 Testing | 4-5 days | E2E tests, unit test coverage, CI integration |
+| Milestone | Status | Completion | Critical Gaps |
+|-----------|--------|------------|---------------|
+| 10.1 Performance | 🟡 In Progress | 70% | Database indexes, Lighthouse baseline, image compression utility |
+| 10.2 Security | 🟡 In Progress | 60% | RLS policies (3/7 migrations), CSP headers, Zod validation integration |
+| 10.3 Error Handling | 🟢 Mostly Complete | 80% | Sentry package installation, user message mapping |
+| 10.4 Final Polish | 🟡 In Progress | 55% | Loading states, empty state presets, keyboard navigation, WCAG audit |
+| 10.5 Testing | 🟡 In Progress | 65% | E2E tests for booking/auth/calendar, API integration tests |
 
 ---
 
@@ -157,43 +164,54 @@ export function reportWebVitals(metric: {
 
 ### 10.1.2 Image Optimization Architecture
 
+**✅ Implementation Status: IMPLEMENTED (Task 0222)**
+- Component: `src/components/common/OptimizedImage.tsx`
+- Features: Priority loading, blur placeholders, fallback support, quality settings
+- Integration: Next.js Image with WebP/AVIF automatic conversion
+
 #### Next.js Image Component Patterns
 
 ```typescript
-// src/components/common/OptimizedImage.tsx
+// src/components/common/OptimizedImage.tsx (IMPLEMENTED)
 
-import Image from 'next/image';
+'use client';
 
-interface OptimizedImageProps {
-  src: string;
-  alt: string;
-  width: number;
-  height: number;
+import Image, { ImageProps } from 'next/image';
+import { useState } from 'react';
+
+interface OptimizedImageProps extends Omit<ImageProps, 'placeholder'> {
   priority?: boolean;
-  className?: string;
-  sizes?: string;
+  enableBlur?: boolean;
+  fallbackSrc?: string;
 }
 
 export function OptimizedImage({
-  src,
   alt,
-  width,
-  height,
   priority = false,
-  className,
-  sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+  enableBlur = true,
+  fallbackSrc = '/images/placeholder.jpg',
+  onError,
+  ...props
 }: OptimizedImageProps) {
+  const [error, setError] = useState(false);
+
+  const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    setError(true);
+    if (onError) onError(e);
+  };
+
   return (
     <Image
-      src={src}
+      {...props}
+      src={error && fallbackSrc ? fallbackSrc : props.src}
       alt={alt}
-      width={width}
-      height={height}
       priority={priority}
-      className={className}
-      sizes={sizes}
-      placeholder="blur"
-      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD..."
+      placeholder={enableBlur ? 'blur' : 'empty'}
+      blurDataURL={enableBlur ? 'data:image/png;base64,iVBORw0KGg...' : undefined}
+      onError={handleError}
+      quality={priority ? 90 : 75}
+      loading={priority ? 'eager' : 'lazy'}
+      sizes={props.sizes || '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'}
     />
   );
 }
@@ -410,83 +428,153 @@ export async function getCustomersPaginated(
 
 ### 10.1.5 Caching Architecture
 
+**✅ Implementation Status: IMPLEMENTED (Tasks 0229-0230)**
+- Component: `src/lib/cache/index.ts`
+- Features: TTL-based expiration, pattern matching invalidation, automatic cleanup
+- Usage: getCached() helper with fetcher pattern, invalidateCache() with wildcard support
+
 ```mermaid
 graph LR
     subgraph "Cache Layers"
         A[Browser Cache] --> B[CDN/Edge Cache]
         B --> C[Next.js ISR Cache]
-        C --> D[In-Memory Cache]
+        C --> D[InMemoryCache]
         D --> E[Database]
     end
 
     subgraph "Cache Strategies"
-        F[Static: 24h] --> G[Services, Breeds]
-        H[ISR: 1h] --> I[Gallery, Site Content]
-        J[ISR: 15m] --> K[Promo Banners]
+        F[Static: 24h] --> G[Breeds]
+        H[ISR: 1h] --> I[Services, Gallery]
+        J[ISR: 15m] --> K[Banners, Settings]
         L[Dynamic: No Cache] --> M[Appointments, User Data]
-        N[SWR: 5m] --> O[Analytics, Dashboard]
     end
 ```
 
 #### Caching Implementation
 
 ```typescript
-// src/lib/cache/index.ts
+// src/lib/cache/index.ts (IMPLEMENTED)
 
-interface CacheEntry<T> {
+export interface CacheEntry<T> {
   data: T;
-  timestamp: number;
-  ttl: number;
+  expiresAt: number;
 }
 
-class InMemoryCache {
-  private cache = new Map<string, CacheEntry<unknown>>();
+export class InMemoryCache {
+  private cache: Map<string, CacheEntry<any>>;
 
-  set<T>(key: string, data: T, ttlSeconds: number): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl: ttlSeconds * 1000,
-    });
+  constructor() {
+    this.cache = new Map();
   }
 
   get<T>(key: string): T | null {
-    const entry = this.cache.get(key) as CacheEntry<T> | undefined;
-
+    const entry = this.cache.get(key);
     if (!entry) return null;
 
-    if (Date.now() - entry.timestamp > entry.ttl) {
+    if (Date.now() > entry.expiresAt) {
       this.cache.delete(key);
       return null;
     }
 
-    return entry.data;
+    return entry.data as T;
   }
 
-  invalidate(pattern: string): void {
-    for (const key of this.cache.keys()) {
-      if (key.startsWith(pattern)) {
-        this.cache.delete(key);
-      }
-    }
+  set<T>(key: string, data: T, ttlMs: number): void {
+    const expiresAt = Date.now() + ttlMs;
+    this.cache.set(key, { data, expiresAt });
+  }
+
+  has(key: string): boolean {
+    return this.get(key) !== null;
+  }
+
+  delete(key: string): boolean {
+    return this.cache.delete(key);
   }
 
   clear(): void {
     this.cache.clear();
   }
+
+  cleanup(): number {
+    const now = Date.now();
+    let cleaned = 0;
+
+    for (const [key, entry] of this.cache.entries()) {
+      if (now > entry.expiresAt) {
+        this.cache.delete(key);
+        cleaned++;
+      }
+    }
+
+    return cleaned;
+  }
 }
 
-export const cache = new InMemoryCache();
+// Global cache instance
+const globalCache = new InMemoryCache();
 
-// Cache TTL constants (in seconds)
+// Cache TTL constants (in milliseconds)
 export const CACHE_TTL = {
-  BREEDS: 86400,       // 24 hours
-  SERVICES: 3600,      // 1 hour (ISR revalidate)
-  GALLERY: 3600,       // 1 hour
-  SITE_CONTENT: 300,   // 5 minutes
-  PROMO_BANNERS: 900,  // 15 minutes
-  ANALYTICS: 300,      // 5 minutes
+  BREEDS: 24 * 60 * 60 * 1000,     // 24 hours
+  SERVICES: 60 * 60 * 1000,         // 1 hour
+  SERVICE_PRICES: 60 * 60 * 1000,   // 1 hour
+  ADDONS: 60 * 60 * 1000,           // 1 hour
+  BANNERS: 15 * 60 * 1000,          // 15 minutes
+  GALLERY: 30 * 60 * 1000,          // 30 minutes
+  SETTINGS: 15 * 60 * 1000,         // 15 minutes
+  BUSINESS_HOURS: 60 * 60 * 1000,   // 1 hour
 } as const;
+
+/**
+ * Get or fetch with caching
+ */
+export async function getCached<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  ttl: number = CACHE_TTL.SERVICES
+): Promise<T> {
+  const cached = globalCache.get<T>(key);
+  if (cached !== null) return cached;
+
+  const data = await fetcher();
+  globalCache.set(key, data, ttl);
+  return data;
+}
+
+/**
+ * Invalidate cache by key or pattern (with wildcard support)
+ */
+export function invalidateCache(keyOrPattern: string): number {
+  if (keyOrPattern.includes('*')) {
+    const pattern = keyOrPattern.replace(/\*/g, '.*');
+    const regex = new RegExp(`^${pattern}$`);
+    let invalidated = 0;
+
+    for (const key of Array.from((globalCache as any).cache.keys())) {
+      if (regex.test(key)) {
+        globalCache.delete(key);
+        invalidated++;
+      }
+    }
+
+    return invalidated;
+  } else {
+    return globalCache.delete(keyOrPattern) ? 1 : 0;
+  }
+}
+
+// Auto-cleanup every 5 minutes
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const cleaned = globalCache.cleanup();
+    if (cleaned > 0) {
+      console.log(`Cleaned up ${cleaned} expired cache entries`);
+    }
+  }, 5 * 60 * 1000);
+}
+
+export default globalCache;
 ```
 
 #### ISR Configuration for Pages
@@ -515,7 +603,20 @@ export default async function GalleryPage() {
 
 ## Section 10.2: Security
 
+**Section Status**: 60% Complete
+- ✅ RLS migrations created for public, customer, waitlist/loyalty tables (Tasks 0232-0233-0234)
+- ✅ Input validation with Zod schemas centralized (Task 0237)
+- ✅ CSRF protection middleware (Tasks 0241-0242)
+- ✅ Rate limiting with sliding window algorithm (Task 0243)
+- ⚠️ Pending: Admin RLS policies verification, CSP headers configuration, Zod integration in API routes
+
 ### 10.2.1 Row Level Security (RLS) Policies
+
+**✅ Implementation Status: PARTIAL (3 of 7 migrations created)**
+- ✅ `supabase/migrations/20251227_rls_public_tables.sql` - Public table policies (Task 0232)
+- ✅ `supabase/migrations/20251227_rls_customer_tables.sql` - Customer policies (Task 0233)
+- ✅ `supabase/migrations/20251227_rls_waitlist_loyalty_tables.sql` - Waitlist/loyalty (Task 0234)
+- ⚠️ Pending: RLS enablement migration (Task 0231), admin policies verification (Task 0235), testing (Task 0236)
 
 #### RLS Policy Architecture
 
@@ -737,16 +838,23 @@ CREATE POLICY "Admins can manage gallery"
 
 ### 10.2.2 Input Validation with Zod
 
+**✅ Implementation Status: IMPLEMENTED (Task 0237)**
+- Component: `src/lib/validations/` directory with domain-specific schemas
+- Schemas: auth, booking, customer, admin, common, calendar
+- File upload validation schema with size/type checks included
+- ⚠️ Pending: Integration into all API routes (Tasks 0238-0240)
+
 #### Centralized Validation Schemas
 
 ```typescript
-// src/lib/validations/index.ts
+// src/lib/validations/index.ts (IMPLEMENTED)
 
 export * from './auth';
 export * from './booking';
 export * from './customer';
 export * from './admin';
 export * from './common';
+export * from './calendar';
 
 // src/lib/validations/common.ts
 
@@ -865,23 +973,29 @@ function formatZodErrors(error: ZodError): Record<string, string[]> {
 
 ### 10.2.3 CSRF Protection
 
+**✅ Implementation Status: IMPLEMENTED (Tasks 0241-0242)**
+- Component: `src/lib/security/csrf.ts`
+- Features: Origin/Referer header validation, allowed domains configuration
+- Cookie config: Secure/HttpOnly flags, SameSite policy
+- Usage: withCsrfProtection() wrapper for API routes
+
 #### CSRF Middleware Implementation
 
 ```typescript
-// src/lib/security/csrf.ts
+// src/lib/security/csrf.ts (IMPLEMENTED)
 
 import { NextRequest, NextResponse } from 'next/server';
-
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_APP_URL,
-  'https://thepuppyday.com',
-  'https://www.thepuppyday.com',
-].filter(Boolean);
+import { ApiError, ApiErrorCode } from '../api/errors';
 
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+const ALLOWED_ORIGINS = [
+  process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  'https://thepuppyday.com',
+  'https://www.thepuppyday.com',
+];
 
 /**
- * Validate CSRF protection for state-changing requests
+ * Validate CSRF token for state-changing requests
  */
 export function validateCsrf(request: NextRequest): boolean {
   // Safe methods don't need CSRF protection
@@ -937,42 +1051,35 @@ export function withCsrfProtection(
 
 ### 10.2.4 Rate Limiting Enhancement
 
+**✅ Implementation Status: IMPLEMENTED (Task 0243)**
+- Component: `src/lib/security/rate-limit.ts`
+- Features: Sliding window algorithm, IP-based limiting, X-RateLimit-* headers
+- Configurations: auth (5/min), booking (10/min), availability (30/min), admin (100/min), webhook (500/min)
+- Auto-cleanup: Expired entries purged every 5 minutes
+
 #### Enhanced Rate Limiter
 
 ```typescript
-// src/lib/rate-limit.ts (enhanced version)
+// src/lib/security/rate-limit.ts (IMPLEMENTED)
 
 import { NextRequest, NextResponse } from 'next/server';
+import { ApiError, ApiErrorCode } from '../api/errors';
 
 interface RateLimitConfig {
-  limit: number;
+  maxRequests: number;
   windowMs: number;
-  keyPrefix?: string;
 }
 
 // Predefined rate limit configurations
-export const RATE_LIMITS = {
-  // Authentication endpoints: 5 requests per minute
-  auth: { limit: 5, windowMs: 60 * 1000, keyPrefix: 'auth' },
-
-  // Booking API: 10 requests per minute
-  booking: { limit: 10, windowMs: 60 * 1000, keyPrefix: 'booking' },
-
-  // Availability check: 30 requests per minute
-  availability: { limit: 30, windowMs: 60 * 1000, keyPrefix: 'availability' },
-
-  // Waitlist: 5 requests per minute
-  waitlist: { limit: 5, windowMs: 60 * 1000, keyPrefix: 'waitlist' },
-
-  // Admin API: 100 requests per minute per user
-  admin: { limit: 100, windowMs: 60 * 1000, keyPrefix: 'admin' },
-
-  // Webhooks: 500 requests per minute (system-to-system)
-  webhook: { limit: 500, windowMs: 60 * 1000, keyPrefix: 'webhook' },
-
-  // Default: 60 requests per minute
-  default: { limit: 60, windowMs: 60 * 1000, keyPrefix: 'default' },
-} as const;
+export const RATE_LIMITS: Record<string, RateLimitConfig> = {
+  auth: { maxRequests: 5, windowMs: 60 * 1000 },         // 5 requests per minute
+  booking: { maxRequests: 10, windowMs: 60 * 1000 },     // 10 per minute
+  availability: { maxRequests: 30, windowMs: 60 * 1000 }, // 30 per minute
+  waitlist: { maxRequests: 5, windowMs: 60 * 1000 },     // 5 per minute
+  admin: { maxRequests: 100, windowMs: 60 * 1000 },      // 100 per minute
+  webhook: { maxRequests: 500, windowMs: 60 * 1000 },    // 500 per minute
+  default: { maxRequests: 20, windowMs: 60 * 1000 },     // 20 per minute
+};
 
 /**
  * Create rate limit headers for response
@@ -1103,28 +1210,41 @@ export default nextConfig;
 
 ## Section 10.3: Error Handling
 
+**Section Status**: 80% Complete
+- ✅ Global and route-specific error boundaries (Tasks 0246-0247)
+- ✅ API error standardization with ApiError class (Tasks 0249-0250)
+- ✅ Error tracking infrastructure (Tasks 0251-0252)
+- ⚠️ Pending: Sentry @sentry/nextjs package installation, custom 404 page (Task 0248), user message mapping (Tasks 0253-0255)
+
 ### 10.3.1 Error Boundary Hierarchy
+
+**✅ Implementation Status: IMPLEMENTED (Tasks 0246-0247)**
+- ✅ `src/app/error.tsx` - Global error boundary
+- ✅ `src/app/(customer)/error.tsx` - Customer portal error boundary
+- ✅ `src/app/(admin)/error.tsx` - Admin panel error boundary
+- ✅ `src/app/(auth)/error.tsx` - Authentication error boundary
+- ⚠️ Pending: `src/app/not-found.tsx` custom 404 page (Task 0248)
 
 ```mermaid
 graph TB
-    subgraph "Error Boundary Hierarchy"
+    subgraph "Error Boundary Hierarchy (IMPLEMENTED)"
         A[Root Error Boundary] --> B[Route Group Boundaries]
         B --> C["(marketing)/error.tsx"]
-        B --> D["(customer)/error.tsx"]
-        B --> E["(admin)/error.tsx"]
-        B --> F["(auth)/error.tsx"]
+        B --> D["(customer)/error.tsx ✅"]
+        B --> E["(admin)/error.tsx ✅"]
+        B --> F["(auth)/error.tsx ✅"]
 
         C --> G[Page-level Error UI]
-        D --> H[Portal Error UI with navigation]
-        E --> I[Admin Error UI with support]
-        F --> J[Auth Error UI with retry]
+        D --> H[Portal Error UI with navigation ✅]
+        E --> I[Admin Error UI with support ✅]
+        F --> J[Auth Error UI with retry ✅]
     end
 ```
 
 #### Global Error Boundary
 
 ```typescript
-// src/app/error.tsx
+// src/app/error.tsx (IMPLEMENTED)
 
 'use client';
 
@@ -1261,10 +1381,16 @@ export default function CustomerPortalError({
 
 ### 10.3.2 API Error Response Standardization
 
+**✅ Implementation Status: IMPLEMENTED (Tasks 0249-0250)**
+- Component: `src/lib/api/errors.ts` - ApiError class and error codes
+- Component: `src/lib/api/handler.ts` - withErrorHandling wrapper
+- Features: Consistent error format, status code mapping, sanitized production errors
+- Usage: Used across API routes with structured error responses
+
 #### Error Response Interface
 
 ```typescript
-// src/lib/api/errors.ts
+// src/lib/api/errors.ts (IMPLEMENTED)
 
 export enum ApiErrorCode {
   // 400 Bad Request
@@ -2731,10 +2857,273 @@ describe('/api/admin/appointments', () => {
 });
 ```
 
-### 10.5.4 CI/CD Integration
+### 10.5.4 Google Calendar Integration Testing
+
+**❌ Implementation Status: NOT IMPLEMENTED (NEW REQUIREMENT)**
+
+The Google Calendar integration is a major feature (66 tasks) implemented outside the original Phase 10 scope. Comprehensive testing is required to ensure reliability of the two-way sync system.
+
+#### Testing Requirements
+
+**Critical Test Coverage Needed:**
+1. OAuth 2.0 authentication flow and token refresh
+2. Service account connection and fallback handling
+3. Calendar event mapping (Supabase ↔ Google)
+4. Two-way sync (push/pull) with conflict resolution
+5. Webhook notification processing
+6. Sync error classification and recovery
+7. Quota tracking and enforcement
+8. Import wizard functionality
+9. Manual sync triggers
+10. Pause/resume sync operations
+
+#### Unit Tests for Calendar Utilities
+
+```typescript
+// src/lib/calendar/__tests__/sync-logic.test.ts (TO BE CREATED)
+
+import { describe, it, expect } from 'vitest';
+import { mapAppointmentToGoogleEvent, mapGoogleEventToAppointment } from '../mapping';
+import { classifyError, shouldRetry } from '../sync/error-classifier';
+import { checkQuota, trackQuotaUsage } from '../quota/tracker';
+
+describe('Calendar Event Mapping', () => {
+  it('maps Supabase appointment to Google event correctly', () => {
+    const appointment = { /* test data */ };
+    const googleEvent = mapAppointmentToGoogleEvent(appointment);
+
+    expect(googleEvent.summary).toBe(appointment.service_name);
+    expect(googleEvent.start.dateTime).toBe(appointment.scheduled_at);
+  });
+
+  it('maps Google event to Supabase appointment correctly', () => {
+    const googleEvent = { /* test data */ };
+    const appointment = mapGoogleEventToAppointment(googleEvent);
+
+    expect(appointment.service_name).toBe(googleEvent.summary);
+  });
+});
+
+describe('Error Classification', () => {
+  it('classifies quota exceeded errors correctly', () => {
+    const error = { code: 429, message: 'Quota exceeded' };
+    const classification = classifyError(error);
+
+    expect(classification.type).toBe('quota_exceeded');
+    expect(classification.recoverable).toBe(true);
+  });
+
+  it('classifies token refresh errors correctly', () => {
+    const error = { code: 401, message: 'Invalid credentials' };
+    const classification = classifyError(error);
+
+    expect(classification.type).toBe('auth_failure');
+    expect(shouldRetry(classification)).toBe(true);
+  });
+});
+
+describe('Quota Management', () => {
+  it('tracks quota usage correctly', () => {
+    const initialQuota = checkQuota();
+    trackQuotaUsage('read', 1);
+    const updatedQuota = checkQuota();
+
+    expect(updatedQuota.reads).toBe(initialQuota.reads + 1);
+  });
+
+  it('warns when approaching quota limits', () => {
+    // Test quota warning at 80% threshold
+  });
+});
+```
+
+#### E2E Tests for Calendar Flows
+
+```typescript
+// e2e/admin/calendar-integration.spec.ts (TO BE CREATED)
+
+import { test, expect } from '@playwright/test';
+import { loginAsAdmin, seedTestData } from '../fixtures';
+
+test.describe('Google Calendar OAuth Flow', () => {
+  test('admin can connect via OAuth', async ({ page, context }) => {
+    await loginAsAdmin(page);
+    await page.goto('/admin/settings/calendar');
+
+    // Click connect button
+    await page.click('[data-testid="connect-google-oauth"]');
+
+    // Handle OAuth redirect (mock)
+    await expect(page).toHaveURL(/accounts\.google\.com/);
+
+    // Simulate OAuth callback
+    await page.goto('/admin/settings/calendar?code=test_auth_code');
+
+    // Verify connection success
+    await expect(page.locator('[data-testid="calendar-connected"]')).toBeVisible();
+  });
+
+  test('admin can disconnect calendar', async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto('/admin/settings/calendar');
+
+    await page.click('[data-testid="disconnect-calendar"]');
+    await page.click('[data-testid="confirm-disconnect"]');
+
+    await expect(page.locator('[data-testid="connect-google-oauth"]')).toBeVisible();
+  });
+});
+
+test.describe('Calendar Import Wizard', () => {
+  test('admin can import appointments from date range', async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto('/admin/settings/calendar');
+
+    // Start import wizard
+    await page.click('[data-testid="import-appointments"]');
+
+    // Select date range
+    await page.fill('[data-testid="import-start-date"]', '2025-01-01');
+    await page.fill('[data-testid="import-end-date"]', '2025-01-31');
+    await page.click('[data-testid="next-step"]');
+
+    // Preview appointments
+    await expect(page.locator('[data-testid="preview-table"]')).toBeVisible();
+    const rowCount = await page.locator('[data-testid="appointment-preview-row"]').count();
+    expect(rowCount).toBeGreaterThan(0);
+
+    // Confirm import
+    await page.click('[data-testid="confirm-import"]');
+
+    // Verify success message
+    await expect(page.locator('[data-testid="import-success"]')).toBeVisible();
+  });
+});
+
+test.describe('Manual Sync Operations', () => {
+  test('admin can manually sync single appointment', async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto('/admin/appointments');
+
+    // Click sync button on appointment row
+    await page.click('[data-testid="sync-appointment-123"]');
+
+    // Verify sync status updates
+    await expect(page.locator('[data-testid="sync-status-123"]')).toContainText('synced');
+  });
+
+  test('admin can trigger bulk sync', async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto('/admin/appointments');
+
+    await page.click('[data-testid="bulk-sync"]');
+    await expect(page.locator('[data-testid="bulk-sync-progress"]')).toBeVisible();
+  });
+});
+
+test.describe('Sync Error Recovery', () => {
+  test('displays error recovery UI when sync fails', async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto('/admin/appointments');
+
+    // Simulate sync error (via test data)
+    await expect(page.locator('[data-testid="sync-error-banner"]')).toBeVisible();
+
+    // Retry failed sync
+    await page.click('[data-testid="retry-sync"]');
+
+    // Verify error clears
+    await expect(page.locator('[data-testid="sync-error-banner"]')).not.toBeVisible();
+  });
+
+  test('pauses sync after consecutive failures', async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto('/admin/settings/calendar');
+
+    // Verify paused state
+    await expect(page.locator('[data-testid="sync-paused-banner"]')).toBeVisible();
+
+    // Resume sync
+    await page.click('[data-testid="resume-sync"]');
+
+    await expect(page.locator('[data-testid="sync-active"]')).toBeVisible();
+  });
+});
+```
+
+#### API Integration Tests
+
+```typescript
+// __tests__/api/admin/calendar.test.ts (TO BE CREATED)
+
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createMocks } from 'node-mocks-http';
+import { POST as syncManual } from '@/app/api/admin/calendar/sync/manual/route';
+import { POST as webhookHandler } from '@/app/api/admin/calendar/webhook/route';
+
+describe('/api/admin/calendar/sync/manual', () => {
+  it('triggers manual sync for appointment', async () => {
+    const { req } = createMocks({
+      method: 'POST',
+      body: { appointment_id: 'test-123' },
+    });
+
+    const response = await syncManual(req as any);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data).toHaveProperty('sync_result');
+  });
+
+  it('returns 404 for non-existent appointment', async () => {
+    const { req } = createMocks({
+      method: 'POST',
+      body: { appointment_id: 'invalid' },
+    });
+
+    const response = await syncManual(req as any);
+    expect(response.status).toBe(404);
+  });
+});
+
+describe('/api/admin/calendar/webhook', () => {
+  it('processes Google webhook notification', async () => {
+    const { req } = createMocks({
+      method: 'POST',
+      headers: {
+        'x-goog-channel-id': 'test-channel',
+        'x-goog-resource-state': 'exists',
+      },
+    });
+
+    const response = await webhookHandler(req as any);
+    expect(response.status).toBe(200);
+  });
+
+  it('validates webhook signature', async () => {
+    const { req } = createMocks({
+      method: 'POST',
+      headers: {
+        'x-goog-channel-id': 'invalid',
+      },
+    });
+
+    const response = await webhookHandler(req as any);
+    expect(response.status).toBe(401);
+  });
+});
+```
+
+### 10.5.5 CI/CD Integration
+
+**✅ Implementation Status: IMPLEMENTED**
+- Component: `.github/workflows/ci.yml`
+- Jobs: lint, test, build, deploy, performance-check
+- Features: Unit test coverage, E2E tests, bundle size reporting
+- ⚠️ Pending: Lighthouse CI job, security scanning job
 
 ```yaml
-# .github/workflows/test.yml
+# .github/workflows/test.yml (EXISTING)
 
 name: Tests
 
@@ -2924,22 +3313,151 @@ export interface PerformanceLog {
 
 ---
 
-## Appendix: Implementation Checklist
+## Appendix A: Implementation Status Summary
+
+### Completed Components (✅)
+
+**Performance (70%)**
+- ✅ OptimizedImage component with WebP/AVIF support
+- ✅ InMemoryCache with TTL and pattern-based invalidation
+- ✅ Image optimization utilities (6 preset configurations)
+- ✅ Bundle optimization (webpack splitChunks configuration)
+- ✅ Dynamic imports for heavy components (LazyCharts, LazyComponents)
+- ✅ Optimized database queries with parallel fetching
+- ✅ ISR configuration for marketing pages
+
+**Security (60%)**
+- ✅ RLS migrations for public, customer, waitlist/loyalty tables
+- ✅ Centralized Zod validation schemas (auth, booking, customer, admin, calendar)
+- ✅ CSRF protection middleware with Origin/Referer validation
+- ✅ Rate limiting with sliding window algorithm
+- ✅ Security utilities (password hashing, token generation)
+
+**Error Handling (80%)**
+- ✅ Global error boundary (src/app/error.tsx)
+- ✅ Route-specific error boundaries (customer, admin, auth)
+- ✅ ApiError class with standardized error codes
+- ✅ Error handler wrapper (withErrorHandling)
+- ✅ Error tracking infrastructure (awaiting Sentry installation)
+
+**Final Polish (55%)**
+- ✅ Skeleton components (Appointment, Pet, Dashboard)
+- ✅ EmptyState component with icon support
+- ✅ Focus management utilities (getFocusableElements, createFocusTrap)
+- ✅ StepperFocusManager for wizard components
+
+**Testing (65%)**
+- ✅ Playwright E2E configuration (5 browsers/devices)
+- ✅ Extensive unit test coverage (pricing, availability, notifications, loyalty)
+- ✅ Comprehensive API integration tests (admin settings, notifications)
+- ✅ GitHub Actions CI/CD pipeline
+
+### Pending Implementation (⚠️ / ❌)
+
+**Performance**
+- ⚠️ Database indexes migration (Task 0228)
+- ⚠️ Lighthouse baseline audit and optimization targets (Task 0221)
+- ⚠️ Image upload compression utility (client/server-side)
+
+**Security**
+- ⚠️ RLS enablement migration (Task 0231)
+- ⚠️ Admin RLS policies verification (Task 0235)
+- ⚠️ RLS horizontal privilege escalation testing (Task 0236)
+- ⚠️ Zod validation integration in API routes (Tasks 0238-0240)
+- ⚠️ CSP headers configuration in next.config.mjs (Tasks 0244-0245)
+
+**Error Handling**
+- ❌ Custom not-found.tsx page (Task 0248)
+- ⚠️ Sentry @sentry/nextjs package installation (Task 0251)
+- ❌ User-friendly error message mapping (Tasks 0253-0255)
+
+**Final Polish**
+- ❌ Button loading state enhancement (Task 0258)
+- ❌ loading.tsx files for route groups (Task 0259)
+- ❌ EmptyState presets and additional icons (Task 0260)
+- ❌ Empty states implementation across app (Tasks 0261-0262)
+- ❌ Skip to Content link (Task 0267)
+- ❌ Modal keyboard navigation (Tasks 0265-0266)
+- ❌ Screen reader ARIA audit (Task 0268)
+- ❌ WCAG 2.1 AA compliance verification (Task 0269)
+- ❌ Console error elimination audit (Task 0270)
+
+**Testing**
+- ❌ E2E tests for booking flow (Task 0273)
+- ❌ E2E tests for authentication (Task 0274)
+- ❌ E2E tests for customer portal (Task 0275)
+- ❌ E2E tests for admin settings (Task 0277)
+- ❌ Unit tests for Zod validation schemas (Task 0278)
+- ❌ Unit tests for date/time utilities (Task 0280)
+- ❌ API integration tests for booking routes (Task 0281)
+- ❌ API integration tests for auth/customer routes (Task 0282)
+- ❌ **Google Calendar integration tests (NEW - Priority)** - Unit, E2E, and API tests for the 66-task calendar feature
+
+### Critical Path to Completion
+
+**Priority 1: Security & Testing (Must Have)**
+1. Complete RLS migrations and testing (Tasks 0231, 0235-0236)
+2. Integrate Zod validation in all API routes (Tasks 0238-0240)
+3. Configure CSP headers (Tasks 0244-0245)
+4. Create E2E tests for booking and auth flows (Tasks 0273-0274)
+5. **Create Google Calendar integration tests** (NEW)
+
+**Priority 2: Performance & Quality (Should Have)**
+6. Run Lighthouse baseline and optimize (Task 0221)
+7. Create database indexes (Task 0228)
+8. Install and configure Sentry (Task 0251)
+9. Implement user-friendly error messages (Tasks 0253-0255)
+10. Create custom 404 page (Task 0248)
+
+**Priority 3: UX Polish (Nice to Have)**
+11. Complete keyboard navigation (Tasks 0265-0267)
+12. WCAG 2.1 AA audit and fixes (Task 0269)
+13. Implement empty states across app (Tasks 0260-0262)
+14. Add loading states to buttons and routes (Tasks 0258-0259)
+15. Console error elimination (Task 0270)
+
+## Appendix B: Google Calendar Integration Impact
+
+The Google Calendar integration (66 tasks, completed December 2025) significantly expands Phase 10 testing requirements:
+
+**New Test Coverage Required:**
+- OAuth 2.0 authentication flow and token management
+- Service account connection and fallback mechanisms
+- Two-way sync engine (push/pull)
+- Webhook notification processing
+- Error classification and recovery system
+- Quota management and enforcement
+- Import wizard (date selection, preview, confirmation)
+- Manual sync operations and bulk sync
+- Pause/resume sync functionality
+
+**Testing Complexity:**
+- Integration with external Google Calendar API (mocking required)
+- OAuth flow requires handling redirects and callback simulations
+- Webhook testing requires signature validation
+- Sync conflicts and race conditions need edge case coverage
+- Quota limits require simulating throttling scenarios
+
+**Recommendation**: Allocate 3-4 days for Google Calendar testing to ensure production readiness of this critical feature.
+
+## Appendix C: Implementation Checklist
 
 ### Pre-Implementation
 
-- [ ] Review existing test coverage
-- [ ] Audit current Lighthouse scores
-- [ ] Document current API error formats
-- [ ] Review existing RLS policies
-- [ ] Inventory all form validations
+- [x] Review existing test coverage (extensive unit/integration tests found)
+- [ ] Audit current Lighthouse scores (Task 0221)
+- [x] Document current API error formats (ApiError class implemented)
+- [x] Review existing RLS policies (3 migrations created, 4 pending)
+- [x] Inventory all form validations (Zod schemas centralized)
 
 ### Post-Implementation
 
 - [ ] All Lighthouse scores >= 90
 - [ ] Zero console errors in production
-- [ ] E2E tests pass for all critical flows
-- [ ] Unit test coverage meets targets
-- [ ] Security headers properly configured
-- [ ] Error tracking operational
-- [ ] Accessibility audit passed
+- [ ] E2E tests pass for all critical flows (booking, auth, customer, admin, calendar)
+- [ ] Unit test coverage meets targets (95% validations, 90% booking, 80% notifications)
+- [ ] Security headers properly configured (CSP, HSTS, X-Frame-Options)
+- [ ] Error tracking operational (Sentry integrated)
+- [ ] Accessibility audit passed (WCAG 2.1 AA)
+- [ ] RLS policies prevent horizontal privilege escalation
+- [ ] Google Calendar integration fully tested

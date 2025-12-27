@@ -124,40 +124,49 @@ Before starting work, check `.claude/tasks/context_session_x.md` for current con
 - `kiro-plan`: Implementation task planning
 - `kiro-executor`: Focused implementation
 
-### Frontend Workflow (Two-Step Orchestration)
-- `frontend-expert`: **STEP 1 - DESIGN** - Creates UI/UX design specifications (layout, visual hierarchy, user flows)
-- `daisyui-expert`: **STEP 2 - IMPLEMENT** - Implements design using DaisyUI + Tailwind, writes actual code
+### Development Agents
+- `app-dev`: Frontend development - UI/UX design, React components, Next.js pages, DaisyUI implementation, responsive design, accessibility
+- `data-dev`: Backend development - Supabase integration, authentication, RLS policies, database queries, migrations (has MCP tools)
+- `code-reviewer`: Code review and audits - security, performance, design system compliance (has MCP tools)
 
-### Specialized Agents
-- `nextjs-expert`: Next.js patterns and best practices
-- `code-reviewer`: Architecture and security review
-- `supabase-nextjs-expert`: Supabase + Next.js integration expert for authentication flows, database patterns, realtime subscriptions, RLS policies, and React Server Components architecture
+### Available Skills
+Reference these for detailed specifications:
+- `@skill design-system`: The Puppy Day colors, typography, spacing
+- `@skill daisyui-components`: DaisyUI component patterns and theme config
+- `@skill nextjs-patterns`: App Router, data fetching, Server/Client components
 
-## Frontend Development Workflow
+## Development Workflow
 
-For any UI/UX work, use the **two-step orchestration**:
+### Frontend Work (`@agent-app-dev`)
+Use for UI/UX design AND implementation in one step:
+- Creates components with DaisyUI + Tailwind
+- Implements responsive layouts
+- Adds animations and interactions
+- Ensures accessibility compliance
 
-**Step 1 - Design (`@agent-frontend-expert`)**:
-- Creates comprehensive design specifications
-- Defines layout, visual hierarchy, user flows, interactions
-- Outputs: `.claude/design/[name].md`
-- Focus: **WHAT** to build and **WHY**
-
-**Step 2 - Implement (`@agent-daisyui-expert`)**:
-- Reads design spec from frontend-expert
-- Implements using DaisyUI components + Tailwind utilities
-- Writes actual React/TypeScript code
-- Focus: **HOW** to build with DaisyUI/Tailwind
-
-**Example Usage**:
 ```bash
-# Step 1: Create design
-@agent-frontend-expert "Design a booking confirmation modal"
-# → Outputs: .claude/design/booking-confirmation-modal.md
+@agent-app-dev "Create a booking confirmation modal with success animation"
+```
 
-# Step 2: Implement design
-@agent-daisyui-expert "Implement the booking confirmation modal design"
-# → Reads design spec and writes the actual component code
+### Backend/Data Work (`@agent-data-dev`)
+Use for database and API work:
+- Supabase queries and migrations
+- Authentication flows
+- RLS policies
+- API routes
+
+```bash
+@agent-data-dev "Add RLS policy for loyalty points table"
+```
+
+### Code Review (`@agent-code-reviewer`)
+Use after completing features or before PRs:
+- Security and performance review
+- Design system compliance
+- Best practices validation
+
+```bash
+@agent-code-reviewer "Review the new booking flow implementation"
 ```
 
 ## Booking System Architecture
