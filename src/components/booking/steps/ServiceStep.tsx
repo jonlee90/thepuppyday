@@ -121,13 +121,13 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Subtitle */}
-      <p className="text-[#434E54]/70 leading-relaxed">Choose the perfect grooming experience for your furry friend</p>
+      <p className="text-[#434E54]/70 leading-relaxed max-w-2xl">Select the grooming service for your pet</p>
 
       {/* Services grid - Optimized for 2 services */}
       <div className="flex justify-center">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-[800px] w-full">
           {bookableServices.map((service) => (
             <ServiceCard
               key={service.id}

@@ -347,55 +347,6 @@ export function WalkinReviewStep({ onComplete, customerId }: WalkinReviewStepPro
           </div>
         </div>
       )}
-
-      {/* Navigation */}
-      <div className="flex justify-between pt-4">
-        <button
-          onClick={prevStep}
-          className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
-                   hover:bg-[#EAE0D5] transition-colors duration-200
-                   flex items-center gap-2"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Back
-        </button>
-        <button
-          onClick={handleConfirm}
-          disabled={isSubmitting}
-          className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                   hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
-                   disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
-                   flex items-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              Confirm Walk-In
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </>
-          )}
-        </button>
-      </div>
     </div>
   );
 }

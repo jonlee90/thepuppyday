@@ -36,7 +36,7 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
       aria-label={`Select ${service.name} service`}
     >
       {/* Enhanced image container */}
-      <div className="relative aspect-[1] bg-[#EAE0D5] overflow-hidden">
+      <div className="relative aspect-video sm:aspect-[2/1] md:aspect-[5/3] bg-[#EAE0D5] overflow-hidden">
         {service.image_url ? (
           <>
             <Image
@@ -44,7 +44,7 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
               alt={service.name}
               fill
               className={cn(
-                "object-cover transition-transform duration-500"
+                "object-contain scale-[1.2] transition-transform duration-500"
               )}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />

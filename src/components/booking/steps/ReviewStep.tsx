@@ -208,26 +208,26 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Subtitle */}
-      <p className="text-[#434E54]/70 leading-relaxed">Double-check everything looks perfect for your pup&apos;s visit</p>
+      <p className="text-[#434E54]/70 leading-relaxed max-w-2xl">Review your booking details</p>
 
-      {/* Booking summary */}
+      {/* Booking summary - consolidated single card */}
       <div className="bg-white rounded-xl border border-[#434E54]/20 overflow-hidden">
         {/* Service */}
-        <div className="p-4 border-b border-[#434E54]/20">
+        <div className="p-3 border-b border-[#434E54]/10">
           <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-[#434E54]/70">Service</p>
-              <p className="font-semibold text-[#434E54]">{selectedService?.name}</p>
-              <p className="text-sm text-[#434E54]/70">
+            <div className="flex-1">
+              <p className="text-sm text-[#434E54]/70 mb-0.5">Service</p>
+              <p className="font-semibold text-[#434E54] text-[15px]">{selectedService?.name}</p>
+              <p className="text-xs text-[#434E54]/70 mt-0.5">
                 {formatDuration(selectedService?.duration_minutes || 0)}
               </p>
             </div>
             <button
               onClick={() => setStep(0)}
-              className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
-                       hover:bg-[#EAE0D5] transition-colors duration-200"
+              className="text-[#434E54] text-xs font-medium py-1 px-2 rounded-lg
+                       hover:bg-[#434E54]/5 transition-colors duration-200"
             >
               Edit
             </button>
@@ -235,11 +235,11 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
         </div>
 
         {/* Date & Time */}
-        <div className="p-4 border-b border-[#434E54]/20">
+        <div className="p-3 border-b border-[#434E54]/10">
           <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-[#434E54]/70">Date & Time</p>
-              <p className="font-semibold text-[#434E54]">
+            <div className="flex-1">
+              <p className="text-sm text-[#434E54]/70 mb-0.5">Date & Time</p>
+              <p className="font-semibold text-[#434E54] text-[15px]">
                 {selectedDate &&
                   new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
                     weekday: 'long',
@@ -248,14 +248,14 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
                     year: 'numeric',
                   })}
               </p>
-              <p className="text-sm text-[#434E54]/70">
+              <p className="text-xs text-[#434E54]/70 mt-0.5">
                 {selectedTimeSlot && formatTimeDisplay(selectedTimeSlot)}
               </p>
             </div>
             <button
               onClick={() => setStep(1)}
-              className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
-                       hover:bg-[#EAE0D5] transition-colors duration-200"
+              className="text-[#434E54] text-xs font-medium py-1 px-2 rounded-lg
+                       hover:bg-[#434E54]/5 transition-colors duration-200"
             >
               Edit
             </button>
@@ -263,12 +263,12 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
         </div>
 
         {/* Pet */}
-        <div className="p-4 border-b border-[#434E54]/20">
+        <div className="p-3 border-b border-[#434E54]/10">
           <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-[#434E54]/70">Pet</p>
-              <p className="font-semibold text-[#434E54]">{petName}</p>
-              <p className="text-sm text-[#434E54]/70">
+            <div className="flex-1">
+              <p className="text-sm text-[#434E54]/70 mb-0.5">Pet</p>
+              <p className="font-semibold text-[#434E54] text-[15px]">{petName}</p>
+              <p className="text-xs text-[#434E54]/70 mt-0.5">
                 {petSize ? getSizeShortLabel(petSize) : ''}
                 {(selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom) && (
                   <> • {selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom}</>
@@ -277,8 +277,8 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
             </div>
             <button
               onClick={() => setStep(3)}
-              className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
-                       hover:bg-[#EAE0D5] transition-colors duration-200"
+              className="text-[#434E54] text-xs font-medium py-1 px-2 rounded-lg
+                       hover:bg-[#434E54]/5 transition-colors duration-200"
             >
               Edit
             </button>
@@ -286,8 +286,8 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
         </div>
 
         {/* Price breakdown */}
-        <div className="p-4 bg-[#FFFBF7]">
-          <div className="space-y-2">
+        <div className="p-3 bg-[#FFFBF7]">
+          <div className="space-y-1.5">
             <div className="flex justify-between text-sm">
               <span className="text-[#434E54]/70">{selectedService?.name}</span>
               <span className="text-[#434E54]">{formatCurrency(servicePrice)}</span>
@@ -299,9 +299,9 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
               </div>
             ))}
             <div className="border-t border-[#434E54]/20 pt-2 mt-2">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="font-semibold text-[#434E54]">Total</span>
-                <span className="text-xl font-bold text-[#434E54]">{formatCurrency(totalPrice)}</span>
+                <span className="text-lg font-bold text-[#434E54]">{formatCurrency(totalPrice)}</span>
               </div>
             </div>
           </div>
@@ -310,9 +310,9 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
 
       {/* Add-ons Selection */}
       {!isLoadingAddons && addons.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="font-semibold text-[#434E54] text-lg">Add Extra Services</h3>
-          <p className="text-[#434E54]/70 text-sm">Enhance your pet&apos;s grooming experience with these optional add-ons</p>
+        <div className="space-y-3">
+          <h3 className="font-semibold text-[#434E54]">Add Extra Services</h3>
+          <p className="text-[#434E54]/70 text-sm max-w-2xl">Enhance your pet&apos;s grooming experience</p>
 
           {/* Upsell add-ons */}
           {upsellAddons.length > 0 && (
@@ -454,55 +454,6 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
           </div>
         </div>
       )}
-
-      {/* Navigation */}
-      <div className="flex justify-between pt-4">
-        <button
-          onClick={prevStep}
-          className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
-                   hover:bg-[#EAE0D5] transition-colors duration-200
-                   flex items-center gap-2"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Back
-        </button>
-        <button
-          onClick={handleConfirm}
-          disabled={!canConfirm || isSubmitting}
-          className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                   hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
-                   disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
-                   flex items-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              Confirm Booking
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </>
-          )}
-        </button>
-      </div>
     </div>
   );
 }

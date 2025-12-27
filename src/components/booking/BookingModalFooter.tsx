@@ -42,12 +42,6 @@ const getButtonText = (
   // Walk-in mode has different step order: Service → Customer → Pet → Review
   if (mode === 'walkin') {
     switch (currentStep) {
-      case 0: // Service
-        return canContinue ? 'Continue to Customer' : 'Select a Service';
-      case 1: // Customer
-        return canContinue ? 'Continue to Pet' : 'Add Customer Information';
-      case 2: // Pet
-        return canContinue ? 'Continue to Review' : 'Add Pet Information';
       case 3: // Review (combined addons + review)
         return 'Confirm Walk-In';
       default:
@@ -55,21 +49,11 @@ const getButtonText = (
     }
   }
 
-  // Admin and Customer modes: Service → DateTime → Customer → Pet → Addons → Review
+  // Admin and Customer modes: Service → DateTime → Customer → Pet → Review
   switch (currentStep) {
-    case 0: // Service
-      return canContinue ? 'Continue to Date & Time' : 'Select a Service';
-    case 1: // Date & Time
-      return canContinue ? 'Continue to Customer' : 'Select Date & Time';
-    case 2: // Customer
-      return canContinue ? 'Continue to Pet' : 'Add Customer Information';
-    case 3: // Pet
-      return canContinue ? 'Continue to Add-ons' : 'Add Pet Information';
-    case 4: // Add-ons
-      return 'Review Your Booking';
-    case 5: // Review
+    case 4: // Review
       if (mode === 'admin') return 'Create Appointment';
-      return canContinue ? 'Confirm Booking' : 'Complete Your Information';
+      return 'Confirm Booking';
     default:
       return 'Continue';
   }
@@ -136,7 +120,7 @@ export function BookingModalFooter({
           onClick={handleContinue}
           disabled={!canContinue || isLoading}
           className={`
-            w-full h-[52px] rounded-xl font-semibold text-[17px] tracking-[0.01em]
+            w-full h-12 rounded-xl font-semibold text-[15px] tracking-[0.01em]
             flex items-center justify-center gap-2
             transition-all duration-200 ease-out
             ${
@@ -164,9 +148,9 @@ export function BookingModalFooter({
             onClick={handleBack}
             disabled={isLoading}
             className="w-full mt-3 text-center text-sm text-[#434E54]/70 hover:text-[#434E54] transition-colors duration-200"
-            aria-label={`Go back to ${previousStepName}`}
+            aria-label="Go back to previous step"
           >
-            Back to {previousStepName}
+            Back
           </button>
         )}
       </div>
@@ -183,15 +167,15 @@ export function BookingModalFooter({
             onClick={handleBack}
             disabled={isLoading}
             className="
-              flex items-center gap-2 h-12 px-5 rounded-xl
+              flex items-center gap-2 h-11 px-4 rounded-xl
               text-[#434E54] font-medium text-[15px]
               bg-transparent hover:bg-[#EAE0D5] active:bg-[#DCD2C7]
-              transition-all duration-200
+              transition-all duration-150
               focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#434E54] focus-visible:outline-offset-2
             "
-            aria-label={`Go back to ${previousStepName}`}
+            aria-label="Go back to previous step"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
             <span>Back</span>
           </button>
         ) : (
@@ -203,10 +187,10 @@ export function BookingModalFooter({
           onClick={handleContinue}
           disabled={!canContinue || isLoading}
           className={`
-            h-12 px-8 rounded-xl font-semibold text-base tracking-[0.01em]
+            h-11 px-6 rounded-xl font-semibold text-base tracking-[0.01em]
             flex items-center justify-center gap-2
-            min-w-[200px]
-            transition-all duration-200 ease-out
+            min-w-[160px]
+            transition-all duration-150 ease-out
             ${
               canContinue && !isLoading
                 ? 'bg-[#434E54] text-white shadow-md hover:bg-[#363F44] hover:shadow-lg active:scale-[0.98] active:bg-[#2D363A] active:shadow-sm'
@@ -220,9 +204,9 @@ export function BookingModalFooter({
         >
           <span>{buttonText}</span>
           {isLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           )}
         </button>
       </div>

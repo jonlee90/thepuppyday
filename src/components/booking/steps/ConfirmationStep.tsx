@@ -56,31 +56,19 @@ export function ConfirmationStep() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Success animation with dog theme */}
+      {/* Success animation */}
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-        className="text-center mb-8 relative"
+        className="text-center mb-6"
       >
-        {/* Subtle celebration paw prints */}
-        <div className="absolute -top-4 left-1/4 opacity-[0.06]">
-          <svg className="w-12 h-12 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
-          </svg>
-        </div>
-        <div className="absolute -top-2 right-1/4 opacity-[0.06]">
-          <svg className="w-10 h-10 text-[#434E54]" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
-          </svg>
-        </div>
-
-        <div className="w-24 h-24 bg-[#434E54]/10 rounded-full flex items-center justify-center mx-auto mb-4 relative z-10">
+        <div className="w-20 h-20 bg-[#434E54]/10 rounded-full flex items-center justify-center mx-auto mb-3">
           <motion.svg
             initial={{ pathLength: 0 }}
             animate={{ pathLength: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-12 h-12 text-[#434E54]"
+            className="w-10 h-10 text-[#434E54]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -89,9 +77,9 @@ export function ConfirmationStep() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </motion.svg>
         </div>
-        <h2 className="text-3xl font-bold text-[#434E54] mb-2">Booking Confirmed!</h2>
-        <p className="text-[#434E54]/70">
-          Your pup's spa day is all set! We've sent a confirmation to your email
+        <h2 className="text-2xl font-bold text-[#434E54] mb-2">Booking Confirmed!</h2>
+        <p className="text-[#434E54]/70 text-sm">
+          We've sent a confirmation to your email
         </p>
       </motion.div>
 
@@ -100,10 +88,10 @@ export function ConfirmationStep() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="bg-[#434E54]/10 border border-[#434E54]/30 rounded-xl p-6 text-center mb-6"
+        className="bg-[#434E54]/5 border border-[#434E54]/20 rounded-xl p-4 text-center mb-4"
       >
-        <p className="text-sm text-[#434E54]/70 mb-1">Confirmation Number</p>
-        <p className="text-2xl font-mono font-bold text-[#434E54]">{referenceNumber}</p>
+        <p className="text-xs text-[#434E54]/70 mb-1">Confirmation Number</p>
+        <p className="text-xl font-mono font-bold text-[#434E54]">{referenceNumber}</p>
       </motion.div>
 
       {/* Booking details */}
@@ -111,32 +99,32 @@ export function ConfirmationStep() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-white rounded-xl border border-[#434E54]/20 overflow-hidden mb-6"
+        className="bg-white rounded-xl border border-[#434E54]/20 overflow-hidden mb-4"
       >
-        <div className="p-4 bg-[#FFFBF7] border-b border-[#434E54]/20">
-          <h3 className="font-semibold text-[#434E54]">Appointment Details</h3>
+        <div className="p-3 bg-[#FFFBF7] border-b border-[#434E54]/10">
+          <h3 className="font-semibold text-[#434E54] text-sm">Appointment Details</h3>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="p-3 space-y-3">
           {/* Date & Time */}
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-[#EAE0D5] rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#EAE0D5] rounded-full flex items-center justify-center flex-shrink-0">
               <svg
-                className="w-5 h-5 text-[#434E54]"
+                className="w-4 h-4 text-[#434E54]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                strokeWidth={2}
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
             </div>
             <div>
-              <p className="font-medium text-[#434E54]">
+              <p className="text-sm font-medium text-[#434E54]">
                 {selectedDate &&
                   new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
                     weekday: 'long',
@@ -144,57 +132,57 @@ export function ConfirmationStep() {
                     day: 'numeric',
                   })}
               </p>
-              <p className="text-sm text-[#434E54]/70">
+              <p className="text-xs text-[#434E54]/70">
                 {selectedTimeSlot && formatTimeDisplay(selectedTimeSlot)}
               </p>
             </div>
           </div>
 
           {/* Service */}
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-[#EAE0D5] rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#EAE0D5] rounded-full flex items-center justify-center flex-shrink-0">
               <svg
-                className="w-5 h-5 text-[#434E54]"
+                className="w-4 h-4 text-[#434E54]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                strokeWidth={2}
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
                   d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
                 />
               </svg>
             </div>
             <div>
-              <p className="font-medium text-[#434E54]">{selectedService?.name}</p>
-              <p className="text-sm text-[#434E54]/70">
+              <p className="text-sm font-medium text-[#434E54]">{selectedService?.name}</p>
+              <p className="text-xs text-[#434E54]/70">
                 {formatDuration(selectedService?.duration_minutes || 0)}
               </p>
             </div>
           </div>
 
           {/* Pet */}
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-[#EAE0D5] rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#EAE0D5] rounded-full flex items-center justify-center flex-shrink-0">
               <svg
-                className="w-5 h-5 text-[#434E54]"
+                className="w-4 h-4 text-[#434E54]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                strokeWidth={2}
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
                   d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                 />
               </svg>
             </div>
             <div>
-              <p className="font-medium text-[#434E54]">{petName}</p>
-              <p className="text-sm text-[#434E54]/70">
+              <p className="text-sm font-medium text-[#434E54]">{petName}</p>
+              <p className="text-xs text-[#434E54]/70">
                 {petSize && getSizeShortLabel(petSize)}
               </p>
             </div>
@@ -202,25 +190,25 @@ export function ConfirmationStep() {
 
           {/* Add-ons */}
           {selectedAddons.length > 0 && (
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-[#EAE0D5] rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-[#EAE0D5] rounded-full flex items-center justify-center flex-shrink-0">
                 <svg
-                  className="w-5 h-5 text-[#434E54]"
+                  className="w-4 h-4 text-[#434E54]"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth={2}
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
                     d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                   />
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-[#434E54]">Add-ons</p>
-                <ul className="text-sm text-[#434E54]/70">
+                <p className="text-sm font-medium text-[#434E54]">Add-ons</p>
+                <ul className="text-xs text-[#434E54]/70">
                   {selectedAddons.map((addon) => (
                     <li key={addon.id}>{addon.name}</li>
                   ))}

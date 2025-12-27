@@ -251,14 +251,14 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
 
     // Show login or register form
     return (
-      <div className="space-y-6">
-        <p className="text-[#434E54]/70 leading-relaxed">
+      <div className="space-y-4">
+        <p className="text-[#434E54]/70 leading-relaxed max-w-2xl">
           {viewMode === 'login' ? 'Log in to continue' : 'Create an account to book your appointment'}
         </p>
 
         {/* Login Form */}
         {viewMode === 'login' && (
-          <div className="space-y-4 p-4 md:p-6 bg-white rounded-xl border border-[#E5E5E5]">
+          <div className="space-y-3 p-4 bg-white rounded-xl border border-[#E5E5E5]">
             <div>
               <label className="block text-sm font-medium text-[#434E54] mb-2">
                 Email <span className="text-[#EF4444]">*</span>
@@ -322,8 +322,8 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
 
         {/* Register Form */}
         {viewMode === 'register' && (
-          <div className="space-y-4 p-4 md:p-6 bg-white rounded-xl border border-[#E5E5E5]">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3 p-4 bg-white rounded-xl border border-[#E5E5E5]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-[#434E54] mb-2">
                   First Name <span className="text-[#EF4444]">*</span>
@@ -458,9 +458,9 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
 
   // Admin/Walk-in mode (search + create)
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Subtitle */}
-      <p className="text-[#434E54]/70 leading-relaxed">
+      <p className="text-[#434E54]/70 leading-relaxed max-w-2xl">
         Search for an existing customer or create a new one
       </p>
 
@@ -539,8 +539,8 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
           Create New Customer
         </div>
 
-        <div className="p-4 md:p-6 bg-white rounded-xl border border-[#E5E5E5] space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-4 bg-white rounded-xl border border-[#E5E5E5] space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-[#434E54] mb-2">
                 First Name <span className="text-[#EF4444]">*</span>

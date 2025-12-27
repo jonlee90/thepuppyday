@@ -157,14 +157,14 @@ export function PetStep({ customerId, mode = 'customer' }: PetStepProps) {
   // Show form for guests, new customers, or when adding new pet
   if (showForm) {
     return (
-      <div className="space-y-6">
-        <p className="text-[#434E54]/70 leading-relaxed">
+      <div className="space-y-4">
+        <p className="text-[#434E54]/70 leading-relaxed max-w-2xl">
           {isAuthenticated
             ? 'Enter your pet\'s information so we can provide the best care'
-            : 'We need some details about your furry friend to personalize their grooming experience'}
+            : 'Tell us about your pet so we can provide the best grooming experience'}
         </p>
 
-        <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="bg-white rounded-xl shadow-md p-4">
           <PetForm
             onSubmit={handleFormSubmit}
             onCancel={pets.length > 0 ? handleFormCancel : undefined}
@@ -178,8 +178,8 @@ export function PetStep({ customerId, mode = 'customer' }: PetStepProps) {
 
   // Show pet selection for authenticated users
   return (
-    <div className="space-y-6">
-      <p className="text-[#6B7280] leading-relaxed">Tell us which furry family member we&apos;ll be pampering today</p>
+    <div className="space-y-4">
+      <p className="text-[#434E54]/70 leading-relaxed max-w-2xl">Select your pet for this appointment</p>
 
       {/* New pet info banner */}
       {newPetData && (

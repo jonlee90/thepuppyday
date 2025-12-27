@@ -30,9 +30,9 @@ export function BookingModalProgress({
   // Mobile: Compact progress bar
   if (isMobile) {
     return (
-      <div className="px-4 py-3 bg-white/60 border-b border-[#434E54]/5">
+      <div className="px-4 py-2 bg-white/60 border-b border-[#434E54]/5">
         {/* Progress bar */}
-        <div className="h-1.5 bg-[#EAE0D5] rounded-full overflow-hidden">
+        <div className="h-2 bg-[#EAE0D5] rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-[#434E54] rounded-full"
             initial={{ width: 0 }}
@@ -41,11 +41,8 @@ export function BookingModalProgress({
           />
         </div>
 
-        {/* Step counter */}
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xs font-medium text-[#434E54]/70">
-            Step {currentStep + 1} of {totalSteps}
-          </span>
+        {/* Current step label */}
+        <div className="flex items-center justify-end mt-1.5">
           <span className="text-xs font-medium text-[#434E54]">
             {stepLabels[currentStep]}
           </span>
@@ -54,10 +51,10 @@ export function BookingModalProgress({
     );
   }
 
-  // Desktop/Tablet: Full stepper
+  // Desktop/Tablet: Compact single-line stepper
   return (
-    <div className="px-6 lg:px-8 py-4 bg-gradient-to-b from-white to-[#FFFBF7] border-b border-[#434E54]/5">
-      <div className="flex items-center justify-between max-w-2xl mx-auto">
+    <div className="px-6 py-2.5 bg-white border-b border-[#434E54]/5">
+      <div className="flex items-center max-w-3xl mx-auto">
         {stepLabels.map((label, index) => {
           const isCompleted = index < currentStep;
           const isCurrent = index === currentStep;
@@ -65,23 +62,25 @@ export function BookingModalProgress({
 
           return (
             <div key={index} className="flex items-center flex-1 last:flex-none">
-              {/* Step indicator */}
-              <div className="flex flex-col items-center">
+              {/* Step indicator with inline label */}
+              <div className="flex items-center gap-2">
                 <motion.div
                   className={`
-                    relative flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors
+                    relative flex items-center justify-center w-6 h-6 rounded-full transition-colors
                     ${isCompleted ? 'bg-[#434E54] text-white' : ''}
                     ${isCurrent ? 'bg-[#434E54] text-white ring-4 ring-[#434E54]/20' : ''}
-                    ${isFuture ? 'bg-[#EAE0D5] text-[#434E54]/50' : ''}
+                    ${isFuture ? 'border-2 border-[#434E54]/30 text-[#434E54]/30' : ''}
                   `}
                   initial={false}
                   animate={isCurrent ? { scale: [1, 1.1, 1] } : {}}
                   transition={{ duration: 0.3 }}
                 >
                   {isCompleted ? (
-                    <Check className="w-4 h-4" />
+                    <Check className="w-3 h-3" />
+                  ) : isCurrent ? (
+                    <div className="w-2 h-2 bg-white rounded-full" />
                   ) : (
-                    <span>{index + 1}</span>
+                    <div className="w-2 h-2 bg-[#434E54]/30 rounded-full" />
                   )}
 
                   {/* Pulse animation for current step */}
@@ -99,10 +98,10 @@ export function BookingModalProgress({
                   )}
                 </motion.div>
 
-                {/* Label - visible on larger screens */}
+                {/* Inline label - visible on desktop */}
                 <span
                   className={`
-                    hidden lg:block mt-2 text-xs font-medium text-center max-w-[80px] truncate
+                    hidden md:block text-xs font-medium whitespace-nowrap
                     ${isCurrent ? 'text-[#434E54]' : 'text-[#434E54]/50'}
                   `}
                 >
@@ -112,10 +111,11 @@ export function BookingModalProgress({
 
               {/* Connecting line */}
               {index < stepLabels.length - 1 && (
-                <div className="flex-1 mx-2 lg:mx-3">
-                  <div className="h-0.5 bg-[#EAE0D5] rounded-full overflow-hidden">
+                <div className="flex-1 mx-2">
+                  <div className="h-px bg-[#EAE0D5] overflow-hidden">
                     <motion.div
-                      className="h-full bg-[#434E54]"
+                      className={`h-full ${isCompleted ? 'bg-[#434E54]' : 'bg-[#434E54]/20'}`}
+                      style={{ width: isCompleted ? '100%' : '0%' }}
                       initial={{ width: '0%' }}
                       animate={{ width: isCompleted ? '100%' : '0%' }}
                       transition={{ duration: 0.3, ease: 'easeOut' }}

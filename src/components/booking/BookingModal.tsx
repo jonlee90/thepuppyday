@@ -285,7 +285,7 @@ export function BookingModal({
           >
             <motion.div
               ref={modalRef}
-              className="relative w-full max-w-[1000px] xl:max-w-[1200px] max-h-[85vh] lg:max-h-[90vh] bg-[#FFFBF7] rounded-[20px] lg:rounded-3xl shadow-[0_25px_50px_-12px_rgba(67,78,84,0.25)] overflow-hidden flex flex-col pointer-events-auto"
+              className="relative w-full max-w-[960px] xl:max-w-[1100px] max-h-[85vh] lg:max-h-[90vh] bg-[#FFFBF7] rounded-[20px] lg:rounded-[24px] shadow-[0_25px_50px_-12px_rgba(67,78,84,0.25)] overflow-hidden flex flex-col pointer-events-auto"
               variants={desktopModalVariants}
               initial="hidden"
               animate="visible"
@@ -314,7 +314,7 @@ export function BookingModal({
 
               {/* Content Area */}
               <div className="flex-1 overflow-y-auto overscroll-contain">
-                <div className="px-4 md:px-6 lg:px-8">
+                <div className="px-6 py-4">
                   <BookingWizard
                     embedded={true}
                     preSelectedServiceId={preSelectedServiceId || undefined}
@@ -346,7 +346,7 @@ export function BookingModal({
           >
             <motion.div
               ref={modalRef}
-              className="relative w-full h-[95vh] bg-[#FFFBF7] rounded-t-[20px] shadow-[0_-25px_50px_-12px_rgba(67,78,84,0.25)] overflow-hidden flex flex-col pointer-events-auto"
+              className="relative w-full h-[92vh] bg-[#FFFBF7] rounded-t-[20px] shadow-[0_-25px_50px_-12px_rgba(67,78,84,0.25)] overflow-hidden flex flex-col pointer-events-auto"
               variants={mobileModalVariants}
               initial="hidden"
               animate="visible"
@@ -390,7 +390,7 @@ export function BookingModal({
 
               {/* Content Area */}
               <div className="flex-1 overflow-y-auto overscroll-contain">
-                <div className="p-4 pb-32">
+                <div className="p-4 pb-4">
                   <BookingWizard
                     embedded={true}
                     preSelectedServiceId={preSelectedServiceId || undefined}

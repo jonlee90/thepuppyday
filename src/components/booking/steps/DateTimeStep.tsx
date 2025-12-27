@@ -128,74 +128,48 @@ export function DateTimeStep() {
             Retry
           </button>
         </div>
-
-        {/* Navigation */}
-        <div className="flex justify-between pt-4">
-          <button
-            onClick={prevStep}
-            className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
-                     hover:bg-[#EAE0D5] transition-colors duration-200
-                     flex items-center gap-2"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Subtitle */}
-      <p className="text-[#434E54]/70 leading-relaxed">Pick a time that works best for you and your pup&apos;s schedule</p>
+      <p className="text-[#434E54]/70 leading-relaxed max-w-2xl">Pick a time that works for you and your pet</p>
 
-      {/* Selected datetime banner */}
+      {/* Selected datetime banner - compact */}
       {selectedDate && selectedTimeSlot && (
-        <div className="bg-[#434E54]/10 border border-[#434E54]/30 rounded-lg p-4">
+        <div className="bg-[#434E54]/5 border border-[#434E54]/20 rounded-xl p-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#434E54]/20 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-[#434E54]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
+            <div className="flex items-center gap-2">
+              <svg
+                className="w-5 h-5 text-[#434E54]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
               <div>
-                <p className="font-medium text-[#434E54]">
+                <p className="text-[15px] font-medium text-[#434E54]">
                   {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
                     weekday: 'long',
-                    year: 'numeric',
                     month: 'long',
                     day: 'numeric',
-                  })}
-                </p>
-                <p className="text-sm text-[#434E54] font-medium">
-                  {formatTimeDisplay(selectedTimeSlot)}
+                    year: 'numeric',
+                  })} at {formatTimeDisplay(selectedTimeSlot)}
                 </p>
               </div>
             </div>
             <button
               onClick={clearDateTime}
-              className="text-[#434E54] font-medium py-1.5 px-3 rounded-lg text-sm
-                       hover:bg-[#EAE0D5] transition-colors duration-200"
+              className="text-[#434E54] text-xs font-medium py-1 px-2 rounded-lg
+                       hover:bg-[#434E54]/5 transition-colors duration-200"
             >
               Change
             </button>
@@ -247,46 +221,6 @@ export function DateTimeStep() {
             />
           )}
         </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex justify-between pt-4">
-        <button
-          onClick={prevStep}
-          className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
-                   hover:bg-[#EAE0D5] transition-colors duration-200
-                   flex items-center gap-2"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Back
-        </button>
-        <button
-          onClick={handleContinue}
-          disabled={!canContinue}
-          className="bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                   hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
-                   disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
-                   flex items-center gap-2"
-        >
-          Continue
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
       </div>
 
       {/* Waitlist Modal */}
