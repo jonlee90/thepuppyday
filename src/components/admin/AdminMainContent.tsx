@@ -17,6 +17,7 @@ export function AdminMainContent({ children }: AdminMainContentProps) {
 
   return (
     <main
+      id="main-content"
       className={`
         min-h-screen
         pt-14 md:pt-0

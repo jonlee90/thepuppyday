@@ -3,6 +3,7 @@
 /**
  * Hero section for marketing homepage - Clean & Elegant Professional
  * Task 0168: Updated to use dynamic hero content from database
+ * Task 0224: Updated to use OptimizedImage with priority loading
  * Updated: Integrated with booking modal for CTA
  */
 
@@ -10,6 +11,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Phone, Calendar, Star } from 'lucide-react';
 import { HeroBookingButton } from '@/components/booking';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
 import PawDecoration from './paw-decoration';
 import type { HeroContent } from '@/types/settings';
 
@@ -106,9 +108,13 @@ export function HeroSection({ heroContent }: HeroSectionProps) {
               >
                  {/* Main hero image with dog centered in lobby */}
             <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl">
-              <img
-                src={"/images/puppyday-lobby-background.jpg"}
+              <OptimizedImage
+                src="/images/puppyday-lobby-background.jpg"
                 alt="Adorable groomed dog with bowtie in the Puppy Day salon lobby"
+                width={800}
+                height={500}
+                priority={true}
+                enableBlur={false}
                 className="w-full h-[400px] lg:h-[500px] object-cover"
               />
    

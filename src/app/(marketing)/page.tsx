@@ -78,8 +78,9 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// Revalidate every 5 seconds for near-instant updates
-export const revalidate = 5;
+// ISR: Revalidate every 15 minutes (matches banner cache TTL)
+// Task 0229: Configure ISR for services and gallery content
+export const revalidate = 900; // 15 minutes
 
 async function getMarketingData() {
   const supabase = await createServerSupabaseClient();

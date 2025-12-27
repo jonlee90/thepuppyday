@@ -1,62 +1,22 @@
-# Task 0236: Test RLS policies for horizontal privilege escalation
+# Task 0236: Test RLS Policies
 
-**Phase**: 10.2 Security
-**Prerequisites**: 0232-0235
-**Estimated effort**: 3-4 hours
+## Description
+Comprehensive testing of RLS policies to ensure security and prevent unauthorized data access.
 
-## Objective
-
-Write comprehensive tests to verify RLS policies prevent unauthorized data access.
-
-## Requirements
-
-- Write tests to verify customers cannot access other customers' data
-- Test that direct queries return empty results for unauthorized access
-- Test admin access works correctly
-- Test all CRUD operations respect RLS
+## Checklist
+- [ ] Write integration tests for RLS policy verification
+- [ ] Test horizontal privilege escalation prevention
+- [ ] Test admin bypass functionality
+- [ ] Test anonymous access to public tables
 
 ## Acceptance Criteria
-
-- [ ] Tests verify Customer A cannot see Customer B's data
-- [ ] Tests verify unauthenticated users cannot access protected data
-- [ ] Tests verify admins can access all data
-- [ ] Tests verify role escalation prevented
-- [ ] All RLS tests pass
-- [ ] No privilege escalation possible
-
-## Implementation Details
-
-### Files to Create
-
-- `__tests__/security/rls-policies.test.ts`
-
-### Test Scenarios
-
-1. Unauthenticated access to public data (should succeed)
-2. Unauthenticated access to protected data (should fail)
-3. Customer accessing own data (should succeed)
-4. Customer accessing another customer's data (should fail)
-5. Customer attempting role escalation (should fail)
-6. Admin accessing all data (should succeed)
-7. Groomer accessing appointment data (should succeed)
-
-### Testing Pattern
-
-```typescript
-test('customer cannot access other customer pets', async () => {
-  const customerA = await createTestCustomer();
-  const customerB = await createTestCustomer();
-
-  const { data, error } = await supabaseAs(customerA)
-    .from('pets')
-    .select('*')
-    .eq('owner_id', customerB.id);
-
-  expect(data).toEqual([]);
-});
-```
+All RLS policies pass security tests, no data leakage
 
 ## References
+- Requirement 6.7, 6.9
 
-- **Requirements**: Req 6.7, 6.9
-- **Design**: Section 10.2.1
+## Files to Create/Modify
+- `__tests__/integration/rls-policies.test.ts`
+
+## Implementation Notes
+Use test users with different roles (customer, admin, anonymous) to verify access patterns.

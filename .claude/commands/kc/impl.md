@@ -27,19 +27,17 @@ The kiro-executor agent is the primary agent for implementing tasks from Kiro sp
 **Specialized Agent Delegation**:
 When @agent-kiro-executor encounters specific types of work, it MUST delegate to the appropriate specialized agent:
 
-| Work Type | Primary Agent | Purpose |
-|-----------|---------------|---------|
-| **Frontend/UI Components** | @agent-frontend-expert → @agent-daisyui-expert | First get design specs from frontend-expert, then implement with daisyui-expert |
-| **Database/Supabase** | @agent-supabase-nextjs-expert | All database operations, migrations, RLS policies, and Supabase integrations (always use MCP Supabase tools) |
-| **Next.js Specifics** | @agent-nextjs-expert | App Router patterns, Server/Client Components, API routes, middleware |
-| **Code Review** | @agent-code-reviewer | Review architecture, security, and best practices |
+| Work Type | Agent | Purpose |
+|-----------|-------|---------|
+| **Frontend/UI Components** | @agent-app-dev | UI/UX design and implementation with DaisyUI + Tailwind (uses `/frontend-design` plugin first) |
+| **Database/Supabase** | @agent-data-dev | All database operations, migrations, RLS policies, auth, and Supabase integrations (has MCP tools) |
+| **Code Review** | @agent-code-reviewer | Review architecture, security, performance, and design system compliance (has MCP tools) |
 | **General Tasks** | @agent-general-purpose | Research, exploration, and other non-specialized work |
 
-**Agent Workflow for Frontend Work**:
-```
-1. @agent-frontend-expert → Creates design specification (.claude/design/*.md)
-2. @agent-daisyui-expert → Implements the design using DaisyUI + Tailwind
-```
+**Available Skills** (reference for detailed specs):
+- `@skill design-system` - The Puppy Day colors, typography, spacing
+- `@skill daisyui-components` - DaisyUI component patterns and theme config
+- `@skill nextjs-patterns` - App Router, data fetching, Server/Client components
 
 **Implementation Steps:**
 
@@ -50,9 +48,8 @@ When @agent-kiro-executor encounters specific types of work, it MUST delegate to
 3. **Implement**:
    - Create a new git branch for the implementation
    - **Delegate to specialized agents** based on work type (see table above)
-   - For frontend: Get design from @agent-frontend-expert FIRST, then implement with @agent-daisyui-expert
-   - For database: Use @agent-supabase-nextjs-expert with MCP Supabase tools
-   - For Next.js patterns: Use @agent-nextjs-expert
+   - For frontend: Use @agent-app-dev (it handles both design and implementation)
+   - For database: Use @agent-data-dev with MCP Supabase tools
    - Write sufficient unit/integration tests (Vitest/Jest)
    - Ensure design system adherence (Clean & Elegant Professional)
 
