@@ -501,6 +501,72 @@ await supabase.from('gallery_images').insert({
 
 ---
 
+#### 9.7. Calendar Settings (`/admin/settings/calendar`) ✅
+
+**File**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\app\admin\settings\calendar\page.tsx`
+
+**Features (Phase 11)**:
+
+**Connection Management**:
+- View active calendar connections
+- Enable/disable auto-sync
+- Connection health status
+- Last sync timestamp
+
+**Error Recovery UI** (`SyncErrorRecovery` Component):
+- **Filter Errors**: By error type (auth_error, quota_exceeded, network_error, etc.)
+- **Retry Failed Syncs**: Individual or batch retry
+- **Resync Appointments**: Force delete + recreate in Google Calendar
+- **Error Details**: View full error messages and retry history
+- **Pagination**: Handle large error lists
+
+**Quota Tracking** (`QuotaWarning` Component):
+- **Daily Usage**: Current API request count vs limit
+- **Progress Bar**: Visual quota usage indicator
+- **Warning Banner**: Alert at 80% usage (800,000/1,000,000 requests)
+- **Critical Alert**: Auto-pause warning at 90%
+
+**Auto-Pause System** (`PausedSyncBanner` Component):
+- **Pause Notification**: Banner when sync auto-paused after 10 consecutive failures
+- **Resume Button**: Manual resume with CSRF-protected Server Action
+- **Pause Reason**: Display reason (e.g., "Token expired", "Quota exceeded")
+- **Consecutive Failures**: Show failure count before pause
+
+**Server Actions** (CSRF Protection):
+```typescript
+// src/app/admin/settings/calendar/actions.ts
+export async function getQuotaStatus(): Promise<QuotaStatus> {
+  // CSRF-protected quota fetch
+}
+
+export async function resumeAutoSync(connectionId: string): Promise<Result> {
+  // CSRF-protected resume action
+}
+```
+
+**API Routes**:
+- `/api/admin/calendar/quota` - Get quota status
+- `/api/admin/calendar/sync/errors` - List failed syncs
+- `/api/admin/calendar/sync/retry` - Retry failed syncs
+- `/api/admin/calendar/sync/resync` - Force resync
+- `/api/admin/calendar/connection/resume` - Resume auto-sync
+- `/api/admin/calendar/sync/queue-stats` - Retry queue statistics
+
+**Security Fixes (Phase 11)**:
+1. **CSRF Protection**: All mutations use Server Actions
+2. **Auth Verification**: Quota tracker validates admin session
+3. **SQL Injection Prevention**: Input validation on error type filter
+4. **N+1 Query Optimization**: Batch fetch appointments in retry queue
+5. **XSS Prevention**: Safe DOM manipulation in toast notifications
+6. **Memory Leak Prevention**: AbortController for fetch requests
+
+**Next.js 16 Compatibility**:
+- Async `searchParams` handling
+- Server Actions return typed promises
+- Proper error boundary integration
+
+---
+
 ## Layout (`layout.tsx`)
 
 **File**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\app\admin\layout.tsx`
@@ -789,4 +855,4 @@ describe('Admin Appointment Creation', () => {
 
 ---
 
-**Last Updated**: 2025-12-22
+**Last Updated**: 2025-12-26

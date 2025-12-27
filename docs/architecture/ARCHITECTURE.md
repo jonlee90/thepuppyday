@@ -1,8 +1,8 @@
 # The Puppy Day - Master Architecture Documentation
 
-> **Version**: 1.1
-> **Last Updated**: 2025-12-22
-> **Status**: Production-Ready (Phases 1-6, 8-9 Complete | Phase 7 Pending)
+> **Version**: 1.2
+> **Last Updated**: 2025-12-26
+> **Status**: Production-Ready (Phases 1-6, 8-9, 11 Complete | Phase 7 Pending)
 
 ## Table of Contents
 
@@ -57,6 +57,7 @@
 | 8 | Notifications | ✅ Completed | Templates, triggers, preferences, email/SMS providers, unsubscribe system |
 | 9 | Admin Settings | ✅ Completed | Business settings, staff management, site content, banners |
 | 10 | Testing & Polish | 🚧 Pending | Comprehensive testing, performance optimization |
+| 11 | Calendar Error Recovery | ✅ Completed | Retry queue, error recovery UI, quota tracking, auto-pause system |
 
 ---
 
@@ -1129,6 +1130,84 @@ interface NotificationLog {
 }
 ```
 
+#### 22. `calendar_sync_retry_queue` Table
+Retry queue for failed calendar sync operations (Phase 11).
+
+```typescript
+interface CalendarSyncRetryQueue {
+  id: string;                      // UUID
+  calendar_connection_id: string;  // Foreign key -> calendar_connections.id
+  operation_type: 'create' | 'update' | 'delete';
+  appointment_id: string;          // Foreign key -> appointments.id
+  google_event_id: string | null;  // Google Calendar event ID (for update/delete)
+  event_data: Record<string, unknown> | null; // Event data (for create/update)
+  error_type: string;              // Error classification
+  error_message: string;           // Last error message
+  retry_count: number;             // Number of retry attempts
+  max_retries: number;             // Maximum retry attempts (default: 3)
+  next_retry_at: string | null;    // Scheduled next retry time
+  created_at: string;
+  updated_at: string;
+}
+```
+
+**Retry Strategy**:
+- Exponential backoff: 1 minute → 5 minutes → 15 minutes
+- Max 3 retry attempts before manual intervention required
+- Auto-cleanup after 7 days
+
+#### 23. `calendar_api_quota` Table
+Daily API quota tracking for Google Calendar API (Phase 11).
+
+```typescript
+interface CalendarApiQuota {
+  id: string;                      // UUID
+  date: string;                    // Date (YYYY-MM-DD)
+  request_count: number;           // Number of API requests made
+  daily_limit: number;             // Daily request limit (default: 1,000,000)
+  warning_threshold: number;       // Warning threshold percentage (default: 80)
+  created_at: string;
+  updated_at: string;
+}
+```
+
+**Quota Limits**:
+- Daily limit: 1,000,000 requests (Google Calendar API default)
+- Warning at 80% (800,000 requests)
+- Auto-pauses sync at 90% (900,000 requests)
+
+#### 24. `calendar_connections` Table (Updated for Phase 11)
+Calendar integration connections with error tracking.
+
+```typescript
+interface CalendarConnection {
+  id: string;                      // UUID
+  user_id: string;                 // Foreign key -> users.id
+  provider: 'google';              // Calendar provider
+  calendar_id: string;             // External calendar ID
+  access_token: string;            // Encrypted access token
+  refresh_token: string;           // Encrypted refresh token
+  token_expires_at: string;        // Token expiration
+  auto_sync_enabled: boolean;      // Auto-sync toggle
+  sync_direction: 'both' | 'to_google' | 'from_google';
+  last_sync_at: string | null;     // Last successful sync
+
+  // Phase 11: Error tracking fields
+  consecutive_failures: number;    // Count of consecutive sync failures
+  auto_sync_paused: boolean;       // Whether auto-sync is paused
+  paused_at: string | null;        // When sync was paused
+  pause_reason: string | null;     // Reason for pause
+
+  created_at: string;
+  updated_at: string;
+}
+```
+
+**Auto-Pause Logic**:
+- Pauses after 10 consecutive failures
+- Requires manual resume via admin UI
+- Prevents cascade failures and quota exhaustion
+
 ### Database Relationships
 
 ```
@@ -1204,6 +1283,113 @@ AS $$
 $$;
 ```
 
+#### `increment_quota(target_date DATE)` (Phase 11)
+Increments the API quota counter for a specific date.
+
+```sql
+CREATE OR REPLACE FUNCTION increment_quota(target_date DATE)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  INSERT INTO calendar_api_quota (date, request_count, daily_limit, warning_threshold)
+  VALUES (target_date, 1, 1000000, 80)
+  ON CONFLICT (date)
+  DO UPDATE SET
+    request_count = calendar_api_quota.request_count + 1,
+    updated_at = NOW();
+END;
+$$;
+```
+
+**Usage**: Called automatically by calendar sync service on each API request.
+
+#### `cleanup_retry_queue()` (Phase 11)
+Removes old retry queue entries (older than 7 days).
+
+```sql
+CREATE OR REPLACE FUNCTION cleanup_retry_queue()
+RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  deleted_count INTEGER;
+BEGIN
+  DELETE FROM calendar_sync_retry_queue
+  WHERE created_at < NOW() - INTERVAL '7 days';
+
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count;
+END;
+$$;
+```
+
+**Scheduled**: Run daily via cron job.
+
+#### `cleanup_quota_records()` (Phase 11)
+Removes old quota records (older than 90 days).
+
+```sql
+CREATE OR REPLACE FUNCTION cleanup_quota_records()
+RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  deleted_count INTEGER;
+BEGIN
+  DELETE FROM calendar_api_quota
+  WHERE date < CURRENT_DATE - INTERVAL '90 days';
+
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count;
+END;
+$$;
+```
+
+**Scheduled**: Run weekly via cron job.
+
+### Database Views (Phase 11)
+
+#### `retry_queue_summary`
+Monitoring view for retry queue health.
+
+```sql
+CREATE VIEW retry_queue_summary AS
+SELECT
+  operation_type,
+  error_type,
+  COUNT(*) as pending_count,
+  AVG(retry_count) as avg_retries,
+  MAX(retry_count) as max_retries
+FROM calendar_sync_retry_queue
+WHERE next_retry_at IS NOT NULL
+GROUP BY operation_type, error_type;
+```
+
+**Usage**: Monitor retry queue health in admin dashboard.
+
+#### `calendar_health_summary`
+Monitoring view for calendar connection health.
+
+```sql
+CREATE VIEW calendar_health_summary AS
+SELECT
+  cc.id,
+  cc.user_id,
+  cc.provider,
+  cc.auto_sync_enabled,
+  cc.auto_sync_paused,
+  cc.consecutive_failures,
+  cc.last_sync_at,
+  COUNT(rq.id) as pending_retries
+FROM calendar_connections cc
+LEFT JOIN calendar_sync_retry_queue rq ON rq.calendar_connection_id = cc.id
+WHERE cc.auto_sync_enabled = true
+GROUP BY cc.id;
+```
+
+**Usage**: Display connection health status in calendar settings.
+
 ### Indexes
 
 Key indexes for performance:
@@ -1215,6 +1401,9 @@ Key indexes for performance:
 - `pets.owner_id` (owner pet lookup)
 - `waitlist.customer_id` (customer waitlist lookup)
 - `notifications_log.customer_id` (notification history)
+- `calendar_sync_retry_queue.calendar_connection_id` (retry queue lookup)
+- `calendar_sync_retry_queue.next_retry_at` (scheduled retry queries)
+- `calendar_api_quota.date` (unique, quota tracking)
 
 ---
 
@@ -1733,6 +1922,31 @@ export const config = {
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-12-20
+**Document Version**: 1.2
+**Last Updated**: 2025-12-26
 **Maintained By**: Development Team
+
+## Changelog
+
+### Version 1.2 (2025-12-26)
+- **Phase 11: Calendar Error Recovery** - Complete implementation
+  - Added `calendar_sync_retry_queue` table for retry queue management
+  - Added `calendar_api_quota` table for daily API usage tracking
+  - Updated `calendar_connections` table with error tracking fields
+  - New stored procedures: `increment_quota()`, `cleanup_retry_queue()`, `cleanup_quota_records()`
+  - New database views: `retry_queue_summary`, `calendar_health_summary`
+  - 6 new API endpoints for error recovery and quota management
+  - 3 new UI components: `QuotaWarning`, `SyncErrorRecovery`, `PausedSyncBanner`
+  - Calendar settings page with error recovery features
+  - 6 critical security fixes (CSRF, auth verification, SQL injection, N+1 queries, XSS, memory leaks)
+  - Next.js 16 compatibility updates
+
+### Version 1.1 (2025-12-22)
+- Phase 9 Admin Settings completion
+- Phase 6 enhancements (walk-in appointments, CSV import)
+- Notification system (Phase 8) documentation
+
+### Version 1.0 (2025-12-20)
+- Initial comprehensive architecture documentation
+- Phases 1-6 complete documentation
+- Database schema, security model, and service integration docs

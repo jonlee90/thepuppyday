@@ -514,12 +514,186 @@ return data;
 
 ---
 
+---
+
+## Phase 11: Calendar Error Recovery
+
+### New Tables
+
+#### `calendar_sync_retry_queue`
+Stores failed calendar sync operations for retry with exponential backoff.
+
+```typescript
+const { data, error } = await supabase
+  .from('calendar_sync_retry_queue')
+  .insert({
+    calendar_connection_id: connectionId,
+    operation_type: 'create',
+    appointment_id: appointmentId,
+    event_data: eventPayload,
+    error_type: 'auth_error',
+    error_message: 'Token expired',
+    retry_count: 0,
+    max_retries: 3,
+    next_retry_at: new Date(Date.now() + 60000).toISOString() // 1 minute
+  });
+```
+
+**Retry Logic**:
+- First retry: 1 minute
+- Second retry: 5 minutes
+- Third retry: 15 minutes
+- Max 3 attempts, then manual intervention required
+
+#### `calendar_api_quota`
+Tracks daily Google Calendar API usage.
+
+```typescript
+// Increment quota (via stored procedure)
+const { error } = await supabase.rpc('increment_quota', {
+  target_date: new Date().toISOString().split('T')[0]
+});
+
+// Check quota status
+const { data } = await supabase
+  .from('calendar_api_quota')
+  .select('*')
+  .eq('date', new Date().toISOString().split('T')[0])
+  .single();
+
+const percentageUsed = (data.request_count / data.daily_limit) * 100;
+const isWarning = percentageUsed >= data.warning_threshold;
+```
+
+### Updated Tables
+
+#### `calendar_connections` (Phase 11 Fields)
+Added error tracking fields for auto-pause functionality.
+
+```typescript
+const { data, error } = await supabase
+  .from('calendar_connections')
+  .update({
+    consecutive_failures: 0,      // Reset on success
+    auto_sync_paused: false,      // Resume sync
+    paused_at: null,
+    pause_reason: null
+  })
+  .eq('id', connectionId);
+
+// Auto-pause after 10 consecutive failures
+if (consecutiveFailures >= 10) {
+  await supabase
+    .from('calendar_connections')
+    .update({
+      auto_sync_paused: true,
+      paused_at: new Date().toISOString(),
+      pause_reason: 'Automatic pause after 10 consecutive failures'
+    })
+    .eq('id', connectionId);
+}
+```
+
+### New Stored Procedures
+
+#### `increment_quota(target_date DATE)`
+```typescript
+// Called automatically by calendar sync service
+const { error } = await supabase.rpc('increment_quota', {
+  target_date: '2025-12-26'
+});
+```
+
+#### `cleanup_retry_queue()`
+```typescript
+// Run daily via cron job
+const { data } = await supabase.rpc('cleanup_retry_queue');
+console.log(`Cleaned up ${data} old retry entries`);
+```
+
+#### `cleanup_quota_records()`
+```typescript
+// Run weekly via cron job
+const { data } = await supabase.rpc('cleanup_quota_records');
+console.log(`Cleaned up ${data} old quota records`);
+```
+
+### New Views
+
+#### `retry_queue_summary`
+```typescript
+const { data } = await supabase
+  .from('retry_queue_summary')
+  .select('*');
+
+// Returns aggregated retry queue stats
+// {
+//   operation_type: 'create',
+//   error_type: 'auth_error',
+//   pending_count: 5,
+//   avg_retries: 1.8,
+//   max_retries: 3
+// }
+```
+
+#### `calendar_health_summary`
+```typescript
+const { data } = await supabase
+  .from('calendar_health_summary')
+  .select('*');
+
+// Returns connection health for all active connections
+// {
+//   id: 'uuid',
+//   user_id: 'uuid',
+//   provider: 'google',
+//   auto_sync_enabled: true,
+//   auto_sync_paused: false,
+//   consecutive_failures: 2,
+//   last_sync_at: '2025-12-26T10:00:00Z',
+//   pending_retries: 3
+// }
+```
+
+### Security Patterns (Phase 11)
+
+#### RLS Policies for New Tables
+
+**calendar_sync_retry_queue**:
+```sql
+-- Admins can view all retry entries
+CREATE POLICY "Admins can view retry queue"
+  ON calendar_sync_retry_queue FOR SELECT
+  USING (is_admin());
+
+-- System can insert/update retry entries
+CREATE POLICY "System can manage retry queue"
+  ON calendar_sync_retry_queue FOR ALL
+  USING (auth.role() = 'service_role');
+```
+
+**calendar_api_quota**:
+```sql
+-- Admins can view quota
+CREATE POLICY "Admins can view quota"
+  ON calendar_api_quota FOR SELECT
+  USING (is_admin());
+
+-- System can update quota
+CREATE POLICY "System can manage quota"
+  ON calendar_api_quota FOR ALL
+  USING (auth.role() = 'service_role');
+```
+
+---
+
 ## Related Documentation
 
 - [Database Schema](../ARCHITECTURE.md#database-schema)
 - [RLS Policies](../security/rls.md)
 - [Mock Services](../testing/mocks.md)
+- [Calendar Settings UI](../routes/admin-panel.md#97-calendar-settings-adminsettingscalendar-)
 
 ---
 
-**Last Updated**: 2025-12-20
+**Last Updated**: 2025-12-26

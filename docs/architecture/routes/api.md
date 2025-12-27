@@ -701,6 +701,150 @@ Handle Stripe webhook events (Phase 7).
 
 ---
 
+### Calendar Error Recovery (Phase 11) ✅
+
+#### `GET /api/admin/calendar/quota`
+Get current API quota status.
+
+**Response**:
+```json
+{
+  "date": "2025-12-26",
+  "request_count": 450000,
+  "daily_limit": 1000000,
+  "warning_threshold": 80,
+  "percentage_used": 45,
+  "is_warning": false,
+  "requests_remaining": 550000
+}
+```
+
+#### `GET /api/admin/calendar/sync/errors`
+List failed calendar sync operations with filters.
+
+**Query Params**:
+- `error_type`: Filter by error classification (optional)
+- `operation_type`: Filter by operation (create, update, delete)
+- `limit`: Results per page (default: 50)
+- `offset`: Pagination offset
+
+**Response**:
+```json
+{
+  "errors": [
+    {
+      "id": "uuid",
+      "operation_type": "create",
+      "appointment_id": "uuid",
+      "error_type": "auth_error",
+      "error_message": "Token expired",
+      "retry_count": 2,
+      "max_retries": 3,
+      "next_retry_at": "2025-12-26T15:30:00Z",
+      "created_at": "2025-12-26T14:00:00Z"
+    }
+  ],
+  "total": 15,
+  "has_more": false
+}
+```
+
+**Security Note**: Input validation on `error_type` to prevent SQL injection.
+
+#### `POST /api/admin/calendar/sync/retry`
+Retry failed sync operations (individual or batch).
+
+**Body**:
+```json
+{
+  "retry_ids": ["uuid1", "uuid2"],  // Optional: specific retry entries
+  "retry_all": false                // Optional: retry all pending
+}
+```
+
+**Response**:
+```json
+{
+  "retried_count": 2,
+  "succeeded": 1,
+  "failed": 1,
+  "errors": [
+    {
+      "retry_id": "uuid2",
+      "error": "Still failing: Token expired"
+    }
+  ]
+}
+```
+
+**Security**: CSRF protection via Server Actions wrapper.
+
+#### `POST /api/admin/calendar/sync/resync`
+Force resync appointments (delete + recreate in Google Calendar).
+
+**Body**:
+```json
+{
+  "appointment_ids": ["uuid1", "uuid2"]
+}
+```
+
+**Response**:
+```json
+{
+  "resynced_count": 2,
+  "succeeded": 2,
+  "failed": 0
+}
+```
+
+**Security**: Admin-only, validates appointment ownership.
+
+#### `POST /api/admin/calendar/connection/resume`
+Resume auto-sync for paused calendar connection.
+
+**Body**:
+```json
+{
+  "connection_id": "uuid"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Auto-sync resumed successfully",
+  "consecutive_failures_reset": true
+}
+```
+
+**Security**: CSRF-protected Server Action.
+
+#### `GET /api/admin/calendar/sync/queue-stats`
+Get retry queue statistics.
+
+**Response**:
+```json
+{
+  "total_pending": 15,
+  "by_operation": {
+    "create": 8,
+    "update": 5,
+    "delete": 2
+  },
+  "by_error_type": {
+    "auth_error": 7,
+    "quota_exceeded": 3,
+    "network_error": 5
+  },
+  "avg_retry_count": 1.8,
+  "oldest_entry": "2025-12-20T10:00:00Z"
+}
+```
+
+---
+
 ## Validation
 
 **Zod Schemas** for all mutations:
@@ -855,4 +999,4 @@ describe('POST /api/appointments', () => {
 
 ---
 
-**Last Updated**: 2025-12-22
+**Last Updated**: 2025-12-26

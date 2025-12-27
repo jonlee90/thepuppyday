@@ -161,7 +161,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="flex justify-center">
-        <div className="w-8 h-8 border-4 border-[#EAE0D5] border-t-[#434E54] rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#EAE0D5] border-t-[#EAE0D5] rounded-full animate-spin"></div>
       </div>
     }>
       <LoginForm />

@@ -566,11 +566,273 @@ describe('Button', () => {
 
 ---
 
+## Phase 11: Calendar Error Recovery Components
+
+### QuotaWarning (`src/components/admin/calendar/QuotaWarning.tsx`)
+
+**Purpose**: Display Google Calendar API quota usage with warnings.
+
+**Props**:
+```typescript
+interface QuotaWarningProps {
+  date: string;
+  requestCount: number;
+  dailyLimit: number;
+  warningThreshold: number;
+}
+```
+
+**Usage**:
+```tsx
+<QuotaWarning
+  date="2025-12-26"
+  requestCount={800000}
+  dailyLimit={1000000}
+  warningThreshold={80}
+/>
+```
+
+**Visual States**:
+- Normal (< 80%): Info alert with progress bar
+- Warning (80-90%): Warning alert, yellow progress bar
+- Critical (> 90%): Error alert, red progress bar, auto-pause notification
+
+**Features**:
+- Real-time quota percentage calculation
+- Color-coded progress bar (DaisyUI progress component)
+- Requests remaining display
+- Auto-refresh via polling
+
+---
+
+### SyncErrorRecovery (`src/components/admin/calendar/SyncErrorRecovery.tsx`)
+
+**Purpose**: Admin UI for managing failed calendar sync operations.
+
+**Props**:
+```typescript
+interface SyncErrorRecoveryProps {
+  connectionId: string;
+}
+```
+
+**Usage**:
+```tsx
+<SyncErrorRecovery connectionId={calendarConnection.id} />
+```
+
+**Features**:
+
+**Error Filtering**:
+- Dropdown to filter by error type (auth_error, quota_exceeded, network_error, etc.)
+- Filter by operation type (create, update, delete)
+- Clear filters button
+
+**Error List Display**:
+- Table with columns: Operation, Appointment, Error Type, Message, Retry Count, Next Retry
+- Pagination (50 errors per page)
+- Sort by created_at (newest first)
+
+**Retry Actions**:
+- **Retry Individual**: Button per error row
+- **Retry All**: Batch retry all filtered errors
+- **Resync**: Force delete + recreate in Google Calendar (nuclear option)
+
+**Visual Feedback**:
+- Loading states during retry operations
+- Success/error toast notifications
+- Disabled state for max-retried errors
+
+**DaisyUI Components Used**:
+- `table` - Error list table
+- `select` - Error type filter
+- `btn` - Action buttons (retry, resync)
+- `badge` - Error type badges
+- `alert` - No errors state
+
+---
+
+### PausedSyncBanner (`src/components/admin/calendar/PausedSyncBanner.tsx`)
+
+**Purpose**: Alert banner when auto-sync is paused due to consecutive failures.
+
+**Props**:
+```typescript
+interface PausedSyncBannerProps {
+  connectionId: string;
+  pausedAt: string;
+  pauseReason: string;
+  consecutiveFailures: number;
+  onResume: () => void;
+}
+```
+
+**Usage**:
+```tsx
+{connection.auto_sync_paused && (
+  <PausedSyncBanner
+    connectionId={connection.id}
+    pausedAt={connection.paused_at}
+    pauseReason={connection.pause_reason}
+    consecutiveFailures={connection.consecutive_failures}
+    onResume={handleResumeSync}
+  />
+)}
+```
+
+**Features**:
+- **Warning Alert**: DaisyUI alert-warning styling
+- **Pause Info**: Display pause reason and timestamp
+- **Failure Count**: Show consecutive failures before pause
+- **Resume Button**: CSRF-protected Server Action
+- **Dismissable**: Can be collapsed but persists until resumed
+
+**DaisyUI Components Used**:
+- `alert alert-warning` - Warning banner
+- `btn btn-primary` - Resume button
+- Icon from Lucide React (AlertTriangle)
+
+---
+
+## Design Patterns
+
+### Composition Pattern
+
+Components are composable and follow single-responsibility principle:
+
+```tsx
+// Good: Composable
+<Card>
+  <div className="flex justify-between items-center">
+    <h3>Appointment Details</h3>
+    <Badge variant="success">Confirmed</Badge>
+  </div>
+  <p>January 15, 2025 at 10:00 AM</p>
+  <div className="mt-4">
+    <Button variant="outline">Reschedule</Button>
+    <Button variant="error">Cancel</Button>
+  </div>
+</Card>
+
+// Avoid: Monolithic component with too many responsibilities
+<AppointmentCard
+  showBadge
+  showActions
+  enableReschedule
+  enableCancel
+  // ... too many props
+/>
+```
+
+### Controlled vs Uncontrolled
+
+**Form Components** (controlled):
+```tsx
+const [email, setEmail] = useState('');
+
+<Input
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+/>
+```
+
+**Modal** (controlled state):
+```tsx
+const [isOpen, setIsOpen] = useState(false);
+
+<Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+```
+
+---
+
+## Accessibility
+
+All components follow WCAG AA standards:
+
+### Keyboard Navigation
+- All interactive elements are keyboard-accessible
+- Tab order follows visual flow
+- Focus indicators visible (`focus:ring-2 focus:ring-primary`)
+
+### Screen Readers
+```tsx
+// ARIA labels for icon-only buttons
+<Button aria-label="Close modal">
+  <X className="w-4 h-4" />
+</Button>
+
+// Form labels associated with inputs
+<label htmlFor="email">Email Address</label>
+<Input id="email" type="email" />
+```
+
+### Color Contrast
+- Text on background: 7.2:1 (charcoal on cream)
+- Error text: 4.5:1 minimum
+- Disabled states: Visual + ARIA indicators
+
+---
+
+## Theming
+
+Components use DaisyUI theme variables defined in `globals.css`:
+
+```css
+[data-theme="light"] {
+  --p: 67 78 84;      /* Primary: Charcoal */
+  --s: 234 224 213;   /* Secondary: Cream */
+  --a: 78 205 196;    /* Accent: Sky Blue */
+  --b1: 248 238 229;  /* Base: Warm cream background */
+}
+```
+
+**Custom Theme Overrides**:
+```tsx
+<Button className="bg-[#434E54] hover:bg-[#363F44]">
+  Custom Color
+</Button>
+```
+
+---
+
+## Testing
+
+### Unit Tests
+
+```typescript
+import { render, screen } from '@testing-library/react';
+import { Button } from '@/components/ui/button';
+
+describe('Button', () => {
+  it('renders with correct text', () => {
+    render(<Button>Click Me</Button>);
+    expect(screen.getByText('Click Me')).toBeInTheDocument();
+  });
+
+  it('shows loading spinner when isLoading', () => {
+    render(<Button isLoading>Submit</Button>);
+    expect(screen.getByRole('button')).toBeDisabled();
+    expect(screen.getByRole('button')).toContainHTML('loading-spinner');
+  });
+
+  it('calls onClick when clicked', () => {
+    const handleClick = vi.fn();
+    render(<Button onClick={handleClick}>Click</Button>);
+
+    screen.getByRole('button').click();
+    expect(handleClick).toHaveBeenCalledOnce();
+  });
+});
+```
+
+---
+
 ## Related Documentation
 
 - [Design System](../ARCHITECTURE.md#global-design-system)
 - [DaisyUI Documentation](https://daisyui.com/components/)
+- [Calendar Settings Page](../routes/admin-panel.md#97-calendar-settings-adminsettingscalendar-)
 
 ---
 
-**Last Updated**: 2025-12-20
+**Last Updated**: 2025-12-26
