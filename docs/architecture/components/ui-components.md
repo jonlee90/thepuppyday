@@ -694,6 +694,223 @@ interface PausedSyncBannerProps {
 
 ---
 
+## Phase 10: Admin Responsive Layout Components
+
+### AdminMainContent (`src/components/admin/AdminMainContent.tsx`)
+
+**Purpose**: Wraps main admin content with dynamic padding that responds to sidebar collapse state.
+
+**Props**:
+```typescript
+interface AdminMainContentProps {
+  children: React.ReactNode;
+}
+```
+
+**Usage**:
+```tsx
+// In admin layout.tsx
+<AdminMainContent>
+  {children}
+</AdminMainContent>
+```
+
+**Features**:
+- **Dynamic Padding**: Adjusts left padding based on `isSidebarCollapsed` state
+  - Expanded: `lg:pl-64` (256px) + `max-w-7xl` (1280px)
+  - Collapsed: `lg:pl-20` (80px) + `max-w-[1600px]` (gains ~496px usable space)
+- **Responsive Breakpoints**:
+  - Mobile: `pt-14 pb-20` (header + bottom tabs)
+  - Tablet: `md:pl-[72px]` (icon sidebar)
+  - Desktop: `lg:pl-64` or `lg:pl-20` (based on collapse state)
+- **Smooth Transitions**: 300ms transition for padding and max-width changes
+- **Zustand Integration**: Reads `isSidebarCollapsed` from admin store
+
+---
+
+### TabletSidebar (`src/components/admin/layout/TabletSidebar.tsx`)
+
+**Purpose**: Icon-only sidebar navigation for tablet devices (768-1023px).
+
+**Props**:
+```typescript
+interface TabletSidebarProps {
+  user: User;
+}
+```
+
+**Usage**:
+```tsx
+<TabletSidebar user={user} />
+```
+
+**Features**:
+- **Compact Layout**: 72px width (always visible)
+- **Icon Navigation**: Icons only, tooltips on hover
+- **Popover Submenus**: For Notifications and Settings sections
+- **Submenu Indicators**: Dots show which items have submenus
+- **Touch-Optimized**: 56px touch targets
+- **Active States**: Highlights current route
+- **Responsive**: Only visible on tablet breakpoint (md:flex lg:hidden)
+
+**Navigation Items**:
+- Dashboard (LayoutDashboard icon)
+- Analytics (BarChart3 icon)
+- Appointments (Calendar icon)
+- Waitlist (Clock icon)
+- Customers (Users icon)
+- Services (Scissors icon)
+- Gallery (Images icon)
+- Marketing (Megaphone icon)
+- Notifications (Bell icon) → Popover submenu
+- Settings (Settings icon) → Popover submenu
+
+---
+
+### MobileHeader (`src/components/admin/layout/MobileHeader.tsx`)
+
+**Purpose**: Fixed top header for mobile devices with hamburger menu and branding.
+
+**Props**:
+```typescript
+interface MobileHeaderProps {
+  user: User;
+}
+```
+
+**Usage**:
+```tsx
+<MobileHeader user={user} />
+```
+
+**Features**:
+- **Fixed Positioning**: Top of viewport, z-index 50
+- **Hamburger Button**: Opens mobile drawer (`toggleMobileDrawer`)
+- **Centered Branding**: "Puppy Day Admin" logo with icon
+- **User Avatar**: Dropdown menu with sign-out option
+- **Responsive**: Only visible on mobile (md:hidden)
+- **Touch Targets**: 44x44px minimum (WCAG AA compliant)
+
+---
+
+### MobileBottomTabs (`src/components/admin/layout/MobileBottomTabs.tsx`)
+
+**Purpose**: Fixed bottom tab navigation for mobile devices with elevated Walk-in button.
+
+**Props**: None (uses hooks for routing and state)
+
+**Usage**:
+```tsx
+<MobileBottomTabs />
+```
+
+**Features**:
+- **5 Tab Layout**: Home, Appointments, Walk-in (center), Customers, More
+- **Elevated Walk-in**: 56px circle button elevated above tab bar
+- **Walk-in Integration**: Opens BookingModal in walk-in mode
+- **Active States**: Top border indicator for active tab
+- **Touch-Optimized**: 48-56px touch targets (WCAG AAA)
+- **Drawer Trigger**: "More" tab opens mobile drawer
+- **Zustand Integration**: Manages active tab state, drawer state
+- **Responsive**: Only visible on mobile (md:hidden)
+
+**Tab Configuration**:
+```typescript
+const tabs = [
+  { id: 'home', label: 'Home', icon: LayoutDashboard, href: '/admin/dashboard' },
+  { id: 'appointments', label: 'Appts', icon: Calendar, href: '/admin/appointments' },
+  { id: 'walkin', label: 'Walk-in', icon: UserPlus, action: 'walkin' },
+  { id: 'customers', label: 'Customers', icon: Users, href: '/admin/customers' },
+  { id: 'more', label: 'More', icon: MoreHorizontal, action: 'drawer' }
+];
+```
+
+---
+
+### NavPopover (`src/components/admin/layout/NavPopover.tsx`)
+
+**Purpose**: Reusable popover component for tablet sidebar submenus.
+
+**Props**:
+```typescript
+interface NavPopoverProps {
+  isOpen: boolean;
+  onClose: () => void;
+  anchorEl: HTMLElement | null;
+  items: Array<{
+    label: string;
+    href: string;
+    icon: React.ElementType;
+  }>;
+}
+```
+
+**Usage**:
+```tsx
+<NavPopover
+  isOpen={isNotificationsOpen}
+  onClose={() => setIsNotificationsOpen(false)}
+  anchorEl={notificationsButtonRef.current}
+  items={notificationItems}
+/>
+```
+
+**Features**:
+- **Auto-Positioning**: Positions relative to anchor element
+- **Click-Outside**: Closes when clicking outside popover
+- **ESC Key**: Closes on ESC key press
+- **Active Route**: Highlights current page
+- **Smooth Animation**: Fade in/out transition
+- **DaisyUI Card**: Styled with card, rounded-xl, shadow-lg
+- **Touch-Friendly**: Adequate spacing between items
+
+---
+
+### Breakpoint Utilities (`src/lib/utils/breakpoints.ts`)
+
+**Purpose**: React hooks for responsive breakpoint detection.
+
+**Hooks**:
+```typescript
+// Get current breakpoint
+const breakpoint = useBreakpoint(); // 'mobile' | 'tablet' | 'desktop'
+
+// Check specific breakpoints
+const isMobile = useIsMobile();               // < 768px
+const isTablet = useIsTablet();               // 768-1023px
+const isDesktop = useIsDesktop();             // > 1024px
+const isTabletOrDesktop = useIsTabletOrDesktop(); // >= 768px
+
+// Custom media query
+const matches = useMediaQuery('(min-width: 900px)');
+```
+
+**Usage**:
+```tsx
+import { useBreakpoint, useIsMobile } from '@/lib/utils/breakpoints';
+
+function ResponsiveComponent() {
+  const breakpoint = useBreakpoint();
+  const isMobile = useIsMobile();
+
+  return (
+    <div>
+      {isMobile && <MobileView />}
+      {breakpoint === 'tablet' && <TabletView />}
+      {breakpoint === 'desktop' && <DesktopView />}
+    </div>
+  );
+}
+```
+
+**Features**:
+- **SSR-Safe**: Returns default values during server-side rendering
+- **Debounced**: Prevents excessive re-renders on window resize
+- **TypeScript**: Fully typed with proper return types
+- **Performant**: Uses matchMedia API, not window.innerWidth
+
+---
+
 ## Design Patterns
 
 ### Composition Pattern
@@ -835,4 +1052,4 @@ describe('Button', () => {
 
 ---
 
-**Last Updated**: 2025-12-26
+**Last Updated**: 2025-12-27

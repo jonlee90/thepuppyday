@@ -567,36 +567,215 @@ export async function resumeAutoSync(connectionId: string): Promise<Result> {
 
 ---
 
-## Layout (`layout.tsx`)
+## Responsive Layout (`layout.tsx`)
 
 **File**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\app\admin\layout.tsx`
 
-**Structure**:
+### Overview
+
+The admin panel features a comprehensive responsive layout system optimized for desktop, tablet, and mobile devices, eliminating dead space and providing touch-optimized navigation.
+
+### Layout Components by Breakpoint
+
+**Desktop (>1024px)**:
 ```tsx
-<div className="min-h-screen bg-gray-50">
-  <AdminSidebar />  {/* Desktop sidebar */}
-  <div className="lg:pl-64">
-    <AdminHeader />
-    <main className="p-6">
-      {children}
-    </main>
-  </div>
-  <MobileNav />  {/* Mobile bottom nav */}
-</div>
+<AdminSidebar user={user} />           {/* Full sidebar: 256px width */}
+<AdminMainContent>                     {/* Left padding: pl-64 (expanded) or pl-20 (collapsed) */}
+  {children}
+</AdminMainContent>
 ```
 
-**Sidebar Navigation**:
-- Dashboard
-- Appointments
-- Customers
-- Services
-- Addons
-- Gallery
-- Analytics
-- Waitlist
-- Marketing
-- Notifications
-- Settings
+**Tablet (768px-1023px)**:
+```tsx
+<TabletSidebar user={user} />          {/* Icon sidebar: 72px width, always visible */}
+<AdminMainContent>                     {/* Left padding: pl-[72px] */}
+  {children}
+</AdminMainContent>
+```
+
+**Mobile (<768px)**:
+```tsx
+<MobileHeader user={user} />           {/* Fixed top header: 56px height */}
+<AdminMobileNav user={user} />         {/* Slide-in drawer from right */}
+<MobileBottomTabs />                   {/* Fixed bottom tabs: 72px height */}
+<AdminMainContent>                     {/* Padding: pt-14 pb-20 */}
+  {children}
+</AdminMainContent>
+```
+
+---
+
+### Desktop Layout
+
+**AdminSidebar Component** (`src/components/admin/AdminSidebar.tsx`):
+- Full-width sidebar (256px expanded, 80px collapsed)
+- Collapsible with toggle button
+- Grouped navigation sections
+- User info panel with avatar and role
+- Smooth transitions (300ms)
+
+**Sidebar States**:
+- **Expanded** (default): Full navigation labels, section headers, user info
+- **Collapsed**: Icon-only, tooltips on hover, centered icons
+
+**AdminMainContent Component** (`src/components/admin/AdminMainContent.tsx`):
+- Dynamic left padding responds to sidebar collapse state
+- **Expanded sidebar**: `lg:pl-64` (256px) + `max-w-7xl` (1280px)
+- **Collapsed sidebar**: `lg:pl-20` (80px) + `max-w-[1600px]` (gains ~496px usable space)
+- Smooth transitions when sidebar toggles
+
+---
+
+### Tablet Layout
+
+**TabletSidebar Component** (`src/components/admin/layout/TabletSidebar.tsx`):
+- Icon-only sidebar: 72px width (always visible, no hamburger)
+- Saves 184px horizontal space vs full sidebar
+- Touch-friendly targets: 56px height
+- Tooltips on hover for navigation labels
+- Popover submenus for Notifications and Settings
+- Submenu indicator dots for expandable items
+
+**Features**:
+- Always visible (no hiding/expanding like mobile)
+- Touch-optimized spacing (adequate spacing between targets)
+- Popover positioning relative to anchor element
+- Click-outside and ESC key to close popovers
+- Active state highlighting for current route
+
+**NavPopover Component** (`src/components/admin/layout/NavPopover.tsx`):
+- Reusable popover for tablet sidebar submenus
+- Auto-positioning relative to anchor
+- Active route highlighting
+- Accessible (ESC key, click-outside)
+
+---
+
+### Mobile Layout
+
+**MobileHeader Component** (`src/components/admin/layout/MobileHeader.tsx`):
+- Fixed top header: 56px height
+- Hamburger menu button (left) opens drawer
+- Centered "Puppy Day Admin" branding with logo
+- User avatar dropdown menu (right) with sign-out option
+- z-index: 50 (above content, below drawer)
+
+**MobileBottomTabs Component** (`src/components/admin/layout/MobileBottomTabs.tsx`):
+- Fixed bottom navigation bar: 72px height
+- 5 tabs with 20% width each:
+  1. **Home** (Dashboard) - LayoutDashboard icon
+  2. **Appointments** - Calendar icon
+  3. **Walk-in** (CENTER, ELEVATED) - UserPlus icon in elevated circle
+  4. **Customers** - Users icon
+  5. **More** (opens drawer) - MoreHorizontal icon
+- Walk-in button: Elevated 56px circle above tab bar, opens BookingModal in walk-in mode
+- Active state: Top border indicator (4px rounded)
+- Touch targets: 48-56px (WCAG AAA compliant)
+- z-index: 40
+
+**AdminMobileNav Component** (`src/components/admin/AdminMobileNav.tsx`):
+- Slide-in drawer from right (280px width)
+- Triggered by: Header hamburger OR bottom "More" tab
+- Controlled by Zustand store (`isMobileDrawerOpen`)
+- Auto-closes on route change
+- Overlay background (black/50 opacity)
+- Full navigation tree with expandable sections
+- Sign-out button at bottom
+- z-index: 50 (above header and tabs)
+
+---
+
+### Responsive Behavior
+
+**Breakpoint Detection** (`src/lib/utils/breakpoints.ts`):
+```typescript
+// React hooks for responsive behavior
+useBreakpoint()         // Returns 'mobile' | 'tablet' | 'desktop'
+useIsMobile()           // <768px
+useIsTablet()           // 768-1023px
+useIsDesktop()          // >1024px
+useIsTabletOrDesktop()  // >=768px
+useMediaQuery(query)    // Custom media query
+```
+
+**State Management** (`src/stores/admin-store.ts`):
+```typescript
+interface AdminState {
+  // Sidebar
+  isSidebarCollapsed: boolean;
+  toggleSidebar: () => void;
+
+  // Responsive
+  currentBreakpoint: 'mobile' | 'tablet' | 'desktop';
+  isMobileDrawerOpen: boolean;
+  activeBottomTab: 'home' | 'appointments' | 'customers';
+
+  setBreakpoint: (breakpoint) => void;
+  toggleMobileDrawer: () => void;
+  setMobileDrawerOpen: (open: boolean) => void;
+  setActiveBottomTab: (tab) => void;
+}
+```
+
+**Transition Behavior**:
+- Sidebar collapse/expand: 300ms ease
+- Mobile drawer slide: 300ms ease-out
+- Content padding adjustment: 300ms
+- Bottom tabs active state: Instant
+
+---
+
+### Touch Optimization
+
+**Touch Targets**:
+- Mobile bottom tabs: 48px minimum (WCAG AA), 56px for Walk-in (AAA)
+- Tablet sidebar icons: 56px height
+- Mobile drawer items: 48px height
+- Adequate spacing between interactive elements (8-12px)
+
+**Gestures**:
+- Drawer: Swipe from right edge to open (future enhancement)
+- Overlay: Tap to close drawer
+- Pull-to-refresh: Available on list views (future enhancement)
+
+---
+
+### Space Utilization
+
+**Dead Space Elimination**:
+
+**Desktop Sidebar Collapsed**:
+- Before: 256px sidebar + 1280px content = large right margin
+- After: 80px sidebar + 1600px content = ~496px more usable space
+
+**Tablet Icon Sidebar**:
+- Saves 184px vs full sidebar (72px vs 256px)
+- Always visible, no need for hamburger menu
+- Consistent, predictable layout
+
+**Mobile Bottom Tabs**:
+- 72px bottom chrome (industry standard)
+- One-tap access to critical functions
+- Familiar pattern (iOS, Instagram, etc.)
+
+---
+
+### Navigation Hierarchy
+
+**Primary Navigation**:
+- Desktop: Full sidebar with labels
+- Tablet: Icon sidebar with tooltips
+- Mobile: Bottom tabs (Home, Appointments, Walk-in, Customers, More)
+
+**Secondary Navigation**:
+- Desktop: Expandable sections in sidebar
+- Tablet: Popover submenus (Notifications, Settings)
+- Mobile: Drawer with full tree (opened by hamburger or "More" tab)
+
+**Quick Actions**:
+- Desktop: Inline buttons on dashboard
+- Tablet: Same as desktop
+- Mobile: Walk-in button elevated in bottom tabs (always accessible)
 
 ---
 
@@ -855,4 +1034,4 @@ describe('Admin Appointment Creation', () => {
 
 ---
 
-**Last Updated**: 2025-12-26
+**Last Updated**: 2025-12-27
