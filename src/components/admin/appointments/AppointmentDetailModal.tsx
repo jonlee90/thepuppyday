@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { getStatusBadgeColor, getStatusLabel, getAllowedTransitions, isTerminalStatus, isAppointmentInPast } from '@/lib/admin/appointment-status';
 import { StatusTransitionButton } from './StatusTransitionButton';
-import type { Appointment, CustomerFlag, Service, Addon } from '@/types/database';
+import type { Appointment, CustomerFlag, Service, Addon, User, Pet, ServicePrice } from '@/types/database';
 
 interface EditFormState {
   scheduled_date: string;
@@ -45,12 +45,23 @@ interface AppointmentDetailModalProps {
 }
 
 interface AppointmentDetail extends Appointment {
-  customer?: any;
-  pet?: any;
-  service?: any;
-  groomer?: any;
-  addons?: any[];
+  customer?: User | null;
+  pet?: Pet | null;
+  service?: (Service & { prices?: ServicePrice[] }) | null;
+  groomer?: User | null;
+  addons?: Array<{
+    id: string;
+    appointment_id: string;
+    addon_id: string;
+    price: number;
+    addon: Addon | null;
+  }>;
   customer_flags?: CustomerFlag[];
+}
+
+interface ToastNotification {
+  type: 'success' | 'error';
+  message: string;
 }
 
 export function AppointmentDetailModal({
@@ -62,11 +73,12 @@ export function AppointmentDetailModal({
   const [appointment, setAppointment] = useState<AppointmentDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<ToastNotification | null>(null);
   const [editingNotes, setEditingNotes] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [reportCard, setReportCard] = useState<any>(null);
   const [loadingReportCard, setLoadingReportCard] = useState(false);
-  const [groomers, setGroomers] = useState<any[]>([]);
+  const [groomers, setGroomers] = useState<User[]>([]);
   const [loadingGroomers, setLoadingGroomers] = useState(false);
   const [assigningGroomer, setAssigningGroomer] = useState(false);
 
@@ -81,8 +93,8 @@ export function AppointmentDetailModal({
     admin_notes: '',
     addon_ids: [],
   });
-  const [services, setServices] = useState<any[]>([]);
-  const [addons, setAddons] = useState<any[]>([]);
+  const [services, setServices] = useState<(Service & { prices?: ServicePrice[] })[]>([]);
+  const [addons, setAddons] = useState<Addon[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
 
   // Fetch appointment details and groomers
@@ -148,11 +160,14 @@ export function AppointmentDetailModal({
     setLoadingGroomers(true);
 
     try {
-      const response = await fetch('/api/admin/settings/staff?role=groomer&status=active');
+      const response = await fetch('/api/admin/groomers');
       const result = await response.json();
 
       if (response.ok) {
-        setGroomers(result.data || []);
+        setGroomers(result.groomers || []);
+      } else {
+        console.error('Failed to fetch groomers:', result.error);
+        setGroomers([]);
       }
     } catch (err) {
       console.error('Error fetching groomers:', err);
@@ -166,6 +181,7 @@ export function AppointmentDetailModal({
     if (!appointmentId) return;
 
     setAssigningGroomer(true);
+    setError(''); // Clear previous errors
 
     try {
       const response = await fetch(`/api/admin/appointments/${appointmentId}`, {
@@ -177,18 +193,31 @@ export function AppointmentDetailModal({
       const result = await response.json();
 
       if (response.ok) {
-        // Show success toast
-        console.log('Groomer assigned successfully');
+        // Show success feedback
+        setToast({
+          type: 'success',
+          message: groomerId
+            ? 'Groomer assigned successfully'
+            : 'Groomer unassigned successfully'
+        });
+
         // Refresh appointment details
         fetchAppointmentDetails();
         if (onUpdate) {
           onUpdate();
         }
       } else {
-        console.error('Failed to assign groomer:', result.error);
+        // Show error feedback
+        setToast({
+          type: 'error',
+          message: result.error || 'Failed to assign groomer'
+        });
       }
     } catch (err) {
-      console.error('Error assigning groomer:', err);
+      setToast({
+        type: 'error',
+        message: 'An error occurred while assigning groomer'
+      });
     } finally {
       setAssigningGroomer(false);
     }
@@ -265,9 +294,34 @@ export function AppointmentDetailModal({
   };
 
   const handleSaveEdit = async () => {
-    if (!appointmentId || !appointment) return;
+    if (!appointmentId || !appointment || saving) return; // Prevent multiple saves
+
+    // Client-side validation
+    const errors: string[] = [];
+
+    if (!editForm.scheduled_date || !editForm.scheduled_time) {
+      errors.push('Date and time are required');
+    }
+
+    if (!editForm.service_id) {
+      errors.push('Service is required');
+    }
+
+    // Check if scheduling in the past for pending appointments
+    if (editForm.scheduled_date && editForm.scheduled_time) {
+      const scheduledDateTime = new Date(`${editForm.scheduled_date}T${editForm.scheduled_time}:00`);
+      if (scheduledDateTime < new Date() && appointment.status === 'pending') {
+        errors.push('Cannot schedule pending appointments in the past');
+      }
+    }
+
+    if (errors.length > 0) {
+      setError(errors.join('. '));
+      return;
+    }
 
     setSaving(true);
+    setError(''); // Clear previous errors
 
     try {
       // Combine date and time into scheduled_at
@@ -448,6 +502,22 @@ export function AppointmentDetailModal({
             </div>
           ) : appointment ? (
             <>
+              {/* Toast Notification */}
+              {toast && (
+                <div className={`alert ${toast.type === 'success' ? 'alert-success' : 'alert-error'} rounded-lg shadow-sm animate-[fadeIn_200ms_ease-out]`}>
+                  <div className="flex items-center justify-between w-full">
+                    <span>{toast.message}</span>
+                    <button
+                      onClick={() => setToast(null)}
+                      className="btn btn-sm btn-ghost btn-circle"
+                      aria-label="Dismiss notification"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Customer Flags Alert */}
               {appointment.customer_flags && appointment.customer_flags.length > 0 && (
                 <div className="bg-[#FFF3CD] border border-[#FFB347] rounded-xl p-4 shadow-sm">
@@ -556,7 +626,7 @@ export function AppointmentDetailModal({
               </div>
 
               {/* Groomer Assignment */}
-              {appointment.status !== 'cancelled' && appointment.status !== 'no_show' && (
+              {!isTerminalStatus(appointment.status) && (
                 <div className="card bg-white border border-[#E5E5E5] shadow-sm rounded-xl">
                   <div className="card-body p-6">
                     <h4 className="card-title text-base font-semibold text-[#434E54] mb-4 flex items-center gap-2">
@@ -571,12 +641,14 @@ export function AppointmentDetailModal({
                         value={appointment.groomer_id || ''}
                         onChange={(e) => handleGroomerAssignment(e.target.value || null)}
                         disabled={assigningGroomer || loadingGroomers}
+                        aria-label="Assign groomer to appointment"
                         className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:ring-2 focus:ring-[#434E54]/20 focus:outline-none transition-all duration-200"
                       >
                         <option value="">Unassigned</option>
                         {groomers.map((groomer) => (
                           <option key={groomer.id} value={groomer.id}>
                             {groomer.first_name} {groomer.last_name}
+                            {groomer.role === 'admin' ? ' (Admin)' : ''}
                           </option>
                         ))}
                       </select>
