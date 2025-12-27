@@ -10,6 +10,9 @@ import { useState, useEffect } from 'react';
 import { CalendarConnectionCard } from '@/components/admin/calendar/CalendarConnectionCard';
 import { CalendarSelector } from '@/components/admin/calendar/CalendarSelector';
 import { SyncSettingsForm } from '@/components/admin/calendar/SyncSettingsForm';
+import { QuotaWarning } from '@/components/admin/calendar/QuotaWarning';
+import { PausedSyncBanner } from '@/components/admin/calendar/PausedSyncBanner';
+import { SyncErrorRecovery } from '@/components/admin/calendar/SyncErrorRecovery';
 import { toast } from '@/hooks/use-toast';
 import {
   disconnectCalendar,
@@ -48,6 +51,26 @@ export function CalendarSettingsClient({
   );
   const [isLoading, setIsLoading] = useState(false);
 
+  // Error recovery state
+  const [quotaData, setQuotaData] = useState<{
+    current: number;
+    limit: number;
+    percentage: number;
+    resetAt: string;
+  } | null>(null);
+  const [showErrorRecovery, setShowErrorRecovery] = useState(false);
+
+  // Fetch quota status when connected
+  useEffect(() => {
+    if (connectionStatus.connected) {
+      fetchQuotaStatus();
+
+      // Refresh quota every 5 minutes
+      const interval = setInterval(fetchQuotaStatus, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [connectionStatus.connected]);
+
   // Show OAuth success/error toasts
   useEffect(() => {
     if (oauthSuccess) {
@@ -72,6 +95,49 @@ export function CalendarSettingsClient({
       });
     }
   }, [oauthSuccess, oauthError]);
+
+  const fetchQuotaStatus = async () => {
+    try {
+      const response = await fetch('/api/admin/calendar/quota');
+      if (response.ok) {
+        const data = await response.json();
+        setQuotaData(data);
+      }
+    } catch (error) {
+      console.error('[CalendarSettings] Failed to fetch quota status:', error);
+    }
+  };
+
+  const handleResumeAutoSync = async () => {
+    if (!connectionStatus.connection?.id) return;
+
+    try {
+      const response = await fetch('/api/admin/calendar/connection/resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connectionId: connectionStatus.connection.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to resume auto-sync');
+      }
+
+      toast({
+        title: 'Auto-Sync Resumed',
+        description: 'Auto-sync has been successfully resumed',
+      });
+
+      // Refresh connection status
+      await handleRefreshStatus();
+    } catch (error) {
+      console.error('[CalendarSettings] Failed to resume auto-sync:', error);
+      toast({
+        title: 'Resume Failed',
+        description: error instanceof Error ? error.message : 'Failed to resume auto-sync',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleRefreshStatus = async () => {
     try {
@@ -230,6 +296,30 @@ export function CalendarSettingsClient({
 
   return (
     <div className="space-y-6">
+      {/* Paused Sync Banner - Critical Alert (top priority) */}
+      {connectionStatus.connected &&
+       connectionStatus.connection?.auto_sync_paused && (
+        <PausedSyncBanner
+          pausedAt={connectionStatus.connection.paused_at || new Date().toISOString()}
+          pauseReason={connectionStatus.connection.pause_reason || 'Auto-paused due to consecutive failures'}
+          errorCount={connectionStatus.connection.consecutive_failures || 0}
+          onResume={handleResumeAutoSync}
+          onViewErrors={() => setShowErrorRecovery(true)}
+        />
+      )}
+
+      {/* Quota Warning - Proactive Monitor */}
+      {connectionStatus.connected &&
+       quotaData &&
+       quotaData.percentage >= 80 && (
+        <QuotaWarning
+          current={quotaData.current}
+          limit={quotaData.limit}
+          percentage={quotaData.percentage}
+          resetAt={quotaData.resetAt}
+        />
+      )}
+
       {/* Connection Card */}
       <CalendarConnectionCard
         connectionStatus={connectionStatus}
@@ -259,6 +349,33 @@ export function CalendarSettingsClient({
             />
           )}
 
+          {/* Error Recovery Section */}
+          {showErrorRecovery && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-[#434E54]">
+                  Sync Error Recovery
+                </h3>
+                <button
+                  onClick={() => setShowErrorRecovery(false)}
+                  className="btn btn-sm btn-ghost text-[#6B7280]"
+                >
+                  Hide
+                </button>
+              </div>
+              <SyncErrorRecovery />
+            </div>
+          )}
+
+          {!showErrorRecovery && (
+            <button
+              onClick={() => setShowErrorRecovery(true)}
+              className="btn btn-outline btn-sm text-[#434E54] border-[#E5E7EB] hover:bg-[#F8EEE5]"
+            >
+              View Sync Errors
+            </button>
+          )}
+
           {/* Info Section */}
           <div className="card bg-white shadow-md">
             <div className="card-body p-6">
@@ -284,6 +401,11 @@ export function CalendarSettingsClient({
                   <strong className="text-[#434E54]">Privacy:</strong> Calendar events include
                   customer name, pet name, and service details. Sensitive information like
                   payment details are never synced.
+                </p>
+                <p>
+                  <strong className="text-[#434E54]">Error Recovery:</strong> Failed syncs are
+                  automatically retried with exponential backoff. After 3 failed attempts,
+                  manual intervention may be required.
                 </p>
               </div>
             </div>
