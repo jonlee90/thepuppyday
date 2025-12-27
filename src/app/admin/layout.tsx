@@ -8,6 +8,7 @@
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
 import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
+import { AdminMainContent } from '@/components/admin/AdminMainContent';
 import { TabletSidebar, MobileHeader, MobileBottomTabs } from '@/components/admin/layout';
 import { Toaster } from '@/components/ui/toaster';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
@@ -59,21 +60,8 @@ export default async function AdminLayout({
         {/* Mobile Bottom Tabs (<768px) - Fixed bottom */}
         <MobileBottomTabs />
 
-        {/* Main content area - Responsive padding for different layouts */}
-        <main className="
-          min-h-screen
-          pt-14 md:pt-0
-          pb-20 md:pb-0
-          md:pl-[72px] lg:pl-64
-        ">
-          <div className="
-            max-w-7xl mx-auto
-            px-4 md:px-6 lg:px-8
-            py-4 md:py-6 lg:py-8
-          ">
-            {children}
-          </div>
-        </main>
+        {/* Main content area - Responsive to sidebar collapse state */}
+        <AdminMainContent>{children}</AdminMainContent>
 
         {/* Toast notifications */}
         <Toaster />
