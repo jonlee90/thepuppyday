@@ -100,23 +100,22 @@ export function useBookingModal() {
  * Mode-specific configuration
  * Step order must match BookingWizard.renderStep() for each mode
  *
- * Customer: Service → DateTime → Customer → Pet → Addons → Review → Confirmation (7 steps)
- * Admin: Service → DateTime → Customer → Pet → Addons → Review → Confirmation (7 steps)
- * Walk-in: Service → Customer → Pet → Review (combined addons+review) → Confirmation (5 steps, no DateTime)
+ * Customer: Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation (6 steps)
+ * Admin: Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation (6 steps)
+ * Walk-in: Service → Customer → Pet → Review (includes add-ons) → Confirmation (5 steps, no DateTime)
  */
 export const MODE_CONFIG = {
   customer: {
     title: 'Book Your Appointment',
     subtitle: 'Schedule your pet\'s grooming session',
-    steps: ['Service', 'Date & Time', 'Customer', 'Pet', 'Add-ons', 'Review', 'Confirmation'],
+    steps: ['Service', 'Date & Time', 'Customer', 'Pet', 'Review', 'Confirmation'],
     stepTitles: [
       'Select a Service',       // Step 0
       'Select Date & Time',     // Step 1
       'Your Information',       // Step 2
       'Pet Information',        // Step 3
-      'Add Extra Services',     // Step 4
-      'Review Your Booking',    // Step 5
-      'Booking Confirmed',      // Step 6
+      'Review Your Booking',    // Step 4 (Now includes add-ons)
+      'Booking Confirmed',      // Step 5
     ],
     showTrustSignals: true,
     showBranding: true,
@@ -130,15 +129,14 @@ export const MODE_CONFIG = {
   admin: {
     title: 'Create Appointment',
     subtitle: 'Schedule a new appointment',
-    steps: ['Service', 'Date & Time', 'Customer', 'Pet', 'Add-ons', 'Review', 'Confirmation'],
+    steps: ['Service', 'Date & Time', 'Customer', 'Pet', 'Review', 'Confirmation'],
     stepTitles: [
       'Select a Service',       // Step 0
       'Select Date & Time',     // Step 1
       'Customer Information',   // Step 2
       'Pet Information',        // Step 3
-      'Add Extra Services',     // Step 4
-      'Review Appointment',     // Step 5
-      'Appointment Created',    // Step 6
+      'Review Appointment',     // Step 4 (Now includes add-ons)
+      'Appointment Created',    // Step 5
     ],
     showTrustSignals: false,
     showBranding: false,
@@ -157,7 +155,7 @@ export const MODE_CONFIG = {
       'Select a Service',       // Step 0
       'Customer Information',   // Step 1
       'Pet Information',        // Step 2
-      'Review & Confirm',       // Step 3 (Combined addons + review)
+      'Review & Confirm',       // Step 3 (Includes add-ons)
       'Walk-In Confirmed',      // Step 4
     ],
     showTrustSignals: false,

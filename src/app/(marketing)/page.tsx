@@ -13,7 +13,6 @@ import { BeforeAfterCarousel } from '@/components/marketing/before-after-carouse
 import { GalleryGrid } from '@/components/marketing/gallery-grid';
 import { AboutSection } from '@/components/marketing/about-section';
 import { ContactSection } from '@/components/marketing/contact-section';
-import { EmbeddedBookingWidget } from '@/components/marketing/embedded-booking-widget';
 import type {
   Service,
   PromoBanner as PromoBannerType,
@@ -186,42 +185,6 @@ export default async function MarketingPage() {
         </section>
       )}
 
-      {/* Booking Widget Section */}
-      <section id="book" className="relative py-20 md:py-32 bg-[#EAE0D5] overflow-hidden">
-        {/* Decorative background elements */}
-        <div className="absolute top-20 right-10 w-80 h-80 bg-[#434E54]/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#434E54]/5 rounded-full blur-3xl"></div>
-
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-6xl mx-auto">
-            {/* Section Header */}
-            <div className="text-center mb-12 md:mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-[#434E54] mb-4">
-                Book Appointment
-              </h2>
-              <div className="h-1 w-24 bg-gradient-to-r from-[#434E54] to-[#434E54]/30 rounded-full mx-auto mb-6"></div>
-              <p className="text-lg md:text-xl text-[#6B7280] max-w-3xl mx-auto leading-relaxed">
-                Book an appointment in minutes and give them the grooming experience they deserve
-              </p>
-            </div>
-
-            {/* Embedded Booking Widget */}
-            <EmbeddedBookingWidget />
-          </div>
-        </div>
-
-        {/* Decorative paw prints - subtle and elegant */}
-        <div className="absolute bottom-10 right-20 text-[#434E54]/5 hidden lg:block">
-          <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
-          </svg>
-        </div>
-        <div className="absolute top-32 left-20 text-[#434E54]/5 hidden lg:block">
-          <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm-3 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3 3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 6c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3z"/>
-          </svg>
-        </div>
-      </section>
 
       {/* About Section */}
       <AboutSection

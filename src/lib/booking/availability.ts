@@ -28,7 +28,7 @@ export interface TimeSlot {
   waitlistCount?: number;
 }
 
-const SLOT_INTERVAL_MINUTES = 30;
+const SLOT_INTERVAL_MINUTES = 60;
 
 /**
  * Default business hours configuration

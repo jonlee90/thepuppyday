@@ -1,15 +1,19 @@
 /**
- * Customer Selection Step for Admin/Walk-in booking modes
- * Search for existing customers or create new customer inline
+ * Customer Selection Step
+ * Admin/Walk-in: Search for existing customers or create new customer inline
+ * Customer: Login or Register
  */
 
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, ChevronDown, ChevronUp, UserPlus, User } from 'lucide-react';
+import { Search, UserPlus, LogIn, UserCheck } from 'lucide-react';
 import { useBookingStore } from '@/stores/bookingStore';
+import { useAuthStore } from '@/stores/auth-store';
 import { guestInfoSchema } from '@/lib/booking/validation';
 import { z } from 'zod';
+
+type CustomerStepMode = 'customer' | 'admin' | 'walkin';
 
 interface Customer {
   id: string;
@@ -20,7 +24,11 @@ interface Customer {
   full_name: string;
 }
 
-export function CustomerStep() {
+interface CustomerStepProps {
+  mode?: CustomerStepMode;
+}
+
+export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
   const {
     selectedCustomerId,
     guestInfo,
@@ -28,13 +36,20 @@ export function CustomerStep() {
     setGuestInfo,
   } = useBookingStore();
 
+  const { isAuthenticated, user, login } = useAuthStore();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Customer[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
-  // New customer form state
+  // Customer mode: Login or Register
+  const [viewMode, setViewMode] = useState<'login' | 'register'>('register');
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  // New customer/register form state
   const [newCustomerForm, setNewCustomerForm] = useState({
     first_name: guestInfo?.firstName || '',
     last_name: guestInfo?.lastName || '',
@@ -44,8 +59,10 @@ export function CustomerStep() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [duplicateEmailError, setDuplicateEmailError] = useState('');
 
-  // Debounced search
+  // Debounced search (admin/walk-in modes only)
   useEffect(() => {
+    if (mode === 'customer') return; // Skip search for customer mode
+
     if (!searchQuery.trim() || searchQuery.length < 2) {
       setSearchResults([]);
       return;
@@ -69,9 +86,22 @@ export function CustomerStep() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, mode]);
 
-  // Handle customer selection
+  // Set authenticated user info (customer mode)
+  useEffect(() => {
+    if (mode === 'customer' && isAuthenticated && user) {
+      setSelectedCustomerId(user.id);
+      setGuestInfo({
+        firstName: user.first_name || '',
+        lastName: user.last_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [mode, isAuthenticated, user, setSelectedCustomerId, setGuestInfo]);
+
+  // Handle customer selection (admin/walkin modes)
   const handleSelectCustomer = useCallback(
     (customer: Customer) => {
       setSelectedCustomer(customer);
@@ -82,10 +112,27 @@ export function CustomerStep() {
         email: customer.email,
         phone: customer.phone,
       });
-      setShowNewCustomerForm(false);
     },
     [setSelectedCustomerId, setGuestInfo]
   );
+
+  // Handle login (customer mode)
+  const handleLogin = useCallback(async () => {
+    setIsLoggingIn(true);
+    setLoginError('');
+
+    try {
+      const result = await login(loginForm.email, loginForm.password);
+      if (!result.success) {
+        setLoginError(result.error || 'Invalid email or password');
+      }
+      // If successful, the useEffect above will handle setting the customer info
+    } catch (error) {
+      setLoginError('An error occurred during login. Please try again.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  }, [loginForm, login]);
 
   // Validate new customer form
   const validateNewCustomerForm = useCallback(async () => {
@@ -163,99 +210,119 @@ export function CustomerStep() {
 
   const isNewCustomer = selectedCustomerId === 'new';
 
-  return (
-    <div className="space-y-6">
-      {/* Subtitle */}
-      <p className="text-[#434E54]/70 leading-relaxed">
-        Search for an existing customer or create a new one
-      </p>
+  // Check if form is complete and valid
+  const isFormComplete =
+    newCustomerForm.first_name.trim() !== '' &&
+    newCustomerForm.last_name.trim() !== '' &&
+    newCustomerForm.email.trim() !== '' &&
+    newCustomerForm.phone.trim() !== '' &&
+    Object.keys(formErrors).length === 0 &&
+    !duplicateEmailError;
 
-      {/* Search Section */}
-      <div>
-        <label className="block text-sm font-semibold text-[#434E54] mb-2">
-          Search Existing Customer
-        </label>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input input-bordered w-full h-12 pl-10 bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 rounded-lg transition-all duration-150"
-          />
-        </div>
-        {isSearching && (
-          <p className="text-sm text-[#6B7280] mt-2 flex items-center gap-2">
-            <span className="loading loading-spinner loading-xs"></span>
-            Searching...
+  // Check if login form is complete
+  const isLoginFormComplete =
+    loginForm.email.trim() !== '' &&
+    loginForm.password.trim() !== '';
+
+  // Render customer mode (login/register)
+  if (mode === 'customer') {
+    // If already authenticated, show confirmation
+    if (isAuthenticated && user) {
+      return (
+        <div className="space-y-6">
+          <p className="text-[#434E54]/70 leading-relaxed">
+            You're logged in and ready to book!
           </p>
-        )}
-      </div>
 
-      {/* Search Results */}
-      {searchResults.length > 0 && (
-        <div className="space-y-3">
-          <label className="block text-sm font-semibold text-[#434E54]">
-            Select Customer ({searchResults.length} found)
-          </label>
-          <div className="space-y-3 max-h-60 overflow-y-auto">
-            {searchResults.map((customer) => (
-              <label
-                key={customer.id}
-                className={`flex items-start p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                  selectedCustomerId === customer.id
-                    ? 'border-[#434E54] bg-[#FFFBF7] shadow-md'
-                    : 'border-[#E5E5E5] bg-white hover:border-[#434E54]/30 shadow-sm'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="customer"
-                  value={customer.id}
-                  checked={selectedCustomerId === customer.id}
-                  onChange={() => handleSelectCustomer(customer)}
-                  className="radio radio-sm radio-primary mt-1 min-w-[20px]"
-                  aria-label={`Select ${customer.first_name} ${customer.last_name}`}
-                />
-                <div className="ml-3 flex-1 min-w-0">
-                  <div className="font-semibold text-[#434E54]">
-                    {customer.first_name} {customer.last_name}
-                  </div>
-                  <div className="text-sm text-[#6B7280] truncate">{customer.email}</div>
-                  <div className="text-sm text-[#6B7280]">{customer.phone}</div>
-                </div>
-              </label>
-            ))}
+          <div className="p-4 bg-green-50 border-2 border-green-200 rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <UserCheck className="w-5 h-5 text-green-600" />
+              <span className="text-sm font-semibold text-[#434E54]">Logged In</span>
+            </div>
+            <div className="font-semibold text-[#434E54]">
+              {user.first_name} {user.last_name}
+            </div>
+            <div className="text-sm text-[#6B7280]">{user.email}</div>
+            {user.phone && <div className="text-sm text-[#6B7280]">{user.phone}</div>}
           </div>
         </div>
-      )}
+      );
+    }
 
-      {/* Divider */}
-      <div className="relative flex items-center">
-        <div className="flex-grow border-t border-[#E5E5E5]"></div>
-        <span className="px-4 text-sm text-[#9CA3AF] bg-[#FFFBF7]">OR</span>
-        <div className="flex-grow border-t border-[#E5E5E5]"></div>
-      </div>
+    // Show login or register form
+    return (
+      <div className="space-y-6">
+        <p className="text-[#434E54]/70 leading-relaxed">
+          {viewMode === 'login' ? 'Log in to continue' : 'Create an account to book your appointment'}
+        </p>
 
-      {/* New Customer Form */}
-      <div>
-        <button
-          onClick={() => setShowNewCustomerForm(!showNewCustomerForm)}
-          className="flex items-center gap-2 text-[#434E54] font-semibold hover:text-[#363F44] transition-colors duration-200 min-h-[44px]"
-          aria-expanded={showNewCustomerForm}
-        >
-          <UserPlus className="w-5 h-5" />
-          Create New Customer
-          {showNewCustomerForm ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
-        </button>
+        {/* Login Form */}
+        {viewMode === 'login' && (
+          <div className="space-y-4 p-4 md:p-6 bg-white rounded-xl border border-[#E5E5E5]">
+            <div>
+              <label className="block text-sm font-medium text-[#434E54] mb-2">
+                Email <span className="text-[#EF4444]">*</span>
+              </label>
+              <input
+                type="email"
+                value={loginForm.email}
+                onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                className="input input-bordered w-full h-12 bg-white rounded-lg border-[#E5E5E5] focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20"
+                placeholder="john.doe@example.com"
+              />
+            </div>
 
-        {showNewCustomerForm && (
-          <div className="mt-4 p-4 md:p-6 bg-white rounded-xl border border-[#E5E5E5] space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-[#434E54] mb-2">
+                Password <span className="text-[#EF4444]">*</span>
+              </label>
+              <input
+                type="password"
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                className="input input-bordered w-full h-12 bg-white rounded-lg border-[#E5E5E5] focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20"
+                placeholder="Enter your password"
+              />
+            </div>
+
+            {loginError && (
+              <div className="alert bg-red-50 border border-red-200 rounded-lg p-3">
+                <span className="text-sm text-[#EF4444]">{loginError}</span>
+              </div>
+            )}
+
+            <button
+              onClick={handleLogin}
+              disabled={!isLoginFormComplete || isLoggingIn}
+              className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none w-full h-12 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-[#434E54]/40 disabled:cursor-not-allowed"
+            >
+              {isLoggingIn ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  Logging in...
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5 mr-2" />
+                  Log In
+                </>
+              )}
+            </button>
+
+            <div className="text-center">
+              <button
+                onClick={() => setViewMode('register')}
+                className="text-sm text-[#434E54] hover:underline"
+              >
+                Don't have an account? <span className="font-semibold">Register</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Register Form */}
+        {viewMode === 'register' && (
+          <div className="space-y-4 p-4 md:p-6 bg-white rounded-xl border border-[#E5E5E5]">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-[#434E54] mb-2">
@@ -345,12 +412,229 @@ export function CustomerStep() {
 
             <button
               onClick={handleNewCustomerSubmit}
-              className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none w-full h-12 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+              disabled={!isFormComplete}
+              className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none w-full h-12 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-[#434E54]/40 disabled:cursor-not-allowed"
             >
-              Use This Customer
+              <UserPlus className="w-5 h-5 mr-2" />
+              Continue
             </button>
+
+            <div className="text-center">
+              <button
+                onClick={() => setViewMode('login')}
+                className="text-sm text-[#434E54] hover:underline"
+              >
+                Already have an account? <span className="font-semibold">Log In</span>
+              </button>
+            </div>
           </div>
         )}
+
+        {/* Selected Customer Display (for register mode after submission) */}
+        {viewMode === 'register' && (selectedCustomer || (selectedCustomerId && guestInfo)) && (
+          <div className="p-4 bg-green-50 border-2 border-green-200 rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm font-semibold text-[#434E54]">Information Confirmed</span>
+            </div>
+            <div className="font-semibold text-[#434E54]">
+              {selectedCustomer?.first_name || guestInfo?.firstName}{' '}
+              {selectedCustomer?.last_name || guestInfo?.lastName}
+              {isNewCustomer && (
+                <span className="ml-2 badge badge-sm bg-[#434E54] text-white border-none">New</span>
+              )}
+            </div>
+            <div className="text-sm text-[#6B7280]">
+              {selectedCustomer?.email || guestInfo?.email}
+            </div>
+            <div className="text-sm text-[#6B7280]">
+              {selectedCustomer?.phone || guestInfo?.phone}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Admin/Walk-in mode (search + create)
+  return (
+    <div className="space-y-6">
+      {/* Subtitle */}
+      <p className="text-[#434E54]/70 leading-relaxed">
+        Search for an existing customer or create a new one
+      </p>
+
+      {/* Search Section */}
+      <div>
+        <label className="block text-sm font-semibold text-[#434E54] mb-2">
+          Search Existing Customer
+        </label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
+          <input
+            type="text"
+            placeholder="Search by name, email, or phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input input-bordered w-full h-12 pl-10 bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 rounded-lg transition-all duration-150"
+          />
+        </div>
+        {isSearching && (
+          <p className="text-sm text-[#6B7280] mt-2 flex items-center gap-2">
+            <span className="loading loading-spinner loading-xs"></span>
+            Searching...
+          </p>
+        )}
+      </div>
+
+      {/* Search Results */}
+      {searchResults.length > 0 && (
+        <div className="space-y-3">
+          <label className="block text-sm font-semibold text-[#434E54]">
+            Select Customer ({searchResults.length} found)
+          </label>
+          <div className="space-y-3 max-h-60 overflow-y-auto">
+            {searchResults.map((customer) => (
+              <label
+                key={customer.id}
+                className={`flex items-start p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                  selectedCustomerId === customer.id
+                    ? 'border-[#434E54] bg-[#FFFBF7] shadow-md'
+                    : 'border-[#E5E5E5] bg-white hover:border-[#434E54]/30 shadow-sm'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="customer"
+                  value={customer.id}
+                  checked={selectedCustomerId === customer.id}
+                  onChange={() => handleSelectCustomer(customer)}
+                  className="radio radio-sm radio-primary mt-1 min-w-[20px]"
+                  aria-label={`Select ${customer.first_name} ${customer.last_name}`}
+                />
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="font-semibold text-[#434E54]">
+                    {customer.first_name} {customer.last_name}
+                  </div>
+                  <div className="text-sm text-[#6B7280] truncate">{customer.email}</div>
+                  <div className="text-sm text-[#6B7280]">{customer.phone}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Divider */}
+      <div className="relative flex items-center">
+        <div className="flex-grow border-t border-[#E5E5E5]"></div>
+        <span className="px-4 text-sm text-[#9CA3AF] bg-[#FFFBF7]">OR</span>
+        <div className="flex-grow border-t border-[#E5E5E5]"></div>
+      </div>
+
+      {/* New Customer Form - Always Visible */}
+      <div>
+        <div className="flex items-center gap-2 mb-4 text-[#434E54] font-semibold">
+          <UserPlus className="w-5 h-5" />
+          Create New Customer
+        </div>
+
+        <div className="p-4 md:p-6 bg-white rounded-xl border border-[#E5E5E5] space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#434E54] mb-2">
+                First Name <span className="text-[#EF4444]">*</span>
+              </label>
+              <input
+                type="text"
+                value={newCustomerForm.first_name}
+                onChange={(e) =>
+                  setNewCustomerForm({ ...newCustomerForm, first_name: e.target.value })
+                }
+                className={`input input-bordered w-full h-12 bg-white rounded-lg ${
+                  formErrors.first_name ? 'border-[#EF4444]' : 'border-[#E5E5E5]'
+                } focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20`}
+                placeholder="John"
+              />
+              {formErrors.first_name && (
+                <p className="text-sm text-[#EF4444] mt-1">{formErrors.first_name}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#434E54] mb-2">
+                Last Name <span className="text-[#EF4444]">*</span>
+              </label>
+              <input
+                type="text"
+                value={newCustomerForm.last_name}
+                onChange={(e) =>
+                  setNewCustomerForm({ ...newCustomerForm, last_name: e.target.value })
+                }
+                className={`input input-bordered w-full h-12 bg-white rounded-lg ${
+                  formErrors.last_name ? 'border-[#EF4444]' : 'border-[#E5E5E5]'
+                } focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20`}
+                placeholder="Doe"
+              />
+              {formErrors.last_name && (
+                <p className="text-sm text-[#EF4444] mt-1">{formErrors.last_name}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#434E54] mb-2">
+              Email <span className="text-[#EF4444]">*</span>
+            </label>
+            <input
+              type="email"
+              value={newCustomerForm.email}
+              onChange={(e) =>
+                setNewCustomerForm({ ...newCustomerForm, email: e.target.value })
+              }
+              className={`input input-bordered w-full h-12 bg-white rounded-lg ${
+                formErrors.email ? 'border-[#EF4444]' : 'border-[#E5E5E5]'
+              } focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20`}
+              placeholder="john.doe@example.com"
+            />
+            {formErrors.email && (
+              <p className="text-sm text-[#EF4444] mt-1">{formErrors.email}</p>
+            )}
+            {duplicateEmailError && (
+              <div className="alert bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
+                <span className="text-sm text-[#434E54]">{duplicateEmailError}</span>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#434E54] mb-2">
+              Phone <span className="text-[#EF4444]">*</span>
+            </label>
+            <input
+              type="tel"
+              value={newCustomerForm.phone}
+              onChange={(e) =>
+                setNewCustomerForm({ ...newCustomerForm, phone: e.target.value })
+              }
+              className={`input input-bordered w-full h-12 bg-white rounded-lg ${
+                formErrors.phone ? 'border-[#EF4444]' : 'border-[#E5E5E5]'
+              } focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20`}
+              placeholder="(555) 123-4567"
+            />
+            {formErrors.phone && (
+              <p className="text-sm text-[#EF4444] mt-1">{formErrors.phone}</p>
+            )}
+          </div>
+
+          <button
+            onClick={handleNewCustomerSubmit}
+            disabled={!isFormComplete}
+            className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none w-full h-12 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-[#434E54]/40 disabled:cursor-not-allowed"
+          >
+            Use This Customer
+          </button>
+        </div>
       </div>
 
       {/* Selected Customer Display */}

@@ -9,8 +9,11 @@ import { useBookingStore, type GuestInfo } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
 import { useBooking } from '@/hooks/useBooking';
 import { GuestInfoForm } from '../GuestInfoForm';
+import { AddonCard } from '../AddonCard';
+import { useAddons } from '@/hooks/useAddons';
 import { formatCurrency, formatDuration, getSizeShortLabel } from '@/lib/booking/pricing';
 import { formatTimeDisplay } from '@/lib/booking/availability';
+import type { Addon } from '@/types/database';
 
 interface ReviewStepProps {
   onComplete?: () => Promise<void>;
@@ -33,6 +36,8 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
     selectedDate,
     selectedTimeSlot,
     selectedAddons,
+    selectedAddonIds,
+    toggleAddon,
     servicePrice,
     addonsTotal,
     totalPrice,
@@ -43,6 +48,9 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
     prevStep,
     setBookingResult,
   } = useBookingStore();
+
+  // Fetch add-ons for selection
+  const { addons, isLoading: isLoadingAddons, getUpsellAddons } = useAddons();
 
   const handleGuestInfoSubmit = (info: GuestInfo) => {
     setGuestInfo(info);
@@ -171,6 +179,20 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
 
   const petName = selectedPet?.name || newPetData?.name || 'Your pet';
 
+  // Get pet breed for upsell matching
+  const petBreedId = selectedPet?.breed_id || null;
+
+  // Separate upsell add-ons (matching pet's breed)
+  const upsellAddons = getUpsellAddons(petBreedId);
+  const regularAddons = addons.filter((addon) => {
+    if (!petBreedId) return true;
+    return !upsellAddons.some((upsell) => upsell.id === addon.id);
+  });
+
+  const handleToggleAddon = (addon: Addon) => {
+    toggleAddon(addon);
+  };
+
   // For guests: check if the form has valid data (even if not submitted yet)
   // Button should always be enabled - clicking it will trigger form validation if needed
   const canConfirm = true;
@@ -212,29 +234,6 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
           </div>
         </div>
 
-        {/* Pet */}
-        <div className="p-4 border-b border-[#434E54]/20">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-[#434E54]/70">Pet</p>
-              <p className="font-semibold text-[#434E54]">{petName}</p>
-              <p className="text-sm text-[#434E54]/70">
-                {petSize ? getSizeShortLabel(petSize) : ''}
-                {(selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom) && (
-                  <> • {selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom}</>
-                )}
-              </p>
-            </div>
-            <button
-              onClick={() => setStep(1)}
-              className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
-                       hover:bg-[#EAE0D5] transition-colors duration-200"
-            >
-              Edit
-            </button>
-          </div>
-        </div>
-
         {/* Date & Time */}
         <div className="p-4 border-b border-[#434E54]/20">
           <div className="flex items-start justify-between">
@@ -254,7 +253,7 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
               </p>
             </div>
             <button
-              onClick={() => setStep(2)}
+              onClick={() => setStep(1)}
               className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
                        hover:bg-[#EAE0D5] transition-colors duration-200"
             >
@@ -263,30 +262,28 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
           </div>
         </div>
 
-        {/* Add-ons */}
-        {selectedAddons.length > 0 && (
-          <div className="p-4 border-b border-[#434E54]/20">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-[#434E54]/70">Add-ons</p>
-                <ul className="mt-1 space-y-1">
-                  {selectedAddons.map((addon) => (
-                    <li key={addon.id} className="text-sm text-[#434E54]">
-                      {addon.name} <span className="text-[#434E54]/70">+{formatCurrency(addon.price)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <button
-                onClick={() => setStep(3)}
-                className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
-                         hover:bg-[#EAE0D5] transition-colors duration-200"
-              >
-                Edit
-              </button>
+        {/* Pet */}
+        <div className="p-4 border-b border-[#434E54]/20">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-[#434E54]/70">Pet</p>
+              <p className="font-semibold text-[#434E54]">{petName}</p>
+              <p className="text-sm text-[#434E54]/70">
+                {petSize ? getSizeShortLabel(petSize) : ''}
+                {(selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom) && (
+                  <> • {selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom}</>
+                )}
+              </p>
             </div>
+            <button
+              onClick={() => setStep(3)}
+              className="text-[#434E54] font-medium py-1 px-2 rounded text-xs
+                       hover:bg-[#EAE0D5] transition-colors duration-200"
+            >
+              Edit
+            </button>
           </div>
-        )}
+        </div>
 
         {/* Price breakdown */}
         <div className="p-4 bg-[#FFFBF7]">
@@ -310,6 +307,61 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
           </div>
         </div>
       </div>
+
+      {/* Add-ons Selection */}
+      {!isLoadingAddons && addons.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="font-semibold text-[#434E54] text-lg">Add Extra Services</h3>
+          <p className="text-[#434E54]/70 text-sm">Enhance your pet&apos;s grooming experience with these optional add-ons</p>
+
+          {/* Upsell add-ons */}
+          {upsellAddons.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-[#434E54] flex items-center gap-2 bg-[#434E54]/5 px-3 py-2 rounded-lg">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                  />
+                </svg>
+                Recommended for your pet
+              </h4>
+              <div className="space-y-3">
+                {upsellAddons.map((addon) => (
+                  <AddonCard
+                    key={addon.id}
+                    addon={addon}
+                    isSelected={selectedAddonIds.includes(addon.id)}
+                    isUpsell
+                    onToggle={() => handleToggleAddon(addon)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Regular add-ons */}
+          {regularAddons.length > 0 && (
+            <div className="space-y-3">
+              {upsellAddons.length > 0 && (
+                <h4 className="text-sm font-medium text-[#434E54]/60">Other add-ons</h4>
+              )}
+              <div className="space-y-3">
+                {regularAddons.map((addon) => (
+                  <AddonCard
+                    key={addon.id}
+                    addon={addon}
+                    isSelected={selectedAddonIds.includes(addon.id)}
+                    onToggle={() => handleToggleAddon(addon)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Guest info form */}
       {!isAuthenticated && (

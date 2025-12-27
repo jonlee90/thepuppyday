@@ -7,6 +7,7 @@ import { Header } from '@/components/marketing/header';
 import { Footer } from '@/components/marketing/footer';
 import { AnnouncementBars } from '@/components/marketing/announcement-bars';
 import { BookingModalProvider } from '@/components/booking';
+import { StickyBookingButton } from '@/components/marketing/StickyBookingButton';
 import { getBusinessInfo } from '@/lib/site-content';
 
 export default async function MarketingLayout({
@@ -24,6 +25,7 @@ export default async function MarketingLayout({
         {children}
       </main>
       <Footer businessInfo={businessInfo} />
+      <StickyBookingButton />
     </BookingModalProvider>
   );
 }

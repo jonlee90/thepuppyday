@@ -45,7 +45,7 @@ export function canContinueFromStep(
   bookingState: BookingStore,
   mode: BookingModalMode = 'customer'
 ): boolean {
-  // Walk-in mode: Service → Customer → Pet → Addons → Confirmation (no DateTime)
+  // Walk-in mode: Service → Customer → Pet → Review (includes add-ons) → Confirmation (no DateTime)
   if (mode === 'walkin') {
     switch (currentStep) {
       case 0: // Service step
@@ -57,8 +57,12 @@ export function canContinueFromStep(
       case 2: // Pet step
         return hasValidPet(bookingState);
 
-      case 3: // Add-ons step (optional)
-        return true;
+      case 3: // Review step (includes add-ons - all required data should be present)
+        return (
+          hasValidService(bookingState) &&
+          hasValidCustomer(bookingState) &&
+          hasValidPet(bookingState)
+        );
 
       case 4: // Confirmation step
         return false;
@@ -68,7 +72,7 @@ export function canContinueFromStep(
     }
   }
 
-  // Admin mode: Service → DateTime → Customer → Pet → Addons → Review → Confirmation
+  // Admin mode: Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation
   if (mode === 'admin') {
     switch (currentStep) {
       case 0: // Service step
@@ -83,10 +87,7 @@ export function canContinueFromStep(
       case 3: // Pet step
         return hasValidPet(bookingState);
 
-      case 4: // Add-ons step (optional)
-        return true;
-
-      case 5: // Review step
+      case 4: // Review step (includes add-ons - all required data should be present)
         return (
           hasValidService(bookingState) &&
           hasValidDateTime(bookingState) &&
@@ -94,7 +95,7 @@ export function canContinueFromStep(
           hasValidPet(bookingState)
         );
 
-      case 6: // Confirmation step
+      case 5: // Confirmation step
         return false;
 
       default:
@@ -102,7 +103,7 @@ export function canContinueFromStep(
     }
   }
 
-  // Customer mode: Service → DateTime → Customer → Pet → Addons → Review → Confirmation
+  // Customer mode: Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation
   switch (currentStep) {
     case 0: // Service step
       return hasValidService(bookingState);
@@ -116,10 +117,7 @@ export function canContinueFromStep(
     case 3: // Pet step
       return hasValidPet(bookingState);
 
-    case 4: // Add-ons step (optional)
-      return true;
-
-    case 5: // Review step
+    case 4: // Review step (includes add-ons - all required data should be present)
       return (
         hasValidService(bookingState) &&
         hasValidDateTime(bookingState) &&
@@ -127,7 +125,7 @@ export function canContinueFromStep(
         hasValidPet(bookingState)
       );
 
-    case 6: // Confirmation step
+    case 5: // Confirmation step
       return false;
 
     default:
@@ -173,7 +171,7 @@ export function getStepValidationMessage(
         return 'Please select or create a customer to continue';
       case 3:
         return 'Please provide pet information to continue';
-      case 5:
+      case 4:
         return 'Please complete all required information';
       default:
         return 'Please complete this step to continue';
@@ -190,7 +188,7 @@ export function getStepValidationMessage(
       return 'Please provide your contact information to continue';
     case 3:
       return 'Please provide pet information to continue';
-    case 5:
+    case 4:
       return 'Please complete all required information';
     default:
       return 'Please complete this step to continue';

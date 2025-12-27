@@ -160,6 +160,49 @@ For any UI/UX work, use the **two-step orchestration**:
 # → Reads design spec and writes the actual component code
 ```
 
+## Booking System Architecture
+
+**Unified Modal System**: The application uses a single `BookingModal` component (`src/components/booking/BookingModal.tsx`) with mode-aware behavior for all booking entry points.
+
+### Booking Modes & Step Flows
+
+1. **Customer Mode** (`mode='customer'`) - Marketing page via sticky button:
+   - Steps: Service → Date & Time → Customer (Login/Register) → Pet → Review (includes add-ons) → Confirmation
+   - Total: 6 steps (0-5)
+   - Entry: `StickyBookingButton` appears after scrolling 600px on marketing page
+
+2. **Admin Mode** (`mode='admin'`) - Admin appointments page:
+   - Steps: Service → Date & Time → Customer (Search/Create) → Pet → Review (includes add-ons) → Confirmation
+   - Total: 6 steps (0-5)
+   - Entry: "Create Appointment" button in `/admin/appointments`
+
+3. **Walk-in Mode** (`mode='walkin'`) - Admin dashboard:
+   - Steps: Service → Customer (Search/Create) → Pet → Review (includes add-ons) → Confirmation
+   - Total: 5 steps (0-4)
+   - Entry: "Walk-in" button in `/admin/dashboard`
+   - Special: Date/Time auto-set to NOW, status set to `'checked_in'`, source tracked as `'walk_in'`
+
+### Key Components
+
+- **`BookingModal`**: Main modal container (max-w-[1000px] xl:max-w-[1200px] for tablet optimization)
+- **`BookingWizard`**: Step orchestration with mode-aware rendering
+- **`StickyBookingButton`**: Scroll-triggered booking trigger on marketing page (replaces embedded widget)
+- **`CustomerStep`**: Mode-aware customer information collection
+  - Customer mode: Login/Register UI
+  - Admin/Walkin modes: Search existing + always-visible create form
+- **`ReviewStep`**: Integrated add-ons selection (no separate AddonsStep)
+- **Time Slots**: Generated hourly (60-minute intervals via `SLOT_INTERVAL_MINUTES = 60`)
+
+📖 **For complete booking flow documentation**, see [Booking Flow](docs/architecture/components/booking-flow.md)
+
+### Deprecated Components (Removed)
+
+The following duplicate components were consolidated into the unified system:
+- ❌ `src/components/admin/appointments/WalkInModal.tsx` (replaced by BookingModal with mode='walkin')
+- ❌ `src/components/admin/appointments/ManualAppointmentModal.tsx` (replaced by BookingModal with mode='admin')
+- ❌ `src/components/admin/appointments/steps/*.tsx` (all duplicate step components)
+- ❌ Embedded booking widget on marketing page (replaced by StickyBookingButton)
+
 ## Database Schema
 
 **Quick Reference**: Key tables: `users`, `pets`, `breeds`, `services`, `service_prices`, `addons`, `appointments`, `appointment_addons`, `waitlist`, `report_cards`, `memberships`, `customer_memberships`, `loyalty_points`, `loyalty_transactions`, `customer_flags`, `payments`, `site_content`, `promo_banners`, `gallery_images`, `settings`, `notifications_log`, `notification_templates`, `notification_settings`, `notification_template_history`
@@ -182,7 +225,19 @@ For any UI/UX work, use the **two-step orchestration**:
 **Current Status**:
 - ✅ Completed: Phases 1-6, 8, 9, 11 (Foundation through Calendar Error Recovery)
 - ⏸️ Pending: Phase 7 (Payments & Memberships)
-- 🔄 In Progress: Phase 10 (Testing & Polish)
+- 🔄 In Progress: Phase 10 (Testing & Polish) - Booking modal refactor complete
+
+**Phase 10 (Testing & Polish)** - IN PROGRESS:
+- ✅ **Booking Modal Refactor** (2025-12-26):
+  - Consolidated duplicate booking components into unified `BookingModal`
+  - Implemented mode-aware step flows (customer, admin, walkin)
+  - Integrated add-ons into ReviewStep (removed separate AddonsStep)
+  - Added `StickyBookingButton` on marketing page (replaced embedded widget)
+  - Increased modal size for tablet optimization (1000px/1200px)
+  - Changed time slots to hourly intervals (60 minutes)
+  - Enhanced `CustomerStep` with login/register UI for customers and search/create for admin modes
+  - Fixed walk-in appointment validation and persistence
+- 🔄 Comprehensive testing and performance optimization (pending)
 
 **Phase 11 (Calendar Error Recovery)** - COMPLETED:
 - Retry queue system with exponential backoff (1min → 5min → 15min)

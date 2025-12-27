@@ -86,11 +86,11 @@ export function WalkinReviewStep({ onComplete, customerId }: WalkinReviewStepPro
       // Set appointment to NOW for walk-in
       const now = new Date();
       const appointmentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      const appointmentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`; // HH:MM:SS
+      const appointmentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // HH:MM
 
       const payload = {
         customer: {
-          id: customerId,
+          id: customerId === 'new' ? undefined : customerId, // Don't send 'new' as UUID
           first_name: customerInfo.firstName,
           last_name: customerInfo.lastName,
           email: customerInfo.email,
@@ -110,7 +110,7 @@ export function WalkinReviewStep({ onComplete, customerId }: WalkinReviewStepPro
         appointment_time: appointmentTime,
         payment_status: 'pending' as const,
         send_notification: false, // Don't send notifications for walk-ins
-        status: 'confirmed' as const, // Walk-ins are immediately confirmed
+        source: 'walk_in' as const, // Mark as walk-in appointment
       };
 
       const response = await fetch('/api/admin/appointments', {

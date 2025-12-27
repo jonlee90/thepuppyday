@@ -285,7 +285,7 @@ export function BookingModal({
           >
             <motion.div
               ref={modalRef}
-              className="relative w-full max-w-[700px] lg:max-w-[900px] max-h-[85vh] lg:max-h-[90vh] bg-[#FFFBF7] rounded-[20px] lg:rounded-3xl shadow-[0_25px_50px_-12px_rgba(67,78,84,0.25)] overflow-hidden flex flex-col pointer-events-auto"
+              className="relative w-full max-w-[1000px] xl:max-w-[1200px] max-h-[85vh] lg:max-h-[90vh] bg-[#FFFBF7] rounded-[20px] lg:rounded-3xl shadow-[0_25px_50px_-12px_rgba(67,78,84,0.25)] overflow-hidden flex flex-col pointer-events-auto"
               variants={desktopModalVariants}
               initial="hidden"
               animate="visible"

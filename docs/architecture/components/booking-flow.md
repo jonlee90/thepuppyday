@@ -2,46 +2,55 @@
 
 > **Module**: Booking Widget Components
 > **Location**: `src/components/booking/`
-> **Status**: ✅ Completed (Phase 3, Updated Phase 10)
-> **Last Updated**: 2024-12-22
+> **Status**: ✅ Completed (Phase 3, Updated Phase 10, Refactored Dec 2025)
+> **Last Updated**: 2025-12-26
 
 ## Overview
 
-The booking widget is a multi-step form that guides users through the appointment scheduling process. It supports three different modes with mode-specific step orders:
+The booking widget is a unified multi-step modal that guides users through the appointment scheduling process. It supports three different modes with mode-specific step orders and behaviors:
 
-- **Customer Mode**: Public-facing booking for customers (7 steps)
-- **Admin Mode**: Admin creating scheduled appointments (7 steps)
-- **Walk-in Mode**: Quick registration for walk-in customers (5 steps)
+- **Customer Mode**: Public-facing booking for customers (6 steps total)
+- **Admin Mode**: Admin creating scheduled appointments (6 steps total)
+- **Walk-in Mode**: Quick registration for walk-in customers (5 steps total)
+
+**Key Features**:
+- ✅ Single unified modal component for all booking types
+- ✅ Mode-aware step flows and UI
+- ✅ Integrated add-ons in review step (no separate add-ons step)
+- ✅ Tablet-optimized sizing (1000px-1200px)
+- ✅ Hourly time slot intervals
+- ✅ Always-visible customer creation form for admin/walkin modes
+- ✅ Login/register functionality for customer mode
 
 ---
 
 ## Booking Modes & Step Orders
 
-### Customer Mode (7 steps)
-Used on the marketing page for public bookings.
+### Customer Mode (6 steps)
+Used on the marketing page for public bookings via sticky "Book Reservation" button.
 
 | Step | Component | Description |
 |------|-----------|-------------|
 | 0 | ServiceStep | Select grooming service |
-| 1 | DateTimeStep | Choose appointment date/time |
-| 2 | CustomerStep | Enter contact information |
+| 1 | DateTimeStep | Choose appointment date/time (hourly slots) |
+| 2 | CustomerStep | Login or register account |
 | 3 | PetStep | Select or create pet profile |
-| 4 | AddonsStep | Select optional add-ons |
-| 5 | ReviewStep | Review and confirm booking |
-| 6 | ConfirmationStep | Success message |
+| 4 | ReviewStep | Review booking **with integrated add-ons selection** |
+| 5 | ConfirmationStep | Success message |
 
-### Admin Mode (7 steps)
+**Trigger**: `StickyBookingButton` appears after scrolling 600px on marketing page
+
+### Admin Mode (6 steps)
 Used in `/admin/appointments` for creating appointments.
 
 | Step | Component | Description |
 |------|-----------|-------------|
 | 0 | ServiceStep | Select grooming service |
-| 1 | DateTimeStep | Choose appointment date/time |
-| 2 | CustomerStep | Search/select or create customer |
+| 1 | DateTimeStep | Choose appointment date/time (hourly slots) |
+| 2 | CustomerStep | Search/create customer (form always visible) |
 | 3 | PetStep | Select customer's pet or create new |
-| 4 | AddonsStep | Select optional add-ons |
-| 5 | ReviewStep | Review appointment details |
-| 6 | ConfirmationStep | Appointment created |
+| 4 | ReviewStep | Review appointment **with integrated add-ons selection** |
+| 5 | ConfirmationStep | Appointment created |
 
 ### Walk-in Mode (5 steps)
 Used in `/admin/dashboard` for immediate walk-in appointments.
@@ -49,12 +58,12 @@ Used in `/admin/dashboard` for immediate walk-in appointments.
 | Step | Component | Description |
 |------|-----------|-------------|
 | 0 | ServiceStep | Select grooming service |
-| 1 | CustomerStep | Search/select or create customer |
+| 1 | CustomerStep | Search/create customer (form always visible) |
 | 2 | PetStep | Select customer's pet or create new |
-| 3 | AddonsStep | Select optional add-ons |
+| 3 | WalkinReviewStep | Review **with integrated add-ons** |
 | 4 | ConfirmationStep | Walk-in confirmed |
 
-> **Note**: Walk-in mode skips Date/Time (auto-set to NOW) and Review steps for speed.
+> **Note**: Walk-in mode skips Date/Time step (auto-set to NOW) and uses WalkinReviewStep for faster processing. Status automatically set to `'checked_in'` with `source: 'walk_in'`.
 
 ---
 
@@ -76,11 +85,12 @@ interface BookingModalProps {
 }
 ```
 
-**Features**:
-- Desktop: Centered modal (max 900px)
-- Tablet: Centered modal (max 700px)
-- Mobile: Bottom sheet (95vh, slides up)
-- Focus trap, escape key handling, body scroll lock
+**Responsive Sizing** (Updated Dec 2025):
+- **Desktop/Tablet**: Centered modal `max-w-[1000px] xl:max-w-[1200px]` - optimized for larger screens
+- **Mobile**: Bottom sheet (95vh, slides up from bottom)
+- **Features**: Focus trap, escape key handling, body scroll lock
+
+**Design**: Clean modal with rounded corners, backdrop blur, and smooth animations.
 
 ### BookingWizard (`BookingWizard.tsx`)
 
@@ -106,7 +116,8 @@ interface BookingState {
   petSize: PetSize | null;
   selectedDate: string | null;
   selectedTimeSlot: string | null;
-  selectedAddons: Addon[];
+  selectedAddons: Addon[]; // Selected in ReviewStep
+  selectedAddonIds: string[]; // IDs only
   guestInfo: GuestInfo | null;
   servicePrice: number;
   addonsTotal: number;
@@ -117,26 +128,77 @@ interface BookingState {
 **Mode-Aware Step Rendering**:
 ```typescript
 const renderStep = () => {
+  // Walk-in mode: 5 steps
   if (mode === 'walkin') {
-    // Service → Customer → Pet → Addons → Confirmation
+    switch (currentStep) {
+      case 0: return <ServiceStep />;
+      case 1: return <CustomerStep mode="walkin" />;
+      case 2: return <PetStep customerId={selectedCustomerId} mode="walkin" />;
+      case 3: return <WalkinReviewStep customerId={selectedCustomerId} />;
+      case 4: return <ConfirmationStep />;
+    }
   }
+
+  // Admin mode: 6 steps (same as customer but with admin customer step)
   if (mode === 'admin') {
-    // Service → DateTime → Customer → Pet → Addons → Review → Confirmation
+    switch (currentStep) {
+      case 0: return <ServiceStep />;
+      case 1: return <DateTimeStep />;
+      case 2: return <CustomerStep mode="admin" />;
+      case 3: return <PetStep customerId={selectedCustomerId} mode="admin" />;
+      case 4: return <ReviewStep adminMode={true} customerId={selectedCustomerId} />;
+      case 5: return <ConfirmationStep />;
+    }
   }
-  // Customer mode (default):
-  // Service → DateTime → Customer → Pet → Addons → Review → Confirmation
+
+  // Customer mode: 6 steps (default)
+  switch (currentStep) {
+    case 0: return <ServiceStep />;
+    case 1: return <DateTimeStep />;
+    case 2: return <CustomerStep mode="customer" />;
+    case 3: return <PetStep customerId={selectedCustomerId} mode="customer" />;
+    case 4: return <ReviewStep />; // Includes add-ons
+    case 5: return <ConfirmationStep />;
+  }
 };
 ```
 
-### BookingModalTrigger (`BookingModalTrigger.tsx`)
+### StickyBookingButton (`StickyBookingButton.tsx`) **[NEW]**
 
-**Purpose**: Button component that opens the booking modal.
+**Purpose**: Sticky booking trigger for marketing page that appears after scroll.
 
-**Pre-configured Variants**:
-- `HeroBookingButton` - Large CTA for marketing hero
-- `ServiceBookingButton` - Inline button on service cards
-- `AdminCreateButton` - Admin "Create Appointment" button
-- `WalkInButton` - Dashboard "Walk In" button
+**Features**:
+- Appears after user scrolls 600px (past hero section)
+- Fixed at bottom of viewport with backdrop blur
+- Opens BookingModal in 'customer' mode
+- Smooth slide-up animation on appearance
+- Responsive: Full-width on mobile, centered button on desktop
+
+**Implementation**:
+```tsx
+export function StickyBookingButton() {
+  const [isVisible, setIsVisible] = useState(false);
+  const { open } = useBookingModal();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsVisible(window.scrollY > 600);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return isVisible && (
+    <motion.div className="fixed bottom-0 ...">
+      <button onClick={() => open({ mode: 'customer' })}>
+        Book Your Appointment
+      </button>
+    </motion.div>
+  );
+}
+```
+
+**Location**: Added to `src/app/(marketing)/layout.tsx`
 
 ---
 
@@ -146,7 +208,7 @@ const renderStep = () => {
 
 **Data Fetching**:
 ```typescript
-const { data: services } = await fetch('/api/services');
+const { services } = useServices(); // Fetches from /api/services
 ```
 
 **Service Card Display**:
@@ -161,11 +223,7 @@ const { data: services } = await fetch('/api/services');
     <h3>{service.name}</h3>
     <p>{service.description}</p>
     <div className="pricing">
-      {service.prices.map(p => (
-        <div key={p.size}>
-          {p.size}: ${p.price}
-        </div>
-      ))}
+      {/* Shows price range: $40.00 - $85.00 based on pet sizes */}
     </div>
   </ServiceCard>
 ))}
@@ -175,29 +233,54 @@ const { data: services } = await fetch('/api/services');
 
 ---
 
-### CustomerStep (`CustomerStep.tsx`)
+### CustomerStep (`CustomerStep.tsx`) **[REFACTORED]**
 
-**Purpose**: Customer selection/creation for admin and walk-in modes.
+**Purpose**: Mode-aware customer selection/creation with different UX for each mode.
+
+**Props**:
+```typescript
+interface CustomerStepProps {
+  mode?: 'customer' | 'admin' | 'walkin';
+}
+```
+
+**Mode-Specific Behavior**:
+
+#### Customer Mode
+- **Login View**: Email + password fields
+- **Register View**: First name, last name, email, phone
+- **Toggle**: Button to switch between login/register
+- **Authenticated**: Shows user confirmation, auto-populates booking info
+
+#### Admin/Walk-in Mode
+- **Search Bar**: Search existing customers by name, email, or phone (debounced 300ms)
+- **Search Results**: Radio list of matching customers
+- **Create Form**: **Always visible** below search (no collapse/expand)
+- **Submit Button**: "Use This Customer" - **disabled until all fields complete**
 
 **Features**:
-- Search existing customers by name, email, or phone
-- Create new customer inline
-- Duplicate email detection
-- Form validation using Zod schema
-
-**Search Flow**:
-```tsx
-// Debounced search with 300ms delay
-const response = await fetch(
-  `/api/admin/customers?search=${encodeURIComponent(searchQuery)}`
-);
-```
+- ✅ Duplicate email detection
+- ✅ Form validation using Zod schema
+- ✅ Real-time field validation with error messages
+- ✅ Button disabled state based on form completion
 
 **New Customer Form Fields**:
 - First Name (required)
 - Last Name (required)
-- Email (required in customer/admin mode, optional in walk-in)
+- Email (required for customer/admin, optional for walk-in)
 - Phone (required)
+
+**Validation Rules**:
+```typescript
+// Button enabled when:
+const isFormComplete =
+  firstName.trim() !== '' &&
+  lastName.trim() !== '' &&
+  email.trim() !== '' &&
+  phone.trim() !== '' &&
+  Object.keys(formErrors).length === 0 &&
+  !duplicateEmailError;
+```
 
 **Integration with Store**:
 ```typescript
@@ -211,8 +294,6 @@ setGuestInfo({
 });
 ```
 
-**Validation**: Customer must be selected or new customer form completed before proceeding.
-
 ---
 
 ### PetStep (`PetStep.tsx`)
@@ -222,7 +303,8 @@ setGuestInfo({
 **Props**:
 ```typescript
 interface PetStepProps {
-  customerId?: string | null; // For admin/walk-in mode - load this customer's pets
+  customerId?: string | null; // For admin/walk-in mode
+  mode?: 'customer' | 'admin' | 'walkin';
 }
 ```
 
@@ -230,50 +312,22 @@ interface PetStepProps {
 - **Customer mode**: Loads current authenticated user's pets
 - **Admin/Walk-in mode**: Loads pets for `selectedCustomerId` from store
 
-**Pet Loading**:
-```tsx
-// Uses customerId if provided (admin/walkin), otherwise current user
-const effectiveOwnerId = customerId || user?.id;
-const { pets, isLoading, error } = usePets(effectiveOwnerId);
-```
-
-**Pet Selection**:
-```tsx
-{pets.map(pet => (
-  <PetCard
-    pet={pet}
-    selected={selectedPet?.id === pet.id}
-    onClick={() => selectPet(pet)}
-  />
-))}
-
-// Option to add new pet
-<AddPetCard onClick={handleAddNewPet} />
-```
-
-**Guest/New Pet Flow**:
-```tsx
-// Show pet creation form
-<PetForm onSubmit={handleFormSubmit} />
-```
-
 **Pet Form Fields**:
 - Name (required)
 - Breed (select from list or custom)
-- Size (small, medium, large, xlarge) - determines pricing
+- Size (small, medium, large, xlarge) - **determines pricing**
 - Weight (optional)
-- Birth date (optional)
-- Medical info (optional)
+- Special Notes (optional)
 
 **Size-Based Pricing Update**:
 ```typescript
 // When pet size selected, update service price
 useEffect(() => {
-  if (selectedPet && selectedService) {
-    const price = getServicePriceForSize(selectedService, selectedPet.size);
-    updateTotalPrice(price);
+  if (petSize && selectedService) {
+    const price = calculatePrice(selectedService, petSize);
+    updateServicePrice(price);
   }
-}, [selectedPet, selectedService]);
+}, [petSize, selectedService]);
 ```
 
 ---
@@ -282,185 +336,153 @@ useEffect(() => {
 
 **Purpose**: Select appointment date and time with real-time availability.
 
-**Calendar Component**:
-```tsx
-<Calendar
-  minDate={new Date()}
-  maxDate={addMonths(new Date(), 3)}
-  disabledDates={blockedDates}
-  selectedDate={selectedDate}
-  onSelectDate={handleDateSelect}
-/>
-```
+**Time Slot Configuration** (Updated Dec 2025):
+- **Interval**: 60 minutes (hourly slots) - changed from 30 minutes
+- **Display**: 9:00 AM, 10:00 AM, 11:00 AM, etc.
+- **Configuration**: `SLOT_INTERVAL_MINUTES = 60` in `src/lib/booking/availability.ts`
 
 **Availability Checking**:
 ```typescript
-useEffect(() => {
-  async function checkAvailability() {
-    const response = await fetch(
-      `/api/availability?date=${selectedDate}&service_id=${selectedService.id}`
-    );
-    const { available_slots, booked_slots } = await response.json();
-    setAvailableSlots(available_slots);
-  }
+const { slots, isLoading, error } = useAvailability({
+  date: selectedDate,
+  serviceId: selectedService?.id,
+});
 
-  if (selectedDate && selectedService) {
-    checkAvailability();
-  }
-}, [selectedDate, selectedService]);
+// Slots fetched from /api/availability
+// Returns array of TimeSlot objects with available/booked status
 ```
 
-**Time Slot Selection**:
+**Calendar Component**:
 ```tsx
-<div className="grid grid-cols-3 gap-2">
-  {availableSlots.map(slot => (
-    <button
-      key={slot}
-      onClick={() => selectTimeSlot(slot)}
-      className={cn(
-        'p-3 rounded-lg border',
-        selectedTime === slot && 'bg-primary text-white'
-      )}
-    >
-      {slot}
-    </button>
-  ))}
-</div>
+<CalendarPicker
+  selectedDate={selectedDate}
+  onDateSelect={handleDateSelect}
+  disabledDates={disabledDates}
+  minDate={minDate}
+  maxDate={maxDate}
+/>
+```
+
+**Time Slot Grid**:
+```tsx
+<TimeSlotGrid
+  slots={slots}
+  selectedTime={selectedTimeSlot}
+  onTimeSelect={handleTimeSelect}
+  onJoinWaitlist={handleJoinWaitlist}
+  loading={isLoading}
+/>
 ```
 
 **Waitlist Option**:
-```tsx
-{availableSlots.length === 0 && (
-  <Alert variant="warning">
-    <span>No slots available for this date.</span>
-    <Button variant="outline" onClick={() => setShowWaitlistModal(true)}>
-      Join Waitlist
-    </Button>
-  </Alert>
-)}
-```
+Available when no time slots are available for the selected date.
 
 ---
 
-### AddonsStep (`AddonsStep.tsx`)
+### ReviewStep (`ReviewStep.tsx`) **[UPDATED - Includes Add-ons]**
 
-**Purpose**: Select optional add-on services.
+**Purpose**: Review booking details and select add-ons before confirmation.
 
-**Addon Display**:
+**Key Change**: Add-ons are now integrated into this step instead of a separate AddonsStep.
+
+**Layout**:
 ```tsx
-{addons.map(addon => (
-  <Checkbox
-    key={addon.id}
-    label={`${addon.name} (+$${addon.price})`}
-    description={addon.description}
-    checked={selectedAddons.includes(addon.id)}
-    onChange={() => toggleAddon(addon)}
-  />
-))}
-```
-
-**Price Update**:
-```typescript
-const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
-const totalPrice = servicePrice + addonTotal;
-```
-
----
-
-### ReviewStep (`ReviewStep.tsx`)
-
-**Purpose**: Review booking details before confirmation.
-
-**Display Summary**:
-```tsx
-<div className="space-y-4">
-  {/* Service */}
+<div className="space-y-6">
+  {/* Booking Summary */}
   <div>
-    <h4 className="font-semibold">Service</h4>
-    <p>{selectedService.name}</p>
+    <h3>Booking Summary</h3>
+    {/* Service, Pet, Date/Time, Customer info */}
   </div>
 
-  {/* Pet */}
+  {/* Price Breakdown */}
   <div>
-    <h4 className="font-semibold">Pet</h4>
-    <p>{selectedPet.name} ({selectedPet.size})</p>
+    <div>Service: ${servicePrice}</div>
+    {selectedAddons.map(addon => (
+      <div key={addon.id}>{addon.name}: ${addon.price}</div>
+    ))}
+    <div className="font-bold">Total: ${totalPrice}</div>
   </div>
 
-  {/* Date & Time */}
-  <div>
-    <h4 className="font-semibold">Date & Time</h4>
-    <p>{format(selectedDate, 'MMMM d, yyyy')} at {selectedTime}</p>
-  </div>
-
-  {/* Add-ons */}
-  {selectedAddons.length > 0 && (
+  {/* Add-ons Selection - INTEGRATED HERE */}
+  {availableAddons.length > 0 && (
     <div>
-      <h4 className="font-semibold">Add-ons</h4>
-      <ul>
-        {selectedAddons.map(addon => (
-          <li key={addon.id}>{addon.name} - ${addon.price}</li>
-        ))}
-      </ul>
+      <h3>Add Extra Services</h3>
+
+      {/* Upsell add-ons (breed-specific) shown first */}
+      {upsellAddons.length > 0 && (
+        <div>
+          <h4>Recommended for your pet</h4>
+          {upsellAddons.map(addon => (
+            <AddonCard
+              key={addon.id}
+              addon={addon}
+              selected={selectedAddonIds.includes(addon.id)}
+              onToggle={() => toggleAddon(addon)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Regular add-ons */}
+      {regularAddons.map(addon => (
+        <AddonCard
+          key={addon.id}
+          addon={addon}
+          selected={selectedAddonIds.includes(addon.id)}
+          onToggle={() => toggleAddon(addon)}
+        />
+      ))}
     </div>
   )}
 
-  {/* Price Breakdown */}
-  <div className="border-t pt-4">
-    <div className="flex justify-between">
-      <span>Service</span>
-      <span>${servicePrice}</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Add-ons</span>
-      <span>${addonTotal}</span>
-    </div>
-    <div className="flex justify-between font-bold text-lg">
-      <span>Total</span>
-      <span>${totalPrice}</span>
-    </div>
+  {/* Edit buttons for previous steps */}
+  <div className="flex gap-2">
+    <button onClick={() => setStep(1)}>Edit Date & Time</button>
+    <button onClick={() => setStep(3)}>Edit Pet</button>
   </div>
-
-  {/* Special Instructions */}
-  <Textarea
-    label="Special Instructions (Optional)"
-    placeholder="Any special requests or medical notes"
-    value={notes}
-    onChange={(e) => setNotes(e.target.value)}
-  />
 </div>
 ```
 
-**Submission**:
+**Add-on Selection**:
+- Checkboxes to toggle add-ons
+- Price updates in real-time
+- Upsell add-ons (breed-specific) shown first with badge
+- Regular add-ons shown below
+
+**Navigation**:
+- Back button to return to Pet step
+- Continue button to proceed to confirmation
+- Edit buttons to jump to specific steps
+
+---
+
+### WalkinReviewStep (`WalkinReviewStep.tsx`)
+
+**Purpose**: Combined review and add-ons step for walk-in appointments.
+
+**Key Features**:
+- Shows walk-in summary (service, pet, customer)
+- Displays "Now (Walk-In)" for appointment time with current timestamp
+- Integrated add-ons selection (same as ReviewStep)
+- "Confirm Walk-In" button
+
+**Walk-in Specific Logic**:
 ```typescript
-const handleConfirm = async () => {
-  setIsSubmitting(true);
+// Set appointment to NOW
+const now = new Date();
+const appointmentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+const appointmentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // HH:MM
 
-  try {
-    const response = await fetch('/api/appointments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        customer_id: user.id,
-        pet_id: selectedPet.id,
-        service_id: selectedService.id,
-        scheduled_at: `${selectedDate}T${selectedTime}`,
-        addon_ids: selectedAddons.map(a => a.id),
-        notes,
-      }),
-    });
-
-    if (!response.ok) throw new Error('Booking failed');
-
-    const { data } = await response.json();
-    setAppointmentId(data.id);
-    goToNextStep();
-  } catch (error) {
-    setError('Unable to book appointment. Please try again.');
-  } finally {
-    setIsSubmitting(false);
-  }
+const payload = {
+  // ... other fields
+  appointment_date: appointmentDate,
+  appointment_time: appointmentTime,
+  source: 'walk_in', // Important: marks as walk-in
+  send_notification: false, // Don't send for walk-ins
 };
 ```
+
+**Status**: Walk-in appointments automatically set to `'checked_in'` status (not 'pending').
 
 ---
 
@@ -471,148 +493,70 @@ const handleConfirm = async () => {
 **Content**:
 ```tsx
 <div className="text-center py-8">
-  <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
-  <h2 className="text-2xl font-bold mb-2">Booking Confirmed!</h2>
-  <p className="text-gray-600 mb-6">
-    We've sent a confirmation email to {user.email}
-  </p>
+  <CheckCircle className="w-16 h-16 text-success" />
+  <h2>Booking Confirmed!</h2>
+  <p>Confirmation email sent to {email}</p>
 
-  <div className="bg-gray-50 rounded-lg p-6 mb-6">
-    <p className="text-sm text-gray-500 mb-2">Appointment Details</p>
-    <p className="font-semibold">{selectedService.name}</p>
-    <p>{format(selectedDate, 'EEEE, MMMM d, yyyy')} at {selectedTime}</p>
-    <p className="text-sm text-gray-600 mt-2">
-      Confirmation #: {appointmentId}
-    </p>
+  <div className="appointment-details">
+    <p>{service.name}</p>
+    <p>{formattedDate} at {time}</p>
+    <p>Confirmation #: {appointmentId}</p>
   </div>
 
-  <div className="space-y-3">
-    <Button
-      variant="primary"
-      onClick={() => router.push('/dashboard')}
-      fullWidth
-    >
-      View My Appointments
-    </Button>
-    <Button
-      variant="outline"
-      onClick={handleBookAnother}
-      fullWidth
-    >
-      Book Another Appointment
-    </Button>
-    <Button
-      variant="ghost"
-      onClick={() => router.push('/')}
-      fullWidth
-    >
-      Return Home
-    </Button>
+  <div className="actions">
+    <Button onClick={goToDashboard}>View My Appointments</Button>
+    <Button onClick={bookAnother}>Book Another</Button>
+    <Button onClick={goHome}>Return Home</Button>
   </div>
 </div>
 ```
 
 ---
 
-### WaitlistModal (`WaitlistModal.tsx`)
-
-**Purpose**: Collect waitlist information when no slots available.
-
-**Form Fields**:
-```tsx
-<Modal isOpen={isOpen} onClose={onClose} title="Join Waitlist">
-  <form onSubmit={handleSubmit}>
-    <Input
-      label="Preferred Date"
-      type="date"
-      value={preferredDate}
-      onChange={(e) => setPreferredDate(e.target.value)}
-      required
-    />
-
-    <RadioGroup label="Time Preference">
-      <Radio name="time" value="morning" label="Morning (9 AM - 12 PM)" />
-      <Radio name="time" value="afternoon" label="Afternoon (12 PM - 5 PM)" />
-      <Radio name="time" value="any" label="Any Time" />
-    </RadioGroup>
-
-    <Textarea
-      label="Notes (Optional)"
-      placeholder="Any additional information"
-      value={notes}
-      onChange={(e) => setNotes(e.target.value)}
-    />
-
-    <div className="flex gap-2 mt-4">
-      <Button type="button" variant="ghost" onClick={onClose}>
-        Cancel
-      </Button>
-      <Button type="submit" variant="primary" isLoading={isSubmitting}>
-        Join Waitlist
-      </Button>
-    </div>
-  </form>
-</Modal>
-```
-
-**Submission**:
-```typescript
-const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  const response = await fetch('/api/waitlist', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      customer_id: user.id,
-      pet_id: selectedPet.id,
-      service_id: selectedService.id,
-      preferred_date: preferredDate,
-      time_preference: timePreference,
-      notes,
-    }),
-  });
-
-  if (response.ok) {
-    onSuccess();
-    onClose();
-  }
-};
-```
-
----
-
 ## State Management
 
-**Zustand Store** (`C:\Users\Jon\Documents\claude projects\thepuppyday\src\stores\bookingStore.ts`):
+**Zustand Store** (`src/stores/bookingStore.ts`):
 
 ```typescript
 interface BookingStore {
   // Current state
   currentStep: number;
-  selectedService: Service | null;
+  selectedCustomerId: string | null;
+  selectedService: ServiceWithPrices | null;
   selectedPet: Pet | null;
-  selectedDate: Date | null;
-  selectedTime: string | null;
+  newPetData: CreatePetInput | null;
+  petSize: PetSize | null;
+  selectedDate: string | null;
+  selectedTimeSlot: string | null;
   selectedAddons: Addon[];
-  notes: string;
-  guestMode: boolean;
+  selectedAddonIds: string[];
+  guestInfo: GuestInfo | null;
+
+  // Pricing
+  servicePrice: number;
+  addonsTotal: number;
+  totalPrice: number;
 
   // Actions
-  setCurrentStep: (step: number) => void;
-  selectService: (service: Service) => void;
+  setStep: (step: number) => void;
+  nextStep: () => void;
+  prevStep: () => void;
+  selectService: (service: ServiceWithPrices) => void;
   selectPet: (pet: Pet) => void;
-  selectDate: (date: Date) => void;
-  selectTime: (time: string) => void;
+  selectDateTime: (date: string, time: string) => void;
   toggleAddon: (addon: Addon) => void;
-  setNotes: (notes: string) => void;
-  resetBooking: () => void;
+  setGuestInfo: (info: GuestInfo) => void;
+  reset: () => void;
 
-  // Computed
-  totalPrice: number;
-  canProceed: boolean;
+  // Validation
+  canNavigateToStep: (step: number) => boolean;
 }
 ```
+
+**Key Methods**:
+- `toggleAddon(addon)`: Add/remove add-on and recalculate total
+- `canNavigateToStep(step)`: Validates if user can navigate to a specific step
+- `reset()`: Clears all booking data and returns to step 0
 
 ---
 
@@ -620,76 +564,98 @@ interface BookingStore {
 
 Step validation is mode-aware and handled by `src/lib/booking/step-validation.ts`.
 
-**Validation Function**:
-```typescript
-function canContinueFromStep(
-  currentStep: number,
-  bookingState: BookingStore,
-  mode: BookingModalMode = 'customer'
-): boolean
-```
-
-**Customer Mode Validation** (Service → DateTime → Customer → Pet → Addons → Review → Confirmation):
+**Customer/Admin Mode Validation** (6 steps):
 | Step | Validation |
 |------|------------|
 | 0 | Service selected |
 | 1 | Date and time selected |
-| 2 | Customer info valid (name, phone, email) |
-| 3 | Pet selected or new pet data complete |
-| 4 | Always valid (add-ons optional) |
-| 5 | All previous steps valid |
+| 2 | Customer authenticated OR guest info complete |
+| 3 | Pet selected or new pet data complete (name + size) |
+| 4 | All previous steps valid (add-ons optional) |
+| 5 | N/A (confirmation) |
 
-**Admin Mode Validation** (Same as Customer):
-| Step | Validation |
-|------|------------|
-| 0-5 | Same as customer mode |
-
-**Walk-in Mode Validation** (Service → Customer → Pet → Addons → Confirmation):
+**Walk-in Mode Validation** (5 steps):
 | Step | Validation |
 |------|------------|
 | 0 | Service selected |
-| 1 | Customer info valid |
+| 1 | Customer info valid (name, phone, email/optional) |
 | 2 | Pet selected or new pet data complete |
-| 3 | Always valid (add-ons optional) |
+| 3 | All previous steps valid (add-ons optional) |
+| 4 | N/A (confirmation) |
 
 ---
 
-## Guest Booking Flow
+## API Integration
 
-**Differences from Authenticated Flow**:
-1. User must provide contact information (email, phone, name)
-2. Temporary guest account created
-3. Email sent with account activation link
-4. Can view appointment status via UUID link
+### Appointment Creation
 
-**Guest Info Collection**:
-```tsx
-<div className="bg-blue-50 p-4 rounded-lg mb-4">
-  <p className="text-sm font-semibold mb-2">Guest Booking</p>
-  <p className="text-xs text-gray-600 mb-4">
-    Create an account to manage your appointment
-  </p>
-
-  <Input label="First Name" required />
-  <Input label="Last Name" required />
-  <Input label="Email" type="email" required />
-  <Input label="Phone" type="tel" required />
-
-  <Checkbox
-    label="Create an account"
-    description="Save your info for easier future bookings"
-  />
-</div>
+**Customer/Admin Mode**:
+```typescript
+POST /api/admin/appointments
+{
+  customer: {
+    id?: string, // UUID or undefined for new
+    first_name: string,
+    last_name: string,
+    email: string,
+    phone: string
+  },
+  pet: {
+    id?: string, // UUID or undefined for new
+    name: string,
+    breed_id?: string,
+    size: 'small' | 'medium' | 'large' | 'xlarge',
+    weight?: number
+  },
+  service_id: string,
+  addon_ids: string[],
+  appointment_date: string, // YYYY-MM-DD
+  appointment_time: string, // HH:MM (not HH:MM:SS)
+  payment_status: 'pending' | 'paid',
+  send_notification: boolean,
+  source?: 'walk_in' | 'phone' | 'online' | 'admin'
+}
 ```
+
+**Walk-in Specific**:
+- `source: 'walk_in'` - Marks appointment as walk-in (status set to 'checked_in')
+- `send_notification: false` - Don't send notifications for walk-ins
+- `appointment_date` and `appointment_time` - Set to NOW
+
+**Response**:
+```typescript
+{
+  success: true,
+  appointment_id: string,
+  booking_reference: string,
+  customer_created: boolean,
+  customer_status: 'active' | 'inactive',
+  pet_created: boolean
+}
+```
+
+---
+
+## Deleted Components
+
+The following components were removed during the Dec 2025 refactor:
+
+- ❌ `src/components/admin/appointments/WalkInModal.tsx` (replaced by unified BookingModal)
+- ❌ `src/components/admin/appointments/ManualAppointmentModal.tsx` (replaced by unified BookingModal)
+- ❌ `src/components/admin/appointments/steps/*.tsx` (all duplicate step components)
+- ❌ `src/components/booking/steps/AddonsStep.tsx` (integrated into ReviewStep)
+- ❌ `src/app/(marketing)/page.tsx` embedded booking widget (replaced by StickyBookingButton)
 
 ---
 
 ## Related Documentation
 
-- [Booking API](../routes/api.md#appointments)
-- [Booking Store](../state/booking-store.md)
-- [Pricing Logic](../services/pricing.md)
+- [Admin Panel Routes](../routes/admin-panel.md) - Admin appointment management
+- [API Routes](../routes/api.md#appointments) - Appointment API endpoints
+- [Marketing Routes](../routes/marketing.md) - Public booking flow
+- [Supabase Integration](../services/supabase.md) - Database operations
 
 ---
 
-**Last Updated**: 2024-12-22
+**Last Updated**: 2025-12-26 by Claude Code
+**Changes**: Refactored to unified modal, integrated add-ons into review, added login/register, updated time slots to hourly, added sticky button
