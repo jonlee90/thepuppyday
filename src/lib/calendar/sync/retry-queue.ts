@@ -174,47 +174,59 @@ export async function processRetryQueue(
 
     console.log(`[Retry Queue] Processing ${retryItems.length} items`);
 
+    // FIXED: Critical #4 - Batch fetch appointments to avoid N+1 query problem
+    const appointmentIds = retryItems.map(item => item.appointment_id);
+    const { data: appointments, error: appointmentsError } = await supabase
+      .from('appointments')
+      .select(`
+        id,
+        customer_id,
+        pet_id,
+        service_id,
+        scheduled_at,
+        status,
+        notes,
+        customer:users!customer_id (
+          first_name,
+          last_name,
+          email,
+          phone
+        ),
+        pet:pets (
+          name,
+          size
+        ),
+        service:services (
+          name,
+          duration_minutes
+        ),
+        appointment_addons (
+          addon:addons (
+            id,
+            name,
+            duration_minutes
+          )
+        )
+      `)
+      .in('id', appointmentIds);
+
+    if (appointmentsError) {
+      throw new Error(`Failed to fetch appointments: ${appointmentsError.message}`);
+    }
+
+    // Create a Map for O(1) lookups
+    const appointmentMap = new Map(
+      (appointments || []).map(appt => [appt.id, appt])
+    );
+
     for (const item of retryItems) {
       stats.processed++;
 
       try {
-        // Fetch the appointment data
-        const { data: appointment, error: appointmentError } = await supabase
-          .from('appointments')
-          .select(`
-            id,
-            customer_id,
-            pet_id,
-            service_id,
-            scheduled_at,
-            status,
-            notes,
-            customer:users!customer_id (
-              first_name,
-              last_name,
-              email,
-              phone
-            ),
-            pet:pets (
-              name,
-              size
-            ),
-            service:services (
-              name,
-              duration_minutes
-            ),
-            appointment_addons (
-              addon:addons (
-                id,
-                name,
-                duration_minutes
-              )
-            )
-          `)
-          .eq('id', item.appointment_id)
-          .single();
+        // Get appointment from pre-fetched data
+        const appointment = appointmentMap.get(item.appointment_id);
 
-        if (appointmentError || !appointment) {
+        if (!appointment) {
           throw new Error(`Appointment not found: ${item.appointment_id}`);
         }
 

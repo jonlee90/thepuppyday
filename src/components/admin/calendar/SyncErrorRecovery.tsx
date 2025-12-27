@@ -61,21 +61,30 @@ export function SyncErrorRecovery({ onRetry, onResync, onRetryBatch }: SyncError
   const [showBatchRetryModal, setShowBatchRetryModal] = useState(false);
 
   // Fetch errors from API
-  const fetchErrors = useCallback(async () => {
+  // FIXED: Critical #6 - Added AbortController for proper cleanup
+  const fetchErrors = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch('/api/admin/calendar/sync/errors');
+      const response = await fetch('/api/admin/calendar/sync/errors', { signal });
+      if (signal?.aborted) return;
+
       const data = await response.json();
       setErrors(data.failedSyncs || []);
       setIsLoading(false);
     } catch (error) {
+      // Ignore abort errors
+      if (error instanceof Error && error.name === 'AbortError') return;
+
       console.error('Failed to fetch sync errors:', error);
       setIsLoading(false);
     }
   }, []);
 
-  // Initial load
+  // Initial load with AbortController
   useEffect(() => {
-    fetchErrors();
+    const abortController = new AbortController();
+    fetchErrors(abortController.signal);
+
+    return () => abortController.abort();
   }, [fetchErrors]);
 
   // Auto-refresh every 30 seconds
@@ -242,18 +251,42 @@ export function SyncErrorRecovery({ onRetry, onResync, onRetryBatch }: SyncError
   };
 
   // Toast notification
+  // FIXED: Critical #5 - XSS vulnerability fixed by using textContent instead of innerHTML
   const showToast = (message: string, type: 'success' | 'error') => {
-    // Create toast element
+    // Create toast element structure safely
     const toast = document.createElement('div');
     toast.className = `toast toast-top toast-end z-50`;
-    toast.innerHTML = `
-      <div class="alert ${type === 'success' ? 'alert-success' : 'alert-error'} shadow-lg">
-        <div class="flex items-center gap-2">
-          ${type === 'success' ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'}
-          <span>${message}</span>
-        </div>
-      </div>
-    `;
+
+    const alert = document.createElement('div');
+    alert.className = `alert ${type === 'success' ? 'alert-success' : 'alert-error'} shadow-lg`;
+
+    const container = document.createElement('div');
+    container.className = 'flex items-center gap-2';
+
+    // Create SVG icon
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'w-5 h-5');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('viewBox', '0 0 24 24');
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('d', type === 'success' ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12');
+
+    svg.appendChild(path);
+    container.appendChild(svg);
+
+    // Create message span with safe text content (no HTML injection)
+    const span = document.createElement('span');
+    span.textContent = message; // Safe - no HTML injection
+
+    container.appendChild(span);
+    alert.appendChild(container);
+    toast.appendChild(alert);
+
     document.body.appendChild(toast);
     setTimeout(() => {
       toast.remove();

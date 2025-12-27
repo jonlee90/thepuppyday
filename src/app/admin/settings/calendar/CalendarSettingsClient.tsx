@@ -19,6 +19,8 @@ import {
   updateSyncSettings,
   updateSelectedCalendar,
   refreshConnectionStatus,
+  getQuotaStatus as getQuotaStatusAction,
+  resumeAutoSync as resumeAutoSyncAction,
 } from './actions';
 import type {
   CalendarConnectionStatus,
@@ -98,10 +100,11 @@ export function CalendarSettingsClient({
 
   const fetchQuotaStatus = async () => {
     try {
-      const response = await fetch('/api/admin/calendar/quota');
-      if (response.ok) {
-        const data = await response.json();
-        setQuotaData(data);
+      // FIXED: Critical #1 - Using Server Action instead of fetch for CSRF protection
+      const result = await getQuotaStatusAction();
+
+      if (result.success && result.data) {
+        setQuotaData(result.data);
       }
     } catch (error) {
       console.error('[CalendarSettings] Failed to fetch quota status:', error);
@@ -112,14 +115,11 @@ export function CalendarSettingsClient({
     if (!connectionStatus.connection?.id) return;
 
     try {
-      const response = await fetch('/api/admin/calendar/connection/resume', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ connectionId: connectionStatus.connection.id }),
-      });
+      // FIXED: Critical #1 - Using Server Action instead of fetch for CSRF protection
+      const result = await resumeAutoSyncAction(connectionStatus.connection.id);
 
-      if (!response.ok) {
-        throw new Error('Failed to resume auto-sync');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to resume auto-sync');
       }
 
       toast({

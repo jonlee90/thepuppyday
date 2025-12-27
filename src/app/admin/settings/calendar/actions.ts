@@ -11,6 +11,8 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { getActiveConnection, deactivateConnection } from '@/lib/calendar/connection';
 import { revokeTokens } from '@/lib/calendar/oauth';
 import { getValidAccessToken } from '@/lib/calendar/token-manager';
+import { getQuotaStatus as getQuotaStatusUtil } from '@/lib/calendar/quota/tracker';
+import { resumeAutoSync as resumeAutoSyncUtil } from '@/lib/calendar/sync/pause-manager';
 import type { CalendarSyncSettings, CalendarConnectionStatus } from '@/types/calendar';
 
 /**
@@ -217,6 +219,74 @@ export async function refreshConnectionStatus(): Promise<{
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to refresh status',
+    };
+  }
+}
+
+/**
+ * Get Quota Status
+ * Returns current API quota usage with CSRF protection
+ * FIXED: Critical #1 - CSRF protection via Server Action
+ */
+export async function getQuotaStatus(): Promise<{
+  success: boolean;
+  data?: {
+    current: number;
+    limit: number;
+    percentage: number;
+    resetAt: string;
+  };
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabaseClient();
+    await requireAdmin(supabase);
+
+    const quotaStatus = await getQuotaStatusUtil(supabase);
+
+    return { success: true, data: quotaStatus };
+  } catch (error) {
+    console.error('[Actions] Failed to get quota status:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get quota status',
+    };
+  }
+}
+
+/**
+ * Resume Auto-Sync
+ * Resumes auto-sync for paused connection with CSRF protection
+ * FIXED: Critical #1 - CSRF protection via Server Action
+ */
+export async function resumeAutoSync(connectionId: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabaseClient();
+    await requireAdmin(supabase);
+
+    // Validate connection belongs to admin
+    const { user: adminUser } = await requireAdmin(supabase);
+    const connection = await getActiveConnection(supabase, adminUser.id);
+
+    if (!connection || connection.id !== connectionId) {
+      return { success: false, error: 'Connection not found or unauthorized' };
+    }
+
+    // Resume auto-sync using utility function
+    await resumeAutoSyncUtil(supabase, connectionId);
+
+    // Revalidate the page to show updated state
+    revalidatePath('/admin/settings/calendar');
+
+    return { success: true };
+  } catch (error) {
+    console.error('[Actions] Failed to resume auto-sync:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to resume auto-sync',
     };
   }
 }

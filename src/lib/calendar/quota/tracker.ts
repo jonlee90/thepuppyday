@@ -56,6 +56,13 @@ export interface QuotaStatus {
  */
 export async function trackApiCall(supabase: SupabaseClient): Promise<void> {
   try {
+    // FIXED: Critical #2 - Add authentication check
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.warn('[Quota Tracker] Unauthorized quota tracking attempt');
+      return; // Silently fail for quota tracking
+    }
+
     const today = getCurrentDate();
 
     // Use database function to increment quota atomically

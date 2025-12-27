@@ -48,7 +48,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
-    const errorType = searchParams.get('errorType');
+
+    // FIXED: Critical #3 - Input validation to prevent SQL injection
+    const VALID_ERROR_TYPES = ['rate_limit', 'auth', 'network', 'validation', 'unknown'] as const;
+    const errorTypeParam = searchParams.get('errorType');
+    const errorType = errorTypeParam && VALID_ERROR_TYPES.includes(errorTypeParam as any)
+      ? errorTypeParam
+      : null;
+
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
     // Build query
