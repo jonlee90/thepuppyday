@@ -1,22 +1,26 @@
 /**
  * Review Step Component
- * Task 0048: Step 4 - Review and confirm import with progress tracking
+ * Task 0048: Step 3 - Review and confirm import with automatic matching preview
+ * UPDATED: Refactored for automatic matching (Option B) - shows import options and parsed data
  */
 
 'use client';
 
-import { Calendar, User, Dog, Scissors, Plus, FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, Clock, Settings2, AlertTriangle, CheckCircle, XCircle, User, Dog, Scissors } from 'lucide-react';
 import { motion } from 'framer-motion';
+import DOMPurify from 'isomorphic-dompurify';
 import type { GoogleCalendarEvent } from '@/types/calendar';
 
+interface ImportOptions {
+  skip_duplicates: boolean;
+  create_new_customers: boolean;
+  default_service_id: string;
+}
+
 interface ReviewStepProps {
-  events: GoogleCalendarEvent[];
-  mappings: EventMapping[];
-  duplicates: Array<{
-    eventId: string;
-    appointmentId: string;
-    matchScore: number;
-  }>;
+  events: GoogleCalendarEvent[]; // Only selected events
+  options: ImportOptions;
   isImporting: boolean;
   progress: { current: number; total: number } | null;
   results: {
@@ -24,57 +28,87 @@ interface ReviewStepProps {
     failed: number;
     errors: Array<{ eventId: string; message: string }>;
   } | null;
-  onConfirm: () => void; // Not used in this component but required for prop consistency
+  onConfirm: () => void;
 }
 
-interface EventMapping {
-  eventId: string;
-  customerId: string;
-  petId: string;
-  serviceId: string;
-  addonIds: string[];
-  notes: string;
+interface Service {
+  id: string;
+  name: string;
+  duration_minutes: number;
 }
 
 export function ReviewStep({
   events,
-  mappings,
-  duplicates,
+  options,
   isImporting,
   progress,
   results,
 }: ReviewStepProps) {
-  // Helper to get event by ID
-  const getEvent = (eventId: string) => events.find((e) => e.id === eventId);
+  const [defaultService, setDefaultService] = useState<Service | null>(null);
+  const [isLoadingService, setIsLoadingService] = useState(false);
 
-  // Helper to check if event has duplicate
-  const hasDuplicate = (eventId: string) => duplicates.some((d) => d.eventId === eventId);
+  // Fetch default service name if one is selected
+  useEffect(() => {
+    const fetchDefaultService = async () => {
+      if (!options.default_service_id) {
+        setDefaultService(null);
+        return;
+      }
 
-  // Count warnings
-  const duplicateCount = mappings.filter((m) => hasDuplicate(m.eventId)).length;
-  const pastEventCount = mappings.filter((m) => {
-    const event = getEvent(m.eventId);
-    if (!event) return false;
-    const eventDate = new Date(event.start.dateTime);
-    return eventDate < new Date();
-  }).length;
+      setIsLoadingService(true);
+      try {
+        const response = await fetch('/api/admin/services');
+        if (response.ok) {
+          const data = await response.json();
+          const service = data.services?.find((s: Service) => s.id === options.default_service_id);
+          setDefaultService(service || null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch service:', error);
+      } finally {
+        setIsLoadingService(false);
+      }
+    };
 
-  const totalWarnings = duplicateCount + pastEventCount;
+    fetchDefaultService();
+  }, [options.default_service_id]);
 
-  // Format date/time
-  const formatDateTime = (event: GoogleCalendarEvent) => {
-    const start = new Date(event.start.dateTime);
-    return start.toLocaleDateString('en-US', {
+  // Helper to sanitize HTML for XSS protection
+  const sanitizeHTML = (html: string) => {
+    return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
+  };
+
+  // Helper to format date/time
+  const formatDateTime = (dateTime: string) => {
+    const date = new Date(dateTime);
+    return date.toLocaleString('en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
       year: 'numeric',
-    }) + ' • ' + start.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true,
     });
   };
+
+  // Calculate event duration
+  const getEventDuration = (start: string, end: string) => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const durationMs = endDate.getTime() - startDate.getTime();
+    const minutes = Math.round(durationMs / 60000);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  };
+
+  // Count warnings
+  const duplicateCount = events.filter(
+    (e) => e.duplicate_match && e.duplicate_match.confidence >= 60
+  ).length;
+  const pastEventCount = events.filter((e) => new Date(e.start) < new Date()).length;
+  const totalWarnings = duplicateCount + pastEventCount;
 
   // Results screen
   if (results) {
@@ -155,7 +189,7 @@ export function ReviewStep({
 
         <p className="text-sm text-[#9CA3AF] text-center max-w-md">
           {allSuccessful && 'These appointments are now visible in your calendar and can be managed from the Appointments page.'}
-          {partialSuccess && 'You can retry failed imports from the Import History page.'}
+          {partialSuccess && 'Successfully imported appointments are visible in your calendar.'}
           {allFailed && 'Please check the errors above and try again.'}
         </p>
       </div>
@@ -195,21 +229,84 @@ export function ReviewStep({
     );
   }
 
-  // Review screen
+  // Review screen (automatic matching preview)
   return (
     <div className="space-y-6">
+      {/* Import Options Summary */}
+      <div className="card bg-[#FFFBF7] border border-[#E5E5E5]">
+        <div className="card-body p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Settings2 className="w-5 h-5 text-[#F59E0B]" />
+            <h3 className="text-lg font-semibold text-[#434E54]">Import Settings</h3>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            <div className="flex items-start gap-2">
+              <CheckCircle
+                className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                  options.skip_duplicates ? 'text-[#10B981]' : 'text-[#D1D5DB]'
+                }`}
+              />
+              <div>
+                <p className="text-[#434E54] font-medium">
+                  {options.skip_duplicates ? 'Skipping' : 'Including'} duplicate events
+                </p>
+                {options.skip_duplicates && (
+                  <p className="text-xs text-[#6B7280]">
+                    Events with 60%+ match confidence will be skipped
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <CheckCircle
+                className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                  options.create_new_customers ? 'text-[#10B981]' : 'text-[#D1D5DB]'
+                }`}
+              />
+              <div>
+                <p className="text-[#434E54] font-medium">
+                  {options.create_new_customers ? 'Auto-creating' : 'Not creating'} new customers &amp; pets
+                </p>
+                {options.create_new_customers && (
+                  <p className="text-xs text-[#6B7280]">
+                    New customer and pet records will be created if not found
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {options.default_service_id && (
+              <div className="flex items-start gap-2">
+                <Scissors className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#F59E0B]" />
+                <div>
+                  <p className="text-[#434E54] font-medium">Default Service</p>
+                  <p className="text-xs text-[#6B7280]">
+                    {isLoadingService ? (
+                      'Loading...'
+                    ) : defaultService ? (
+                      `${defaultService.name} (${defaultService.duration_minutes} min)`
+                    ) : (
+                      'Service selected'
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Import Summary */}
       <div className="p-4 bg-[#F8EEE5] rounded-lg">
-        <h3 className="text-lg font-semibold text-[#434E54] mb-3 flex items-center gap-2">
-          <FileText className="w-5 h-5" aria-hidden="true" />
-          Import Summary
-        </h3>
+        <h3 className="text-lg font-semibold text-[#434E54] mb-3">Import Summary</h3>
         <ul className="space-y-1 text-[#434E54]">
-          <li>• {mappings.length} appointment{mappings.length !== 1 ? 's' : ''} ready to import</li>
+          <li>• {events.length} appointment{events.length !== 1 ? 's' : ''} ready to import</li>
           {totalWarnings > 0 && (
             <li className="text-[#F59E0B]">• {totalWarnings} warning{totalWarnings !== 1 ? 's' : ''} detected</li>
           )}
-          <li className="text-[#9CA3AF]">• Estimated time: 10-15 seconds</li>
+          <li className="text-[#9CA3AF]">• Automatic matching will be applied</li>
         </ul>
       </div>
 
@@ -224,7 +321,11 @@ export function ReviewStep({
             {duplicateCount > 0 && (
               <li>
                 • {duplicateCount} event{duplicateCount !== 1 ? 's' : ''} may be duplicate{duplicateCount !== 1 ? 's' : ''}
-                <p className="ml-4 text-xs text-[#9CA3AF]">Similar appointments already exist in the system</p>
+                <p className="ml-4 text-xs text-[#9CA3AF]">
+                  {options.skip_duplicates
+                    ? 'These will be skipped automatically'
+                    : 'Similar appointments already exist in the system'}
+                </p>
               </li>
             )}
             {pastEventCount > 0 && (
@@ -237,78 +338,79 @@ export function ReviewStep({
         </div>
       )}
 
-      {/* Appointment Preview Cards */}
+      {/* Event Preview Cards */}
       <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-        {mappings.map((mapping, index) => {
-          const event = getEvent(mapping.eventId);
-          if (!event) return null;
-
-          const isDuplicate = hasDuplicate(mapping.eventId);
-          const isPast = new Date(event.start.dateTime) < new Date();
+        {events.map((event, index) => {
+          const isDuplicate = event.duplicate_match && event.duplicate_match.confidence >= 60;
+          const isPast = new Date(event.start) < new Date();
+          const willBeSkipped = isDuplicate && options.skip_duplicates;
 
           return (
             <motion.div
-              key={mapping.eventId}
+              key={event.google_event_id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05, duration: 0.2 }}
-              className="p-4 bg-white border border-[#E5E5E5] rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+              className={`p-4 bg-white border rounded-lg shadow-sm transition-all duration-200 ${
+                willBeSkipped ? 'border-[#F59E0B] opacity-60' : 'border-[#E5E5E5] hover:shadow-md'
+              }`}
             >
               <div className="flex items-start justify-between mb-3">
-                <h4 className="text-sm font-medium text-[#9CA3AF]">Appointment {index + 1}</h4>
-                {(isDuplicate || isPast) && (
-                  <div className="flex gap-2">
-                    {isDuplicate && (
-                      <span className="badge badge-warning text-white text-xs">Possible duplicate</span>
+                <h4 className="font-semibold text-[#434E54] truncate">{sanitizeHTML(event.title)}</h4>
+                <div className="flex gap-1 items-center text-xs text-[#6B7280] flex-shrink-0 ml-2">
+                  <Clock className="w-3 h-3" />
+                  {getEventDuration(event.start, event.end)}
+                </div>
+              </div>
+
+              <div className="space-y-2 text-sm mb-3">
+                {/* Date/Time */}
+                <div className="flex items-center gap-2 text-[#6B7280]">
+                  <Calendar className="w-4 h-4" aria-hidden="true" />
+                  <span>{formatDateTime(event.start)}</span>
+                </div>
+
+                {/* Automatic Matching Preview */}
+                {event.parsed_data && (
+                  <div className="space-y-1 pl-6 border-l-2 border-[#E5E5E5] ml-2">
+                    {event.parsed_data.customer?.name && (
+                      <div className="flex items-center gap-2 text-[#434E54]">
+                        <User className="w-3 h-3 text-[#6B7280]" />
+                        <span className="text-xs">{sanitizeHTML(event.parsed_data.customer.name)}</span>
+                      </div>
                     )}
-                    {isPast && (
-                      <span className="badge badge-ghost text-[#9CA3AF] text-xs">Past event</span>
+                    {event.parsed_data.pet?.name && (
+                      <div className="flex items-center gap-2 text-[#434E54]">
+                        <Dog className="w-3 h-3 text-[#6B7280]" />
+                        <span className="text-xs">{sanitizeHTML(event.parsed_data.pet.name)}</span>
+                      </div>
+                    )}
+                    {event.parsed_data.service_name && (
+                      <div className="flex items-center gap-2 text-[#434E54]">
+                        <Scissors className="w-3 h-3 text-[#6B7280]" />
+                        <span className="text-xs">{sanitizeHTML(event.parsed_data.service_name)}</span>
+                      </div>
                     )}
                   </div>
                 )}
               </div>
 
-              <div className="space-y-2 text-sm">
-                {/* Date/Time */}
-                <div className="flex items-start gap-2">
-                  <Calendar className="w-4 h-4 text-[#6B7280] flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <span className="text-[#434E54]">{formatDateTime(event)}</span>
-                </div>
-
-                {/* Customer */}
-                <div className="flex items-start gap-2">
-                  <User className="w-4 h-4 text-[#6B7280] flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <span className="text-[#434E54]">Customer ID: {mapping.customerId.slice(0, 8)}...</span>
-                </div>
-
-                {/* Pet */}
-                <div className="flex items-start gap-2">
-                  <Dog className="w-4 h-4 text-[#6B7280] flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <span className="text-[#434E54]">Pet ID: {mapping.petId.slice(0, 8)}...</span>
-                </div>
-
-                {/* Service */}
-                <div className="flex items-start gap-2">
-                  <Scissors className="w-4 h-4 text-[#6B7280] flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <span className="text-[#434E54]">Service ID: {mapping.serviceId.slice(0, 8)}...</span>
-                </div>
-
-                {/* Addons */}
-                {mapping.addonIds.length > 0 && (
-                  <div className="flex items-start gap-2">
-                    <Plus className="w-4 h-4 text-[#6B7280] flex-shrink-0 mt-0.5" aria-hidden="true" />
-                    <span className="text-[#434E54]">
-                      {mapping.addonIds.length} addon{mapping.addonIds.length !== 1 ? 's' : ''}
-                    </span>
+              {/* Status Badges */}
+              <div className="flex flex-wrap gap-2">
+                {willBeSkipped && (
+                  <div className="badge badge-sm bg-[#FEF3C7] text-[#92400E] border-[#FDE68A] gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Will be skipped (duplicate)
                   </div>
                 )}
-
-                {/* Notes */}
-                {mapping.notes && (
-                  <div className="flex items-start gap-2">
-                    <FileText className="w-4 h-4 text-[#6B7280] flex-shrink-0 mt-0.5" aria-hidden="true" />
-                    <span className="text-[#6B7280] line-clamp-2">{mapping.notes}</span>
+                {isDuplicate && !willBeSkipped && (
+                  <div className="badge badge-sm bg-[#FEF3C7] text-[#92400E] border-[#FDE68A] gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Possible duplicate ({event.duplicate_match!.confidence}%)
                   </div>
+                )}
+                {isPast && (
+                  <div className="badge badge-sm badge-ghost text-[#9CA3AF]">Past event</div>
                 )}
               </div>
             </motion.div>
@@ -318,7 +420,7 @@ export function ReviewStep({
 
       {/* Footer Note */}
       <p className="text-sm text-[#9CA3AF] text-center">
-        Review all appointments carefully before confirming. This action cannot be undone.
+        Review all settings and events carefully before confirming. Automatic matching will be applied during import.
       </p>
     </div>
   );
