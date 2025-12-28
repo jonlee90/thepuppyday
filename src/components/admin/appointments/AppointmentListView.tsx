@@ -413,7 +413,6 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
             <option value="">All Statuses</option>
             <option value="pending">Pending</option>
             <option value="confirmed">Confirmed</option>
-            <option value="checked_in">Checked In</option>
             <option value="in_progress">In Progress</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>

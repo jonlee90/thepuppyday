@@ -8,33 +8,44 @@
 import { useState, useCallback } from 'react';
 import { DashboardStats } from '@/components/admin/dashboard/DashboardStats';
 import { TodayAppointments } from '@/components/admin/dashboard/TodayAppointments';
-import { ActivityFeed } from '@/components/admin/dashboard/ActivityFeed';
+import { PendingAppointments } from '@/components/admin/dashboard/PendingAppointments';
 import { DashboardWalkInButton } from '@/components/admin/dashboard/DashboardWalkInButton';
 import { useDashboardRealtime } from '@/hooks/admin/use-dashboard-realtime';
 import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
-import type { Appointment, NotificationLog } from '@/types/database';
+import type { Tables } from '@/types/supabase';
 import type { DashboardStats as StatsData } from '@/app/api/admin/dashboard/stats/route';
+
+type Appointment = Tables<'appointments'> & {
+  customer?: Tables<'users'> | null;
+  pet?: (Tables<'pets'> & {
+    breed?: Tables<'breeds'> | null;
+  }) | null;
+  service?: Tables<'services'> | null;
+};
 
 interface DashboardClientProps {
   initialStats: StatsData | null;
   initialAppointments: Appointment[];
-  initialActivity: NotificationLog[];
+  initialPendingAppointments: Appointment[];
   errors?: {
     stats: boolean;
     appointments: boolean;
-    activity: boolean;
+    pendingAppointments: boolean;
   };
 }
 
 export function DashboardClient({
   initialStats,
   initialAppointments,
-  initialActivity,
+  initialPendingAppointments,
   errors,
 }: DashboardClientProps) {
   const [stats, setStats] = useState<StatsData | null>(initialStats);
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
-  const [hasInitialErrors, setHasInitialErrors] = useState(errors?.stats || errors?.appointments || errors?.activity);
+  const [pendingAppointments, setPendingAppointments] = useState<Appointment[]>(initialPendingAppointments);
+  const [hasInitialErrors, setHasInitialErrors] = useState(
+    errors?.stats || errors?.appointments || errors?.pendingAppointments
+  );
 
   const handleStatsUpdate = useCallback((newStats: StatsData) => {
     setStats(newStats);
@@ -79,7 +90,7 @@ export function DashboardClient({
             <p className="text-xs text-red-600 mt-1">
               {errors?.stats && 'Statistics unavailable. '}
               {errors?.appointments && 'Appointments list unavailable. '}
-              {errors?.activity && 'Activity feed unavailable. '}
+              {errors?.pendingAppointments && 'Pending appointments unavailable. '}
               Try refreshing the page.
             </p>
           </div>
@@ -111,20 +122,13 @@ export function DashboardClient({
       {/* Stats Grid */}
       <DashboardStats initialStats={stats} onRetry={handleRetry} />
 
-      {/* Quick Access Cards 
-      <QuickAccess />
-*/}
-      {/* Two Column Layout */}
+      {/* Appointments Grid - 2 Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Today's Appointments */}
-        <div className="lg:col-span-1">
-          <TodayAppointments initialAppointments={appointments} />
-        </div>
+        <TodayAppointments initialAppointments={appointments} />
 
-        {/* Activity Feed */}
-        <div className="lg:col-span-1">
-          <ActivityFeed initialActivities={initialActivity} />
-        </div>
+        {/* Pending Appointments */}
+        <PendingAppointments initialAppointments={pendingAppointments} />
       </div>
     </>
   );

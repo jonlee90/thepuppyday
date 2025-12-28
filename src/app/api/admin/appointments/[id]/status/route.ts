@@ -131,8 +131,8 @@ export async function POST(
         const service = store.selectById('services', appointment.service_id) as Service | null;
 
         if (customer && pet && service) {
-          // Use new notification triggers for checked_in and completed statuses (Task 0108)
-          if (newStatus === 'checked_in' || newStatus === 'completed') {
+          // Use new notification triggers for in_progress and completed statuses (Task 0108)
+          if (newStatus === 'in_progress' || newStatus === 'completed') {
             const { triggerAppointmentStatus } = await import(
               '@/lib/notifications/triggers'
             );
@@ -278,8 +278,8 @@ export async function POST(
         .single();
 
       if (customer && pet && service) {
-        // Use new notification triggers for checked_in and completed statuses (Task 0108)
-        if (newStatus === 'checked_in' || newStatus === 'completed') {
+        // Use new notification triggers for in_progress and completed statuses (Task 0108)
+        if (newStatus === 'in_progress' || newStatus === 'completed') {
           const { triggerAppointmentStatus } = await import(
             '@/lib/notifications/triggers'
           );

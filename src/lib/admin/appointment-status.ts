@@ -39,24 +39,6 @@ export const ALLOWED_TRANSITIONS: StatusTransition[] = [
   // From confirmed
   {
     from: 'confirmed',
-    to: 'checked_in',
-    label: 'Check In',
-    requiresConfirmation: false,
-    isDestructive: false,
-    description: 'Customer has arrived',
-  },
-  {
-    from: 'confirmed',
-    to: 'cancelled',
-    label: 'Cancel',
-    requiresConfirmation: true,
-    isDestructive: true,
-    description: 'Cancel this appointment',
-  },
-
-  // From checked_in
-  {
-    from: 'checked_in',
     to: 'in_progress',
     label: 'Start Service',
     requiresConfirmation: false,
@@ -64,7 +46,7 @@ export const ALLOWED_TRANSITIONS: StatusTransition[] = [
     description: 'Begin grooming service',
   },
   {
-    from: 'checked_in',
+    from: 'confirmed',
     to: 'cancelled',
     label: 'Cancel',
     requiresConfirmation: true,
@@ -103,7 +85,7 @@ export const ALLOWED_TRANSITIONS: StatusTransition[] = [
   // From completed (reverse transitions)
   {
     from: 'completed',
-    to: 'checked_in',
+    to: 'in_progress',
     label: 'Reopen',
     requiresConfirmation: true,
     isDestructive: false,
@@ -145,26 +127,25 @@ export function isAppointmentInPast(scheduledAt: string): boolean {
 }
 
 /**
- * Get status badge color for DaisyUI
+ * Get status badge color for DaisyUI - matches calendar event colors
+ * Returns Tailwind classes with hex colors that match getCalendarEventColor()
  */
 export function getStatusBadgeColor(status: AppointmentStatus): string {
   switch (status) {
     case 'pending':
-      return 'badge-ghost';
+      return 'bg-[#FCD34D] text-[#92400E] border-[#FCD34D]'; // yellow
     case 'confirmed':
-      return 'badge-info';
-    case 'checked_in':
-      return 'badge-warning';
+      return 'bg-[#10B981] text-white border-[#10B981]'; // green
     case 'in_progress':
-      return 'badge-primary';
+      return 'bg-[#6B7280] text-white border-[#6B7280]'; // gray
     case 'completed':
-      return 'badge-success';
+      return 'bg-[#434E54] text-white border-[#434E54]'; // theme primary
     case 'cancelled':
-      return 'badge-error';
+      return 'bg-[#EF4444] text-white border-[#EF4444]'; // red
     case 'no_show':
-      return 'badge-error';
+      return 'bg-[#DC2626] text-white border-[#DC2626]'; // dark red
     default:
-      return 'badge-ghost';
+      return 'bg-[#FCD34D] text-[#92400E] border-[#FCD34D]';
   }
 }
 
@@ -177,8 +158,6 @@ export function getStatusLabel(status: AppointmentStatus): string {
       return 'Pending';
     case 'confirmed':
       return 'Confirmed';
-    case 'checked_in':
-      return 'Checked In';
     case 'in_progress':
       return 'In Progress';
     case 'completed':
@@ -198,21 +177,19 @@ export function getStatusLabel(status: AppointmentStatus): string {
 export function getCalendarEventColor(status: AppointmentStatus): string {
   switch (status) {
     case 'pending':
-      return '#9CA3AF'; // gray
+      return '#FCD34D'; // yellow
     case 'confirmed':
-      return '#74B9FF'; // blue
-    case 'checked_in':
-      return '#FFB347'; // yellow
+      return '#10B981'; // green
     case 'in_progress':
-      return '#6BCB77'; // green
+      return '#6B7280'; // gray
     case 'completed':
-      return '#2D6A4F'; // dark green
+      return '#434E54'; // theme primary
     case 'cancelled':
       return '#EF4444'; // red
     case 'no_show':
       return '#DC2626'; // dark red
     default:
-      return '#9CA3AF';
+      return '#FCD34D';
   }
 }
 

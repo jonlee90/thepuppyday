@@ -60,7 +60,6 @@ export type SyncStatusType = (typeof SyncStatus)[keyof typeof SyncStatus];
 export const AppointmentStatus = {
   PENDING: 'pending',
   CONFIRMED: 'confirmed',
-  CHECKED_IN: 'checked_in',
   IN_PROGRESS: 'in_progress',
   COMPLETED: 'completed',
   CANCELLED: 'cancelled',

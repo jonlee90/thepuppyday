@@ -408,28 +408,28 @@ export function AppointmentCalendar({
           <p className="text-xs font-semibold text-[#6B7280] mb-2">Status</p>
           <div className="flex flex-wrap gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#9CA3AF' }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: getCalendarEventColor('pending') }} />
               <span className="text-[#6B7280]">Pending</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#74B9FF' }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: getCalendarEventColor('confirmed') }} />
               <span className="text-[#6B7280]">Confirmed</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#FFB347' }} />
-              <span className="text-[#6B7280]">Checked In</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#6BCB77' }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: getCalendarEventColor('in_progress') }} />
               <span className="text-[#6B7280]">In Progress</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#2D6A4F' }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: getCalendarEventColor('completed') }} />
               <span className="text-[#6B7280]">Completed</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#EF4444' }} />
-              <span className="text-[#6B7280]">Cancelled/No Show</span>
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: getCalendarEventColor('cancelled') }} />
+              <span className="text-[#6B7280]">Cancelled</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: getCalendarEventColor('no_show') }} />
+              <span className="text-[#6B7280]">No Show</span>
             </div>
           </div>
         </div>

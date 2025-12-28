@@ -233,7 +233,7 @@ export async function PUT(
           duration_minutes: number;
         }) => {
           if (apt.id === id) return false; // Exclude current appointment
-          if (!['pending', 'confirmed', 'checked_in', 'in_progress'].includes(apt.status)) return false;
+          if (!['pending', 'confirmed', 'in_progress'].includes(apt.status)) return false;
           const aptDate = new Date(apt.scheduled_at);
           return aptDate >= startOfDay && aptDate <= endOfDay;
         });
@@ -385,7 +385,7 @@ export async function PUT(
         .select('id, scheduled_at, duration_minutes')
         .gte('scheduled_at', startOfDay.toISOString())
         .lte('scheduled_at', endOfDay.toISOString())
-        .in('status', ['pending', 'confirmed', 'checked_in', 'in_progress'])
+        .in('status', ['pending', 'confirmed', 'in_progress'])
         .neq('id', id);
 
       // Check for overlap

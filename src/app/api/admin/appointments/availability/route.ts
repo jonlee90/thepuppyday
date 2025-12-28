@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
       .select('id, scheduled_at, duration_minutes, status')
       .gte('scheduled_at', startOfDay.toISOString())
       .lte('scheduled_at', endOfDay.toISOString())
-      .in('status', ['pending', 'confirmed', 'checked_in', 'in_progress']);
+      .in('status', ['pending', 'confirmed', 'in_progress']);
 
     if (appointmentsError) {
       console.error('Error fetching appointments:', appointmentsError);

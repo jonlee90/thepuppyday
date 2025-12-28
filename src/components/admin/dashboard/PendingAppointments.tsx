@@ -1,53 +1,45 @@
 /**
- * Today's Appointments Component
- * Displays today's appointments with quick action buttons
+ * Pending Appointments Component
+ * Displays all pending appointments with quick confirm action
  */
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { formatTime, formatCurrency } from '@/lib/utils';
+import { formatTime, formatDate, formatCurrency } from '@/lib/utils';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Calendar, User, Dog, Package, CheckCircle, PlayCircle, UserCheck, AlertCircle } from 'lucide-react';
+import { Clock, User, Dog, Package, CheckCircle } from 'lucide-react';
 import { AppointmentDetailModal } from '@/components/admin/appointments/AppointmentDetailModal';
-import type { Appointment, AppointmentStatus } from '@/types/database';
+import type { Tables } from '@/types/supabase';
 import { toast } from '@/hooks/use-toast';
 
-interface TodayAppointmentsProps {
+type Appointment = Tables<'appointments'> & {
+  customer?: Tables<'users'> | null;
+  pet?: (Tables<'pets'> & {
+    breed?: Tables<'breeds'> | null;
+  }) | null;
+  service?: Tables<'services'> | null;
+};
+
+interface PendingAppointmentsProps {
   initialAppointments: Appointment[];
 }
 
 interface AppointmentCardProps {
   appointment: Appointment;
-  onStatusUpdate: (id: string, newStatus: AppointmentStatus) => void;
+  onStatusUpdate: (id: string) => void;
   onCardClick: (appointmentId: string) => void;
 }
 
-function getNextAction(status: AppointmentStatus): {
-  label: string;
-  action: AppointmentStatus;
-  icon: React.ElementType;
-} | null {
-  switch (status) {
-    case 'pending':
-      return { label: 'Confirm', action: 'confirmed', icon: CheckCircle };
-    case 'confirmed':
-      return { label: 'Start', action: 'in_progress', icon: PlayCircle };
-    case 'in_progress':
-      return { label: 'Complete', action: 'completed', icon: CheckCircle };
-    default:
-      return null;
-  }
-}
-
 function AppointmentCard({ appointment, onStatusUpdate, onCardClick }: AppointmentCardProps) {
-  const [updating, setUpdating] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const scheduledAt = new Date(appointment.scheduled_at);
+  const dateStr = formatDate(scheduledAt);
   const timeStr = formatTime(scheduledAt);
 
-  // Get customer flag color (mock - would come from customer_flags table)
+  // Get customer flag color (would come from customer_flags table in production)
   const flagColor = 'green'; // green, yellow, red
 
   const flagColorClass = {
@@ -56,33 +48,30 @@ function AppointmentCard({ appointment, onStatusUpdate, onCardClick }: Appointme
     red: 'bg-red-500',
   }[flagColor];
 
-  const nextAction = getNextAction(appointment.status);
-
-  const handleStatusUpdate = async (e: React.MouseEvent) => {
+  const handleConfirm = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click when clicking button
-    if (!nextAction) return;
 
-    setUpdating(true);
+    setConfirming(true);
     try {
-      // Call API to update appointment status
+      // Call API to update appointment status to confirmed
       const response = await fetch(`/api/admin/appointments/${appointment.id}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextAction.action }),
+        body: JSON.stringify({ status: 'confirmed' }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update appointment status');
+        throw new Error('Failed to confirm appointment');
       }
 
-      onStatusUpdate(appointment.id, nextAction.action);
+      onStatusUpdate(appointment.id);
 
-      toast.success(`Appointment ${nextAction.action.replace('_', ' ')}`);
+      toast.success('Appointment confirmed');
     } catch (error) {
-      console.error('Failed to update appointment:', error);
-      toast.error('Failed to update appointment');
+      console.error('Failed to confirm appointment:', error);
+      toast.error('Failed to confirm appointment');
     } finally {
-      setUpdating(false);
+      setConfirming(false);
     }
   };
 
@@ -94,11 +83,16 @@ function AppointmentCard({ appointment, onStatusUpdate, onCardClick }: Appointme
       }}
       onClick={() => onCardClick(appointment.id)}
     >
-      {/* Compact header: Time + Status */}
+      {/* Compact header: Date/Time + Status */}
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-base font-semibold text-[#434E54]">
-          {timeStr}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-base font-semibold text-[#434E54]">
+            {timeStr}
+          </span>
+          <span className="text-xs text-[#434E54]/60">
+            {dateStr}
+          </span>
+        </div>
         <StatusBadge status={appointment.status} size="sm" />
       </div>
 
@@ -146,17 +140,15 @@ function AppointmentCard({ appointment, onStatusUpdate, onCardClick }: Appointme
         </div>
       </div>
 
-      {/* Action Button - Full Width */}
-      {nextAction && (
-        <button
-          onClick={handleStatusUpdate}
-          disabled={updating}
-          className="btn btn-sm bg-[#434E54] hover:bg-[#363F44] text-white border-none w-full"
-        >
-          <nextAction.icon className="w-4 h-4" />
-          {updating ? 'Updating...' : nextAction.label}
-        </button>
-      )}
+      {/* Confirm Button - Full Width */}
+      <button
+        onClick={handleConfirm}
+        disabled={confirming}
+        className="btn btn-sm bg-[#434E54] hover:bg-[#363F44] text-white border-none w-full"
+      >
+        <CheckCircle className="w-4 h-4" />
+        {confirming ? 'Confirming...' : 'Confirm Appointment'}
+      </button>
 
       {/* Notes - if present */}
       {appointment.notes && (
@@ -170,17 +162,14 @@ function AppointmentCard({ appointment, onStatusUpdate, onCardClick }: Appointme
   );
 }
 
-export function TodayAppointments({ initialAppointments }: TodayAppointmentsProps) {
+export function PendingAppointments({ initialAppointments }: PendingAppointmentsProps) {
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleStatusUpdate = (id: string, newStatus: AppointmentStatus) => {
-    setAppointments(prev =>
-      prev.map(apt =>
-        apt.id === id ? { ...apt, status: newStatus, updated_at: new Date().toISOString() } : apt
-      )
-    );
+  const handleStatusUpdate = (id: string) => {
+    // Remove the confirmed appointment from the pending list
+    setAppointments(prev => prev.filter(apt => apt.id !== id));
   };
 
   const handleCardClick = (appointmentId: string) => {
@@ -199,50 +188,33 @@ export function TodayAppointments({ initialAppointments }: TodayAppointmentsProp
     // In a real implementation, you might want to refetch the data
   };
 
-  // Custom sorting: Active (earliest first) → Completed → Cancelled
-  const sortedAppointments = useMemo(() => {
-    const active = appointments
-      .filter(apt => apt.status !== 'cancelled' && apt.status !== 'completed')
-      .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
-
-    const completed = appointments.filter(apt => apt.status === 'completed');
-    const cancelled = appointments.filter(apt => apt.status === 'cancelled');
-
-    return [...active, ...completed, ...cancelled];
-  }, [appointments]);
+  const displayAppointments = appointments.slice(0, 10);
+  const hasMore = appointments.length > 10;
 
   return (
     <>
       <div className="bg-white rounded-xl shadow-sm p-4 lg:p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg lg:text-xl font-semibold text-[#434E54] flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            Today's Appointments
+            <Clock className="w-5 h-5" />
+            Pending Appointments
             <span className="ml-2 px-2.5 py-0.5 bg-[#EAE0D5] text-[#434E54] text-sm font-medium rounded-full">
               {appointments.length}
             </span>
           </h2>
-          {appointments.length > 0 && (
-            <Link
-              href="/admin/appointments"
-              className="text-sm text-[#434E54] hover:text-[#363F44] font-medium transition-colors"
-            >
-              View Calendar
-            </Link>
-          )}
         </div>
 
         {appointments.length === 0 ? (
           <div className="text-center py-12">
-            <Calendar className="w-16 h-16 text-[#EAE0D5] mx-auto mb-4" />
-            <p className="text-[#434E54]/60 mb-2">No appointments scheduled for today</p>
+            <Clock className="w-16 h-16 text-[#EAE0D5] mx-auto mb-4" />
+            <p className="text-[#434E54]/60 mb-2">No pending appointments</p>
             <p className="text-sm text-[#434E54]/40">
-              Appointments will appear here when customers book
+              All appointments are confirmed or scheduled
             </p>
           </div>
         ) : (
-          <div className="max-h-[calc(100vh-300px)] overflow-y-auto pr-1 space-y-3">
-            {sortedAppointments.map(appointment => (
+          <div className="space-y-3">
+            {displayAppointments.map(appointment => (
               <AppointmentCard
                 key={appointment.id}
                 appointment={appointment}
@@ -250,6 +222,15 @@ export function TodayAppointments({ initialAppointments }: TodayAppointmentsProp
                 onCardClick={handleCardClick}
               />
             ))}
+
+            {hasMore && (
+              <Link
+                href="/admin/appointments?status=pending"
+                className="block text-center py-3 text-[#434E54] hover:text-[#363F44] font-medium transition-colors"
+              >
+                View All Pending Appointments ({appointments.length})
+              </Link>
+            )}
           </div>
         )}
       </div>

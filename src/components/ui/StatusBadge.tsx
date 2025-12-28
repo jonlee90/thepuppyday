@@ -28,12 +28,6 @@ const statusConfig: Record<AppointmentStatus, {
     textColor: 'text-[#434E54]',
     dotColor: 'bg-[#434E54]',
   },
-  checked_in: {
-    label: 'Checked In',
-    bgColor: 'bg-[#434E54]/20',
-    textColor: 'text-[#434E54]',
-    dotColor: 'bg-[#434E54]',
-  },
   in_progress: {
     label: 'In Progress',
     bgColor: 'bg-[#434E54]/25',
@@ -73,7 +67,13 @@ const dotSizes = {
 };
 
 export function StatusBadge({ status, size = 'md', className = '' }: StatusBadgeProps) {
-  const config = statusConfig[status];
+  // Fallback for legacy or unknown statuses (e.g., checked_in)
+  const config = statusConfig[status] || {
+    label: status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    bgColor: 'bg-[#434E54]/10',
+    textColor: 'text-[#434E54]',
+    dotColor: 'bg-[#434E54]/60',
+  };
 
   return (
     <span

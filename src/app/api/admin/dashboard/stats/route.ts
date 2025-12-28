@@ -9,10 +9,8 @@ import { NextResponse } from 'next/server';
 import { getTodayInBusinessTimezone } from '@/lib/utils/timezone';
 
 export interface DashboardStats {
-  todayRevenue: number | null;
-  pendingConfirmations: number | null;
-  totalAppointments: number | null;
-  completedAppointments: number | null;
+  completedRevenue: number | null;
+  pendingRevenue: number | null;
 }
 
 export async function GET() {
@@ -25,61 +23,43 @@ export async function GET() {
     // Get today's date range in business timezone (America/Los_Angeles)
     const { todayStart, todayEnd } = getTodayInBusinessTimezone();
 
-    // Fetch all data in parallel
-    const [
-      revenueResult,
-      pendingResult,
-      totalResult,
-      completedResult,
-    ] = await Promise.all([
-      // Today's Revenue - sum of completed payments
-      (supabase as any)
-        .from('payments')
-        .select('amount, tip_amount')
-        .gte('created_at', todayStart)
-        .lt('created_at', todayEnd)
-        .eq('status', 'succeeded'),
+    // Fetch all appointments scheduled today with their pricing details
+    const appointmentsResult = await (supabase as any)
+      .from('appointments')
+      .select(`
+        id,
+        status,
+        total_price
+      `)
+      .gte('scheduled_at', todayStart)
+      .lt('scheduled_at', todayEnd)
+      .not('status', 'in', '(cancelled,no_show)');
 
-      // Pending Confirmations - appointments awaiting confirmation
-      (supabase as any)
-        .from('appointments')
-        .select('id', { count: 'exact', head: true })
-        .gte('scheduled_at', todayStart)
-        .lt('scheduled_at', todayEnd)
-        .eq('status', 'pending'),
+    let completedRevenue: number | null = null;
+    let pendingRevenue: number | null = null;
 
-      // Total Appointments - all appointments today (excluding cancelled/no_show)
-      (supabase as any)
-        .from('appointments')
-        .select('id', { count: 'exact', head: true })
-        .gte('scheduled_at', todayStart)
-        .lt('scheduled_at', todayEnd)
-        .not('status', 'in', '(cancelled,no_show)'),
+    if (!appointmentsResult.error && appointmentsResult.data) {
+      const appointments = appointmentsResult.data;
 
-      // Completed Appointments
-      (supabase as any)
-        .from('appointments')
-        .select('id', { count: 'exact', head: true })
-        .gte('scheduled_at', todayStart)
-        .lt('scheduled_at', todayEnd)
-        .eq('status', 'completed'),
-    ]);
+      // Completed Revenue: appointments with status = 'completed'
+      completedRevenue = appointments
+        .filter((apt: any) => apt.status === 'completed')
+        .reduce((sum: number, apt: any) => sum + (apt.total_price || 0), 0);
 
-    // Calculate today's revenue
-    let todayRevenue: number | null = null;
-    if (!revenueResult.error && revenueResult.data) {
-      todayRevenue = revenueResult.data.reduce((sum: number, payment: any) => {
-        const amount = typeof payment.amount === 'number' ? payment.amount : 0;
-        const tip = typeof payment.tip_amount === 'number' ? payment.tip_amount : 0;
-        return sum + amount + tip;
-      }, 0);
+      // Pending Revenue: appointments with status BEFORE 'completed'
+      // (pending, confirmed, in_progress)
+      pendingRevenue = appointments
+        .filter((apt: any) =>
+          apt.status === 'pending' ||
+          apt.status === 'confirmed' ||
+          apt.status === 'in_progress'
+        )
+        .reduce((sum: number, apt: any) => sum + (apt.total_price || 0), 0);
     }
 
     const stats: DashboardStats = {
-      todayRevenue,
-      pendingConfirmations: pendingResult.error ? null : (pendingResult.count ?? 0),
-      totalAppointments: totalResult.error ? null : (totalResult.count ?? 0),
-      completedAppointments: completedResult.error ? null : (completedResult.count ?? 0),
+      completedRevenue,
+      pendingRevenue,
     };
 
     return NextResponse.json(stats);

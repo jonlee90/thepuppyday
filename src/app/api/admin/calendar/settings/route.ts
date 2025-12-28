@@ -50,7 +50,7 @@ export async function GET() {
       // Return default settings if not found
       console.log('[Calendar Sync Settings] No settings found, returning defaults');
       syncSettings = {
-        sync_statuses: ['confirmed', 'checked_in', 'in_progress'],
+        sync_statuses: ['confirmed', 'in_progress'],
         auto_sync_enabled: true,
         sync_past_appointments: false,
         sync_completed_appointments: false,

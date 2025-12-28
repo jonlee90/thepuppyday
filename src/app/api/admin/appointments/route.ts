@@ -579,7 +579,7 @@ export async function POST(request: NextRequest) {
         groomer_id: data.groomer_id || null,
         scheduled_at: scheduledAt.toISOString(),
         duration_minutes: service.duration_minutes,
-        status: data.source === 'walk_in' ? 'checked_in' : 'pending',
+        status: data.source === 'walk_in' ? 'in_progress' : 'pending',
         payment_status: data.payment_status,
         total_price: priceBreakdown.total,
         notes: data.notes || null,

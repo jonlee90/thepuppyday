@@ -6,7 +6,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { DollarSign, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { DashboardStats as StatsData } from '@/app/api/admin/dashboard/stats/route';
 
@@ -110,38 +110,23 @@ export function DashboardStats({ initialStats, onRetry }: DashboardStatsProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <StatCard
-        title="Today's Revenue"
-        value={stats?.todayRevenue ?? null}
-        icon={DollarSign}
+        title="Completed Revenue"
+        value={stats?.completedRevenue ?? null}
+        icon={CheckCircle}
         format="currency"
         loading={loading}
-        error={error || stats?.todayRevenue === null}
+        error={error || stats?.completedRevenue === null}
         onRetry={handleRetry}
       />
       <StatCard
-        title="Pending Confirmations"
-        value={stats?.pendingConfirmations ?? null}
+        title="Pending Revenue"
+        value={stats?.pendingRevenue ?? null}
         icon={Clock}
+        format="currency"
         loading={loading}
-        error={error || stats?.pendingConfirmations === null}
-        onRetry={handleRetry}
-      />
-      <StatCard
-        title="Total Appointments"
-        value={stats?.totalAppointments ?? null}
-        icon={Calendar}
-        loading={loading}
-        error={error || stats?.totalAppointments === null}
-        onRetry={handleRetry}
-      />
-      <StatCard
-        title="Completed Today"
-        value={stats?.completedAppointments ?? null}
-        icon={CheckCircle}
-        loading={loading}
-        error={error || stats?.completedAppointments === null}
+        error={error || stats?.pendingRevenue === null}
         onRetry={handleRetry}
       />
     </div>
