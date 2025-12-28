@@ -26,7 +26,7 @@ const appointmentRequestSchema = appointmentCreationSchema
     new_pet: z
       .object({
         name: z.string().min(1),
-        breed_id: z.string().uuid(),
+        breed_id: z.string().uuid().optional(),
         size: z.enum(['small', 'medium', 'large', 'xlarge']),
         weight: z.number().positive().optional(),
         breed_custom: z.string().optional(),
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
         .insert({
           owner_id: customerId,
           name: validated.new_pet.name,
-          breed_id: validated.new_pet.breed_id,
+          breed_id: validated.new_pet.breed_id || null,
           size: validated.new_pet.size,
           weight: validated.new_pet.weight || null,
           breed_custom: validated.new_pet.breed_custom || null,
