@@ -250,7 +250,7 @@ export async function cleanupOrphanedMappings(
 
     // Get all event mappings for this connection
     const { data: mappings, error: mappingsError } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .select('id, appointment_id, google_event_id')
       .eq('connection_id', connection.id);
 

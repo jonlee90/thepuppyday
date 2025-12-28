@@ -40,7 +40,7 @@ export async function GET() {
 
     // Get total synced events count
     const { count: totalSyncedCount } = await (supabase as AppSupabaseClient)
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .select('*', { count: 'exact', head: true })
       .eq('connection_id', connection.id);
 

@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     // Check if any events are already imported
     const googleEventIds = googleEvents.map(e => e.id).filter(Boolean) as string[];
     const { data: existingMappings } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .select('google_event_id')
       .in('google_event_id', googleEventIds);
 

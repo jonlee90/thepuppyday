@@ -1,6 +1,6 @@
 /**
  * Event Mapping Repository
- * Database operations for calendar_event_mappings table
+ * Database operations for calendar_event_mapping table
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -35,7 +35,7 @@ export async function createEventMapping(
 ): Promise<CalendarEventMapping> {
   try {
     const { data: mapping, error } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .insert({
         appointment_id: data.appointment_id,
         connection_id: data.connection_id,
@@ -84,7 +84,7 @@ export async function getEventMappingByAppointmentId(
 ): Promise<CalendarEventMapping | null> {
   try {
     const { data, error } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .select('*')
       .eq('appointment_id', appointmentId)
       .single();
@@ -127,7 +127,7 @@ export async function getEventMappingByEventId(
 ): Promise<CalendarEventMapping | null> {
   try {
     const { data, error } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .select('*')
       .eq('google_event_id', eventId)
       .single();
@@ -166,7 +166,7 @@ export async function updateEventMappingLastSync(
 ): Promise<CalendarEventMapping> {
   try {
     const { data, error } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .update({
         last_synced_at: new Date().toISOString(),
         sync_direction: syncDirection,
@@ -213,7 +213,7 @@ export async function deleteEventMapping(
 ): Promise<void> {
   try {
     const { error } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .delete()
       .eq('appointment_id', appointmentId);
 
@@ -242,7 +242,7 @@ export async function deleteEventMappingByEventId(
 ): Promise<void> {
   try {
     const { error } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .delete()
       .eq('google_event_id', eventId);
 
@@ -276,7 +276,7 @@ export async function getEventMappingsByConnection(
 ): Promise<CalendarEventMapping[]> {
   try {
     const { data, error } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .select('*')
       .eq('connection_id', connectionId)
       .order('created_at', { ascending: false });
@@ -330,7 +330,7 @@ export async function getSyncedAppointmentsCount(
 ): Promise<number> {
   try {
     const { count, error } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .select('*', { count: 'exact', head: true })
       .eq('connection_id', connectionId);
 
@@ -362,7 +362,7 @@ export async function deleteEventMappingsByConnection(
 ): Promise<void> {
   try {
     const { error } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .delete()
       .eq('connection_id', connectionId);
 
@@ -392,7 +392,7 @@ export async function getRecentEventMappings(
 ): Promise<CalendarEventMapping[]> {
   try {
     const { data, error } = await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .select('*')
       .eq('connection_id', connectionId)
       .order('last_synced_at', { ascending: false })

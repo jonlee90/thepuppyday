@@ -295,7 +295,7 @@ async function handleDeletedAppointment(
 
     // Delete event mapping (should cascade from appointment deletion, but double-check)
     await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .delete()
       .eq('google_event_id', eventId);
 
@@ -346,7 +346,7 @@ async function recreateDeletedEvent(
 
     // Update event mapping with new event ID
     await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .update({
         google_event_id: createdEvent.id,
         last_synced_at: new Date().toISOString(),
@@ -454,7 +454,7 @@ async function resolveConflict(
 
     // Update event mapping timestamp
     await supabase
-      .from('calendar_event_mappings')
+      .from('calendar_event_mapping')
       .update({
         last_synced_at: new Date().toISOString(),
         sync_direction: 'push',
