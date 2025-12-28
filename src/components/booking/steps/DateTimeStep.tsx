@@ -157,12 +157,17 @@ export function DateTimeStep() {
               </svg>
               <div>
                 <p className="text-[15px] font-medium text-[#434E54]">
-                  {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })} at {formatTimeDisplay(selectedTimeSlot)}
+                  {(() => {
+                    // Parse YYYY-MM-DD as local date (not UTC)
+                    const [year, month, day] = selectedDate.split('-').map(Number);
+                    const date = new Date(year, month - 1, day);
+                    return date.toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    });
+                  })()} at {formatTimeDisplay(selectedTimeSlot)}
                 </p>
               </div>
             </div>

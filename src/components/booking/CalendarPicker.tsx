@@ -34,7 +34,9 @@ export function CalendarPicker({
 
   const [currentMonth, setCurrentMonth] = useState(() => {
     if (selectedDate) {
-      const selected = new Date(selectedDate + 'T00:00:00');
+      // Parse date string as YYYY-MM-DD in local timezone
+      const [year, month, day] = selectedDate.split('-').map(Number);
+      const selected = new Date(year, month - 1, day);
       return { year: selected.getFullYear(), month: selected.getMonth() };
     }
     return { year: today.getFullYear(), month: today.getMonth() };
@@ -42,12 +44,18 @@ export function CalendarPicker({
 
   // Calculate min and max dates
   const minDateObj = useMemo(() => {
-    if (minDate) return new Date(minDate + 'T00:00:00');
+    if (minDate) {
+      const [year, month, day] = minDate.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
     return today;
   }, [minDate]);
 
   const maxDateObj = useMemo(() => {
-    if (maxDate) return new Date(maxDate + 'T00:00:00');
+    if (maxDate) {
+      const [year, month, day] = maxDate.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
     // Default to 2 months ahead
     const max = new Date(today);
     max.setMonth(max.getMonth() + 2);

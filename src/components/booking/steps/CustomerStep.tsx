@@ -12,6 +12,7 @@ import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
 import { guestInfoSchema } from '@/lib/booking/validation';
 import { z } from 'zod';
+import { usePhoneMask, formatPhoneNumber } from '@/hooks/usePhoneMask';
 
 type CustomerStepMode = 'customer' | 'admin' | 'walkin';
 
@@ -34,6 +35,7 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
     guestInfo,
     setSelectedCustomerId,
     setGuestInfo,
+    nextStep,
   } = useBookingStore();
 
   const { isAuthenticated, user, login } = useAuthStore();
@@ -58,6 +60,15 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [duplicateEmailError, setDuplicateEmailError] = useState('');
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+
+  // Phone masking hook for new customer form
+  const phoneInput = usePhoneMask(guestInfo?.phone || '');
+
+  // Sync phoneInput with newCustomerForm
+  useEffect(() => {
+    setNewCustomerForm((prev) => ({ ...prev, phone: phoneInput.rawValue }));
+  }, [phoneInput.rawValue]);
 
   // Debounced search (admin/walk-in modes only)
   useEffect(() => {
@@ -187,26 +198,44 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
 
   // Handle new customer form submission
   const handleNewCustomerSubmit = useCallback(async () => {
-    const isValid = await validateNewCustomerForm();
-    if (!isValid) return;
+    setIsCreatingCustomer(true);
 
-    // Set as new customer (will be created on booking confirmation)
-    setSelectedCustomerId('new');
-    setGuestInfo({
-      firstName: newCustomerForm.first_name,
-      lastName: newCustomerForm.last_name,
-      email: newCustomerForm.email,
-      phone: newCustomerForm.phone,
-    });
-    setSelectedCustomer({
-      id: 'new',
-      first_name: newCustomerForm.first_name,
-      last_name: newCustomerForm.last_name,
-      email: newCustomerForm.email,
-      phone: newCustomerForm.phone,
-      full_name: `${newCustomerForm.first_name} ${newCustomerForm.last_name}`,
-    });
-  }, [newCustomerForm, validateNewCustomerForm, setSelectedCustomerId, setGuestInfo]);
+    try {
+      const isValid = await validateNewCustomerForm();
+      if (!isValid) {
+        setIsCreatingCustomer(false);
+        return;
+      }
+
+      // Set as new customer (will be created on booking confirmation)
+      setSelectedCustomerId('new');
+      setGuestInfo({
+        firstName: newCustomerForm.first_name,
+        lastName: newCustomerForm.last_name,
+        email: newCustomerForm.email,
+        phone: newCustomerForm.phone,
+      });
+      setSelectedCustomer({
+        id: 'new',
+        first_name: newCustomerForm.first_name,
+        last_name: newCustomerForm.last_name,
+        email: newCustomerForm.email,
+        phone: newCustomerForm.phone,
+        full_name: `${newCustomerForm.first_name} ${newCustomerForm.last_name}`,
+      });
+
+      // Clear loading state before auto-advancing
+      setIsCreatingCustomer(false);
+
+      // Auto-advance to next step after customer is created and selected
+      setTimeout(() => {
+        nextStep();
+      }, 300); // Small delay for smooth UX (let user see the confirmation)
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      setIsCreatingCustomer(false);
+    }
+  }, [newCustomerForm, validateNewCustomerForm, setSelectedCustomerId, setGuestInfo, nextStep]);
 
   const isNewCustomer = selectedCustomerId === 'new';
 
@@ -243,7 +272,7 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
               {user.first_name} {user.last_name}
             </div>
             <div className="text-sm text-[#6B7280]">{user.email}</div>
-            {user.phone && <div className="text-sm text-[#6B7280]">{user.phone}</div>}
+            {user.phone && <div className="text-sm text-[#6B7280]">{formatPhoneNumber(user.phone)}</div>}
           </div>
         </div>
       );
@@ -396,10 +425,9 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
               </label>
               <input
                 type="tel"
-                value={newCustomerForm.phone}
-                onChange={(e) =>
-                  setNewCustomerForm({ ...newCustomerForm, phone: e.target.value })
-                }
+                value={phoneInput.value}
+                onChange={phoneInput.onChange}
+                onPaste={phoneInput.onPaste}
                 className={`input input-bordered w-full h-12 bg-white rounded-lg ${
                   formErrors.phone ? 'border-[#EF4444]' : 'border-[#E5E5E5]'
                 } focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20`}
@@ -412,11 +440,20 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
 
             <button
               onClick={handleNewCustomerSubmit}
-              disabled={!isFormComplete}
+              disabled={!isFormComplete || isCreatingCustomer}
               className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none w-full h-12 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-[#434E54]/40 disabled:cursor-not-allowed"
             >
-              <UserPlus className="w-5 h-5 mr-2" />
-              Continue
+              {isCreatingCustomer ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-5 h-5 mr-2" />
+                  Continue
+                </>
+              )}
             </button>
 
             <div className="text-center">
@@ -448,7 +485,7 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
               {selectedCustomer?.email || guestInfo?.email}
             </div>
             <div className="text-sm text-[#6B7280]">
-              {selectedCustomer?.phone || guestInfo?.phone}
+              {formatPhoneNumber(selectedCustomer?.phone || guestInfo?.phone || '')}
             </div>
           </div>
         )}
@@ -517,7 +554,7 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
                     {customer.first_name} {customer.last_name}
                   </div>
                   <div className="text-sm text-[#6B7280] truncate">{customer.email}</div>
-                  <div className="text-sm text-[#6B7280]">{customer.phone}</div>
+                  <div className="text-sm text-[#6B7280]">{formatPhoneNumber(customer.phone)}</div>
                 </div>
               </label>
             ))}
@@ -613,10 +650,9 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
             </label>
             <input
               type="tel"
-              value={newCustomerForm.phone}
-              onChange={(e) =>
-                setNewCustomerForm({ ...newCustomerForm, phone: e.target.value })
-              }
+              value={phoneInput.value}
+              onChange={phoneInput.onChange}
+              onPaste={phoneInput.onPaste}
               className={`input input-bordered w-full h-12 bg-white rounded-lg ${
                 formErrors.phone ? 'border-[#EF4444]' : 'border-[#E5E5E5]'
               } focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20`}
@@ -629,10 +665,20 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
 
           <button
             onClick={handleNewCustomerSubmit}
-            disabled={!isFormComplete}
+            disabled={!isFormComplete || isCreatingCustomer}
             className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none w-full h-12 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-[#434E54]/40 disabled:cursor-not-allowed"
           >
-            Use This Customer
+            {isCreatingCustomer ? (
+              <>
+                <span className="loading loading-spinner loading-sm"></span>
+                Creating...
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-5 h-5 mr-2" />
+                Use This Customer
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -655,7 +701,7 @@ export function CustomerStep({ mode = 'customer' }: CustomerStepProps) {
             {selectedCustomer?.email || guestInfo?.email}
           </div>
           <div className="text-sm text-[#6B7280]">
-            {selectedCustomer?.phone || guestInfo?.phone}
+            {formatPhoneNumber(selectedCustomer?.phone || guestInfo?.phone || '')}
           </div>
         </div>
       )}

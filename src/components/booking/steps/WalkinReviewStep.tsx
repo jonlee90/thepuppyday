@@ -85,7 +85,14 @@ export function WalkinReviewStep({ onComplete, customerId }: WalkinReviewStepPro
 
       // Set appointment to NOW for walk-in
       const now = new Date();
-      const appointmentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+      // CRITICAL: Use local date parsing, NOT toISOString() which uses UTC
+      // Format date as YYYY-MM-DD using local time components
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const appointmentDate = `${year}-${month}-${day}`; // YYYY-MM-DD
+
       const appointmentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // HH:MM
 
       const payload = {

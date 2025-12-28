@@ -29,6 +29,7 @@ import { AppointmentHistoryList } from './AppointmentHistoryList';
 import { CustomerFlagBadge, SingleFlagBadge } from './CustomerFlagBadge';
 import { CustomerFlagForm, RemoveFlagConfirmation } from './CustomerFlagForm';
 import { isWalkinPlaceholderEmail } from '@/lib/utils';
+import { usePhoneMask, formatPhoneNumber } from '@/hooks/usePhoneMask';
 import type { User as UserType, Pet, CustomerFlag, CustomerMembership } from '@/types/database';
 
 interface CustomerDetail extends UserType {
@@ -58,6 +59,9 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
   });
   const [savingContact, setSavingContact] = useState(false);
 
+  // Phone masking for contact editing
+  const phoneInput = usePhoneMask('');
+
   // Pet expansion state
   const [expandedPetIds, setExpandedPetIds] = useState<Set<string>>(new Set());
 
@@ -70,6 +74,11 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
   useEffect(() => {
     fetchCustomer();
   }, [customerId]);
+
+  // Sync phone input with editedContact
+  useEffect(() => {
+    setEditedContact((prev) => ({ ...prev, phone: phoneInput.rawValue }));
+  }, [phoneInput.rawValue]);
 
   const fetchCustomer = async () => {
     setLoading(true);
@@ -90,6 +99,7 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
         email: result.data.email,
         phone: result.data.phone || '',
       });
+      phoneInput.setValue(result.data.phone || '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -319,17 +329,16 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
             {isEditingContact ? (
               <input
                 type="tel"
-                value={editedContact.phone}
-                onChange={(e) =>
-                  setEditedContact({ ...editedContact, phone: e.target.value })
-                }
+                value={phoneInput.value}
+                onChange={phoneInput.onChange}
+                onPaste={phoneInput.onPaste}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200
                            focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]"
               />
             ) : (
               <div className="flex items-center gap-2 text-[#434E54]">
                 <Phone className="w-4 h-4" />
-                <p>{customer.phone || 'Not provided'}</p>
+                <p>{formatPhoneNumber(customer.phone || '')}</p>
               </div>
             )}
           </div>

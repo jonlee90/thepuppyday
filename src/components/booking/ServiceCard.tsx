@@ -1,10 +1,12 @@
 /**
  * Service card component for booking wizard
+ * Editorial magazine-inspired design with refined interactions
  */
 
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { getServicePriceRange, formatDuration } from '@/lib/booking/pricing';
@@ -18,42 +20,61 @@ interface ServiceCardProps {
 
 export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps) {
   const priceRange = getServicePriceRange(service);
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <motion.button
       onClick={onSelect}
-      whileHover={{ y: -4, scale: 1.01 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       className={cn(
-        'w-full text-left bg-white rounded-2xl overflow-hidden',
-        'transition-all duration-300 group',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#434E54]/50 focus-visible:ring-offset-2',
+        'group relative w-full text-left bg-white rounded-xl overflow-hidden',
+        'transition-shadow duration-300',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4A261] focus-visible:ring-offset-4',
         isSelected
-          ? 'shadow-2xl ring-2 ring-[#434E54] scale-[1.02]'
-          : 'shadow-lg hover:shadow-2xl'
+          ? 'shadow-[0_20px_60px_-15px_rgba(244,162,97,0.4)] ring-1 ring-[#F4A261]/30'
+          : 'shadow-[0_8px_30px_-5px_rgba(67,78,84,0.15)] hover:shadow-[0_20px_60px_-15px_rgba(67,78,84,0.25)]'
       )}
       aria-pressed={isSelected}
       aria-label={`Select ${service.name} service`}
     >
-      {/* Enhanced image container */}
-      <div className="relative aspect-video sm:aspect-[2/1] md:aspect-[5/3] bg-[#EAE0D5] overflow-hidden">
+      {/* Editorial Image Container - 3:2 aspect ratio */}
+      <div className="relative aspect-[3/2] bg-gradient-to-br from-[#EAE0D5] to-[#F8EEE5] overflow-hidden">
         {service.image_url ? (
           <>
             <Image
               src={service.image_url}
               alt={service.name}
               fill
-              className={cn(
-                "object-contain scale-[1.2] transition-transform duration-500"
-              )}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-contain scale-105"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
             />
-            {/* Gradient overlay for better text contrast */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#434E54]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+            {/* Selected glow overlay */}
+            <AnimatePresence>
+              {isSelected && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-gradient-to-br from-[#F4A261]/20 to-transparent pointer-events-none"
+                />
+              )}
+            </AnimatePresence>
           </>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-[#434E54]/20">
-            <svg className="w-20 h-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg
+              className="w-20 h-20 text-[#434E54]/20"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1}
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -63,20 +84,42 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
           </div>
         )}
 
-        {/* Enhanced selected indicator */}
+        {/* Duration Badge - Top Left */}
+        <div className="absolute top-4 left-4">
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/95 backdrop-blur-sm shadow-lg"
+          >
+            <svg
+              className="w-3.5 h-3.5 text-[#434E54]/70"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-xs font-semibold text-[#434E54]">
+              {formatDuration(service.duration_minutes)}
+            </span>
+          </motion.div>
+        </div>
+
+        {/* Selected Check - Top Right */}
         <AnimatePresence>
           {isSelected && (
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               exit={{ scale: 0, rotate: 180 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="absolute top-3 right-3 w-12 h-12 bg-[#434E54] rounded-full
-                         flex items-center justify-center shadow-lg shadow-[#434E54]/50
-                         ring-4 ring-white"
+              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              className="absolute top-4 right-4 w-10 h-10 bg-[#F4A261] rounded-full
+                         flex items-center justify-center shadow-lg"
             >
               <svg
-                className="w-7 h-7 text-white"
+                className="w-6 h-6 text-white"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -89,61 +132,89 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
         </AnimatePresence>
       </div>
 
-      {/* Enhanced content */}
-      <div className="p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <h3 className="font-bold text-[#434E54] text-lg sm:text-xl leading-tight">
-            {service.name}
-          </h3>
+      {/* Editorial Content Section */}
+      <div className="relative p-6">
+        {/* Service Name - Editorial headline style */}
+        <h3 className="text-2xl font-bold text-[#434E54] tracking-tight leading-tight mb-3">
+          {service.name}
+        </h3>
 
-          {/* Duration badge */}
-          <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAE0D5] text-xs font-medium text-[#434E54] flex-shrink-0">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {formatDuration(service.duration_minutes)}
-          </div>
-        </div>
-
+        {/* Description - Editorial body text */}
         {service.description && (
-          <p className="text-sm text-[#434E54]/70 line-clamp-2 mb-4 leading-relaxed">
+          <p className="text-[15px] text-[#434E54]/65 leading-[1.6] mb-5 line-clamp-2">
             {service.description}
           </p>
         )}
 
-        {/* Enhanced pricing section */}
-        <div className="flex items-end justify-between pt-4 border-t border-[#434E54]/20">
-          <div>
-            <p className="text-xs text-[#434E54]/60 mb-1">
-              {priceRange.min !== priceRange.max ? 'Starting at' : 'Price'}
-            </p>
-            <span className="text-2xl font-bold text-[#434E54]">
-              {priceRange.formatted}
-            </span>
-            {priceRange.min !== priceRange.max && (
-              <p className="text-xs text-[#434E54]/60 mt-1">
-                Based on pet size
+        {/* Pricing Section - Magazine price tag aesthetic */}
+        <div className="relative pt-4 mt-4 border-t border-[#434E54]/10">
+          <div className="flex items-end justify-between">
+            {/* Price Display */}
+            <div className="space-y-1">
+              <p className="text-xs uppercase tracking-wide font-medium text-[#434E54]/50">
+                {priceRange.min !== priceRange.max ? 'From' : 'Price'}
               </p>
-            )}
-          </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[36px] font-bold text-[#434E54] leading-none tracking-tight">
+                  {priceRange.formatted}
+                </span>
+              </div>
+              {priceRange.min !== priceRange.max && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-xs text-[#434E54]/50 mt-1"
+                >
+                  Based on pet size
+                </motion.p>
+              )}
+            </div>
 
-          {/* CTA indicator */}
-          <motion.div
-            animate={isSelected ? { x: [0, 4, 0] } : {}}
-            transition={{ repeat: isSelected ? Infinity : 0, duration: 1.5 }}
-            className={cn(
-              'w-10 h-10 rounded-full flex items-center justify-center',
-              'transition-colors duration-300',
-              isSelected
-                ? 'bg-[#434E54] text-white'
-                : 'bg-[#EAE0D5] group-hover:bg-[#EAE0D5]/80'
-            )}
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </motion.div>
+            {/* Refined CTA Arrow */}
+            <motion.div
+              animate={
+                isSelected
+                  ? { x: [0, 4, 0] }
+                  : { x: 0 }
+              }
+              transition={
+                isSelected
+                  ? { repeat: Infinity, duration: 1.5, ease: 'easeInOut' }
+                  : { duration: 0.2 }
+              }
+              className={cn(
+                'w-12 h-12 rounded-full flex items-center justify-center',
+                'transition-colors duration-200',
+                isSelected
+                  ? 'bg-[#F4A261] text-white shadow-lg shadow-[#F4A261]/30'
+                  : 'bg-[#EAE0D5] text-[#434E54] group-hover:bg-[#434E54] group-hover:text-white'
+              )}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </motion.div>
+          </div>
         </div>
+
+        {/* Selected state accent line */}
+        {isSelected && (
+          <motion.div
+            className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-[#F4A261] to-[#434E54]"
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            exit={{ scaleX: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            style={{ transformOrigin: 'left' }}
+          />
+        )}
       </div>
     </motion.button>
   );

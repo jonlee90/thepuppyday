@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { DashboardSkeleton } from '@/components/ui/skeletons';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { formatPhoneNumber } from '@/lib/utils/phone';
 
 // Get user info from session
 async function getUserInfo() {
@@ -98,7 +99,7 @@ export default async function ProfilePage() {
                     </div>
                     <div>
                       <p className="text-xs text-[#434E54]/50 uppercase tracking-wide mb-1">Phone</p>
-                      <p className="font-semibold text-[#434E54]">{user.phone || '-'}</p>
+                      <p className="font-semibold text-[#434E54]">{user.phone ? formatPhoneNumber(user.phone) : '-'}</p>
                     </div>
                   </div>
                 </div>

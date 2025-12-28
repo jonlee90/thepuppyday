@@ -57,7 +57,7 @@ export default function AppointmentsPage() {
           <div className="flex gap-3">
             <button
               onClick={() => setIsImportModalOpen(true)}
-              className="btn bg-white text-[#434E54] hover:bg-[#FFFBF7] border border-gray-200 shadow-sm"
+              className="btn bg-white text-[#434E54] hover:bg-[#FFFBF7] border border-[#E5E5E5] shadow-sm"
             >
               <Upload className="w-5 h-5 mr-2" />
               Import CSV
@@ -75,7 +75,7 @@ export default function AppointmentsPage() {
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
               appointmentsView === 'calendar'
                 ? 'bg-[#434E54] text-white shadow-md'
-                : 'bg-white text-[#434E54] hover:bg-[#FFFBF7] border border-gray-200'
+                : 'bg-white text-[#434E54] hover:bg-[#FFFBF7] border border-[#E5E5E5]'
             }`}
           >
             <Calendar className="w-5 h-5" />
@@ -86,7 +86,7 @@ export default function AppointmentsPage() {
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
               appointmentsView === 'list'
                 ? 'bg-[#434E54] text-white shadow-md'
-                : 'bg-white text-[#434E54] hover:bg-[#FFFBF7] border border-gray-200'
+                : 'bg-white text-[#434E54] hover:bg-[#FFFBF7] border border-[#E5E5E5]'
             }`}
           >
             <List className="w-5 h-5" />

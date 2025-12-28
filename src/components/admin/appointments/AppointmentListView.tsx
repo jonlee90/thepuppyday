@@ -393,9 +393,9 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
             placeholder="Search by customer name, pet name, email, or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#E5E5E5] bg-white
                      focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
-                     placeholder:text-gray-400 transition-colors duration-200"
+                     placeholder:text-[#9CA3AF] transition-colors duration-200"
           />
         </div>
 
@@ -408,7 +408,7 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
               setFilters((prev) => ({ ...prev, status: e.target.value as AppointmentStatus | '' }));
               setPage(1);
             }}
-            className="select select-bordered bg-white border-gray-200 focus:border-[#434E54] focus:outline-none"
+            className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
           >
             <option value="">All Statuses</option>
             <option value="pending">Pending</option>
@@ -427,7 +427,7 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
               setFilters((prev) => ({ ...prev, service: e.target.value }));
               setPage(1);
             }}
-            className="select select-bordered bg-white border-gray-200 focus:border-[#434E54] focus:outline-none"
+            className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
           >
             <option value="">All Services</option>
             {services.map((service) => (
@@ -441,7 +441,7 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
           <select
             value={datePreset}
             onChange={(e) => handleDatePresetChange(e.target.value)}
-            className="select select-bordered bg-white border-gray-200 focus:border-[#434E54] focus:outline-none"
+            className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
           >
             <option value="">All Dates</option>
             {DATE_RANGE_PRESETS.map((preset) => (
@@ -458,21 +458,33 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
                 type="date"
                 value={filters.dateFrom ? format(new Date(filters.dateFrom), 'yyyy-MM-dd') : ''}
                 onChange={(e) => {
-                  const date = e.target.value ? new Date(e.target.value).toISOString() : '';
-                  setFilters((prev) => ({ ...prev, dateFrom: date }));
+                  if (e.target.value) {
+                    // Parse YYYY-MM-DD as local date, then convert to ISO for storage
+                    const [year, month, day] = e.target.value.split('-').map(Number);
+                    const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+                    setFilters((prev) => ({ ...prev, dateFrom: localDate.toISOString() }));
+                  } else {
+                    setFilters((prev) => ({ ...prev, dateFrom: '' }));
+                  }
                   setPage(1);
                 }}
-                className="input input-bordered bg-white border-gray-200 focus:border-[#434E54] focus:outline-none"
+                className="input input-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
               />
               <input
                 type="date"
                 value={filters.dateTo ? format(new Date(filters.dateTo), 'yyyy-MM-dd') : ''}
                 onChange={(e) => {
-                  const date = e.target.value ? new Date(e.target.value).toISOString() : '';
-                  setFilters((prev) => ({ ...prev, dateTo: date }));
+                  if (e.target.value) {
+                    // Parse YYYY-MM-DD as local date, set to end of day, then convert to ISO
+                    const [year, month, day] = e.target.value.split('-').map(Number);
+                    const localDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+                    setFilters((prev) => ({ ...prev, dateTo: localDate.toISOString() }));
+                  } else {
+                    setFilters((prev) => ({ ...prev, dateTo: '' }));
+                  }
                   setPage(1);
                 }}
-                className="input input-bordered bg-white border-gray-200 focus:border-[#434E54] focus:outline-none"
+                className="input input-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
               />
             </>
           )}

@@ -403,9 +403,9 @@ export function AppointmentDetailModal({
       {/* Backdrop */}
       <div className="modal-backdrop bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
-      <div className="modal-box bg-white max-w-[900px] max-h-[90vh] overflow-y-auto shadow-lg rounded-xl p-0 animate-[scale-in_200ms_ease-out]">
-        {/* Header - Sticky */}
-        <div className="sticky top-0 z-10 bg-white px-8 py-6 border-b border-[#E5E5E5] rounded-t-xl">
+      <div className="modal-box bg-[#FAFAFA] max-w-[1000px] max-h-[90vh] overflow-y-auto shadow-2xl rounded-2xl p-0 animate-[scale-in_200ms_ease-out]">
+        {/* Header - Sticky with Dark Gradient */}
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-[#434E54] to-[#363F44] px-8 py-6 border-b-4 border-[#F8EEE5]/20 rounded-t-2xl shadow-lg">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               {appointment && (
@@ -413,30 +413,30 @@ export function AppointmentDetailModal({
                   {/* Status Badge */}
                   <div className="mb-3">
                     <span
-                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${getStatusBadgeColor(appointment.status)}`}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold shadow-md ${getStatusBadgeColor(appointment.status)}`}
                       role="status"
                       aria-label={`Appointment status: ${getStatusLabel(appointment.status)}`}
                     >
                       {getStatusLabel(appointment.status)}
                     </span>
                     {isPast && !isTerminal && (
-                      <span className="ml-2 text-sm text-[#6B7280]">(Past appointment)</span>
+                      <span className="ml-2 text-sm text-white/80">(Past appointment)</span>
                     )}
                   </div>
 
                   {/* Title */}
-                  <h3 id="appointment-modal-title" className="text-2xl font-bold text-[#434E54] mb-1">
+                  <h3 id="appointment-modal-title" className="text-3xl font-bold text-white mb-2">
                     {isEditing ? 'Edit Appointment' : `${appointment.pet?.name}'s Grooming Appointment`}
                   </h3>
                   {!isEditing && appointment.customer && (
-                    <p className="text-lg text-[#6B7280]">
+                    <p className="text-lg text-white/90">
                       Customer: {appointment.customer.first_name} {appointment.customer.last_name}
                     </p>
                   )}
                 </>
               )}
               {!appointment && (
-                <h3 id="appointment-modal-title" className="text-2xl font-bold text-[#434E54]">
+                <h3 id="appointment-modal-title" className="text-3xl font-bold text-white">
                   Appointment Details
                 </h3>
               )}
@@ -447,7 +447,7 @@ export function AppointmentDetailModal({
               {appointment && !isEditing && (
                 <button
                   onClick={handleStartEdit}
-                  className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none transition-all duration-200 hover:shadow-md"
+                  className="btn btn-sm bg-white text-[#434E54] hover:bg-[#F8EEE5] border-none transition-all duration-200 hover:shadow-lg font-semibold"
                   aria-label="Edit appointment details"
                 >
                   <Edit2 className="w-4 h-4" />
@@ -459,7 +459,7 @@ export function AppointmentDetailModal({
                   <button
                     onClick={handleSaveEdit}
                     disabled={saving}
-                    className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none transition-all duration-200 hover:shadow-md"
+                    className="btn btn-sm bg-white text-[#434E54] hover:bg-[#F8EEE5] border-none transition-all duration-200 hover:shadow-lg font-semibold"
                   >
                     {saving ? (
                       <span className="loading loading-spinner loading-sm" />
@@ -471,7 +471,7 @@ export function AppointmentDetailModal({
                   <button
                     onClick={handleCancelEdit}
                     disabled={saving}
-                    className="btn btn-sm btn-ghost text-[#434E54] hover:bg-[#EAE0D5] transition-all duration-200"
+                    className="btn btn-sm bg-white/20 text-white hover:bg-white/30 border-none transition-all duration-200"
                   >
                     <XCircle className="w-4 h-4" />
                     Cancel
@@ -480,7 +480,7 @@ export function AppointmentDetailModal({
               )}
               <button
                 onClick={handleClose}
-                className="btn btn-sm btn-circle btn-ghost text-[#6B7280] hover:bg-[#EAE0D5] transition-all duration-200"
+                className="btn btn-sm btn-circle bg-white/20 text-white hover:bg-white/30 border-none transition-all duration-200"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
@@ -537,45 +537,51 @@ export function AppointmentDetailModal({
               )}
 
               {/* Customer & Pet Information - Two Column Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Customer Information Card */}
-                <div className="card bg-white border border-[#E5E5E5] shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl">
-                  <div className="card-body p-6">
-                    <h4 className="card-title text-base font-semibold text-[#434E54] mb-4 flex items-center gap-2">
-                      <User className="w-5 h-5 text-[#6B7280]" />
-                      Customer
+                <div className="card bg-white border border-[#E5E5E5]/50 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden">
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] px-5 py-4 border-b border-[#E5E5E5]/50">
+                    <h4 className="text-base font-bold text-[#434E54] flex items-center gap-2.5">
+                      <div className="p-2 bg-white rounded-lg shadow-sm">
+                        <User className="w-5 h-5 text-[#434E54]" />
+                      </div>
+                      Customer Information
                     </h4>
+                  </div>
+                  {/* Body */}
+                  <div className="card-body p-5">
                     <div className="space-y-4">
                       <div>
-                        <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1">Name</div>
-                        <div className="text-sm font-medium text-[#434E54]">
+                        <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Name</div>
+                        <div className="text-sm font-semibold text-[#434E54]">
                           {appointment.customer
                             ? `${appointment.customer.first_name} ${appointment.customer.last_name}`
                             : 'Unknown'}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1">Email</div>
+                        <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Email</div>
                         <a
                           href={`mailto:${appointment.customer?.email}`}
-                          className="text-sm font-medium text-[#434E54] hover:text-[#363F44] flex items-center gap-1.5 transition-colors duration-200 hover:underline"
+                          className="text-sm font-medium text-[#434E54] hover:text-[#363F44] flex items-center gap-2 transition-colors duration-200 hover:underline"
                         >
                           <Mail className="w-4 h-4 text-[#6B7280]" />
                           {appointment.customer?.email}
                         </a>
                       </div>
                       <div>
-                        <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1">Phone</div>
+                        <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Phone</div>
                         {appointment.customer?.phone ? (
                           <a
                             href={`tel:${appointment.customer.phone}`}
-                            className="text-sm font-medium text-[#434E54] hover:text-[#363F44] flex items-center gap-1.5 transition-colors duration-200 hover:underline"
+                            className="text-sm font-medium text-[#434E54] hover:text-[#363F44] flex items-center gap-2 transition-colors duration-200 hover:underline"
                           >
                             <Phone className="w-4 h-4 text-[#6B7280]" />
                             {appointment.customer.phone}
                           </a>
                         ) : (
-                          <span className="text-sm text-[#9CA3AF]">Not provided</span>
+                          <span className="text-sm text-[#9CA3AF] italic">Not provided</span>
                         )}
                       </div>
                     </div>
@@ -583,41 +589,47 @@ export function AppointmentDetailModal({
                 </div>
 
                 {/* Pet Information Card */}
-                <div className="card bg-white border border-[#E5E5E5] shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl">
-                  <div className="card-body p-6">
-                    <h4 className="card-title text-base font-semibold text-[#434E54] mb-4 flex items-center gap-2">
-                      <Scissors className="w-5 h-5 text-[#6B7280]" />
-                      Pet
+                <div className="card bg-white border border-[#E5E5E5]/50 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden">
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] px-5 py-4 border-b border-[#E5E5E5]/50">
+                    <h4 className="text-base font-bold text-[#434E54] flex items-center gap-2.5">
+                      <div className="p-2 bg-white rounded-lg shadow-sm">
+                        <Scissors className="w-5 h-5 text-[#434E54]" />
+                      </div>
+                      Pet Information
                     </h4>
+                  </div>
+                  {/* Body */}
+                  <div className="card-body p-5">
                     <div className="space-y-4">
                       <div>
-                        <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1">Name</div>
-                        <div className="text-sm font-medium text-[#434E54]">{appointment.pet?.name}</div>
+                        <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Name</div>
+                        <div className="text-sm font-semibold text-[#434E54]">{appointment.pet?.name}</div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1">Size</div>
-                          <div className="text-sm font-medium text-[#434E54] capitalize">
+                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Size</div>
+                          <div className="text-sm font-semibold text-[#434E54] capitalize">
                             {appointment.pet?.size}
                           </div>
                         </div>
                         {appointment.pet?.weight && (
                           <div>
-                            <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1">Weight</div>
-                            <div className="text-sm font-medium text-[#434E54]">{appointment.pet.weight} lbs</div>
+                            <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Weight</div>
+                            <div className="text-sm font-semibold text-[#434E54]">{appointment.pet.weight} lbs</div>
                           </div>
                         )}
                       </div>
                       {appointment.pet?.medical_info && (
-                        <div>
-                          <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1">Medical Info</div>
-                          <div className="text-sm text-[#434E54]">{appointment.pet.medical_info}</div>
+                        <div className="pt-3 border-t border-[#E5E5E5]">
+                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Medical Info</div>
+                          <div className="text-sm text-[#434E54] bg-[#FFF3CD]/30 p-3 rounded-lg border-l-2 border-[#FFB347]">{appointment.pet.medical_info}</div>
                         </div>
                       )}
                       {appointment.pet?.notes && (
-                        <div>
-                          <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1">Pet Notes</div>
-                          <div className="text-sm text-[#434E54]">{appointment.pet.notes}</div>
+                        <div className="pt-3 border-t border-[#E5E5E5]">
+                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Pet Notes</div>
+                          <div className="text-sm text-[#434E54] bg-[#F8EEE5] p-3 rounded-lg">{appointment.pet.notes}</div>
                         </div>
                       )}
                     </div>
@@ -627,15 +639,21 @@ export function AppointmentDetailModal({
 
               {/* Groomer Assignment */}
               {!isTerminalStatus(appointment.status) && (
-                <div className="card bg-white border border-[#E5E5E5] shadow-sm rounded-xl">
-                  <div className="card-body p-6">
-                    <h4 className="card-title text-base font-semibold text-[#434E54] mb-4 flex items-center gap-2">
-                      <Scissors className="w-5 h-5 text-[#6B7280]" />
+                <div className="card bg-white border border-[#E5E5E5]/50 shadow-md rounded-xl overflow-hidden">
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] px-5 py-4 border-b border-[#E5E5E5]/50">
+                    <h4 className="text-base font-bold text-[#434E54] flex items-center gap-2.5">
+                      <div className="p-2 bg-white rounded-lg shadow-sm">
+                        <Scissors className="w-5 h-5 text-[#434E54]" />
+                      </div>
                       Groomer Assignment
                     </h4>
+                  </div>
+                  {/* Body */}
+                  <div className="card-body p-5">
                     <div className="form-control">
                       <label className="label pb-2">
-                        <span className="label-text text-xs uppercase tracking-wide font-medium text-[#9CA3AF]">Assigned Groomer</span>
+                        <span className="label-text text-xs uppercase tracking-wide font-semibold text-[#9CA3AF]">Assigned Groomer</span>
                       </label>
                       <select
                         value={appointment.groomer_id || ''}
@@ -674,17 +692,33 @@ export function AppointmentDetailModal({
 
               {/* Appointment Details */}
               <div
-                className={`card border rounded-xl transition-all duration-200 ${
+                className={`card border rounded-xl overflow-hidden transition-all duration-200 ${
                   isEditing
-                    ? 'bg-[#FFFBF7] border-[#434E54]/20 shadow-md'
-                    : 'bg-white border-[#E5E5E5] shadow-sm'
+                    ? 'bg-white border-[#434E54]/20 shadow-lg ring-2 ring-[#434E54]/20'
+                    : 'bg-white border-[#E5E5E5]/50 shadow-md'
                 }`}
               >
-                <div className="card-body p-6">
-                  <h4 className="card-title text-base font-semibold text-[#434E54] mb-4 flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-[#6B7280]" />
+                {/* Header */}
+                <div className={`px-5 py-4 border-b ${
+                  isEditing
+                    ? 'bg-[#434E54] border-[#363F44]'
+                    : 'bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] border-[#E5E5E5]/50'
+                }`}>
+                  <h4 className={`text-base font-bold flex items-center gap-2.5 ${
+                    isEditing ? 'text-white' : 'text-[#434E54]'
+                  }`}>
+                    <div className={`p-2 rounded-lg shadow-sm ${
+                      isEditing ? 'bg-white/20' : 'bg-white'
+                    }`}>
+                      <Calendar className={`w-5 h-5 ${
+                        isEditing ? 'text-white' : 'text-[#434E54]'
+                      }`} />
+                    </div>
                     {isEditing ? 'Edit Appointment Details' : 'Appointment Details'}
                   </h4>
+                </div>
+
+                <div className="card-body p-6">
 
                   {isEditing ? (
                     // Edit Mode Form
@@ -801,47 +835,47 @@ export function AppointmentDetailModal({
                     </div>
                   ) : (
                     // View Mode
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                       {/* Date, Time, Service Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1 flex items-center gap-1">
+                        <div className="bg-[#F8EEE5]/40 p-4 rounded-lg border border-[#E5E5E5]/50">
+                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-2 flex items-center gap-1.5">
                             <Calendar className="w-4 h-4" />
                             Date
                           </div>
-                          <div className="text-sm font-medium text-[#434E54]">
+                          <div className="text-sm font-semibold text-[#434E54]">
                             {format(new Date(appointment.scheduled_at), 'EEEE, MMMM d, yyyy')}
                           </div>
                         </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1 flex items-center gap-1">
+                        <div className="bg-[#F8EEE5]/40 p-4 rounded-lg border border-[#E5E5E5]/50">
+                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-2 flex items-center gap-1.5">
                             <Clock className="w-4 h-4" />
                             Time
                           </div>
-                          <div className="text-sm font-medium text-[#434E54]">
+                          <div className="text-sm font-semibold text-[#434E54]">
                             {format(new Date(appointment.scheduled_at), 'h:mm a')} ({appointment.duration_minutes} min)
                           </div>
                         </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1 flex items-center gap-1">
+                        <div className="bg-[#F8EEE5]/40 p-4 rounded-lg border border-[#E5E5E5]/50">
+                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-2 flex items-center gap-1.5">
                             <Scissors className="w-4 h-4" />
                             Service
                           </div>
-                          <div className="text-sm font-medium text-[#434E54]">{appointment.service?.name}</div>
+                          <div className="text-sm font-semibold text-[#434E54]">{appointment.service?.name}</div>
                         </div>
                       </div>
 
                       {/* Add-ons */}
                       {appointment.addons && appointment.addons.length > 0 && (
-                        <div>
-                          <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-2">Add-ons</div>
+                        <div className="mb-5 pt-4 border-t border-[#E5E5E5]">
+                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-3">Add-ons Selected</div>
                           <div className="flex flex-wrap gap-2">
                             {appointment.addons.map((addon: any) => (
                               <span
                                 key={addon.id}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#434E54] text-white text-xs font-medium rounded-full"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#434E54] to-[#363F44] text-white text-sm font-semibold rounded-lg shadow-sm"
                               >
-                                {addon.addon?.name} <span className="opacity-80">+${addon.price.toFixed(2)}</span>
+                                {addon.addon?.name} <span className="opacity-90 font-bold">+${addon.price.toFixed(2)}</span>
                               </span>
                             ))}
                           </div>
@@ -850,9 +884,9 @@ export function AppointmentDetailModal({
 
                       {/* Special Requests */}
                       {appointment.notes && (
-                        <div>
-                          <div className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-2">Special Requests</div>
-                          <div className="text-sm text-[#434E54] bg-[#F8EEE5]/50 p-3 rounded-lg border-l-4 border-[#434E54] italic">
+                        <div className="pt-4 border-t border-[#E5E5E5]">
+                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-2.5">Special Requests</div>
+                          <div className="text-sm text-[#434E54] bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] p-4 rounded-lg border-l-4 border-[#434E54] italic shadow-sm">
                             "{appointment.notes}"
                           </div>
                         </div>
@@ -862,35 +896,74 @@ export function AppointmentDetailModal({
                 </div>
               </div>
 
-              {/* Pricing Summary */}
-              <div className="card bg-white border border-[#E5E5E5] shadow-sm rounded-xl">
-                <div className="card-body p-6">
-                  <h4 className="card-title text-base font-semibold text-[#434E54] mb-4 flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-[#6B7280]" />
-                    Pricing
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-sm text-[#434E54]">
-                      <span>Base Service ({appointment.service?.name} - {appointment.pet?.size})</span>
-                      <span className="font-medium">${basePrice.toFixed(2)}</span>
+              {/* Pricing Summary - Invoice Style */}
+              <div className="card bg-gradient-to-br from-white to-[#F8EEE5]/30 border-2 border-[#434E54]/10 shadow-lg rounded-xl overflow-hidden">
+                <div className="card-body p-0">
+                  {/* Header */}
+                  <div className="bg-[#434E54] px-6 py-4">
+                    <h4 className="text-base font-semibold text-white flex items-center gap-2">
+                      <DollarSign className="w-5 h-5" />
+                      Pricing Summary
+                    </h4>
+                  </div>
+
+                  {/* Line Items */}
+                  <div className="px-6 py-5 space-y-4">
+                    {/* Base Service */}
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-[#434E54]">
+                          {appointment.service?.name}
+                        </div>
+                        <div className="text-xs text-[#6B7280] mt-0.5">
+                          {appointment.pet?.size} size • {appointment.duration_minutes} minutes
+                        </div>
+                      </div>
+                      <div className="text-sm font-semibold text-[#434E54] ml-4">
+                        ${basePrice.toFixed(2)}
+                      </div>
                     </div>
+
+                    {/* Individual Add-ons */}
                     {appointment.addons && appointment.addons.length > 0 && (
-                      <div className="flex justify-between items-center text-sm text-[#434E54]">
-                        <span>Add-ons</span>
-                        <span className="font-medium">${addonsTotal.toFixed(2)}</span>
+                      <div className="space-y-3 pt-3 border-t border-[#E5E5E5]">
+                        <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-2">
+                          Add-ons
+                        </div>
+                        {appointment.addons.map((addonItem: any) => (
+                          <div key={addonItem.id} className="flex justify-between items-center pl-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-[#434E54]/40"></div>
+                              <span className="text-sm text-[#434E54]">
+                                {addonItem.addon?.name}
+                              </span>
+                            </div>
+                            <span className="text-sm font-medium text-[#434E54]">
+                              ${addonItem.price.toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     )}
-                    <div className="border-t border-dashed border-[#E5E5E5] pt-3 flex justify-between items-center text-sm text-[#434E54]">
-                      <span>Subtotal</span>
-                      <span className="font-medium">${subtotal.toFixed(2)}</span>
+
+                    {/* Subtotal */}
+                    <div className="border-t border-dashed border-[#E5E5E5] pt-3 flex justify-between items-center">
+                      <span className="text-sm font-medium text-[#434E54]">Subtotal</span>
+                      <span className="text-sm font-semibold text-[#434E54]">${subtotal.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between items-center text-sm text-[#6B7280]">
-                      <span>Tax (9.75%)</span>
-                      <span>${tax.toFixed(2)}</span>
+
+                    {/* Tax */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[#6B7280]">Tax (9.75%)</span>
+                      <span className="text-sm font-medium text-[#6B7280]">${tax.toFixed(2)}</span>
                     </div>
-                    <div className="border-t-2 border-[#434E54] pt-3 flex justify-between items-center">
-                      <span className="text-lg font-bold text-[#434E54]">Total</span>
-                      <span className="text-xl font-bold text-[#434E54]">${total.toFixed(2)}</span>
+                  </div>
+
+                  {/* Footer - Total */}
+                  <div className="bg-[#434E54] px-6 py-4 border-t-2 border-[#F8EEE5]">
+                    <div className="flex justify-between items-center">
+                      <span className="text-base font-bold text-white">Total</span>
+                      <span className="text-2xl font-bold text-white tabular-nums">${total.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -980,22 +1053,28 @@ export function AppointmentDetailModal({
 
               {/* Admin Notes - Only show when not in edit mode */}
               {!isEditing && (
-                <div className="card bg-white border border-[#E5E5E5] shadow-sm rounded-xl">
-                  <div className="card-body p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="card-title text-base font-semibold text-[#434E54] flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-[#6B7280]" />
+                <div className="card bg-white border border-[#E5E5E5]/50 shadow-md rounded-xl overflow-hidden">
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] px-5 py-4 border-b border-[#E5E5E5]/50">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-base font-bold text-[#434E54] flex items-center gap-2.5">
+                        <div className="p-2 bg-white rounded-lg shadow-sm">
+                          <FileText className="w-5 h-5 text-[#434E54]" />
+                        </div>
                         Admin Notes
                       </h4>
                       <button
                         onClick={() => setEditingNotes(!editingNotes)}
-                        className="btn btn-sm btn-ghost text-[#434E54] hover:bg-[#EAE0D5] transition-all duration-200"
+                        className="btn btn-sm bg-white text-[#434E54] hover:bg-[#434E54] hover:text-white border-none transition-all duration-200 shadow-sm font-semibold"
                         aria-label={editingNotes ? 'Cancel editing notes' : 'Edit admin notes'}
                       >
                         <Edit2 className="w-4 h-4" />
                         {editingNotes ? 'Cancel' : 'Edit'}
                       </button>
                     </div>
+                  </div>
+                  {/* Body */}
+                  <div className="card-body p-5">
                     {editingNotes ? (
                       <div className="space-y-3">
                         <textarea
@@ -1021,14 +1100,14 @@ export function AppointmentDetailModal({
                               console.error('Error saving admin notes:', err);
                             }
                           }}
-                          className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none transition-all duration-200 hover:shadow-md"
+                          className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none transition-all duration-200 hover:shadow-md font-semibold"
                         >
                           <Save className="w-4 h-4" />
                           Save Notes
                         </button>
                       </div>
                     ) : (
-                      <div className="text-sm text-[#434E54] bg-[#F8EEE5]/30 p-4 rounded-lg min-h-[4rem]">
+                      <div className="text-sm text-[#434E54] bg-[#F8EEE5]/50 p-4 rounded-lg min-h-[4rem] border border-[#E5E5E5]/50">
                         {adminNotes || <span className="text-[#9CA3AF] italic">No admin notes yet. Click Edit to add internal notes.</span>}
                       </div>
                     )}
@@ -1085,11 +1164,11 @@ export function AppointmentDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-[#E5E5E5] px-8 py-4 rounded-b-xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="sticky bottom-0 bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] border-t-2 border-[#E5E5E5]/50 px-8 py-4 rounded-b-2xl shadow-lg">
           <div className="flex items-center justify-end">
             <button
               onClick={handleClose}
-              className="btn btn-ghost text-[#434E54] hover:bg-[#EAE0D5] transition-all duration-200"
+              className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none transition-all duration-200 hover:shadow-md font-semibold"
             >
               Close
             </button>
