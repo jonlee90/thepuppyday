@@ -116,13 +116,35 @@ Before starting work, check `.claude/tasks/context_session_x.md` for current con
 - Icons: Lucide React
 - NO bold borders or chunky elements
 
+**Playful, Dog-Themed UI/UX Guidelines**:
+When working on UI/UX designs, incorporate a **playful, dog-themed vibe** that complements the professional aesthetic:
+
+- **Dog-Themed Icons & Illustrations**:
+  - Paw prints for success indicators or decorative elements
+  - Dog silhouettes for navigation or empty states
+  - Bone icons for loyalty points or rewards
+  - Subtle dog-related illustrations in backgrounds or empty states
+
+- **Fun Interactions & Animations**:
+  - Wagging tail animations for success states
+  - Bouncing paw prints during loading
+  - Playful transitions (e.g., slide-in with a "bounce" like a happy dog)
+  - Confetti or paw prints on appointment confirmation
+
+- **Empty States with Personality**:
+  - Dog-themed messaging when there's no content
+  - Friendly illustrations of dogs waiting or playing
+  - Encouraging CTAs that feel warm and inviting
+
+- **Tone**: Maintain professional elegance while adding character - warm, inviting, and joyful without being childish
+
 ## Available Agents
 
 ### Kiro Workflow Agents
 - `kiro-requirement`: Requirements analysis (EARS format)
 - `kiro-design`: Technical design documents
 - `kiro-plan`: Implementation task planning
-- `kiro-executor`: Focused implementation
+- `kiro-executor`: Task Orchestrator
 
 ### Development Agents
 - `app-dev`: Frontend development - UI/UX design, React components, Next.js pages, DaisyUI implementation, responsive design, accessibility

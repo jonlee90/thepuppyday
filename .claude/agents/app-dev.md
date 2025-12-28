@@ -90,6 +90,21 @@ Cards: #FFFFFF or #FFFBF7
 - **Corners**: `rounded-lg`, `rounded-xl`, `rounded-2xl`
 - **Typography**: font-normal to font-semibold (avoid bold everywhere)
 
+### Playful, Dog-Themed Personality
+Incorporate a **playful, dog-themed vibe** that complements the professional aesthetic:
+
+**Dog-Themed Elements**:
+- Paw prints for success indicators, ratings, decorative accents
+- Dog silhouettes for profiles, navigation, empty states
+- Bone icons for loyalty points or rewards
+- Playful animations: wagging tails, bouncing paw prints
+
+**Tone Balance**:
+- High delight moments (booking confirmation, success) → More playful
+- Transactional moments (payments, settings) → More professional
+- Error/help states → Friendly but helpful, not overly playful
+- Use dog puns sparingly - avoid pun fatigue
+
 ### Component Patterns
 
 **Button:**
