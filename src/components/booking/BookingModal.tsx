@@ -93,8 +93,14 @@ export function BookingModal({
   useEffect(() => {
     if (isOpen && mode === 'walkin') {
       const now = new Date();
-      // Format date as YYYY-MM-DD
-      const dateStr = now.toISOString().split('T')[0];
+
+      // CRITICAL: Use local date parsing, NOT toISOString() which uses UTC
+      // Format date as YYYY-MM-DD using local time components
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
       // Format time as HH:MM (round to nearest 15 minutes for cleaner slots)
       const minutes = Math.ceil(now.getMinutes() / 15) * 15;
       const hours = minutes === 60 ? now.getHours() + 1 : now.getHours();
@@ -105,12 +111,42 @@ export function BookingModal({
     }
   }, [isOpen, mode, selectDateTime]);
 
+  // Reset form state when modal closes (safety net for all close paths)
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset booking state after modal close animation completes
+      const timer = setTimeout(() => {
+        reset();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, reset]);
+
+  // Handle close (reset is handled by useEffect when isOpen becomes false)
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
   // Handle escape key
   const handleEscapeKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape' && modalStore.canClose) {
-      onClose();
+      handleClose();
     }
-  }, [onClose, modalStore.canClose]);
+  }, [modalStore.canClose, handleClose]);
+
+  // Handle overlay click
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && modalStore.canClose) {
+      handleClose();
+    }
+  };
+
+  // Handle drag to dismiss (mobile)
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.y > 100 && modalStore.canClose) {
+      handleClose();
+    }
+  };
 
   // Lock body scroll when modal is open and setup focus trap
   useEffect(() => {
@@ -161,29 +197,6 @@ export function BookingModal({
       document.removeEventListener('keydown', handleEscapeKey);
     };
   }, [isOpen, handleEscapeKey]);
-
-  // Handle overlay click
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && modalStore.canClose) {
-      onClose();
-    }
-  };
-
-  // Handle drag to dismiss (mobile)
-  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (info.offset.y > 100 && modalStore.canClose) {
-      onClose();
-    }
-  };
-
-  // Handle close with reset
-  const handleClose = () => {
-    onClose();
-    // Reset booking state after close animation
-    setTimeout(() => {
-      reset();
-    }, 300);
-  };
 
   // Handle success
   const handleSuccess = (appointmentId: string) => {
