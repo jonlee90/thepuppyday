@@ -361,11 +361,18 @@ const createTodayAppointment = (hour: number, minute: number = 0): string => {
   return date.toISOString();
 };
 
+// Stable appointment IDs for testing - needed for appointment_addons relationships
+const APPT_TODAY_9AM_ID = '50000000-0000-0000-0000-000000000001';
+const APPT_TODAY_1030AM_ID = '50000000-0000-0000-0000-000000000002';
+const APPT_TODAY_1PM_ID = '50000000-0000-0000-0000-000000000003';
+const APPT_TODAY_230PM_ID = '50000000-0000-0000-0000-000000000004';
+const APPT_TODAY_4PM_ID = '50000000-0000-0000-0000-000000000005';
+
 // Sample appointments for testing slot blocking
 export const seedAppointments: Appointment[] = [
   // TODAY'S APPOINTMENTS for dashboard testing
   {
-    id: generateId(),
+    id: APPT_TODAY_9AM_ID,
     customer_id: seedUsers[2].id, // Demo Customer
     pet_id: generateId(), // Mock pet ID
     service_id: seedServices[0].id, // Basic Groom
@@ -382,9 +389,10 @@ export const seedAppointments: Appointment[] = [
     created_by_admin_id: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    booking_reference: null,
   },
   {
-    id: generateId(),
+    id: APPT_TODAY_1030AM_ID,
     customer_id: seedUsers[3].id, // Sarah Johnson
     pet_id: seedPets[0].id, // Buddy
     service_id: seedServices[1].id, // Premium Groom
@@ -401,9 +409,10 @@ export const seedAppointments: Appointment[] = [
     created_by_admin_id: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    booking_reference: null,
   },
   {
-    id: generateId(),
+    id: APPT_TODAY_1PM_ID,
     customer_id: seedUsers[2].id,
     pet_id: generateId(),
     service_id: seedServices[0].id,
@@ -420,9 +429,10 @@ export const seedAppointments: Appointment[] = [
     created_by_admin_id: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    booking_reference: null,
   },
   {
-    id: generateId(),
+    id: APPT_TODAY_230PM_ID,
     customer_id: seedUsers[3].id, // Sarah Johnson
     pet_id: seedPets[1].id, // Bella
     service_id: seedServices[0].id, // Basic Groom
@@ -439,9 +449,10 @@ export const seedAppointments: Appointment[] = [
     created_by_admin_id: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    booking_reference: null,
   },
   {
-    id: generateId(),
+    id: APPT_TODAY_4PM_ID,
     customer_id: seedUsers[2].id,
     pet_id: generateId(),
     service_id: seedServices[1].id,
@@ -458,6 +469,7 @@ export const seedAppointments: Appointment[] = [
     created_by_admin_id: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    booking_reference: null,
   },
   // FUTURE APPOINTMENTS
   {
@@ -516,6 +528,41 @@ export const seedAppointments: Appointment[] = [
     created_by_admin_id: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+  },
+];
+
+// Appointment Add-ons - Junction table linking appointments to add-ons
+export const seedAppointmentAddons = [
+  // 10:30 AM appointment - Premium Groom for Buddy with 2 add-ons
+  {
+    id: '60000000-0000-0000-0000-000000000001',
+    appointment_id: APPT_TODAY_1030AM_ID,
+    addon_id: ADDON_TEETH_BRUSHING_ID,
+    price: 10,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '60000000-0000-0000-0000-000000000002',
+    appointment_id: APPT_TODAY_1030AM_ID,
+    addon_id: ADDON_PAWDICURE_ID,
+    price: 15,
+    created_at: new Date().toISOString(),
+  },
+  // 1:00 PM appointment - Basic Groom with Flea & Tick treatment
+  {
+    id: '60000000-0000-0000-0000-000000000003',
+    appointment_id: APPT_TODAY_1PM_ID,
+    addon_id: ADDON_FLEA_TICK_ID,
+    price: 25,
+    created_at: new Date().toISOString(),
+  },
+  // 4:00 PM appointment - Premium Groom with Long Hair addon
+  {
+    id: '60000000-0000-0000-0000-000000000004',
+    appointment_id: APPT_TODAY_4PM_ID,
+    addon_id: ADDON_LONG_HAIR_ID,
+    price: 10,
+    created_at: new Date().toISOString(),
   },
 ];
 

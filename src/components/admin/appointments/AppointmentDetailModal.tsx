@@ -1,6 +1,6 @@
 /**
  * AppointmentDetailModal Component
- * Comprehensive modal for viewing and managing appointment details
+ * Redesigned with clean, space-efficient, dog-themed UI
  */
 
 'use client';
@@ -23,10 +23,14 @@ import {
   ExternalLink,
   Save,
   XCircle,
+  PawPrint,
+  MapPin,
 } from 'lucide-react';
 import { getStatusBadgeColor, getStatusLabel, getAllowedTransitions, isTerminalStatus, isAppointmentInPast } from '@/lib/admin/appointment-status';
 import { StatusTransitionButton } from './StatusTransitionButton';
-import type { Appointment, CustomerFlag, Service, Addon, User, Pet, ServicePrice } from '@/types/database';
+import type { Appointment, CustomerFlag, Service, Addon, Pet, ServicePrice } from '@/types/database';
+import type { User } from '@/types/database';
+import { CA_SALES_TAX_RATE } from '@/lib/booking/pricing';
 
 interface EditFormState {
   scheduled_date: string;
@@ -395,7 +399,7 @@ export function AppointmentDetailModal({
   )?.price || 0;
   const addonsTotal = appointment?.addons?.reduce((sum: number, a: any) => sum + a.price, 0) || 0;
   const subtotal = basePrice + addonsTotal;
-  const tax = subtotal * 0.0975; // CA sales tax
+  const tax = subtotal * CA_SALES_TAX_RATE;
   const total = subtotal + tax;
 
   return (
@@ -403,84 +407,83 @@ export function AppointmentDetailModal({
       {/* Backdrop */}
       <div className="modal-backdrop bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
-      <div className="modal-box bg-[#FAFAFA] max-w-[1000px] max-h-[90vh] overflow-y-auto shadow-2xl rounded-2xl p-0 animate-[scale-in_200ms_ease-out]">
-        {/* Header - Sticky with Dark Gradient */}
-        <div className="sticky top-0 z-10 bg-gradient-to-r from-[#434E54] to-[#363F44] px-8 py-6 border-b-4 border-[#F8EEE5]/20 rounded-t-2xl shadow-lg">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              {appointment && (
-                <>
-                  {/* Status Badge */}
-                  <div className="mb-3">
+      <div className="modal-box bg-[#F8EEE5] max-w-[900px] max-h-[92vh] overflow-y-auto shadow-xl rounded-xl p-0">
+        {/* Header - Simplified */}
+        <div className="sticky top-0 z-10 bg-white px-5 py-4 border-b border-[#E5E5E5] shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* Paw Icon */}
+              <div className="w-10 h-10 bg-[#434E54] rounded-full flex items-center justify-center flex-shrink-0">
+                <PawPrint className="w-5 h-5 text-white" />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div>
+                  <h3 id="appointment-modal-title" className="text-lg font-semibold text-[#434E54]">
+                    {isEditing ? 'Edit Appointment' : 'Appointment Details'}
+                  </h3>
+                  {appointment && (
+                    <p className="text-xs text-[#6B7280]">
+                      #{appointment.id.slice(0, 8)}
+                    </p>
+                  )}
+                </div>
+
+                {/* Status Badge - Inline */}
+                {appointment && (
+                  <>
                     <span
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold shadow-md ${getStatusBadgeColor(appointment.status)}`}
+                      className={`badge badge-sm ${getStatusBadgeColor(appointment.status)}`}
                       role="status"
                       aria-label={`Appointment status: ${getStatusLabel(appointment.status)}`}
                     >
                       {getStatusLabel(appointment.status)}
                     </span>
                     {isPast && !isTerminal && (
-                      <span className="ml-2 text-sm text-white/80">(Past appointment)</span>
+                      <span className="text-xs text-[#9CA3AF]">(Past)</span>
                     )}
-                  </div>
-
-                  {/* Title */}
-                  <h3 id="appointment-modal-title" className="text-3xl font-bold text-white mb-2">
-                    {isEditing ? 'Edit Appointment' : `${appointment.pet?.name}'s Grooming Appointment`}
-                  </h3>
-                  {!isEditing && appointment.customer && (
-                    <p className="text-lg text-white/90">
-                      Customer: {appointment.customer.first_name} {appointment.customer.last_name}
-                    </p>
-                  )}
-                </>
-              )}
-              {!appointment && (
-                <h3 id="appointment-modal-title" className="text-3xl font-bold text-white">
-                  Appointment Details
-                </h3>
-              )}
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Header Actions */}
-            <div className="flex items-center gap-2 ml-4">
+            <div className="flex items-center gap-2">
               {appointment && !isEditing && (
                 <button
                   onClick={handleStartEdit}
-                  className="btn btn-sm bg-white text-[#434E54] hover:bg-[#F8EEE5] border-none transition-all duration-200 hover:shadow-lg font-semibold"
+                  className="btn btn-sm btn-ghost text-[#434E54] hover:bg-[#EAE0D5]"
                   aria-label="Edit appointment details"
                 >
                   <Edit2 className="w-4 h-4" />
-                  Edit
                 </button>
               )}
               {isEditing && (
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   <button
                     onClick={handleSaveEdit}
                     disabled={saving}
-                    className="btn btn-sm bg-white text-[#434E54] hover:bg-[#F8EEE5] border-none transition-all duration-200 hover:shadow-lg font-semibold"
+                    className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none"
                   >
                     {saving ? (
-                      <span className="loading loading-spinner loading-sm" />
+                      <span className="loading loading-spinner loading-xs" />
                     ) : (
                       <Save className="w-4 h-4" />
                     )}
-                    Save Changes
                   </button>
                   <button
                     onClick={handleCancelEdit}
                     disabled={saving}
-                    className="btn btn-sm bg-white/20 text-white hover:bg-white/30 border-none transition-all duration-200"
+                    className="btn btn-sm btn-ghost text-[#6B7280]"
                   >
-                    <XCircle className="w-4 h-4" />
-                    Cancel
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               )}
+              {/* Circular close button with bigger size */}
               <button
                 onClick={handleClose}
-                className="btn btn-sm btn-circle bg-white/20 text-white hover:bg-white/30 border-none transition-all duration-200"
+                className="w-9 h-9 rounded-full bg-[#EAE0D5] hover:bg-[#434E54] text-[#434E54] hover:text-white flex items-center justify-center transition-all duration-200 shadow-sm"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
@@ -490,29 +493,29 @@ export function AppointmentDetailModal({
         </div>
 
         {/* Main Content - Scrollable */}
-        <div className="px-8 py-6 space-y-6 md:space-y-6 lg:space-y-6">
+        <div className="px-5 py-4 space-y-4">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-8">
               <span className="loading loading-spinner loading-lg text-[#434E54]" />
             </div>
           ) : error ? (
-            <div className="alert alert-error rounded-lg shadow-sm">
-              <AlertCircle className="w-5 h-5" />
-              <span>{error}</span>
+            <div className="alert alert-error rounded-lg">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm">{error}</span>
             </div>
           ) : appointment ? (
             <>
               {/* Toast Notification */}
               {toast && (
-                <div className={`alert ${toast.type === 'success' ? 'alert-success' : 'alert-error'} rounded-lg shadow-sm animate-[fadeIn_200ms_ease-out]`}>
+                <div className={`alert ${toast.type === 'success' ? 'alert-success' : 'alert-error'} rounded-lg`}>
                   <div className="flex items-center justify-between w-full">
-                    <span>{toast.message}</span>
+                    <span className="text-sm">{toast.message}</span>
                     <button
                       onClick={() => setToast(null)}
-                      className="btn btn-sm btn-ghost btn-circle"
+                      className="btn btn-xs btn-ghost btn-circle"
                       aria-label="Dismiss notification"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
@@ -520,15 +523,15 @@ export function AppointmentDetailModal({
 
               {/* Customer Flags Alert */}
               {appointment.customer_flags && appointment.customer_flags.length > 0 && (
-                <div className="bg-[#FFF3CD] border border-[#FFB347] rounded-xl p-4 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-[#92400E] flex-shrink-0 mt-0.5" />
+                <div className="bg-[#FFF3CD] border-l-4 border-[#FFB347] rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-[#92400E] flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <div className="text-sm font-semibold text-[#92400E] mb-2 uppercase tracking-wide">Customer Flags</div>
+                      <div className="text-xs font-semibold text-[#92400E] mb-1">Important Notes</div>
                       {appointment.customer_flags.map((flag) => (
-                        <div key={flag.id} className="text-sm text-[#92400E] mb-1">
-                          <strong>{flag.flag_type.replace('_', ' ').toUpperCase()}</strong>
-                          {flag.description && ` - ${flag.description}`}
+                        <div key={flag.id} className="text-xs text-[#92400E]">
+                          <strong>{flag.flag_type.replace('_', ' ')}</strong>
+                          {flag.description && `: ${flag.description}`}
                         </div>
                       ))}
                     </div>
@@ -536,553 +539,298 @@ export function AppointmentDetailModal({
                 </div>
               )}
 
-              {/* Customer & Pet Information - Two Column Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Customer Information Card */}
-                <div className="card bg-white border border-[#E5E5E5]/50 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden">
-                  {/* Header */}
-                  <div className="bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] px-5 py-4 border-b border-[#E5E5E5]/50">
-                    <h4 className="text-base font-bold text-[#434E54] flex items-center gap-2.5">
-                      <div className="p-2 bg-white rounded-lg shadow-sm">
-                        <User className="w-5 h-5 text-[#434E54]" />
+              {/* Quick Info Grid - Compact 3-column */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Date/Time */}
+                <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                  <div className="flex items-start gap-2">
+                    <Calendar className="w-4 h-4 text-[#434E54] mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs text-[#9CA3AF] mb-0.5">When</div>
+                      <div className="text-sm font-medium text-[#434E54]">
+                        {format(new Date(appointment.scheduled_at), 'MMM d, yyyy')}
                       </div>
-                      Customer Information
-                    </h4>
-                  </div>
-                  {/* Body */}
-                  <div className="card-body p-5">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Name</div>
-                        <div className="text-sm font-semibold text-[#434E54]">
-                          {appointment.customer
-                            ? `${appointment.customer.first_name} ${appointment.customer.last_name}`
-                            : 'Unknown'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Email</div>
-                        <a
-                          href={`mailto:${appointment.customer?.email}`}
-                          className="text-sm font-medium text-[#434E54] hover:text-[#363F44] flex items-center gap-2 transition-colors duration-200 hover:underline"
-                        >
-                          <Mail className="w-4 h-4 text-[#6B7280]" />
-                          {appointment.customer?.email}
-                        </a>
-                      </div>
-                      <div>
-                        <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Phone</div>
-                        {appointment.customer?.phone ? (
-                          <a
-                            href={`tel:${appointment.customer.phone}`}
-                            className="text-sm font-medium text-[#434E54] hover:text-[#363F44] flex items-center gap-2 transition-colors duration-200 hover:underline"
-                          >
-                            <Phone className="w-4 h-4 text-[#6B7280]" />
-                            {appointment.customer.phone}
-                          </a>
-                        ) : (
-                          <span className="text-sm text-[#9CA3AF] italic">Not provided</span>
-                        )}
+                      <div className="text-xs text-[#6B7280]">
+                        {format(new Date(appointment.scheduled_at), 'h:mm a')} ({appointment.duration_minutes}m)
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Pet Information Card */}
-                <div className="card bg-white border border-[#E5E5E5]/50 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl overflow-hidden">
-                  {/* Header */}
-                  <div className="bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] px-5 py-4 border-b border-[#E5E5E5]/50">
-                    <h4 className="text-base font-bold text-[#434E54] flex items-center gap-2.5">
-                      <div className="p-2 bg-white rounded-lg shadow-sm">
-                        <Scissors className="w-5 h-5 text-[#434E54]" />
+                {/* Service */}
+                <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                  <div className="flex items-start gap-2">
+                    <Scissors className="w-4 h-4 text-[#434E54] mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs text-[#9CA3AF] mb-0.5">Service</div>
+                      <div className="text-sm font-medium text-[#434E54] truncate">
+                        {appointment.service?.name}
                       </div>
-                      Pet Information
-                    </h4>
+                      {appointment.addons && appointment.addons.length > 0 && (
+                        <div className="text-xs text-[#6B7280]">
+                          +{appointment.addons.length} add-on{appointment.addons.length > 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {/* Body */}
-                  <div className="card-body p-5">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Name</div>
-                        <div className="text-sm font-semibold text-[#434E54]">{appointment.pet?.name}</div>
+                </div>
+
+                {/* Groomer */}
+                <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                  <div className="flex items-start gap-2">
+                    <User className="w-4 h-4 text-[#434E54] mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs text-[#9CA3AF] mb-0.5">Groomer</div>
+                      <div className="text-sm font-medium text-[#434E54]">
+                        {appointment.groomer
+                          ? `${appointment.groomer.first_name} ${appointment.groomer.last_name}`
+                          : 'Not assigned'}
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Size</div>
-                          <div className="text-sm font-semibold text-[#434E54] capitalize">
-                            {appointment.pet?.size}
-                          </div>
-                        </div>
-                        {appointment.pet?.weight && (
-                          <div>
-                            <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Weight</div>
-                            <div className="text-sm font-semibold text-[#434E54]">{appointment.pet.weight} lbs</div>
-                          </div>
-                        )}
-                      </div>
-                      {appointment.pet?.medical_info && (
-                        <div className="pt-3 border-t border-[#E5E5E5]">
-                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Medical Info</div>
-                          <div className="text-sm text-[#434E54] bg-[#FFF3CD]/30 p-3 rounded-lg border-l-2 border-[#FFB347]">{appointment.pet.medical_info}</div>
-                        </div>
-                      )}
-                      {appointment.pet?.notes && (
-                        <div className="pt-3 border-t border-[#E5E5E5]">
-                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-1.5">Pet Notes</div>
-                          <div className="text-sm text-[#434E54] bg-[#F8EEE5] p-3 rounded-lg">{appointment.pet.notes}</div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Groomer Assignment */}
-              {!isTerminalStatus(appointment.status) && (
-                <div className="card bg-white border border-[#E5E5E5]/50 shadow-md rounded-xl overflow-hidden">
-                  {/* Header */}
-                  <div className="bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] px-5 py-4 border-b border-[#E5E5E5]/50">
-                    <h4 className="text-base font-bold text-[#434E54] flex items-center gap-2.5">
-                      <div className="p-2 bg-white rounded-lg shadow-sm">
-                        <Scissors className="w-5 h-5 text-[#434E54]" />
-                      </div>
-                      Groomer Assignment
-                    </h4>
+              {/* Customer & Pet - Compact 2-column */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Customer */}
+                <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <User className="w-4 h-4 text-[#434E54]" />
+                    <h4 className="text-sm font-semibold text-[#434E54]">Pet Parent</h4>
                   </div>
-                  {/* Body */}
-                  <div className="card-body p-5">
-                    <div className="form-control">
-                      <label className="label pb-2">
-                        <span className="label-text text-xs uppercase tracking-wide font-semibold text-[#9CA3AF]">Assigned Groomer</span>
-                      </label>
-                      <select
-                        value={appointment.groomer_id || ''}
-                        onChange={(e) => handleGroomerAssignment(e.target.value || null)}
-                        disabled={assigningGroomer || loadingGroomers}
-                        aria-label="Assign groomer to appointment"
-                        className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:ring-2 focus:ring-[#434E54]/20 focus:outline-none transition-all duration-200"
+                  <div className="space-y-2 text-sm">
+                    <div className="font-medium text-[#434E54]">
+                      {appointment.customer
+                        ? `${appointment.customer.first_name} ${appointment.customer.last_name}`
+                        : 'Unknown'}
+                    </div>
+                    {appointment.customer?.email && (
+                      <a
+                        href={`mailto:${appointment.customer.email}`}
+                        className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#434E54] transition-colors"
                       >
-                        <option value="">Unassigned</option>
-                        {groomers.map((groomer) => (
-                          <option key={groomer.id} value={groomer.id}>
-                            {groomer.first_name} {groomer.last_name}
-                            {groomer.role === 'admin' ? ' (Admin)' : ''}
-                          </option>
-                        ))}
-                      </select>
-                      {assigningGroomer && (
-                        <label className="label pt-2">
-                          <span className="label-text-alt text-[#6B7280] flex items-center gap-1">
-                            <span className="loading loading-spinner loading-xs" />
-                            Updating assignment...
-                          </span>
-                        </label>
-                      )}
-                      {appointment.groomer && !assigningGroomer && (
-                        <label className="label pt-2">
-                          <span className="label-text-alt text-[#6B7280]">
-                            Currently assigned to {appointment.groomer.first_name} {appointment.groomer.last_name}
-                          </span>
-                        </label>
-                      )}
-                    </div>
+                        <Mail className="w-3.5 h-3.5" />
+                        <span className="text-xs truncate">{appointment.customer.email}</span>
+                      </a>
+                    )}
+                    {appointment.customer?.phone && (
+                      <a
+                        href={`tel:${appointment.customer.phone}`}
+                        className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#434E54] transition-colors"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        <span className="text-xs">{appointment.customer.phone}</span>
+                      </a>
+                    )}
                   </div>
                 </div>
-              )}
 
-              {/* Appointment Details */}
-              <div
-                className={`card border rounded-xl overflow-hidden transition-all duration-200 ${
-                  isEditing
-                    ? 'bg-white border-[#434E54]/20 shadow-lg ring-2 ring-[#434E54]/20'
-                    : 'bg-white border-[#E5E5E5]/50 shadow-md'
-                }`}
-              >
-                {/* Header */}
-                <div className={`px-5 py-4 border-b ${
-                  isEditing
-                    ? 'bg-[#434E54] border-[#363F44]'
-                    : 'bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] border-[#E5E5E5]/50'
-                }`}>
-                  <h4 className={`text-base font-bold flex items-center gap-2.5 ${
-                    isEditing ? 'text-white' : 'text-[#434E54]'
-                  }`}>
-                    <div className={`p-2 rounded-lg shadow-sm ${
-                      isEditing ? 'bg-white/20' : 'bg-white'
-                    }`}>
-                      <Calendar className={`w-5 h-5 ${
-                        isEditing ? 'text-white' : 'text-[#434E54]'
-                      }`} />
+                {/* Pet */}
+                <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <PawPrint className="w-4 h-4 text-[#434E54]" />
+                    <h4 className="text-sm font-semibold text-[#434E54]">Furry Friend</h4>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-[#434E54]">{appointment.pet?.name}</div>
+                    <div className="flex gap-3 text-xs text-[#6B7280]">
+                      <span className="capitalize">{appointment.pet?.size} size</span>
+                      {appointment.pet?.weight && <span>{appointment.pet.weight} lbs</span>}
                     </div>
-                    {isEditing ? 'Edit Appointment Details' : 'Appointment Details'}
-                  </h4>
+                    {appointment.pet?.medical_info && (
+                      <div className="text-xs bg-[#FFF3CD]/30 p-2 rounded border-l-2 border-[#FFB347] text-[#92400E]">
+                        Medical: {appointment.pet.medical_info}
+                      </div>
+                    )}
+                    {appointment.pet?.notes && (
+                      <div className="text-xs bg-[#EAE0D5]/50 p-2 rounded text-[#434E54]">
+                        {appointment.pet.notes}
+                      </div>
+                    )}
+                  </div>
                 </div>
+              </div>
 
-                <div className="card-body p-6">
-
-                  {isEditing ? (
-                    // Edit Mode Form
-                    <div className="space-y-4">
-                      {/* Date & Time */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="form-control">
-                          <label className="label pb-2">
-                            <span className="label-text text-xs uppercase tracking-wide font-medium text-[#9CA3AF] flex items-center gap-1">
-                              <Calendar className="w-4 h-4" /> Date <span className="text-red-500">*</span>
-                            </span>
-                          </label>
-                          <input
-                            type="date"
-                            value={editForm.scheduled_date}
-                            onChange={(e) => setEditForm((prev) => ({ ...prev, scheduled_date: e.target.value }))}
-                            required
-                            aria-required="true"
-                            className="input input-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:ring-2 focus:ring-[#434E54]/20 focus:outline-none h-11 transition-all duration-200"
-                          />
-                        </div>
-                        <div className="form-control">
-                          <label className="label pb-2">
-                            <span className="label-text text-xs uppercase tracking-wide font-medium text-[#9CA3AF] flex items-center gap-1">
-                              <Clock className="w-4 h-4" /> Time <span className="text-red-500">*</span>
-                            </span>
-                          </label>
-                          <input
-                            type="time"
-                            value={editForm.scheduled_time}
-                            onChange={(e) => setEditForm((prev) => ({ ...prev, scheduled_time: e.target.value }))}
-                            required
-                            aria-required="true"
-                            className="input input-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:ring-2 focus:ring-[#434E54]/20 focus:outline-none h-11 transition-all duration-200"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Service Selection */}
-                      <div className="form-control">
-                        <label className="label pb-2">
-                          <span className="label-text text-xs uppercase tracking-wide font-medium text-[#9CA3AF] flex items-center gap-1">
-                            <Scissors className="w-4 h-4" /> Service <span className="text-red-500">*</span>
-                          </span>
-                        </label>
-                        <select
-                          value={editForm.service_id}
-                          onChange={(e) => setEditForm((prev) => ({ ...prev, service_id: e.target.value }))}
-                          disabled={loadingServices}
-                          required
-                          aria-required="true"
-                          className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:ring-2 focus:ring-[#434E54]/20 focus:outline-none transition-all duration-200"
-                        >
-                          {services.map((service) => (
-                            <option key={service.id} value={service.id}>
-                              {service.name} ({service.duration_minutes} min)
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Add-ons Selection */}
-                      <div className="form-control">
-                        <label className="label pb-2">
-                          <span className="label-text text-xs uppercase tracking-wide font-medium text-[#9CA3AF]">Add-ons</span>
-                        </label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                          {addons.map((addon) => (
-                            <label
-                              key={addon.id}
-                              className="flex items-center gap-2 p-3 rounded-lg border border-[#E5E5E5] bg-white cursor-pointer hover:bg-[#F8EEE5] transition-all duration-200 hover:border-[#434E54]/30"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={editForm.addon_ids.includes(addon.id)}
-                                onChange={() => handleAddonToggle(addon.id)}
-                                className="checkbox checkbox-sm border-[#E5E5E5] checked:bg-[#434E54] checked:border-[#434E54]"
-                              />
-                              <span className="text-sm text-[#434E54]">
-                                {addon.name} <span className="font-medium">(${addon.price.toFixed(2)})</span>
-                              </span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Special Requests */}
-                      <div className="form-control">
-                        <label className="label pb-2">
-                          <span className="label-text text-xs uppercase tracking-wide font-medium text-[#9CA3AF]">Special Requests</span>
-                        </label>
-                        <textarea
-                          value={editForm.notes}
-                          onChange={(e) => setEditForm((prev) => ({ ...prev, notes: e.target.value }))}
-                          className="textarea textarea-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:ring-2 focus:ring-[#434E54]/20 focus:outline-none transition-all duration-200 min-h-[80px]"
-                          rows={3}
-                          placeholder="Any special requests from the customer..."
-                        />
-                      </div>
-
-                      {/* Admin Notes */}
-                      <div className="form-control">
-                        <label className="label pb-2">
-                          <span className="label-text text-xs uppercase tracking-wide font-medium text-[#9CA3AF]">Admin Notes</span>
-                        </label>
-                        <textarea
-                          value={editForm.admin_notes}
-                          onChange={(e) => setEditForm((prev) => ({ ...prev, admin_notes: e.target.value }))}
-                          className="textarea textarea-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:ring-2 focus:ring-[#434E54]/20 focus:outline-none transition-all duration-200 min-h-[80px]"
-                          rows={3}
-                          placeholder="Internal notes (not visible to customers)..."
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    // View Mode
-                    <div className="space-y-5">
-                      {/* Date, Time, Service Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-[#F8EEE5]/40 p-4 rounded-lg border border-[#E5E5E5]/50">
-                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-2 flex items-center gap-1.5">
-                            <Calendar className="w-4 h-4" />
-                            Date
-                          </div>
-                          <div className="text-sm font-semibold text-[#434E54]">
-                            {format(new Date(appointment.scheduled_at), 'EEEE, MMMM d, yyyy')}
-                          </div>
-                        </div>
-                        <div className="bg-[#F8EEE5]/40 p-4 rounded-lg border border-[#E5E5E5]/50">
-                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-2 flex items-center gap-1.5">
-                            <Clock className="w-4 h-4" />
-                            Time
-                          </div>
-                          <div className="text-sm font-semibold text-[#434E54]">
-                            {format(new Date(appointment.scheduled_at), 'h:mm a')} ({appointment.duration_minutes} min)
-                          </div>
-                        </div>
-                        <div className="bg-[#F8EEE5]/40 p-4 rounded-lg border border-[#E5E5E5]/50">
-                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-2 flex items-center gap-1.5">
-                            <Scissors className="w-4 h-4" />
-                            Service
-                          </div>
-                          <div className="text-sm font-semibold text-[#434E54]">{appointment.service?.name}</div>
-                        </div>
-                      </div>
-
-                      {/* Add-ons */}
-                      {appointment.addons && appointment.addons.length > 0 && (
-                        <div className="mb-5 pt-4 border-t border-[#E5E5E5]">
-                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-3">Add-ons Selected</div>
-                          <div className="flex flex-wrap gap-2">
-                            {appointment.addons.map((addon: any) => (
-                              <span
-                                key={addon.id}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#434E54] to-[#363F44] text-white text-sm font-semibold rounded-lg shadow-sm"
-                              >
-                                {addon.addon?.name} <span className="opacity-90 font-bold">+${addon.price.toFixed(2)}</span>
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Special Requests */}
-                      {appointment.notes && (
-                        <div className="pt-4 border-t border-[#E5E5E5]">
-                          <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-2.5">Special Requests</div>
-                          <div className="text-sm text-[#434E54] bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] p-4 rounded-lg border-l-4 border-[#434E54] italic shadow-sm">
-                            "{appointment.notes}"
-                          </div>
-                        </div>
-                      )}
+              {/* Groomer Assignment - Compact */}
+              {!isTerminalStatus(appointment.status) && (
+                <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Scissors className="w-4 h-4 text-[#434E54]" />
+                    <h4 className="text-sm font-semibold text-[#434E54]">Assign Groomer</h4>
+                  </div>
+                  <select
+                    value={appointment.groomer_id || ''}
+                    onChange={(e) => handleGroomerAssignment(e.target.value || null)}
+                    disabled={assigningGroomer || loadingGroomers}
+                    aria-label="Assign groomer to appointment"
+                    className="select select-sm select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] w-full text-sm"
+                  >
+                    <option value="">Unassigned</option>
+                    {groomers.map((groomer) => (
+                      <option key={groomer.id} value={groomer.id}>
+                        {groomer.first_name} {groomer.last_name}
+                        {groomer.role === 'admin' ? ' (Admin)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {assigningGroomer && (
+                    <div className="text-xs text-[#6B7280] mt-1 flex items-center gap-1">
+                      <span className="loading loading-spinner loading-xs" />
+                      Updating...
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* Pricing Summary - Invoice Style */}
-              <div className="card bg-gradient-to-br from-white to-[#F8EEE5]/30 border-2 border-[#434E54]/10 shadow-lg rounded-xl overflow-hidden">
-                <div className="card-body p-0">
-                  {/* Header */}
-                  <div className="bg-[#434E54] px-6 py-4">
-                    <h4 className="text-base font-semibold text-white flex items-center gap-2">
-                      <DollarSign className="w-5 h-5" />
-                      Pricing Summary
-                    </h4>
-                  </div>
-
-                  {/* Line Items */}
-                  <div className="px-6 py-5 space-y-4">
-                    {/* Base Service */}
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-[#434E54]">
-                          {appointment.service?.name}
-                        </div>
-                        <div className="text-xs text-[#6B7280] mt-0.5">
-                          {appointment.pet?.size} size • {appointment.duration_minutes} minutes
-                        </div>
-                      </div>
-                      <div className="text-sm font-semibold text-[#434E54] ml-4">
-                        ${basePrice.toFixed(2)}
-                      </div>
-                    </div>
-
-                    {/* Individual Add-ons */}
-                    {appointment.addons && appointment.addons.length > 0 && (
-                      <div className="space-y-3 pt-3 border-t border-[#E5E5E5]">
-                        <div className="text-xs uppercase tracking-wide font-semibold text-[#9CA3AF] mb-2">
-                          Add-ons
-                        </div>
-                        {appointment.addons.map((addonItem: any) => (
-                          <div key={addonItem.id} className="flex justify-between items-center pl-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#434E54]/40"></div>
-                              <span className="text-sm text-[#434E54]">
-                                {addonItem.addon?.name}
-                              </span>
-                            </div>
-                            <span className="text-sm font-medium text-[#434E54]">
-                              ${addonItem.price.toFixed(2)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Subtotal */}
-                    <div className="border-t border-dashed border-[#E5E5E5] pt-3 flex justify-between items-center">
-                      <span className="text-sm font-medium text-[#434E54]">Subtotal</span>
-                      <span className="text-sm font-semibold text-[#434E54]">${subtotal.toFixed(2)}</span>
-                    </div>
-
-                    {/* Tax */}
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-[#6B7280]">Tax (9.75%)</span>
-                      <span className="text-sm font-medium text-[#6B7280]">${tax.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  {/* Footer - Total */}
-                  <div className="bg-[#434E54] px-6 py-4 border-t-2 border-[#F8EEE5]">
-                    <div className="flex justify-between items-center">
-                      <span className="text-base font-bold text-white">Total</span>
-                      <span className="text-2xl font-bold text-white tabular-nums">${total.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Report Card Section */}
-              {appointment.status === 'completed' && (
-                <div className="card bg-white border border-[#E5E5E5] shadow-sm rounded-xl">
-                  <div className="card-body p-6">
-                    <h4 className="card-title text-base font-semibold text-[#434E54] mb-4 flex items-center gap-2">
-                      <Camera className="w-5 h-5 text-[#6B7280]" />
-                      Report Card
-                    </h4>
-
-                    {loadingReportCard ? (
-                      <div className="flex items-center justify-center py-8">
-                        <span className="loading loading-spinner loading-md text-[#434E54]" />
-                      </div>
-                    ) : reportCard ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1">Status</p>
-                            <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                                reportCard.sent_at
-                                  ? 'bg-[#DCFCE7] text-[#166534]'
-                                  : 'bg-[#FEF3C7] text-[#92400E]'
-                              }`}
-                            >
-                              {reportCard.sent_at ? 'Sent' : 'Draft'}
-                            </span>
-                          </div>
-                          {reportCard.viewed_at && (
-                            <div className="text-right">
-                              <p className="text-xs uppercase tracking-wide font-medium text-[#9CA3AF] mb-1">Viewed</p>
-                              <p className="text-sm font-medium text-[#434E54]">
-                                {format(new Date(reportCard.viewed_at), 'MMM d, h:mm a')}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2">
-                          <a
-                            href={`/admin/appointments/${appointmentId}/report-card`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none transition-all duration-200 hover:shadow-md"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                            Edit Report Card
-                          </a>
-                          {reportCard.uuid && (
-                            <a
-                              href={`/report-cards/${reportCard.uuid}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn btn-sm btn-outline text-[#434E54] border-[#434E54] hover:bg-[#434E54] hover:text-white transition-all duration-200"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                              View Public Link
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-6">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#F8EEE5] flex items-center justify-center">
-                          <Camera className="w-8 h-8 text-[#6B7280]" />
-                        </div>
-                        <p className="text-sm text-[#6B7280] mb-4 max-w-md mx-auto">
-                          No report card created yet. Share grooming details and photos with the customer.
-                        </p>
-                        <a
-                          href={`/admin/appointments/${appointmentId}/report-card`}
-                          className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none transition-all duration-200 hover:shadow-md"
-                        >
-                          <Camera className="w-4 h-4" />
-                          Create Report Card
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
               )}
 
-              {/* Admin Notes - Only show when not in edit mode */}
-              {!isEditing && (
-                <div className="card bg-white border border-[#E5E5E5]/50 shadow-md rounded-xl overflow-hidden">
-                  {/* Header */}
-                  <div className="bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] px-5 py-4 border-b border-[#E5E5E5]/50">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-base font-bold text-[#434E54] flex items-center gap-2.5">
-                        <div className="p-2 bg-white rounded-lg shadow-sm">
-                          <FileText className="w-5 h-5 text-[#434E54]" />
-                        </div>
-                        Admin Notes
-                      </h4>
-                      <button
-                        onClick={() => setEditingNotes(!editingNotes)}
-                        className="btn btn-sm bg-white text-[#434E54] hover:bg-[#434E54] hover:text-white border-none transition-all duration-200 shadow-sm font-semibold"
-                        aria-label={editingNotes ? 'Cancel editing notes' : 'Edit admin notes'}
+              {/* Edit Mode OR View Mode Details */}
+              {isEditing ? (
+                <div className="bg-white rounded-lg p-3 border-2 border-[#434E54]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Edit2 className="w-4 h-4 text-[#434E54]" />
+                    <h4 className="text-sm font-semibold text-[#434E54]">Editing Appointment</h4>
+                  </div>
+                  <div className="space-y-3">
+                    {/* Date & Time */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-[#9CA3AF] mb-1 block">Date *</label>
+                        <input
+                          type="date"
+                          value={editForm.scheduled_date}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, scheduled_date: e.target.value }))}
+                          required
+                          className="input input-sm input-bordered w-full bg-white border-[#E5E5E5] focus:border-[#434E54]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-[#9CA3AF] mb-1 block">Time *</label>
+                        <input
+                          type="time"
+                          value={editForm.scheduled_time}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, scheduled_time: e.target.value }))}
+                          required
+                          className="input input-sm input-bordered w-full bg-white border-[#E5E5E5] focus:border-[#434E54]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Service */}
+                    <div>
+                      <label className="text-xs text-[#9CA3AF] mb-1 block">Service *</label>
+                      <select
+                        value={editForm.service_id}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, service_id: e.target.value }))}
+                        disabled={loadingServices}
+                        required
+                        className="select select-sm select-bordered w-full bg-white border-[#E5E5E5] focus:border-[#434E54]"
                       >
-                        <Edit2 className="w-4 h-4" />
-                        {editingNotes ? 'Cancel' : 'Edit'}
-                      </button>
+                        {services.map((service) => (
+                          <option key={service.id} value={service.id}>
+                            {service.name} ({service.duration_minutes}m)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Add-ons */}
+                    <div>
+                      <label className="text-xs text-[#9CA3AF] mb-1 block">Add-ons</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {addons.map((addon) => (
+                          <label
+                            key={addon.id}
+                            className="flex items-center gap-2 p-2 rounded border border-[#E5E5E5] bg-white cursor-pointer hover:bg-[#EAE0D5] text-xs"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={editForm.addon_ids.includes(addon.id)}
+                              onChange={() => handleAddonToggle(addon.id)}
+                              className="checkbox checkbox-xs"
+                            />
+                            <span className="text-[#434E54]">
+                              {addon.name} <span className="font-medium">(${addon.price.toFixed(2)})</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <label className="text-xs text-[#9CA3AF] mb-1 block">Special Requests</label>
+                      <textarea
+                        value={editForm.notes}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, notes: e.target.value }))}
+                        className="textarea textarea-sm textarea-bordered w-full bg-white border-[#E5E5E5] focus:border-[#434E54] min-h-[60px]"
+                        rows={2}
+                        placeholder="Customer requests..."
+                      />
+                    </div>
+
+                    {/* Admin Notes */}
+                    <div>
+                      <label className="text-xs text-[#9CA3AF] mb-1 block">Admin Notes (Internal)</label>
+                      <textarea
+                        value={editForm.admin_notes}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, admin_notes: e.target.value }))}
+                        className="textarea textarea-sm textarea-bordered w-full bg-white border-[#E5E5E5] focus:border-[#434E54] min-h-[60px]"
+                        rows={2}
+                        placeholder="Internal notes..."
+                      />
                     </div>
                   </div>
-                  {/* Body */}
-                  <div className="card-body p-5">
+                </div>
+              ) : (
+                <>
+                  {/* Notes & Add-ons - View Mode Only */}
+                  {appointment.notes && (
+                    <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                      <div className="text-xs text-[#9CA3AF] mb-1">Special Requests</div>
+                      <div className="text-sm text-[#434E54] italic">"{appointment.notes}"</div>
+                    </div>
+                  )}
+
+                  {/* Add-ons Display */}
+                  {appointment.addons && appointment.addons.length > 0 && (
+                    <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                      <div className="text-xs text-[#9CA3AF] mb-2">Extras Added</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {appointment.addons.map((addon: any) => (
+                          <span
+                            key={addon.id}
+                            className="badge badge-sm bg-[#434E54] text-white border-none"
+                          >
+                            {addon.addon?.name} +${addon.price.toFixed(2)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Admin Notes - Inline Edit */}
+                  <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-[#434E54]" />
+                        <h4 className="text-sm font-semibold text-[#434E54]">Admin Notes</h4>
+                      </div>
+                      <button
+                        onClick={() => setEditingNotes(!editingNotes)}
+                        className="btn btn-xs btn-ghost text-[#434E54]"
+                        aria-label={editingNotes ? 'Cancel' : 'Edit notes'}
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                    </div>
                     {editingNotes ? (
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         <textarea
                           value={adminNotes}
                           onChange={(e) => setAdminNotes(e.target.value)}
-                          className="textarea textarea-bordered w-full bg-white border-[#E5E5E5] focus:border-[#434E54] focus:ring-2 focus:ring-[#434E54]/20 focus:outline-none transition-all duration-200 min-h-[100px]"
-                          rows={4}
-                          placeholder="Add internal notes about this appointment (not visible to customers)..."
+                          className="textarea textarea-sm textarea-bordered w-full bg-white border-[#E5E5E5] focus:border-[#434E54] min-h-[60px]"
+                          rows={2}
+                          placeholder="Internal notes (not visible to customers)..."
                         />
                         <button
                           onClick={async () => {
@@ -1100,62 +848,144 @@ export function AppointmentDetailModal({
                               console.error('Error saving admin notes:', err);
                             }
                           }}
-                          className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none transition-all duration-200 hover:shadow-md font-semibold"
+                          className="btn btn-xs bg-[#434E54] text-white hover:bg-[#363F44] border-none"
                         >
-                          <Save className="w-4 h-4" />
-                          Save Notes
+                          <Save className="w-3 h-3" />
+                          Save
                         </button>
                       </div>
                     ) : (
-                      <div className="text-sm text-[#434E54] bg-[#F8EEE5]/50 p-4 rounded-lg min-h-[4rem] border border-[#E5E5E5]/50">
-                        {adminNotes || <span className="text-[#9CA3AF] italic">No admin notes yet. Click Edit to add internal notes.</span>}
+                      <div className="text-sm text-[#6B7280] bg-[#EAE0D5]/30 p-2 rounded min-h-[40px]">
+                        {adminNotes || <span className="italic text-xs">No notes yet. Click edit to add.</span>}
                       </div>
                     )}
                   </div>
-                </div>
+                </>
               )}
 
-              {/* Cancellation Info (if cancelled) */}
-              {appointment.status === 'cancelled' && appointment.cancellation_reason && (
-                <div className="bg-[#FEE2E2] border border-[#EF4444] rounded-xl p-4 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <XCircle className="w-5 h-5 text-[#991B1B] flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <div className="text-sm font-semibold text-[#991B1B] mb-2 uppercase tracking-wide">
-                        Appointment Cancelled
+              {/* Pricing - Compact */}
+              <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-[#434E54]" />
+                  <h4 className="text-sm font-semibold text-[#434E54]">Total Cost</h4>
+                </div>
+                <div className="space-y-1.5">
+                  {/* Base Service */}
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[#6B7280]">{appointment.service?.name} ({appointment.pet?.size})</span>
+                    <span className="text-[#434E54] font-medium">${basePrice.toFixed(2)}</span>
+                  </div>
+
+                  {/* Add-ons Section */}
+                  {appointment.addons && appointment.addons.length > 0 ? (
+                    <>
+                      <div className="pt-1 border-t border-dashed border-[#E5E5E5]/50">
+                        <div className="text-[10px] font-medium text-[#6B7280] uppercase tracking-wide mb-1">Extras Added</div>
                       </div>
-                      <div>
-                        <div className="text-xs uppercase tracking-wide font-medium text-[#991B1B]/70 mb-1">Reason</div>
-                        <div className="text-sm text-[#991B1B]">{appointment.cancellation_reason}</div>
-                      </div>
-                    </div>
+                      {appointment.addons.map((addonItem: any) => (
+                        <div key={addonItem.id} className="flex justify-between text-xs pl-2">
+                          <span className="text-[#6B7280]">• {addonItem.addon?.name || 'Add-on'}</span>
+                          <span className="text-[#434E54] font-medium">${(addonItem.price || 0).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="text-[10px] text-[#9CA3AF] italic pl-2">No extras added</div>
+                  )}
+
+                  {/* Subtotal */}
+                  <div className="flex justify-between text-xs pt-1.5 border-t border-dashed border-[#E5E5E5]">
+                    <span className="text-[#6B7280] font-medium">Subtotal</span>
+                    <span className="text-[#434E54] font-semibold">${subtotal.toFixed(2)}</span>
+                  </div>
+
+                  {/* Tax */}
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[#6B7280]">Tax (9.75%)</span>
+                    <span className="text-[#434E54] font-medium">${tax.toFixed(2)}</span>
+                  </div>
+
+                  {/* Total */}
+                  <div className="flex justify-between items-center pt-2 border-t border-[#434E54]">
+                    <span className="text-sm font-semibold text-[#434E54]">Total</span>
+                    <span className="text-lg font-bold text-[#434E54]">${total.toFixed(2)}</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Report Card - Compact */}
+              {appointment.status === 'completed' && (
+                <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Camera className="w-4 h-4 text-[#434E54]" />
+                    <h4 className="text-sm font-semibold text-[#434E54]">Grooming Report Card</h4>
+                  </div>
+
+                  {loadingReportCard ? (
+                    <div className="flex items-center justify-center py-4">
+                      <span className="loading loading-spinner loading-sm text-[#434E54]" />
+                    </div>
+                  ) : reportCard ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`badge badge-xs ${reportCard.sent_at ? 'badge-success' : 'badge-warning'}`}>
+                          {reportCard.sent_at ? 'Sent' : 'Draft'}
+                        </span>
+                        {reportCard.viewed_at && (
+                          <span className="text-xs text-[#6B7280]">
+                            Viewed {format(new Date(reportCard.viewed_at), 'MMM d')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <a
+                          href={`/admin/appointments/${appointmentId}/report-card`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-xs bg-[#434E54] text-white hover:bg-[#363F44] border-none"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          Edit
+                        </a>
+                        {reportCard.uuid && (
+                          <a
+                            href={`/report-cards/${reportCard.uuid}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-xs btn-outline text-[#434E54] border-[#434E54] hover:bg-[#434E54] hover:text-white"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            View
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-3">
+                      <p className="text-xs text-[#6B7280] mb-2">
+                        Share photos and details from today's spa session!
+                      </p>
+                      <a
+                        href={`/admin/appointments/${appointmentId}/report-card`}
+                        className="btn btn-xs bg-[#434E54] text-white hover:bg-[#363F44] border-none"
+                      >
+                        <Camera className="w-3 h-3" />
+                        Create Report Card
+                      </a>
+                    </div>
+                  )}
+                </div>
               )}
 
-              {/* Action Buttons - Show for all appointments including terminal states */}
-              {!isEditing && allowedTransitions.length > 0 && (
-                <div className="border-t border-[#E5E5E5] pt-6">
-                  <div className="flex flex-wrap gap-3">
-                    {allowedTransitions.map((transition) => {
-                      // For past appointments: only allow completed, no_show, and restore actions
-                      let disabled = false;
-                      if (isPast && !isTerminal) {
-                        // Non-terminal past appointments: allow completed, no_show
-                        disabled = !(transition.to === 'completed' || transition.to === 'no_show');
-                      }
-                      // Terminal states can always be restored (no disabled state)
-
-                      return (
-                        <StatusTransitionButton
-                          key={`${transition.from}-${transition.to}`}
-                          transition={transition}
-                          appointmentId={appointment.id}
-                          disabled={disabled}
-                          onSuccess={handleStatusUpdateSuccess}
-                        />
-                      );
-                    })}
+              {/* Cancellation Info */}
+              {appointment.status === 'cancelled' && appointment.cancellation_reason && (
+                <div className="bg-[#FEE2E2] border-l-4 border-[#EF4444] rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <XCircle className="w-4 h-4 text-[#991B1B] flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="text-xs font-semibold text-[#991B1B] mb-0.5">Cancelled</div>
+                      <div className="text-xs text-[#991B1B]">{appointment.cancellation_reason}</div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1163,17 +993,30 @@ export function AppointmentDetailModal({
           ) : null}
         </div>
 
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-gradient-to-r from-[#F8EEE5] to-[#EAE0D5] border-t-2 border-[#E5E5E5]/50 px-8 py-4 rounded-b-2xl shadow-lg">
-          <div className="flex items-center justify-end">
-            <button
-              onClick={handleClose}
-              className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none transition-all duration-200 hover:shadow-md font-semibold"
-            >
-              Close
-            </button>
+        {/* Footer - Status Transition Actions */}
+        {appointment && !isEditing && allowedTransitions.length > 0 && (
+          <div className="sticky bottom-0 bg-white border-t border-[#E5E5E5] px-5 py-4">
+            {/* Optimized layout for 3 buttons - centered with even spacing */}
+            <div className="flex items-center justify-center gap-3">
+              {allowedTransitions.map((transition) => {
+                let disabled = false;
+                if (isPast && !isTerminal) {
+                  disabled = !(transition.to === 'completed' || transition.to === 'no_show');
+                }
+
+                return (
+                  <StatusTransitionButton
+                    key={`${transition.from}-${transition.to}`}
+                    transition={transition}
+                    appointmentId={appointment.id}
+                    disabled={disabled}
+                    onSuccess={handleStatusUpdateSuccess}
+                  />
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </dialog>
   );

@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 
 interface RouteContext {
@@ -24,9 +24,12 @@ const MAX_PHONE_LENGTH = 20;
  */
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const supabase = await createServerSupabaseClient();
-    await requireAdmin(supabase);
+    const authSupabase = await createServerSupabaseClient();
+    await requireAdmin(authSupabase);
     const { id: customerId } = await context.params;
+
+    // Use service role client for data queries to bypass RLS
+    const supabase = createServiceRoleClient();
 
     // Fetch customer
     const { data: customer, error: customerError } = await (supabase as any)
@@ -127,9 +130,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
-    const supabase = await createServerSupabaseClient();
-    await requireAdmin(supabase);
+    const authSupabase = await createServerSupabaseClient();
+    await requireAdmin(authSupabase);
     const { id: customerId } = await context.params;
+
+    // Use service role client for data queries to bypass RLS
+    const supabase = createServiceRoleClient();
 
     const body = await request.json();
     const { first_name, last_name, email, phone } = body;

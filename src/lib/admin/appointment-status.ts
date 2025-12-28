@@ -35,14 +35,6 @@ export const ALLOWED_TRANSITIONS: StatusTransition[] = [
     isDestructive: true,
     description: 'Cancel this appointment',
   },
-  {
-    from: 'pending',
-    to: 'no_show',
-    label: 'Mark No-Show',
-    requiresConfirmation: true,
-    isDestructive: true,
-    description: 'Customer did not show up',
-  },
 
   // From confirmed
   {
@@ -61,14 +53,6 @@ export const ALLOWED_TRANSITIONS: StatusTransition[] = [
     isDestructive: true,
     description: 'Cancel this appointment',
   },
-  {
-    from: 'confirmed',
-    to: 'no_show',
-    label: 'Mark No-Show',
-    requiresConfirmation: true,
-    isDestructive: true,
-    description: 'Customer did not show up',
-  },
 
   // From checked_in
   {
@@ -86,14 +70,6 @@ export const ALLOWED_TRANSITIONS: StatusTransition[] = [
     requiresConfirmation: true,
     isDestructive: true,
     description: 'Cancel this appointment',
-  },
-  {
-    from: 'checked_in',
-    to: 'no_show',
-    label: 'Mark No-Show',
-    requiresConfirmation: true,
-    isDestructive: true,
-    description: 'Customer did not show up',
   },
 
   // From in_progress
@@ -132,16 +108,6 @@ export const ALLOWED_TRANSITIONS: StatusTransition[] = [
     requiresConfirmation: true,
     isDestructive: false,
     description: 'Reopen this completed appointment',
-  },
-
-  // From no_show (reverse transitions)
-  {
-    from: 'no_show',
-    to: 'pending',
-    label: 'Restore to Pending',
-    requiresConfirmation: true,
-    isDestructive: false,
-    description: 'Restore this no-show appointment to pending status',
   },
 ];
 

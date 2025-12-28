@@ -5,6 +5,12 @@
 import type { ServiceWithPrices, Addon, PetSize } from '@/types/database';
 
 /**
+ * California Sales Tax Rate (9.75%)
+ * Applied to all grooming services in La Mirada, CA
+ */
+export const CA_SALES_TAX_RATE = 0.0975;
+
+/**
  * Size weight ranges constant
  */
 export const SIZE_WEIGHT_RANGES = {

@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { validateReportCard, sanitizeGroomerNotes } from '@/lib/admin/report-card-validation';
 import type { ReportCardFormState } from '@/types/report-card';
 
@@ -13,13 +13,13 @@ import type { ReportCardFormState } from '@/types/report-card';
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
+    const authSupabase = await createServerSupabaseClient();
 
     // Check authentication
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = await authSupabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -32,6 +32,9 @@ export async function GET(request: NextRequest) {
     if (!appointmentId) {
       return NextResponse.json({ error: 'Appointment ID required' }, { status: 400 });
     }
+
+    // Use service role client for data queries to bypass RLS
+    const supabase = createServiceRoleClient();
 
     // Fetch report card
     const { data: reportCard, error: fetchError } = await (supabase as any)
@@ -63,13 +66,13 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
+    const authSupabase = await createServerSupabaseClient();
 
     // Check authentication
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = await authSupabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -93,6 +96,9 @@ export async function POST(request: NextRequest) {
 
     // Sanitize notes
     const sanitizedNotes = sanitizeGroomerNotes(formState.groomer_notes);
+
+    // Use service role client for data queries to bypass RLS
+    const supabase = createServiceRoleClient();
 
     // Check if report card already exists
     const { data: existingReportCard } = await (supabase as any)

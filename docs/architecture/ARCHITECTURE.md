@@ -56,7 +56,7 @@
 | 7 | Payments & Memberships | 🚧 Pending | Stripe integration, memberships, loyalty program |
 | 8 | Notifications | ✅ Completed | Templates, triggers, preferences, email/SMS providers, unsubscribe system |
 | 9 | Admin Settings | ✅ Completed | Business settings, staff management, site content, banners |
-| 10 | Testing & Polish | 🔄 In Progress | Booking modal refactor (✅), responsive admin layout (✅), comprehensive testing, performance optimization |
+| 10 | Testing & Polish | 🔄 In Progress | Booking modal refactor (✅), responsive admin layout (✅), admin RLS fixes (✅), comprehensive testing, performance optimization |
 | 11 | Calendar Error Recovery | ✅ Completed | Retry queue, error recovery UI, quota tracking, auto-pause system |
 
 ---
@@ -1648,6 +1648,51 @@ export async function GET(request: NextRequest) {
   // Proceed with customer logic
 }
 ```
+
+#### Admin API + RLS Pattern (CRITICAL)
+
+**Issue**: Admin endpoints that use `createServerSupabaseClient()` for data queries are subject to RLS policies designed for customers. This blocks admins from accessing other customers' data (e.g., appointment addons, report cards, memberships).
+
+**Solution**: Use separate clients for authentication and data queries:
+
+```typescript
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/admin/auth';
+
+export async function GET(request: NextRequest) {
+  // 1. Authenticate using regular client (respects RLS)
+  const authSupabase = await createServerSupabaseClient();
+  await requireAdmin(authSupabase); // Throws if not admin/groomer
+
+  // 2. Use service role client for data queries (bypasses RLS)
+  const supabase = createServiceRoleClient();
+
+  // 3. Perform queries - now has access to all customer data
+  const { data } = await supabase
+    .from('appointments')
+    .select('*, addons:appointment_addons(*)');
+
+  return NextResponse.json({ data });
+}
+```
+
+**When to Use Service Role Client**:
+- ✅ Admin viewing/managing customer data (appointments, addons, report cards, memberships)
+- ✅ Admin analytics and reports requiring cross-customer queries
+- ✅ Background jobs and automated processes
+- ❌ Customer-facing endpoints (use regular client with RLS)
+- ❌ Public endpoints (RLS provides security layer)
+
+**Affected Routes** (Fixed in 2025-12-28):
+- `/api/admin/appointments/[id]/route.ts` - Appointment addons
+- `/api/admin/customers/[id]/appointments/route.ts` - Customer appointments with addons
+- `/api/admin/customers/[id]/route.ts` - Customer memberships and loyalty
+- `/api/admin/report-cards/route.ts` - Report cards (GET & POST)
+
+**Security Note**: This pattern maintains security by:
+1. ✅ Admin authentication happens FIRST with regular client
+2. ✅ Service role client only used AFTER admin verification
+3. ✅ RLS policies still protect customer-facing endpoints
 
 ### Row-Level Security (RLS)
 

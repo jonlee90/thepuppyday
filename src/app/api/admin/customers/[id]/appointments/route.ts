@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 
 interface RouteContext {
@@ -16,9 +16,12 @@ interface RouteContext {
  */
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const supabase = await createServerSupabaseClient();
-    await requireAdmin(supabase);
+    const authSupabase = await createServerSupabaseClient();
+    await requireAdmin(authSupabase);
     const { id: customerId } = await context.params;
+
+    // Use service role client for data queries to bypass RLS
+    const supabase = createServiceRoleClient();
 
     // Fetch all appointments for this customer
     const { data: appointments, error: appointmentsError } = await (supabase as any)

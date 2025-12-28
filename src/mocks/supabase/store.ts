@@ -13,6 +13,7 @@ import {
   seedUsers,
   seedPets,
   seedAppointments,
+  seedAppointmentAddons,
   seedBeforeAfterPairs,
   seedGalleryImages,
   seedSiteContent,
@@ -135,6 +136,7 @@ class MockStore {
     // Seed pets and appointments
     this.tables.set('pets', [...seedPets] as unknown as TableData[]);
     this.tables.set('appointments', [...seedAppointments] as unknown as TableData[]);
+    this.tables.set('appointment_addons', [...seedAppointmentAddons] as unknown as TableData[]);
 
     // Seed marketing content
     this.tables.set('before_after_pairs', [...seedBeforeAfterPairs] as unknown as TableData[]);

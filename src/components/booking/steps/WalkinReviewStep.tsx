@@ -316,10 +316,20 @@ export function WalkinReviewStep({ onComplete, customerId }: WalkinReviewStepPro
                 <span className="text-[#434E54]">{formatCurrency(addon.price)}</span>
               </div>
             ))}
+            <div className="border-t border-[#434E54]/20 pt-1.5 mt-1.5">
+              <div className="flex justify-between text-sm">
+                <span className="text-[#434E54]/70">Subtotal</span>
+                <span className="text-[#434E54]">{formatCurrency(totalPrice)}</span>
+              </div>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-[#434E54]/70">Tax (9.75%)</span>
+              <span className="text-[#434E54]">{formatCurrency(totalPrice * 0.0975)}</span>
+            </div>
             <div className="border-t border-[#434E54]/20 pt-2 mt-2">
               <div className="flex justify-between">
                 <span className="font-semibold text-[#434E54]">Total</span>
-                <span className="text-xl font-bold text-[#434E54]">{formatCurrency(totalPrice)}</span>
+                <span className="text-xl font-bold text-[#434E54]">{formatCurrency(totalPrice * 1.0975)}</span>
               </div>
             </div>
           </div>

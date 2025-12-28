@@ -31,8 +31,10 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createServerSupabaseClient();
-    await requireAdmin(supabase);
+
+    // Verify admin authentication with regular client
+    const authSupabase = await createServerSupabaseClient();
+    await requireAdmin(authSupabase);
 
     // In mock mode, query from mock store
     if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
@@ -62,15 +64,29 @@ export async function GET(
         : [];
       const service = serviceData ? { ...serviceData, prices: servicePrices } : null;
 
-      // Get appointment add-ons
-      const appointmentAddons = store
-        .select('appointment_addons')
-        .filter((aa: { appointment_id: string }) => aa.appointment_id === id);
+      // Get appointment add-ons from the junction table
+      // Note: We need to get ALL records first, then filter by appointment_id
+      const allAppointmentAddons = store.select<Record<string, unknown>>('appointment_addons');
+      const appointmentAddons = allAppointmentAddons.filter(
+        (aa) => aa.appointment_id === id
+      );
 
-      const addonsWithDetails = appointmentAddons.map((aa: { addon_id: string; [key: string]: unknown }) => ({
-        ...aa,
-        addon: store.selectById('addons', aa.addon_id),
-      }));
+      // Enrich each appointment_addon with its addon details
+      const addonsWithDetails = appointmentAddons.map((aa) => {
+        const addonId = aa.addon_id as string;
+        const addon = store.selectById('addons', addonId);
+        return {
+          id: aa.id as string,
+          appointment_id: aa.appointment_id as string,
+          addon_id: addonId,
+          price: aa.price as number,
+          created_at: aa.created_at as string,
+          addon: addon,
+        };
+      });
+
+      console.log(`[ADDONS TEST] Appointment ${id} has ${addonsWithDetails.length} add-ons:`,
+        addonsWithDetails.map(a => ({ name: a.addon?.name, price: a.price })));
 
       // Get customer flags
       const customerFlags = customer
@@ -92,7 +108,8 @@ export async function GET(
       return NextResponse.json({ data: enrichedAppointment });
     }
 
-    // Production Supabase query
+    // Production Supabase query - Use service role client to bypass RLS
+    const supabase = createServiceRoleClient();
     const { data, error } = await (supabase as AppSupabaseClient)
       .from('appointments')
       .select(
@@ -121,6 +138,14 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    // DEBUG: Log what Supabase returned for addons
+    console.log(`[ADDONS DEBUG] Appointment ${id} Supabase response:`, {
+      hasAddons: !!data.addons,
+      addonsType: Array.isArray(data.addons) ? 'array' : typeof data.addons,
+      addonsLength: data.addons?.length,
+      addons: JSON.stringify(data.addons)
+    });
 
     // Get customer flags
     const { data: customerFlags } = await (supabase as AppSupabaseClient)
@@ -294,15 +319,25 @@ export async function PUT(
         : [];
       const service = serviceData ? { ...serviceData, prices: servicePrices } : null;
 
-      // Get appointment add-ons
-      const appointmentAddons = store
-        .select('appointment_addons')
-        .filter((aa: { appointment_id: string }) => aa.appointment_id === id);
+      // Get appointment add-ons from the junction table
+      const allAppointmentAddons = store.select<Record<string, unknown>>('appointment_addons');
+      const appointmentAddons = allAppointmentAddons.filter(
+        (aa) => aa.appointment_id === id
+      );
 
-      const addonsWithDetails = appointmentAddons.map((aa: { addon_id: string; [key: string]: unknown }) => ({
-        ...aa,
-        addon: store.selectById('addons', aa.addon_id),
-      }));
+      // Enrich each appointment_addon with its addon details
+      const addonsWithDetails = appointmentAddons.map((aa) => {
+        const addonId = aa.addon_id as string;
+        const addon = store.selectById('addons', addonId);
+        return {
+          id: aa.id as string,
+          appointment_id: aa.appointment_id as string,
+          addon_id: addonId,
+          price: aa.price as number,
+          created_at: aa.created_at as string,
+          addon: addon,
+        };
+      });
 
       const enrichedAppointment = {
         ...updatedAppointment,

@@ -177,6 +177,13 @@ Use for database and API work:
 - RLS policies
 - API routes
 
+**CRITICAL - Admin API + RLS Pattern**:
+When creating admin API routes that query customer data, use the **two-client pattern**:
+1. Authenticate with `createServerSupabaseClient()` + `requireAdmin()`
+2. Query data with `createServiceRoleClient()` to bypass RLS
+
+📖 See [Admin API + RLS Pattern](docs/architecture/ARCHITECTURE.md#admin-api--rls-pattern-critical) for full documentation and examples.
+
 ```bash
 @agent-data-dev "Add RLS policy for loyalty points table"
 ```
@@ -279,6 +286,12 @@ The following duplicate components were consolidated into the unified system:
   - Touch-optimized: 48-56px targets (WCAG AAA compliant)
   - Breakpoint utilities with React hooks for responsive behavior
   - Centralized state management with Zustand for drawer, tabs, and breakpoints
+- ✅ **Admin API RLS Fixes** (2025-12-28):
+  - Fixed 4 critical RLS issues blocking admin access to customer data
+  - Implemented two-client pattern: auth with regular client, queries with service role client
+  - Fixed routes: `/api/admin/appointments/[id]`, `/api/admin/customers/[id]/appointments`, `/api/admin/customers/[id]`, `/api/admin/report-cards`
+  - Documented pattern in ARCHITECTURE.md for future development
+  - Admin panel now displays addons, report cards, and memberships correctly
 - 🔄 Comprehensive testing and performance optimization (pending)
 
 **Phase 11 (Calendar Error Recovery)** - COMPLETED:

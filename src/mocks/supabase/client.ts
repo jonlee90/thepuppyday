@@ -179,13 +179,17 @@ class MockQueryBuilder<T> {
       if (hasJoin) {
         const selectString = this.selectColumns[0];
 
-        // Parse foreign key join syntax: "*, prices:service_prices(*)"
-        const foreignKeyJoinRegex = /(\w+):(\w+)\(\*\)/g;
+        // Parse foreign key join syntax: "*, prices:service_prices(*)" or nested "addons:appointment_addons(*, addon:addons(*))"
+        const foreignKeyJoinRegex = /(\w+):(\w+)\(([^)]+)\)/g;
         let match;
-        const joins: { alias: string; table: string }[] = [];
+        const joins: { alias: string; table: string; nestedSelect?: string }[] = [];
 
         while ((match = foreignKeyJoinRegex.exec(selectString)) !== null) {
-          joins.push({ alias: match[1], table: match[2] });
+          joins.push({
+            alias: match[1],
+            table: match[2],
+            nestedSelect: match[3] // Capture nested select like "*, addon:addons(*)"
+          });
         }
 
         // Apply foreign key joins
@@ -202,8 +206,43 @@ class MockQueryBuilder<T> {
               const fkColumn = `${this.table.slice(0, -1)}_id`; // e.g., 'service_id' from 'services'
               const matches = relatedRecords.filter(r => r[fkColumn] === record.id);
 
+              // Handle nested joins (e.g., "*, addon:addons(*)" within appointment_addons)
+              let enrichedMatches = matches;
+              if (join.nestedSelect && join.nestedSelect !== '*') {
+                // Parse nested join syntax - handle multiple nested joins
+                // Pattern: "*, addon:addons(*)" or "addon:addons(*)"
+                const nestedJoinRegex = /(\w+):(\w+)\(([^)]*)\)/g;
+                let nestedMatch;
+                const nestedJoins: { alias: string; table: string }[] = [];
+
+                while ((nestedMatch = nestedJoinRegex.exec(join.nestedSelect)) !== null) {
+                  nestedJoins.push({
+                    alias: nestedMatch[1],
+                    table: nestedMatch[2],
+                  });
+                }
+
+                if (nestedJoins.length > 0) {
+                  enrichedMatches = matches.map(matchRecord => {
+                    const enrichedMatch = { ...matchRecord };
+
+                    for (const nestedJoin of nestedJoins) {
+                      const nestedRecords = store.select<Record<string, unknown>>(nestedJoin.table);
+
+                      // Convention: Foreign key column name is "{singular_table_name}_id"
+                      const nestedFkColumn = `${nestedJoin.table.slice(0, -1)}_id`;
+                      const nestedRecord = nestedRecords.find(nr => nr.id === matchRecord[nestedFkColumn]);
+
+                      enrichedMatch[nestedJoin.alias] = nestedRecord || null;
+                    }
+
+                    return enrichedMatch;
+                  });
+                }
+              }
+
               // Add to record using alias
-              enrichedRecord[join.alias] = matches;
+              enrichedRecord[join.alias] = enrichedMatches;
             }
 
             return enrichedRecord;
@@ -300,8 +339,10 @@ class MockQueryBuilder<T> {
         records = records.slice(0, this.limitValue);
       }
 
-      // Project columns if specified
-      if (this.selectColumns.length > 0) {
+      // Project columns if specified (but skip if we have joins)
+      // When joins are present, selectColumns contains the full select string with join syntax,
+      // and the records are already enriched with joined data
+      if (this.selectColumns.length > 0 && !hasJoin) {
         records = records.map((r) => {
           const projected: Record<string, unknown> = {};
           for (const col of this.selectColumns) {
