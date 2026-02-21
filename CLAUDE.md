@@ -8,28 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Architecture Documentation
 
-For comprehensive technical details, refer to **[docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)** which serves as the definitive Source of Truth for:
+**[docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)** is the definitive Source of Truth for tech stack, database schema, RLS policies, security model, and service integrations. Consult it when implementing features that touch existing systems, reviewing security patterns, or needing exact type definitions. Sub-docs live in `docs/architecture/routes/`, `docs/architecture/components/`, and `docs/architecture/services/`.
 
-- **Complete Tech Stack**: All dependencies with version numbers and purposes
-- **Database Schema**: Full table relationships, RLS policies, and stored procedures
-- **Security Model**: Authentication flows, RLS patterns, data validation
-- **Route Documentation**: Detailed guides for all route modules in `docs/architecture/routes/`
-- **Component Patterns**: UI components and booking flow in `docs/architecture/components/`
-- **Service Integration**: Supabase and notifications in `docs/architecture/services/`
-
-**When to use Architecture Documentation**:
-- Implementing new features that touch existing systems
-- Understanding data flow and state management
-- Setting up integrations (Supabase, notifications, etc.)
-- Reviewing security patterns and RLS policies
-- Needing exact type definitions and API contracts
-
-**After completing a task**, update any architecture files that were affected:
-- Database schema changes → Update `docs/architecture/ARCHITECTURE.md` (Database Schema section)
-- New/modified routes → Update relevant file in `docs/architecture/routes/`
-- Component changes → Update `docs/architecture/components/`
-- Service integration changes → Update `docs/architecture/services/`
-- Phase completion → Update Development Phases in both `CLAUDE.md` and `ARCHITECTURE.md`
+**After completing a task**, update affected architecture files:
+- DB changes → `docs/architecture/ARCHITECTURE.md` (Database Schema) | Routes → `docs/architecture/routes/` | Components → `docs/architecture/components/` | Services → `docs/architecture/services/` | Phases → both `CLAUDE.md` and `ARCHITECTURE.md`
 
 ## Tech Stack
 
@@ -42,6 +24,39 @@ For comprehensive technical details, refer to **[docs/architecture/ARCHITECTURE.
 - **Payments**: Stripe
 - **Email**: Resend
 - **SMS**: Twilio
+
+## Tool Orchestration
+
+**Before writing code**, gather context using the appropriate tools in parallel based on task type:
+
+| Task Type | Tools to Use |
+|---|---|
+| React/Next.js components | Context7 (React/Next.js docs), Serena (`find_symbol`, `get_symbols_overview`), `/vercel-react-best-practices`, `/vercel-composition-patterns` |
+| UI/UX, styling, accessibility | Serena (component analysis), `/web-design-guidelines`, `@skill design-system` |
+| Database, schema, migrations, RLS | Supabase MCP tools, `/postgres-best-practices`, Serena (find types/queries) |
+| Bug fix or refactor | Serena (`find_symbol`, `find_referencing_symbols`), Context7 (relevant lib docs) |
+| New library/API integration | Context7 (`resolve-library-id` then `query-docs`), Serena for integration points |
+
+### Skill Auto-Invocation Triggers
+
+Invoke these skills **proactively** when their trigger conditions match — don't wait for user to ask:
+- **`/vercel-react-best-practices`** — Any React component work, render optimization, Server vs Client component decisions
+- **`/vercel-composition-patterns`** — Component API design, props patterns, compound components, composition refactors
+- **`/web-design-guidelines`** — UI layouts, accessibility audits, responsive design, UX reviews
+- **`/postgres-best-practices`** — SQL queries, schema design, migrations, RLS policies, indexing
+
+### Post-Implementation Rules
+
+- After code-producing tasks → run `@agent code-simplifier` on modified files
+- After DB/schema changes → run `mcp__supabase__get_advisors` for both `security` and `performance` checks
+- After component changes → use Serena `find_referencing_symbols` to verify no broken references
+
+### Tool Usage Rules
+
+1. Run Context7 + Serena + relevant skills **in parallel** before writing code
+2. Use Serena `find_symbol`/`get_symbols_overview` for code navigation (AST-aware, prefer over grep)
+3. Use Context7 for library docs — never guess API signatures
+4. Skills are selective — only invoke those matching the current task type
 
 ## Development Mode
 
@@ -72,15 +87,13 @@ src/
 ├── types/               # TypeScript types
 └── stores/              # Zustand state stores
 docs/
-├── architecture/        # 📖 Comprehensive architecture documentation (Source of Truth)
+├── architecture/        # Comprehensive architecture documentation (Source of Truth)
 │   ├── ARCHITECTURE.md  # Master document with tech stack, database, security
 │   ├── routes/          # Route-specific documentation (marketing, auth, admin, etc.)
 │   ├── components/      # Component architecture (UI, booking flow)
 │   └── services/        # Service integration guides (Supabase, notifications)
 └── specs/               # Kiro SDD specifications per phase
 ```
-
-📖 **For detailed route patterns, data flow, and implementation guides**, see route-specific docs in `docs/architecture/routes/`
 
 ## Commands
 
@@ -108,35 +121,11 @@ Before starting work, check `.claude/tasks/context_session_x.md` for current con
 
 **Clean & Elegant Professional** - Warm cream (#F8EEE5) background, charcoal (#434E54) primary, soft shadows, rounded corners.
 
-📖 **For complete design system with color codes, typography, and component patterns**, see [Global Design System](docs/architecture/ARCHITECTURE.md#global-design-system) in ARCHITECTURE.md
+See [Global Design System](docs/architecture/ARCHITECTURE.md#global-design-system) in ARCHITECTURE.md for complete color codes, typography, and component patterns.
 
-**Quick Reference**:
-- Shadows: `shadow-sm`, `shadow-md`, `shadow-lg` (soft, blurred)
-- Corners: `rounded-lg`, `rounded-xl`
-- Icons: Lucide React
-- NO bold borders or chunky elements
+**Quick Reference**: Shadows: `shadow-sm`/`shadow-md`/`shadow-lg` (soft, blurred) | Corners: `rounded-lg`/`rounded-xl` | Icons: Lucide React | NO bold borders or chunky elements
 
-**Playful, Dog-Themed UI/UX Guidelines**:
-When working on UI/UX designs, incorporate a **playful, dog-themed vibe** that complements the professional aesthetic:
-
-- **Dog-Themed Icons & Illustrations**:
-  - Paw prints for success indicators or decorative elements
-  - Dog silhouettes for navigation or empty states
-  - Bone icons for loyalty points or rewards
-  - Subtle dog-related illustrations in backgrounds or empty states
-
-- **Fun Interactions & Animations**:
-  - Wagging tail animations for success states
-  - Bouncing paw prints during loading
-  - Playful transitions (e.g., slide-in with a "bounce" like a happy dog)
-  - Confetti or paw prints on appointment confirmation
-
-- **Empty States with Personality**:
-  - Dog-themed messaging when there's no content
-  - Friendly illustrations of dogs waiting or playing
-  - Encouraging CTAs that feel warm and inviting
-
-- **Tone**: Maintain professional elegance while adding character - warm, inviting, and joyful without being childish
+**Dog-Themed UI/UX**: Complement the professional aesthetic with playful dog-themed elements — paw prints for success/loading states, dog silhouettes for empty states, bone icons for loyalty/rewards, bouncy animations for confirmations. Tone: warm, inviting, joyful without being childish.
 
 ## Available Agents
 
@@ -182,7 +171,7 @@ When creating admin API routes that query customer data, use the **two-client pa
 1. Authenticate with `createServerSupabaseClient()` + `requireAdmin()`
 2. Query data with `createServiceRoleClient()` to bypass RLS
 
-📖 See [Admin API + RLS Pattern](docs/architecture/ARCHITECTURE.md#admin-api--rls-pattern-critical) for full documentation and examples.
+See [Admin API + RLS Pattern](docs/architecture/ARCHITECTURE.md#admin-api--rls-pattern-critical) for full documentation and examples.
 
 ```bash
 @agent-data-dev "Add RLS policy for loyalty points table"
@@ -200,103 +189,30 @@ Use after completing features or before PRs:
 
 ## Booking System Architecture
 
-**Unified Modal System**: The application uses a single `BookingModal` component (`src/components/booking/BookingModal.tsx`) with mode-aware behavior for all booking entry points.
+**Unified Modal System**: `BookingModal` (`src/components/booking/BookingModal.tsx`) with mode-aware behavior for all entry points.
 
-### Booking Modes & Step Flows
+| Mode | Entry Point | Steps | Special |
+|---|---|---|---|
+| `customer` | `StickyBookingButton` (marketing page, after 600px scroll) | Service → Date/Time → Customer (Login/Register) → Pet → Review+Addons → Confirmation (6 steps) | — |
+| `admin` | "Create Appointment" in `/admin/appointments` | Service → Date/Time → Customer (Search/Create) → Pet → Review+Addons → Confirmation (6 steps) | — |
+| `walkin` | "Walk-in" in `/admin/dashboard` | Service → Customer (Search/Create) → Pet → Review+Addons → Confirmation (5 steps) | Date/Time=NOW, status=`checked_in`, source=`walk_in` |
 
-1. **Customer Mode** (`mode='customer'`) - Marketing page via sticky button:
-   - Steps: Service → Date & Time → Customer (Login/Register) → Pet → Review (includes add-ons) → Confirmation
-   - Total: 6 steps (0-5)
-   - Entry: `StickyBookingButton` appears after scrolling 600px on marketing page
-
-2. **Admin Mode** (`mode='admin'`) - Admin appointments page:
-   - Steps: Service → Date & Time → Customer (Search/Create) → Pet → Review (includes add-ons) → Confirmation
-   - Total: 6 steps (0-5)
-   - Entry: "Create Appointment" button in `/admin/appointments`
-
-3. **Walk-in Mode** (`mode='walkin'`) - Admin dashboard:
-   - Steps: Service → Customer (Search/Create) → Pet → Review (includes add-ons) → Confirmation
-   - Total: 5 steps (0-4)
-   - Entry: "Walk-in" button in `/admin/dashboard`
-   - Special: Date/Time auto-set to NOW, status set to `'checked_in'`, source tracked as `'walk_in'`
-
-### Key Components
-
-- **`BookingModal`**: Main modal container (max-w-[1000px] xl:max-w-[1200px] for tablet optimization)
-- **`BookingWizard`**: Step orchestration with mode-aware rendering
-- **`StickyBookingButton`**: Scroll-triggered booking trigger on marketing page (replaces embedded widget)
-- **`CustomerStep`**: Mode-aware customer information collection
-  - Customer mode: Login/Register UI
-  - Admin/Walkin modes: Search existing + always-visible create form
-- **`ReviewStep`**: Integrated add-ons selection (no separate AddonsStep)
-- **Time Slots**: Generated hourly (60-minute intervals via `SLOT_INTERVAL_MINUTES = 60`)
-
-📖 **For complete booking flow documentation**, see [Booking Flow](docs/architecture/components/booking-flow.md)
-
-### Deprecated Components (Removed)
-
-The following duplicate components were consolidated into the unified system:
-- ❌ `src/components/admin/appointments/WalkInModal.tsx` (replaced by BookingModal with mode='walkin')
-- ❌ `src/components/admin/appointments/ManualAppointmentModal.tsx` (replaced by BookingModal with mode='admin')
-- ❌ `src/components/admin/appointments/steps/*.tsx` (all duplicate step components)
-- ❌ Embedded booking widget on marketing page (replaced by StickyBookingButton)
+Key components: `BookingWizard` (step orchestration), `CustomerStep` (mode-aware: login/register for customers, search/create for admin), `ReviewStep` (integrated add-ons), time slots at 60-min intervals. See [Booking Flow](docs/architecture/components/booking-flow.md) for full docs.
 
 ## Database Schema
 
 **Quick Reference**: Key tables: `users`, `pets`, `breeds`, `services`, `service_prices`, `addons`, `appointments`, `appointment_addons`, `waitlist`, `report_cards`, `memberships`, `customer_memberships`, `loyalty_points`, `loyalty_transactions`, `customer_flags`, `payments`, `site_content`, `promo_banners`, `gallery_images`, `settings`, `notifications_log`, `notification_templates`, `notification_settings`, `notification_template_history`
 
-📖 **For detailed schema with relationships, RLS policies, and stored procedures**, see [Database Schema section](docs/architecture/ARCHITECTURE.md#database-schema) in ARCHITECTURE.md
+See [Database Schema](docs/architecture/ARCHITECTURE.md#database-schema) in ARCHITECTURE.md for relationships, RLS policies, and stored procedures.
 
 ## Business Information
 
-📖 **For complete business details** (pricing, services, features, hours, contact), see [Business Information](docs/architecture/ARCHITECTURE.md#business-information) in ARCHITECTURE.md
+See [Business Information](docs/architecture/ARCHITECTURE.md#business-information) in ARCHITECTURE.md for complete details.
 
-**Quick Reference**:
-- Size-based pricing: Small (0-18 lbs), Medium (19-35 lbs), Large (36-65 lbs), X-Large (66+ lbs)
-- Core packages: Basic Grooming ($40-$85), Premium Grooming ($70-$150)
-- Key features: Multi-step booking, waitlist, report cards, review routing, loyalty program
+**Quick Reference**: Size-based pricing (Small 0-18lbs, Medium 19-35lbs, Large 36-65lbs, X-Large 66+lbs) | Basic Grooming $40-$85, Premium $70-$150 | Features: multi-step booking, waitlist, report cards, review routing, loyalty program
 
 ## Development Phases
 
-📖 **For complete phase details with task breakdowns**, see [Development Phases](docs/architecture/ARCHITECTURE.md#development-phases) in ARCHITECTURE.md
+See [Development Phases](docs/architecture/ARCHITECTURE.md#development-phases) in ARCHITECTURE.md for complete phase details.
 
-**Current Status**:
-- ✅ Completed: Phases 1-6, 8, 9, 11 (Foundation through Calendar Error Recovery)
-- ⏸️ Pending: Phase 7 (Payments & Memberships)
-- 🔄 In Progress: Phase 10 (Testing & Polish) - Booking modal refactor (✅), responsive admin layout (✅)
-
-**Phase 10 (Testing & Polish)** - IN PROGRESS:
-- ✅ **Booking Modal Refactor** (2025-12-26):
-  - Consolidated duplicate booking components into unified `BookingModal`
-  - Implemented mode-aware step flows (customer, admin, walkin)
-  - Integrated add-ons into ReviewStep (removed separate AddonsStep)
-  - Added `StickyBookingButton` on marketing page (replaced embedded widget)
-  - Increased modal size for tablet optimization (1000px/1200px)
-  - Changed time slots to hourly intervals (60 minutes)
-  - Enhanced `CustomerStep` with login/register UI for customers and search/create for admin modes
-  - Fixed walk-in appointment validation and persistence
-- ✅ **Responsive Admin Layout** (2025-12-27):
-  - Comprehensive responsive design for desktop, tablet, and mobile devices
-  - Desktop: Full sidebar (256px) with collapse to icon-only (80px), dynamic content width
-  - Tablet: Icon-only sidebar (72px, always visible) with tooltips and popover submenus
-  - Mobile: Fixed header (56px) + bottom tab navigation (72px) + slide-in drawer
-  - Bottom tabs: Home, Appointments, Walk-in (elevated center button), Customers, More
-  - Walk-in button integration with BookingModal in walk-in mode
-  - Eliminated dead space: Desktop collapsed sidebar gains ~496px usable space
-  - Touch-optimized: 48-56px targets (WCAG AAA compliant)
-  - Breakpoint utilities with React hooks for responsive behavior
-  - Centralized state management with Zustand for drawer, tabs, and breakpoints
-- ✅ **Admin API RLS Fixes** (2025-12-28):
-  - Fixed 4 critical RLS issues blocking admin access to customer data
-  - Implemented two-client pattern: auth with regular client, queries with service role client
-  - Fixed routes: `/api/admin/appointments/[id]`, `/api/admin/customers/[id]/appointments`, `/api/admin/customers/[id]`, `/api/admin/report-cards`
-  - Documented pattern in ARCHITECTURE.md for future development
-  - Admin panel now displays addons, report cards, and memberships correctly
-- 🔄 Comprehensive testing and performance optimization (pending)
-
-**Phase 11 (Calendar Error Recovery)** - COMPLETED:
-- Retry queue system with exponential backoff (1min → 5min → 15min)
-- Error recovery UI with filtering and batch retry
-- Quota tracking with daily limits and warnings
-- Auto-pause system after 10 consecutive failures
-- 6 critical security fixes (CSRF, auth, SQL injection, N+1 queries, XSS, memory leaks)
+**Current Status**: Phases 1-6, 8, 9, 11 completed | Phase 7 (Payments) pending | Phase 10 (Testing & Polish) in progress — booking modal refactor, responsive admin layout, and admin API RLS fixes done; comprehensive testing pending.

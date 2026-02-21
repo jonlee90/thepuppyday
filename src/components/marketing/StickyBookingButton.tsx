@@ -1,7 +1,7 @@
 /**
  * Sticky Booking Button
- * Appears after user scrolls past hero section
- * Opens BookingModal in customer mode
+ * Circular FAB at bottom-right that appears when
+ * the hero "Book Your Appointment" button scrolls out of view
  */
 
 'use client';
@@ -11,27 +11,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar } from 'lucide-react';
 import { useBookingModal } from '@/hooks/useBookingModal';
 
-const SCROLL_THRESHOLD = 600; // Show button after scrolling 600px (past hero)
-
 export function StickyBookingButton() {
   const [isVisible, setIsVisible] = useState(false);
   const { open } = useBookingModal();
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY || document.documentElement.scrollTop;
-      setIsVisible(scrollY > SCROLL_THRESHOLD);
-    };
+    const heroBtn = document.getElementById('hero-book-btn');
+    if (!heroBtn) return;
 
-    // Check initial scroll position
-    handleScroll();
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Show sticky button when hero CTA is NOT visible
+        setIsVisible(!entry.isIntersecting);
+      },
+      { threshold: 0 }
+    );
 
-    // Add scroll listener
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    observer.observe(heroBtn);
+    return () => observer.disconnect();
   }, []);
 
   const handleClick = () => {
@@ -41,45 +38,24 @@ export function StickyBookingButton() {
   return (
     <AnimatePresence>
       {isVisible && (
-        <motion.div
-          className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none"
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        <motion.button
+          onClick={handleClick}
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 sm:w-16 sm:h-16
+                     rounded-full bg-[#434E54] text-white
+                     shadow-[0_4px_20px_rgba(67,78,84,0.35)]
+                     hover:shadow-[0_6px_28px_rgba(67,78,84,0.45)]
+                     hover:bg-[#363F44] active:scale-95
+                     flex items-center justify-center
+                     transition-[background-color,box-shadow] duration-200
+                     cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#434E54]/40 focus:ring-offset-2"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 24 }}
+          aria-label="Book your appointment"
         >
-          {/* Container with backdrop blur */}
-          <div className="bg-white/80 backdrop-blur-md border-t border-[#434E54]/10 shadow-lg pointer-events-auto">
-            <div className="container mx-auto px-4 py-3 md:py-4">
-              {/* Desktop: Centered button */}
-              <div className="hidden md:flex items-center justify-center">
-                <button
-                  onClick={handleClick}
-                  className="bg-[#434E54] text-white font-semibold py-3.5 px-8 rounded-xl
-                           shadow-md hover:shadow-xl hover:bg-[#434E54]/90
-                           transform hover:-translate-y-0.5 transition-all duration-200
-                           flex items-center gap-2.5"
-                >
-                  <Calendar className="w-5 h-5" />
-                  <span>Book Your Appointment</span>
-                </button>
-              </div>
-
-              {/* Mobile: Full-width button */}
-              <div className="md:hidden">
-                <button
-                  onClick={handleClick}
-                  className="w-full bg-[#434E54] text-white font-semibold py-3.5 rounded-xl
-                           shadow-md active:scale-[0.98] transition-transform duration-150
-                           flex items-center justify-center gap-2.5"
-                >
-                  <Calendar className="w-5 h-5" />
-                  <span>Book Your Appointment</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+          <Calendar className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={2} />
+        </motion.button>
       )}
     </AnimatePresence>
   );

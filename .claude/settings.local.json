@@ -80,7 +80,9 @@
       "mcp__playwright__browser_handle_dialog",
       "Bash(gh pr create:*)",
       "mcp__playwright__browser_run_code",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(python3:*)",
+      "Bash(CLAUDE_PROJECT_DIR=/Users/jonathanlee/Desktop/thepuppyday bash:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -21,7 +21,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ heroContent }: HeroSectionProps) {
   return (
-    <section id="home" className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-[#F8EEE5] via-[#FFFBF7] to-[#F8EEE5] pt-5 mt-[160px] lg:mt-5">
+    <section id="home" className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-[#F8EEE5] via-[#FFFBF7] to-[#F8EEE5] mt-3">
 <PawDecoration />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
@@ -65,7 +65,31 @@ export function HeroSection({ heroContent }: HeroSectionProps) {
 
                     if (isBookingButton) {
                       return (
-                        <HeroBookingButton key={index} />
+                        <HeroBookingButton key={index} id="hero-book-btn" />
+                      );
+                    }
+
+                    // Anchor link — smooth scroll to section
+                    if (button.url.startsWith('#')) {
+                      const sectionId = button.url.slice(1);
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className={`
+                            inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg
+                            transition-all duration-200 hover:-translate-y-1 hover:shadow-xl cursor-pointer
+                            ${
+                              button.style === 'primary'
+                                ? 'text-white bg-[#434E54] hover:bg-[#363F44]'
+                                : 'text-[#434E54] bg-white/90 backdrop-blur-sm hover:bg-white border border-gray-200'
+                            }
+                          `}
+                        >
+                          {button.text}
+                        </button>
                       );
                     }
 
