@@ -1,6 +1,7 @@
 /**
  * Marketing homepage - integrates all marketing components
  * Task 0168: Updated to use dynamic site content from database
+ *
  */
 
 import { Metadata } from 'next';
@@ -190,15 +191,7 @@ export default async function MarketingPage() {
       {/* About Section */}
       <AboutSection
         title="About Puppy Day"
-        description="At Puppy Day, we provide professional grooming services that promote your dog's health, comfort, and happiness. We use gentle techniques and premium hypoallergenic products suitable for sensitive skin. Our day care offers a safe, social experience with supervised playtime."
-        differentiators={[
-          'Gentle techniques and premium hypoallergenic products',
-          'Safe, supervised daycare environment',
-          'Experienced and caring staff',
-          'Health-focused grooming services',
-          'Social playtime for dogs',
-          'Comfortable and clean facilities'
-        ]}
+        description="At The Puppy Day, we’re a family-run grooming salon that believes every dog deserves to feel comfortable and look their best. Our La Mirada studio was designed to feel like a second home for your pup and we use warm water and premium hypoallergenic products during every session."
       />
 
       {/* Contact Section - Dynamic from database */}
