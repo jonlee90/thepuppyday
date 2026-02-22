@@ -72,15 +72,6 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="space-y-2">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#434E54] tracking-tight">
-            Choose Your Service
-          </h2>
-          <p className="text-[#434E54]/60 leading-relaxed text-base">
-            Premium grooming tailored to your pet&apos;s needs
-          </p>
-        </div>
-
         <div className="bg-white rounded-xl shadow-lg p-12 text-center">
           <div className="w-20 h-20 bg-gradient-to-br from-[#F4A261]/20 to-[#434E54]/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg
@@ -119,15 +110,6 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
   if (bookableServices.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="space-y-2">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#434E54] tracking-tight">
-            Choose Your Service
-          </h2>
-          <p className="text-[#434E54]/60 leading-relaxed text-base">
-            Premium grooming tailored to your pet&apos;s needs
-          </p>
-        </div>
-
         <div className="bg-white rounded-xl shadow-lg p-12 text-center">
           <div className="w-20 h-20 bg-gradient-to-br from-[#EAE0D5] to-[#F8EEE5] rounded-full flex items-center justify-center mx-auto mb-6">
             <svg
@@ -155,16 +137,6 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
 
   return (
     <div className="space-y-6">
-      {/* Editorial Header */}
-      <div className="space-y-2">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#434E54] tracking-tight">
-          Choose Your Service
-        </h2>
-        <p className="text-[#434E54]/60 leading-relaxed text-base">
-          Premium grooming tailored to your pet&apos;s needs
-        </p>
-      </div>
-
       {/* Editorial Grid - Optimized for modal width */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-8 lg:gap-10">
         {bookableServices.map((service) => (

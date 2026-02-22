@@ -1,18 +1,15 @@
 'use client';
 
 /**
- * Hero section for marketing homepage - Clean & Elegant Professional
- * Task 0168: Updated to use dynamic hero content from database
- * Task 0224: Updated to use OptimizedImage with priority loading
- * Updated: Integrated with booking modal for CTA
+ * Hero section — full-bleed immersive layout
+ * Lobby photo as background with gradient overlay, content pinned bottom-left
  */
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Phone, Calendar, Star } from 'lucide-react';
+import { Phone, MapPin, Star } from 'lucide-react';
 import { HeroBookingButton } from '@/components/booking';
 import { OptimizedImage } from '@/components/common/OptimizedImage';
-import PawDecoration from './paw-decoration';
 import type { HeroContent } from '@/types/settings';
 
 interface HeroSectionProps {
@@ -20,146 +17,146 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ heroContent }: HeroSectionProps) {
-  return (
-    <section id="home" className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-[#F8EEE5] via-[#FFFBF7] to-[#F8EEE5] mt-3">
-<PawDecoration />
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+  // Get today's day name for hours display
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  const isWeekday = !['Saturday', 'Sunday'].includes(today);
+  const todayHours = isWeekday ? '8 AM – 5 PM' : today === 'Saturday' ? '9 AM – 4 PM' : 'Closed';
 
-            {/* Left Column - Content with Lobby Background */}
+  return (
+    <section id="home" className="relative min-h-[85vh] flex items-end overflow-hidden">
+      {/* Full-bleed background image */}
+      <div className="absolute inset-0">
+        <OptimizedImage
+          src="/images/puppyday-lobby-background.png"
+          alt="The Puppy Day salon lobby"
+          fill
+          priority={true}
+          enableBlur={false}
+          className="object-cover"
+          sizes="100vw"
+        />
+        {/* Dark gradient overlay for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+      </div>
+
+      {/* Content container */}
+      <div className="relative z-10 w-full">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 lg:pb-20">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 lg:gap-12">
+            {/* Left — main content */}
             <motion.div
-              className="relative space-y-8 text-center lg:text-left order-2 lg:order-1"
+              className="max-w-2xl space-y-6"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             >
-              {/* Trust badge */}
-            <div className="inline-flex items-center flex-col lg:flex-row gap-2 bg-[#FFFBF7]/60 backdrop-blur-sm rounded-full px-4 py-2 text-sm font-body text-secondary-foreground animate-fade-up">
-              <div className="flex items-center gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                ))}
+              {/* Location badge 
+              <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-2 text-sm text-white/90">
+                <MapPin className="w-4 h-4" />
+                <span>La Mirada, CA</span>
+                <span className="w-px h-3.5 bg-white/30" />
+                <span>{today} {todayHours}</span>
               </div>
-              <span>5 stars on Yelp!</span> <span>Trusted by 100+ dog parents</span>
-            </div>
-            
-              {/* Content - positioned above background */}
-              <div className="relative z-10">
-                {/* Headline */}
-                <div>
-                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#434E54] mb-6 leading-tight">
-                    {heroContent.headline}
-                  </h1>
-                  <p className="text-xl sm:text-2xl text-[#6B7280] leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                    {heroContent.subheadline}
-                  </p>
+*/}
+              {/* Headline */}
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
+                {heroContent.headline}
+              </h1>
+
+              {/* Subheadline */}
+              <p className="text-lg sm:text-xl text-white/80 leading-relaxed max-w-xl">
+                {heroContent.subheadline}
+              </p>
+
+              {/* Trust signals */}
+              <div className="flex items-center gap-2 text-white/90">
+                <div className="flex items-center gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  ))}
                 </div>
+                <span className="text-sm font-medium">5.0 on Yelp</span>
+                <span className="w-1 h-1 rounded-full bg-white/50" />
+                <span className="text-sm">100+ happy pups</span>
+              </div>
 
-                {/* CTA Buttons - Dynamic from database */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mt-8">
-                  {heroContent.cta_buttons.map((button, index) => {
-                    // Use booking modal for primary booking CTA
-                    const isBookingButton = button.style === 'primary' &&
-                      (button.url === '#book' || button.text.toLowerCase().includes('book'));
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                {heroContent.cta_buttons.map((button, index) => {
+                  const isBookingButton = button.style === 'primary' &&
+                    (button.url === '#book' || button.text.toLowerCase().includes('book'));
 
-                    if (isBookingButton) {
-                      return (
-                        <HeroBookingButton key={index} id="hero-book-btn" />
-                      );
-                    }
-
-                    // Anchor link — smooth scroll to section
-                    if (button.url.startsWith('#')) {
-                      const sectionId = button.url.slice(1);
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
-                          }}
-                          className={`
-                            inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg
-                            transition-all duration-200 hover:-translate-y-1 hover:shadow-xl cursor-pointer
-                            ${
-                              button.style === 'primary'
-                                ? 'text-white bg-[#434E54] hover:bg-[#363F44]'
-                                : 'text-[#434E54] bg-white/90 backdrop-blur-sm hover:bg-white border border-gray-200'
-                            }
-                          `}
-                        >
-                          {button.text}
-                        </button>
-                      );
-                    }
-
-                    // Regular link for other CTAs
+                  if (isBookingButton) {
                     return (
-                      <Link
+                      <HeroBookingButton
                         key={index}
-                        href={button.url}
-                        className={`
-                          inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg
-                          transition-all duration-200 hover:-translate-y-1 hover:shadow-xl
-                          ${
-                            button.style === 'primary'
-                              ? 'text-white bg-[#434E54] hover:bg-[#363F44]'
-                              : 'text-[#434E54] bg-white/90 backdrop-blur-sm hover:bg-white border border-gray-200'
-                          }
-                        `}
-                      >
-                        {button.text.toLowerCase().includes('call') && (
-                          <Phone className="w-5 h-5" strokeWidth={2} />
-                        )}
-                        {button.text}
-                      </Link>
+                        id="hero-book-btn"
+                        className="border-[#F8EEE5]/30 border"
+                      />
                     );
-                  })}
+                  }
+
+                  // Anchor link — smooth scroll
+                  if (button.url.startsWith('#')) {
+                    const sectionId = button.url.slice(1);
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-xl
+                          transition-all duration-200 hover:-translate-y-1 cursor-pointer
+                          bg-[#F8EEE5] text-[#434E54] hover:bg-white shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)]
+                         "
+                      >
+                        {button.text}
+                      </button>
+                    );
+                  }
+
+                  // Regular link
+                  return (
+                    <Link
+                      key={index}
+                      href={button.url}
+                      className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-xl
+                        transition-all duration-200 hover:-translate-y-1
+                        bg-[#F8EEE5] text-[#434E54] hover:bg-white shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)]"
+                    >
+                      {button.text.toLowerCase().includes('call') && (
+                        <Phone className="w-5 h-5" strokeWidth={2} />
+                      )}
+                      {button.text}
+                    </Link>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            {/* Right — floating testimonial card (desktop only) 
+            <motion.div
+              className="hidden lg:block shrink-0"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 shadow-lg max-w-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
+                    <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-[#434E54]">
+                      &ldquo;Best dog grooming in La Mirada!&rdquo;
+                    </p>
+                    <p className="text-sm text-[#6B7280]">&mdash; Sarah M.</p>
+                  </div>
                 </div>
               </div>
             </motion.div>
 
-            {/* Right Column - Blended Dog Image */}
-            <motion.div
-              className="relative order-1 lg:order-2"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <motion.div
-                className="relative w-full max-w-md mx-auto lg:max-w-none"
-    
-              >
-                 {/* Main hero image with dog centered in lobby */}
-            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl">
-              <OptimizedImage
-                src="/images/puppyday-lobby-background.jpg"
-                alt="Adorable groomed dog with bowtie in the Puppy Day salon lobby"
-                width={800}
-                height={500}
-                priority={true}
-                enableBlur={false}
-                className="w-full h-[400px] lg:h-[500px] object-cover"
-              />
-   
-              {/* Overlay gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-hero-overlay/30 to-transparent" />
-            </div>
-            
-            {/* Floating card - repositioned */}
-            <div className="mt-5 left-6 w-full lg:w-fit  bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
-                  <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                </div>
-                <div>
-                  <p className="font-display text-base font-semibold text-foreground">"Best dog grooming in La Mirada!"</p>
-                  <p className="text-sm font-body text-muted-foreground">— Sarah M.</p>
-                </div>
-              </div>
-            </div>
-              </motion.div>
-            </motion.div>
+            */}
           </div>
         </div>
       </div>

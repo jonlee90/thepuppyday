@@ -159,7 +159,7 @@ export function BookingModalFooter({
 
   // Desktop Layout
   return (
-    <div className="bg-white border-t border-[#434E54]/10 px-6 py-4 shadow-[0_-4px_16px_rgba(67,78,84,0.08)]">
+    <div className="bg-transparent px-6 py-4 ">
       <div className="flex items-center justify-between gap-4">
         {/* Back Button - Left Side */}
         {showBackButton ? (

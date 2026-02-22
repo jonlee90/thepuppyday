@@ -53,11 +53,11 @@ export async function GET() {
       );
     }
 
-    // Get sync statistics
-    const statistics = await getSyncStatistics(supabase, connection.id);
-
-    // Get total synced appointments
-    const totalSynced = await getSyncedAppointmentsCount(supabase, connection.id);
+    // Fetch sync statistics and synced count in parallel
+    const [statistics, totalSynced] = await Promise.all([
+      getSyncStatistics(supabase, connection.id),
+      getSyncedAppointmentsCount(supabase, connection.id),
+    ]);
 
     // Get last sync time from connection
     const lastSyncAt = connection.last_sync_at

@@ -5,7 +5,7 @@
  * Task 0185: Blocked dates API routes
  */
 
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
@@ -289,15 +289,15 @@ export async function POST(request: Request) {
       }
     }
 
-    // Log settings change to audit log (fire-and-forget)
-    await logSettingsChange(
+    // Log settings change to audit log (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       admin.id,
       'booking',
       'blocked_dates',
       oldBlockedDates,
       updatedBlockedDates
-    );
+    ));
 
     // Return updated blocked dates array
     return NextResponse.json(
@@ -438,15 +438,15 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Log settings change to audit log (fire-and-forget)
-    await logSettingsChange(
+    // Log settings change to audit log (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       admin.id,
       'booking',
       'blocked_dates',
       oldBlockedDates,
       updatedBlockedDates
-    );
+    ));
 
     // Return updated blocked dates array
     return NextResponse.json({

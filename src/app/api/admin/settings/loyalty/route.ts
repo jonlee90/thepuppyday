@@ -5,7 +5,7 @@
  * Task 0192: Loyalty settings API routes
  */
 
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
@@ -212,60 +212,36 @@ export async function PUT(request: Request) {
       referral_program: existingSettings.referral_program,
     };
 
-    // Update or insert loyalty settings
+    // Upsert loyalty settings (settings.key has UNIQUE constraint)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingSetting } = (await (supabase as any)
+    const { error: upsertError } = (await (supabase as any)
       .from('settings')
-      .select('id')
-      .eq('key', 'loyalty_program')
-      .single()) as { data: { id: string } | null; error: Error | null };
-
-    if (existingSetting) {
-      // Update existing setting
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: updateError } = (await (supabase as any)
-        .from('settings')
-        .update({
-          value: newSettings,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('key', 'loyalty_program')) as { error: Error | null };
-
-      if (updateError) {
-        console.error('[Loyalty Settings API] Update error:', updateError);
-        return NextResponse.json(
-          { error: 'Failed to update loyalty settings' },
-          { status: 500 }
-        );
-      }
-    } else {
-      // Insert new setting
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: insertError } = (await (supabase as any)
-        .from('settings')
-        .insert({
+      .upsert(
+        {
           key: 'loyalty_program',
           value: newSettings,
-        })) as { error: Error | null };
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'key' }
+      )) as { error: Error | null };
 
-      if (insertError) {
-        console.error('[Loyalty Settings API] Insert error:', insertError);
-        return NextResponse.json(
-          { error: 'Failed to create loyalty settings' },
-          { status: 500 }
-        );
-      }
+    if (upsertError) {
+      console.error('[Loyalty Settings API] Upsert error:', upsertError);
+      return NextResponse.json(
+        { error: 'Failed to update loyalty settings' },
+        { status: 500 }
+      );
     }
 
-    // Log settings change to audit log (fire-and-forget)
-    await logSettingsChange(
+    // Log settings change to audit log (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       admin.id,
       'loyalty',
       'loyalty_program',
       oldSettings,
       newSettings
-    );
+    ));
 
     // Calculate fresh statistics
     const stats = await calculateLoyaltyStats(supabase, punch_threshold);

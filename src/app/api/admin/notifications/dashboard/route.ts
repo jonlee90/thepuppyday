@@ -145,14 +145,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    // Production Supabase query
-    // Get notifications for current period
-    const { data: currentData, error: currentError } = await (supabase as any)
-      .from('notifications_log')
-      .select('*')
-      .eq('is_test', false)
-      .gte('created_at', currentPeriod.start)
-      .lte('created_at', currentPeriod.end);
+    // Fetch current and previous period data in parallel
+    const [
+      { data: currentData, error: currentError },
+      { data: previousData, error: previousError },
+    ] = await Promise.all([
+      (supabase as any)
+        .from('notifications_log')
+        .select('*')
+        .eq('is_test', false)
+        .gte('created_at', currentPeriod.start)
+        .lte('created_at', currentPeriod.end),
+      (supabase as any)
+        .from('notifications_log')
+        .select('*')
+        .eq('is_test', false)
+        .gte('created_at', previousPeriod.start)
+        .lte('created_at', previousPeriod.end),
+    ]);
 
     if (currentError) {
       console.error('[Dashboard API] Error fetching current period data:', currentError);
@@ -161,14 +171,6 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
-
-    // Get notifications for previous period
-    const { data: previousData, error: previousError } = await (supabase as any)
-      .from('notifications_log')
-      .select('*')
-      .eq('is_test', false)
-      .gte('created_at', previousPeriod.start)
-      .lte('created_at', previousPeriod.end);
 
     if (previousError) {
       console.error('[Dashboard API] Error fetching previous period data:', previousError);

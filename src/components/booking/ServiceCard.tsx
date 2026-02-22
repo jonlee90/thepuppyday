@@ -139,13 +139,13 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
           {service.name}
         </h3>
 
-        {/* Description - Editorial body text */}
+        {/* Description - Editorial body text 
         {service.description && (
           <p className="text-[15px] text-[#434E54]/65 leading-[1.6] mb-5 line-clamp-2">
             {service.description}
           </p>
         )}
-
+*/}
         {/* Pricing Section - Magazine price tag aesthetic */}
         <div className="relative pt-4 mt-4 border-t border-[#434E54]/10">
           <div className="flex items-end justify-between">

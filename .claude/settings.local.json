@@ -82,7 +82,8 @@
       "mcp__playwright__browser_run_code",
       "Bash(awk:*)",
       "Bash(python3:*)",
-      "Bash(CLAUDE_PROJECT_DIR=/Users/jonathanlee/Desktop/thepuppyday bash:*)"
+      "Bash(CLAUDE_PROJECT_DIR=/Users/jonathanlee/Desktop/thepuppyday bash:*)",
+      "mcp__plugin_playwright_playwright__browser_evaluate"
     ]
   },
   "enableAllProjectMcpServers": true,

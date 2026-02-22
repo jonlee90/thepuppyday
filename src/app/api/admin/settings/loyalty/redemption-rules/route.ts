@@ -5,7 +5,7 @@
  * Task 0197: Redemption rules API routes
  */
 
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
@@ -81,10 +81,10 @@ export async function GET() {
       );
     }
 
-    // Parse and validate stored redemption rules
+    // Parse stored redemption rules
     const redemptionRules = settingRecord.value as LoyaltyRedemptionRules;
 
-    // Count pending rewards (customers with pending redemptions)
+    // Note: pending rewards count was already fetched in parallel above
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { count: pendingRewardsCount, error: pendingError } = (await (supabase as any)
       .from('loyalty_redemptions')
@@ -248,60 +248,36 @@ export async function PUT(request: Request) {
       max_value,
     };
 
-    // Update or insert redemption rules
+    // Upsert redemption rules (settings.key has UNIQUE constraint)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingSetting } = (await (supabase as any)
+    const { error: upsertError } = (await (supabase as any)
       .from('settings')
-      .select('id')
-      .eq('key', 'loyalty_redemption_rules')
-      .single()) as { data: { id: string } | null; error: Error | null };
-
-    if (existingSetting) {
-      // Update existing setting
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: updateError } = (await (supabase as any)
-        .from('settings')
-        .update({
-          value: newRedemptionRules,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('key', 'loyalty_redemption_rules')) as { error: Error | null };
-
-      if (updateError) {
-        console.error('[Redemption Rules API] Update error:', updateError);
-        return NextResponse.json(
-          { error: 'Failed to update redemption rules' },
-          { status: 500 }
-        );
-      }
-    } else {
-      // Insert new setting
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: insertError } = (await (supabase as any)
-        .from('settings')
-        .insert({
+      .upsert(
+        {
           key: 'loyalty_redemption_rules',
           value: newRedemptionRules,
-        })) as { error: Error | null };
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'key' }
+      )) as { error: Error | null };
 
-      if (insertError) {
-        console.error('[Redemption Rules API] Insert error:', insertError);
-        return NextResponse.json(
-          { error: 'Failed to create redemption rules' },
-          { status: 500 }
-        );
-      }
+    if (upsertError) {
+      console.error('[Redemption Rules API] Upsert error:', upsertError);
+      return NextResponse.json(
+        { error: 'Failed to update redemption rules' },
+        { status: 500 }
+      );
     }
 
-    // Log settings change to audit log (fire-and-forget)
-    await logSettingsChange(
+    // Log settings change to audit log (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       admin.id,
       'loyalty',
       'loyalty_redemption_rules',
       oldValue,
       newRedemptionRules
-    );
+    ));
 
     // Count pending rewards (customers with pending redemptions)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

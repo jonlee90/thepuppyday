@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Production Supabase query
+    // Build paginated query
     let query = (supabase as any)
       .from('notifications_log')
       .select(
@@ -153,34 +153,49 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    // Apply filters
+    // Build stats query in parallel
+    const statsQuery = (supabase as any)
+      .from('notifications_log')
+      .select('*');
+
+    // Apply filters to both queries
     if (channel) {
       query = query.eq('channel', channel);
+      statsQuery.eq('channel', channel);
     }
 
     if (status) {
       query = query.eq('status', status);
+      statsQuery.eq('status', status);
     }
 
     if (type) {
       query = query.eq('type', type);
+      statsQuery.eq('type', type);
     }
 
     if (campaignId) {
       query = query.eq('campaign_id', campaignId);
+      statsQuery.eq('campaign_id', campaignId);
     }
 
     if (dateFrom) {
       query = query.gte('created_at', dateFrom);
+      statsQuery.gte('created_at', dateFrom);
     }
 
     if (dateTo) {
       const dateToEnd = new Date(dateTo);
       dateToEnd.setHours(23, 59, 59, 999);
       query = query.lte('created_at', dateToEnd.toISOString());
+      statsQuery.lte('created_at', dateToEnd.toISOString());
     }
 
-    const { data, error, count } = await query;
+    // Execute both queries in parallel
+    const [{ data, error, count }, { data: statsData }] = await Promise.all([
+      query,
+      statsQuery,
+    ]);
 
     if (error) {
       console.error('[Notifications API] Error fetching notifications:', error);
@@ -202,25 +217,6 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    // Calculate stats from full dataset (not paginated)
-    // In production, you'd want to optimize this with aggregation queries
-    const statsQuery = (supabase as any)
-      .from('notifications_log')
-      .select('*');
-
-    // Apply same filters for stats
-    if (channel) statsQuery.eq('channel', channel);
-    if (status) statsQuery.eq('status', status);
-    if (type) statsQuery.eq('type', type);
-    if (campaignId) statsQuery.eq('campaign_id', campaignId);
-    if (dateFrom) statsQuery.gte('created_at', dateFrom);
-    if (dateTo) {
-      const dateToEnd = new Date(dateTo);
-      dateToEnd.setHours(23, 59, 59, 999);
-      statsQuery.lte('created_at', dateToEnd.toISOString());
-    }
-
-    const { data: statsData } = await statsQuery;
     const stats: NotificationStats = calculateStats(statsData || []);
 
     return NextResponse.json({

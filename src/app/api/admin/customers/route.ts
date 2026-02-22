@@ -34,12 +34,34 @@ export async function GET(request: NextRequest) {
     // Calculate offset
     const offset = (page - 1) * limit;
 
-    // Fetch all customers (role = 'customer')
-    const { data: allCustomers, error: customersError } = await (supabase as any)
-      .from('users')
-      .select('*')
-      .eq('role', 'customer')
-      .order('created_at', { ascending: false });
+    // Fetch all data in parallel
+    const [
+      { data: allCustomers, error: customersError },
+      { data: allPets, error: petsError },
+      { data: allAppointments, error: appointmentsError },
+      { data: allFlags, error: flagsError },
+      { data: allMemberships, error: membershipsError },
+    ] = await Promise.all([
+      (supabase as any)
+        .from('users')
+        .select('*')
+        .eq('role', 'customer')
+        .order('created_at', { ascending: false }),
+      (supabase as any)
+        .from('pets')
+        .select('id, owner_id, name, is_active'),
+      (supabase as any)
+        .from('appointments')
+        .select('id, customer_id'),
+      (supabase as any)
+        .from('customer_flags')
+        .select('*')
+        .eq('is_active', true),
+      (supabase as any)
+        .from('customer_memberships')
+        .select('*, membership:memberships(*)')
+        .eq('status', 'active'),
+    ]);
 
     if (customersError) {
       console.error('[Customers API] Error fetching customers:', customersError);
@@ -49,39 +71,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch all pets
-    const { data: allPets, error: petsError } = await (supabase as any)
-      .from('pets')
-      .select('id, owner_id, name, is_active');
-
     if (petsError) {
       console.error('[Customers API] Error fetching pets:', petsError);
     }
-
-    // Fetch all appointments
-    const { data: allAppointments, error: appointmentsError } = await (supabase as any)
-      .from('appointments')
-      .select('id, customer_id');
 
     if (appointmentsError) {
       console.error('[Customers API] Error fetching appointments:', appointmentsError);
     }
 
-    // Fetch all customer flags
-    const { data: allFlags, error: flagsError } = await (supabase as any)
-      .from('customer_flags')
-      .select('*')
-      .eq('is_active', true);
-
     if (flagsError) {
       console.error('[Customers API] Error fetching flags:', flagsError);
     }
-
-    // Fetch active memberships
-    const { data: allMemberships, error: membershipsError } = await (supabase as any)
-      .from('customer_memberships')
-      .select('*, membership:memberships(*)')
-      .eq('status', 'active');
 
     if (membershipsError) {
       console.error('[Customers API] Error fetching memberships:', membershipsError);

@@ -5,7 +5,7 @@
  * Task 0203: Staff List & Create API
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
@@ -319,15 +319,15 @@ export async function POST(request: NextRequest) {
 
       console.log('[Staff API] Created staff member:', newStaff.id);
 
-      // Log audit entry
-      await logSettingsChange(
+      // Log audit entry (non-blocking)
+      after(() => logSettingsChange(
         supabase,
         adminUser.id,
         'staff',
         `staff.${newStaff.id}`,
         null,
         { email, first_name, last_name, phone, role }
-      );
+      ));
 
       return NextResponse.json(
         { data: newStaff },
@@ -360,15 +360,15 @@ export async function POST(request: NextRequest) {
 
     console.log('[Staff API] Created staff member:', newStaff.id);
 
-    // Log audit entry
-    await logSettingsChange(
+    // Log audit entry (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       adminUser.id,
       'staff',
       `staff.${newStaff.id}`,
       null,
       { email, first_name, last_name, phone, role }
-    );
+    ));
 
     return NextResponse.json(
       { data: newStaff },

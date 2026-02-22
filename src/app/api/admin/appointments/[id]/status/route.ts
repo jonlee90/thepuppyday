@@ -3,7 +3,7 @@
  * POST /api/admin/appointments/[id]/status - Update appointment status
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { isTransitionAllowed } from '@/lib/admin/appointment-status';
@@ -257,72 +257,64 @@ export async function POST(
       }
     }
 
-    // Send notifications if requested
+    // Send notifications in background (non-blocking)
     if (sendNotification) {
-      const { data: customer } = await (supabase as any)
-        .from('users')
-        .select('*')
-        .eq('id', appointment.customer_id)
-        .single();
+      after(async () => {
+        try {
+          // Fetch customer, pet, and service in parallel
+          const [{ data: customer }, { data: pet }, { data: service }] = await Promise.all([
+            (supabase as any).from('users').select('*').eq('id', appointment.customer_id).single(),
+            (supabase as any).from('pets').select('*').eq('id', appointment.pet_id).single(),
+            (supabase as any).from('services').select('*').eq('id', appointment.service_id).single(),
+          ]);
 
-      const { data: pet } = await (supabase as any)
-        .from('pets')
-        .select('*')
-        .eq('id', appointment.pet_id)
-        .single();
+          if (customer && pet && service) {
+            // Use new notification triggers for in_progress and completed statuses (Task 0108)
+            if (newStatus === 'in_progress' || newStatus === 'completed') {
+              const { triggerAppointmentStatus } = await import(
+                '@/lib/notifications/triggers'
+              );
 
-      const { data: service } = await (supabase as any)
-        .from('services')
-        .select('*')
-        .eq('id', appointment.service_id)
-        .single();
+              const statusResult = await triggerAppointmentStatus(supabase, {
+                appointmentId: id,
+                customerId: appointment.customer_id,
+                customerPhone: customer.phone,
+                petName: pet.name,
+                status: newStatus,
+                manualOverride: true,
+              });
 
-      if (customer && pet && service) {
-        // Use new notification triggers for in_progress and completed statuses (Task 0108)
-        if (newStatus === 'in_progress' || newStatus === 'completed') {
-          const { triggerAppointmentStatus } = await import(
-            '@/lib/notifications/triggers'
-          );
-
-          const statusResult = await triggerAppointmentStatus(supabase, {
-            appointmentId: id,
-            customerId: appointment.customer_id,
-            customerPhone: customer.phone,
-            petName: pet.name,
-            status: newStatus,
-            manualOverride: true, // Manual trigger from admin
-          });
-
-          if (!statusResult.success && !statusResult.skipped) {
-            console.error(
-              '[Admin API] Status notification failed:',
-              statusResult.errors
-            );
-          }
-        }
-        // Use legacy notification for other statuses (confirmed, cancelled, completed)
-        else if (newStatus === 'confirmed' || newStatus === 'cancelled' || newStatus === 'completed') {
-          await sendAppointmentNotification(
-            supabase,
-            {
-              appointmentId: id,
-              customerId: appointment.customer_id,
-              customerName: `${customer.first_name} ${customer.last_name}`,
-              customerEmail: customer.email,
-              customerPhone: customer.phone,
-              petName: pet.name,
-              serviceName: service.name,
-              scheduledAt: appointment.scheduled_at,
-              status: newStatus,
-              cancellationReason,
-            },
-            {
-              sendEmail,
-              sendSms,
+              if (!statusResult.success && !statusResult.skipped) {
+                console.error('[Admin API] Status notification failed:', statusResult.errors);
+              }
             }
-          );
+            // Use legacy notification for other statuses (confirmed, cancelled)
+            else if (newStatus === 'confirmed' || newStatus === 'cancelled') {
+              await sendAppointmentNotification(
+                supabase,
+                {
+                  appointmentId: id,
+                  customerId: appointment.customer_id,
+                  customerName: `${customer.first_name} ${customer.last_name}`,
+                  customerEmail: customer.email,
+                  customerPhone: customer.phone,
+                  petName: pet.name,
+                  serviceName: service.name,
+                  scheduledAt: appointment.scheduled_at,
+                  status: newStatus,
+                  cancellationReason,
+                },
+                {
+                  sendEmail,
+                  sendSms,
+                }
+              );
+            }
+          }
+        } catch (notifError) {
+          console.error('[Admin API] Background notification error:', notifError);
         }
-      }
+      });
     }
 
     // Trigger calendar sync (auto-sync) - Task 0024

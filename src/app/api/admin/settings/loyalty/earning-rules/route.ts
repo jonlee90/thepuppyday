@@ -5,7 +5,7 @@
  * Task 0195: Earning rules API routes
  */
 
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
@@ -221,60 +221,36 @@ export async function PUT(request: Request) {
       first_visit_bonus,
     };
 
-    // Update or insert earning rules
+    // Upsert earning rules (settings.key has UNIQUE constraint)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingSetting } = (await (supabase as any)
+    const { error: upsertError } = (await (supabase as any)
       .from('settings')
-      .select('id')
-      .eq('key', 'loyalty_earning_rules')
-      .single()) as { data: { id: string } | null; error: Error | null };
-
-    if (existingSetting) {
-      // Update existing setting
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: updateError } = (await (supabase as any)
-        .from('settings')
-        .update({
-          value: newEarningRules,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('key', 'loyalty_earning_rules')) as { error: Error | null };
-
-      if (updateError) {
-        console.error('[Earning Rules API] Update error:', updateError);
-        return NextResponse.json(
-          { error: 'Failed to update earning rules' },
-          { status: 500 }
-        );
-      }
-    } else {
-      // Insert new setting
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: insertError } = (await (supabase as any)
-        .from('settings')
-        .insert({
+      .upsert(
+        {
           key: 'loyalty_earning_rules',
           value: newEarningRules,
-        })) as { error: Error | null };
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'key' }
+      )) as { error: Error | null };
 
-      if (insertError) {
-        console.error('[Earning Rules API] Insert error:', insertError);
-        return NextResponse.json(
-          { error: 'Failed to create earning rules' },
-          { status: 500 }
-        );
-      }
+    if (upsertError) {
+      console.error('[Earning Rules API] Upsert error:', upsertError);
+      return NextResponse.json(
+        { error: 'Failed to update earning rules' },
+        { status: 500 }
+      );
     }
 
-    // Log settings change to audit log (fire-and-forget)
-    await logSettingsChange(
+    // Log settings change to audit log (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       admin.id,
       'loyalty',
       'loyalty_earning_rules',
       oldValue,
       newEarningRules
-    );
+    ));
 
     console.log(
       `[Earning Rules API] Earning rules updated by admin ${admin.id}:`,

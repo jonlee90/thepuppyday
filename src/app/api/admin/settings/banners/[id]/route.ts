@@ -7,7 +7,7 @@
  * DELETE /api/admin/settings/banners/[id] - Delete banner (soft-delete if has analytics)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
@@ -179,8 +179,8 @@ export async function PUT(
       throw updateError || new Error('Failed to update banner');
     }
 
-    // Log the update (fire-and-forget)
-    await logSettingsChange(
+    // Log the update (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       user.id,
       'banner',
@@ -201,7 +201,7 @@ export async function PUT(
         end_date: updatedBanner.end_date,
         is_active: updatedBanner.is_active,
       }
-    );
+    ));
 
     // Compute status for response
     const bannerWithAnalytics: BannerWithAnalytics = {
@@ -311,8 +311,8 @@ export async function DELETE(
       deletionType = 'hard';
     }
 
-    // Log the deletion (fire-and-forget)
-    await logSettingsChange(
+    // Log the deletion (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       user.id,
       'banner',
@@ -329,7 +329,7 @@ export async function DELETE(
         impression_count: existingBanner.impression_count || 0,
       },
       null
-    );
+    ));
 
     return NextResponse.json({
       message: `Banner ${deletionType === 'soft' ? 'deactivated' : 'deleted'} successfully`,

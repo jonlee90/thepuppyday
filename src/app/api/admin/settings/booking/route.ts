@@ -5,7 +5,7 @@
  * Task 0180: Booking settings API routes
  */
 
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
@@ -206,15 +206,15 @@ export async function PUT(request: Request) {
       }
     }
 
-    // Log settings change to audit log (fire-and-forget)
-    await logSettingsChange(
+    // Log settings change to audit log (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       admin.id,
       'booking',
       'booking_settings',
       oldSettings,
       newSettings
-    );
+    ));
 
     // Return updated settings
     return NextResponse.json({

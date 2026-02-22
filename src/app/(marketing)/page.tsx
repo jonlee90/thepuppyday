@@ -13,6 +13,7 @@ import { ServiceGrid } from '@/components/marketing/service-grid';
 import { BeforeAfterCarousel } from '@/components/marketing/before-after-carousel';
 import { GalleryGrid } from '@/components/marketing/gallery-grid';
 import { AboutSection } from '@/components/marketing/about-section';
+import { TestimonialsSection } from '@/components/marketing/testimonials-section';
 import { ContactSection } from '@/components/marketing/contact-section';
 import type {
   Service,
@@ -187,6 +188,9 @@ export default async function MarketingPage() {
         </section>
       )}
 
+
+      {/* Testimonials Section - Yelp Reviews */}
+      <TestimonialsSection />
 
       {/* About Section */}
       <AboutSection

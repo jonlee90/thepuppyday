@@ -38,27 +38,29 @@ export async function GET() {
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
-    // Get total synced events count
-    const { count: totalSyncedCount } = await (supabase as AppSupabaseClient)
-      .from('calendar_event_mapping')
-      .select('*', { count: 'exact', head: true })
-      .eq('connection_id', connection.id);
-
-    // Get syncs in last 24 hours
-    const { count: last24hCount } = await (supabase as AppSupabaseClient)
-      .from('calendar_sync_log')
-      .select('*', { count: 'exact', head: true })
-      .eq('connection_id', connection.id)
-      .eq('status', 'success')
-      .gte('created_at', twentyFourHoursAgo.toISOString());
-
-    // Get failed syncs in last 24 hours
-    const { count: failedLast24hCount } = await (supabase as AppSupabaseClient)
-      .from('calendar_sync_log')
-      .select('*', { count: 'exact', head: true })
-      .eq('connection_id', connection.id)
-      .eq('status', 'failed')
-      .gte('created_at', twentyFourHoursAgo.toISOString());
+    // Fetch all three counts in parallel
+    const [
+      { count: totalSyncedCount },
+      { count: last24hCount },
+      { count: failedLast24hCount },
+    ] = await Promise.all([
+      (supabase as AppSupabaseClient)
+        .from('calendar_event_mapping')
+        .select('*', { count: 'exact', head: true })
+        .eq('connection_id', connection.id),
+      (supabase as AppSupabaseClient)
+        .from('calendar_sync_log')
+        .select('*', { count: 'exact', head: true })
+        .eq('connection_id', connection.id)
+        .eq('status', 'success')
+        .gte('created_at', twentyFourHoursAgo.toISOString()),
+      (supabase as AppSupabaseClient)
+        .from('calendar_sync_log')
+        .select('*', { count: 'exact', head: true })
+        .eq('connection_id', connection.id)
+        .eq('status', 'failed')
+        .gte('created_at', twentyFourHoursAgo.toISOString()),
+    ]);
 
     // Build response
     const response: CalendarConnectionStatus = {

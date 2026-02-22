@@ -103,12 +103,12 @@ export function BookingModalHeader({
         </button>
       </div>
 
-      {/* Step counter and context */}
+      {/* Step counter and context 
       {!isConfirmationStep && (
         <div className="text-xs text-[#434E54]/70 mt-1">
           Step {currentStep + 1} of {config.steps.length - 1} • {config.steps[currentStep]}
         </div>
-      )}
+      )}*/}
     </div>
   );
 }

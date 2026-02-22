@@ -1,20 +1,20 @@
 import type { Metadata } from 'next';
-import { Nunito, Inter } from 'next/font/google';
+import { Bricolage_Grotesque, DM_Sans } from 'next/font/google';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { ErrorFilter } from './ErrorFilter';
 import './globals.css';
 
-// Playful heading font for Neubrutalism design
-const nunito = Nunito({
-  variable: '--font-nunito',
+// Distinctive heading font
+const bricolage = Bricolage_Grotesque({
+  variable: '--font-heading',
   subsets: ['latin'],
-  weight: ['400', '600', '700', '800', '900'],
+  weight: ['200', '700', '800'],
   display: 'swap',
 });
 
 // Clean body font
-const inter = Inter({
-  variable: '--font-inter',
+const dmSans = DM_Sans({
+  variable: '--font-body',
   subsets: ['latin'],
   display: 'swap',
 });
@@ -43,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme="light">
-      <body className={`${nunito.variable} ${inter.variable} antialiased`}>
+      <body className={`${bricolage.variable} ${dmSans.variable} antialiased`}>
         {/* Skip to content link for keyboard navigation */}
         <a
           href="#main-content"

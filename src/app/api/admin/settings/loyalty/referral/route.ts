@@ -6,7 +6,7 @@
  * PUT /api/admin/settings/loyalty/referral - Update referral program settings
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
@@ -172,15 +172,15 @@ export async function PUT(request: NextRequest) {
       throw updateError;
     }
 
-    // Log the change (fire-and-forget)
-    await logSettingsChange(
+    // Log the change (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       user.id,
       'referral',
       'referral_program',
       oldSettings,
       newSettings
-    );
+    ));
 
     // Calculate fresh statistics
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

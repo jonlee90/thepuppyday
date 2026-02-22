@@ -4,7 +4,7 @@
  * PUT /api/admin/settings/site-content - Update a specific site content section
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import {
@@ -224,16 +224,15 @@ export async function PUT(request: NextRequest) {
       result = data;
     }
 
-    // Log the settings change (fire-and-forget)
-    // Use section name as the setting key (e.g., "hero", "seo", "business_info")
-    await logSettingsChange(
+    // Log the settings change (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       user.id,
       'site_content',
       validSection,
       oldValue,
       validatedContent
-    );
+    ));
 
     return NextResponse.json({
       section: result.section,

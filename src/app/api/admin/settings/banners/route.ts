@@ -6,7 +6,7 @@
  * POST /api/admin/settings/banners - Create new banner
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
@@ -164,8 +164,8 @@ export async function POST(request: NextRequest) {
       throw insertError || new Error('Failed to create banner');
     }
 
-    // Log the creation (fire-and-forget)
-    await logSettingsChange(
+    // Log the creation (non-blocking)
+    after(() => logSettingsChange(
       supabase,
       user.id,
       'banner',
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
         is_active: newBanner.is_active,
         display_order: newBanner.display_order,
       }
-    );
+    ));
 
     // Compute status for response
     const bannerWithStatus: BannerWithStatus = {

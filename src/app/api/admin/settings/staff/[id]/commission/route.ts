@@ -5,7 +5,7 @@
  * Task 0207: Commission Settings API
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
@@ -249,15 +249,15 @@ export async function PUT(
         console.log('[Commission API] Created commission settings:', updatedCommission.id);
       }
 
-      // Log audit entry
-      await logSettingsChange(
+      // Log audit entry (non-blocking)
+      after(() => logSettingsChange(
         supabase,
         adminUser.id,
         'staff',
         `staff.${staffId}.commission`,
         existingCommission || null,
         { rate_type, rate, include_addons, service_overrides }
-      );
+      ));
 
       return NextResponse.json({ data: updatedCommission });
     }
@@ -298,14 +298,14 @@ export async function PUT(
       .eq('groomer_id', staffId)
       .single();
 
-    await logSettingsChange(
+    after(() => logSettingsChange(
       supabase,
       adminUser.id,
       'staff',
       `staff.${staffId}.commission`,
       oldCommission || null,
       { rate_type, rate, include_addons, service_overrides }
-    );
+    ));
 
     return NextResponse.json({ data: updatedCommission });
   } catch (error) {
