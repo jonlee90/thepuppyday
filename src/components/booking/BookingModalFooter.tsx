@@ -39,17 +39,17 @@ const getButtonText = (
     return 'Processing...';
   }
 
-  // Walk-in mode has different step order: Service → Customer → Pet → Review
+  // Walk-in mode: Service → Customer → Pet → Review → Confirmation
   if (mode === 'walkin') {
     switch (currentStep) {
-      case 3: // Review (combined addons + review)
+      case 3: // Review
         return 'Confirm Walk-In';
       default:
         return 'Continue';
     }
   }
 
-  // Admin and Customer modes: Service → DateTime → Customer → Pet → Review
+  // Admin and Customer modes: Service → DateTime → Customer → Pet → Review → Confirmation
   switch (currentStep) {
     case 4: // Review
       if (mode === 'admin') return 'Create Appointment';
@@ -66,7 +66,7 @@ const getPreviousStepName = (currentStep: number, mode: BookingModalMode): strin
     return stepNames[currentStep - 1] || 'previous';
   }
   // Admin and Customer modes
-  const stepNames = ['Service', 'Date & Time', 'Customer', 'Pet', 'Add-ons', 'Review'];
+  const stepNames = ['Service', 'Date & Time', 'Customer', 'Pet', 'Review'];
   return stepNames[currentStep - 1] || 'previous';
 };
 
@@ -114,103 +114,112 @@ export function BookingModalFooter({
   // Mobile Layout
   if (isMobile) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-[#434E54]/10 px-4 py-4 pb-safe shadow-[0_-4px_20px_rgba(67,78,84,0.12)]">
-        {/* Continue Button - Full Width */}
-        <button
-          onClick={handleContinue}
-          disabled={!canContinue || isLoading}
-          className={`
-            w-full h-12 rounded-xl font-semibold text-[15px] tracking-[0.01em]
-            flex items-center justify-center gap-2
-            transition-all duration-200 ease-out
-            ${
-              canContinue && !isLoading
-                ? 'bg-[#434E54] text-white shadow-md hover:bg-[#363F44] hover:shadow-lg active:scale-[0.98] active:bg-[#2D363A] active:shadow-sm'
-                : 'bg-[#434E54]/30 text-white/60 cursor-not-allowed opacity-60'
-            }
-            focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#434E54] focus-visible:outline-offset-2
-          `}
-          aria-label={`Continue to ${config.steps[currentStep + 1] || 'next step'}`}
-          aria-disabled={!canContinue || isLoading}
-          aria-busy={isLoading}
-        >
-          <span>{buttonText}</span>
-          {isLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
+      <div className="fixed bottom-0 left-0 right-0 bg-transparent px-4 py-4 pb-safe">
+        <div className="flex items-center justify-between gap-3">
+          {/* Back Button - Left Side */}
+          {showBackButton ? (
+            <button
+              onClick={handleBack}
+              disabled={isLoading}
+              className="
+                flex items-center gap-1.5 h-12 px-4 rounded-xl
+                text-[#434E54] font-semibold text-[15px]
+                bg-[#EAE0D5] hover:bg-[#DCD2C7] active:bg-[#D0C6BB]
+                transition-all duration-150
+                focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#434E54] focus-visible:outline-offset-2
+              "
+              aria-label="Go back to previous step"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span>Back</span>
+            </button>
           ) : (
-            <ChevronRight className="w-5 h-5" />
+            <div />
           )}
-        </button>
 
-        {/* Back Link - Below Button */}
-        {showBackButton && (
+          {/* Continue Button - Right Side */}
           <button
-            onClick={handleBack}
-            disabled={isLoading}
-            className="w-full mt-3 text-center text-sm text-[#434E54]/70 hover:text-[#434E54] transition-colors duration-200"
-            aria-label="Go back to previous step"
+            onClick={handleContinue}
+            disabled={!canContinue || isLoading}
+            className={`
+              h-12 px-6 rounded-xl font-semibold text-[15px] tracking-[0.01em]
+              flex items-center justify-center gap-2
+              transition-all duration-200 ease-out
+              ${
+                canContinue && !isLoading
+                  ? 'bg-[#434E54] text-white shadow-md hover:bg-[#363F44] hover:shadow-lg active:scale-[0.98] active:bg-[#2D363A] active:shadow-sm'
+                  : 'bg-[#434E54]/30 text-white/60 cursor-not-allowed opacity-60'
+              }
+              focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#434E54] focus-visible:outline-offset-2
+            `}
+            aria-label={`Continue to ${config.steps[currentStep + 1] || 'next step'}`}
+            aria-disabled={!canContinue || isLoading}
+            aria-busy={isLoading}
           >
-            Back
+            <span>{buttonText}</span>
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <ChevronRight className="w-5 h-5" />
+            )}
           </button>
-        )}
+        </div>
       </div>
     );
   }
 
-  // Desktop Layout
+  // Desktop Layout - absolute positioned buttons at bottom corners
   return (
-    <div className="bg-transparent px-6 py-4 ">
-      <div className="flex items-center justify-between gap-4">
-        {/* Back Button - Left Side */}
-        {showBackButton ? (
-          <button
-            onClick={handleBack}
-            disabled={isLoading}
-            className="
-              flex items-center gap-2 h-11 px-4 rounded-xl
-              text-[#434E54] font-medium text-[15px]
-              bg-transparent hover:bg-[#EAE0D5] active:bg-[#DCD2C7]
-              transition-all duration-150
-              focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#434E54] focus-visible:outline-offset-2
-            "
-            aria-label="Go back to previous step"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Back</span>
-          </button>
-        ) : (
-          <div /> // Spacer
-        )}
-
-        {/* Continue Button - Right Side */}
+    <>
+      {/* Back Button - Bottom Left */}
+      {showBackButton && (
         <button
-          onClick={handleContinue}
-          disabled={!canContinue || isLoading}
-          className={`
-            h-11 px-6 rounded-xl font-semibold text-base tracking-[0.01em]
-            flex items-center justify-center gap-2
-            min-w-[160px]
-            transition-all duration-150 ease-out
-            ${
-              canContinue && !isLoading
-                ? 'bg-[#434E54] text-white shadow-md hover:bg-[#363F44] hover:shadow-lg active:scale-[0.98] active:bg-[#2D363A] active:shadow-sm'
-                : 'bg-[#434E54]/30 text-white/60 cursor-not-allowed opacity-60'
-            }
+          onClick={handleBack}
+          disabled={isLoading}
+          className="
+            absolute bottom-4 left-6
+            flex items-center gap-2 h-11 px-4 rounded-xl
+            text-[#434E54] font-semibold text-[15px]
+            bg-[#EAE0D5] hover:bg-[#DCD2C7] active:bg-[#D0C6BB]
+            transition-all duration-150
             focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#434E54] focus-visible:outline-offset-2
-          `}
-          aria-label={`Continue to ${config.steps[currentStep + 1] || 'next step'}`}
-          aria-disabled={!canContinue || isLoading}
-          aria-busy={isLoading}
+          "
+          aria-label="Go back to previous step"
         >
-          <span>{buttonText}</span>
-          {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          )}
+          <ChevronLeft className="w-4 h-4" />
+          <span>Back</span>
         </button>
-      </div>
-    </div>
+      )}
+
+      {/* Continue Button - Bottom Right */}
+      <button
+        onClick={handleContinue}
+        disabled={!canContinue || isLoading}
+        className={`
+          absolute bottom-4 right-6
+          h-11 px-6 rounded-xl font-semibold text-base tracking-[0.01em]
+          flex items-center justify-center gap-2
+          min-w-[160px]
+          transition-all duration-150 ease-out
+          ${
+            canContinue && !isLoading
+              ? 'bg-[#434E54] text-white shadow-md hover:bg-[#363F44] hover:shadow-lg active:scale-[0.98] active:bg-[#2D363A] active:shadow-sm'
+              : 'bg-[#434E54]/30 text-white/60 cursor-not-allowed opacity-60'
+          }
+          focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#434E54] focus-visible:outline-offset-2
+        `}
+        aria-label={`Continue to ${config.steps[currentStep + 1] || 'next step'}`}
+        aria-disabled={!canContinue || isLoading}
+        aria-busy={isLoading}
+      >
+        <span>{buttonText}</span>
+        {isLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <ChevronRight className="w-4 h-4" />
+        )}
+      </button>
+    </>
   );
 }
 

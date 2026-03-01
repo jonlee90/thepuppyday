@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ServiceWithPrices, Pet, Addon, PetSize, CreatePetInput } from '@/types/database';
+import type { BookingModalMode } from '@/hooks/useBookingModal';
 
 export interface GuestInfo {
   firstName: string;
@@ -14,8 +15,11 @@ export interface GuestInfo {
 }
 
 export interface BookingState {
-  // Current step (0-5)
+  // Current step
   currentStep: number;
+
+  // Booking mode (determines step count and order)
+  mode: BookingModalMode;
 
   // Admin/Walk-in: Selected customer and groomer
   selectedCustomerId: string | null;
@@ -56,6 +60,9 @@ export interface BookingState {
 }
 
 export interface BookingActions {
+  // Mode
+  setMode: (mode: BookingModalMode) => void;
+
   // Navigation
   setStep: (step: number) => void;
   nextStep: () => void;
@@ -98,11 +105,18 @@ export interface BookingActions {
 
 export type BookingStore = BookingState & BookingActions;
 
-const STEP_LABELS = ['Service', 'Pet', 'Date & Time', 'Add-ons', 'Review', 'Confirmation'];
+/** Max step index per mode (0-based) */
+const MAX_STEP: Record<BookingModalMode, number> = {
+  customer: 5, // 6 steps: 0-5
+  admin: 5,    // 6 steps: 0-5
+  walkin: 4,   // 5 steps: 0-4
+};
+
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 const initialState: BookingState = {
   currentStep: 0,
+  mode: 'customer',
   selectedCustomerId: null,
   selectedGroomerId: null,
   selectedServiceId: null,
@@ -129,16 +143,22 @@ export const useBookingStore = create<BookingStore>()(
     (set, get) => ({
       ...initialState,
 
+      // Mode
+      setMode: (mode: BookingModalMode) => {
+        set({ mode });
+      },
+
       // Navigation
       setStep: (step: number) => {
-        if (step >= 0 && step <= 5) {
+        const { mode } = get();
+        if (step >= 0 && step <= MAX_STEP[mode]) {
           set({ currentStep: step, lastActivityTimestamp: Date.now() });
         }
       },
 
       nextStep: () => {
-        const { currentStep } = get();
-        if (currentStep < 5) {
+        const { currentStep, mode } = get();
+        if (currentStep < MAX_STEP[mode]) {
           set({ currentStep: currentStep + 1, lastActivityTimestamp: Date.now() });
         }
       },
@@ -154,13 +174,9 @@ export const useBookingStore = create<BookingStore>()(
         const state = get();
         // Can always go back
         if (step < state.currentStep) return true;
-        // Can only go forward if all previous steps are complete
-        if (step === 1) return state.selectedService !== null;
-        if (step === 2) return state.selectedService !== null && state.petSize !== null;
-        if (step === 3) return state.selectedService !== null && state.petSize !== null && state.selectedDate !== null && state.selectedTimeSlot !== null;
-        if (step === 4) return step <= state.currentStep; // Add-ons are optional
-        if (step === 5) return state.currentStep >= 4; // Can go to confirmation after review
-        return false;
+        // Can't jump ahead
+        if (step > state.currentStep) return false;
+        return true;
       },
 
       // Step 1: Service
@@ -294,10 +310,11 @@ export const useBookingStore = create<BookingStore>()(
 
       // Booking result
       setBookingResult: (id: string, reference: string) => {
+        const { mode } = get();
         set({
           bookingId: id,
           bookingReference: reference,
-          currentStep: 5,
+          currentStep: MAX_STEP[mode],
           lastActivityTimestamp: Date.now(),
         });
       },
@@ -344,8 +361,8 @@ export const useBookingStore = create<BookingStore>()(
   )
 );
 
-// Export step labels for use in components
-export const BOOKING_STEP_LABELS = STEP_LABELS;
+// Export max step config for external use
+export { MAX_STEP };
 
 // Selector hooks for common patterns
 export const useCurrentStep = () => useBookingStore((state) => state.currentStep);

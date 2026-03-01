@@ -2,6 +2,9 @@
  * Step validation helpers for booking wizard
  * Determines if a step can proceed to the next step
  * Supports multiple modes with different step orders
+ *
+ * Customer/Admin: Service → DateTime → Customer → Pet → Review → Confirmation (6 steps, 0-5)
+ * Walk-in: Service → Customer → Pet → Review → Confirmation (5 steps, 0-4)
  */
 
 import type { BookingStore } from '@/stores/bookingStore';
@@ -45,7 +48,7 @@ export function canContinueFromStep(
   bookingState: BookingStore,
   mode: BookingModalMode = 'customer'
 ): boolean {
-  // Walk-in mode: Service → Customer → Pet → Review (includes add-ons) → Confirmation (no DateTime)
+  // Walk-in mode: Service → Customer → Pet → Review → Confirmation
   if (mode === 'walkin') {
     switch (currentStep) {
       case 0: // Service step
@@ -57,7 +60,7 @@ export function canContinueFromStep(
       case 2: // Pet step
         return hasValidPet(bookingState);
 
-      case 3: // Review step (includes add-ons - all required data should be present)
+      case 3: // Review step
         return (
           hasValidService(bookingState) &&
           hasValidCustomer(bookingState) &&
@@ -72,7 +75,7 @@ export function canContinueFromStep(
     }
   }
 
-  // Admin mode: Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation
+  // Admin mode: Service → DateTime → Customer → Pet → Review → Confirmation
   if (mode === 'admin') {
     switch (currentStep) {
       case 0: // Service step
@@ -87,7 +90,7 @@ export function canContinueFromStep(
       case 3: // Pet step
         return hasValidPet(bookingState);
 
-      case 4: // Review step (includes add-ons - all required data should be present)
+      case 4: // Review step
         return (
           hasValidService(bookingState) &&
           hasValidDateTime(bookingState) &&
@@ -103,7 +106,7 @@ export function canContinueFromStep(
     }
   }
 
-  // Customer mode: Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation
+  // Customer mode: Service → DateTime → Customer → Pet → Review → Confirmation
   switch (currentStep) {
     case 0: // Service step
       return hasValidService(bookingState);
@@ -117,7 +120,7 @@ export function canContinueFromStep(
     case 3: // Pet step
       return hasValidPet(bookingState);
 
-    case 4: // Review step (includes add-ons - all required data should be present)
+    case 4: // Review step
       return (
         hasValidService(bookingState) &&
         hasValidDateTime(bookingState) &&

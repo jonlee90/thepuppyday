@@ -11,14 +11,13 @@ import { useBookingStore } from '@/stores/bookingStore';
 import { BookingProgress } from './BookingProgress';
 import { PriceSummary } from './PriceSummary';
 import { ServiceStep } from './steps/ServiceStep';
-import { PetStep } from './steps/PetStep';
 import { DateTimeStep } from './steps/DateTimeStep';
+import { DetailsStep } from './steps/DetailsStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { ConfirmationStep } from './steps/ConfirmationStep';
-import { CustomerStep } from './steps/CustomerStep';
 import { WalkinReviewStep } from './steps/WalkinReviewStep';
 import Link from 'next/link';
-import type { BookingModalMode } from '@/hooks/useBookingModal';
+import { MODE_CONFIG, type BookingModalMode } from '@/hooks/useBookingModal';
 
 interface BookingWizardProps {
   preSelectedServiceId?: string;
@@ -73,20 +72,20 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
 
   /**
    * Render step based on mode
-   * - customer mode: Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation (6 steps)
-   * - admin mode: Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation (6 steps)
-   * - walkin mode: Service → Customer → Pet → Review (includes add-ons) → Confirmation (5 steps, no DateTime)
+   * - customer mode: Service → DateTime → Customer → Pet → Review → Confirmation (6 steps, 0-5)
+   * - admin mode: Service → DateTime → Customer → Pet → Review → Confirmation (6 steps, 0-5)
+   * - walkin mode: Service → Customer → Pet → Review → Confirmation (5 steps, 0-4)
    */
   const renderStep = () => {
-    // Walk-in mode: Service → Customer → Pet → Review (includes add-ons) → Confirmation
+    // Walk-in mode: Service → Customer → Pet → Review → Confirmation
     if (mode === 'walkin') {
       switch (currentStep) {
         case 0:
           return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
         case 1:
-          return <CustomerStep mode="walkin" />;
+          return <DetailsStep mode="walkin" section="customer" />;
         case 2:
-          return <PetStep customerId={selectedCustomerId} mode="walkin" />;
+          return <DetailsStep mode="walkin" section="pet" />;
         case 3:
           return <WalkinReviewStep customerId={selectedCustomerId} />;
         case 4:
@@ -96,8 +95,7 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
       }
     }
 
-    // Admin mode: Same order as customer mode
-    // Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation
+    // Admin mode: Service → DateTime → Customer → Pet → Review → Confirmation
     if (mode === 'admin') {
       switch (currentStep) {
         case 0:
@@ -105,9 +103,9 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
         case 1:
           return <DateTimeStep />;
         case 2:
-          return <CustomerStep mode="admin" />;
+          return <DetailsStep mode="admin" section="customer" />;
         case 3:
-          return <PetStep customerId={selectedCustomerId} mode="admin" />;
+          return <DetailsStep mode="admin" section="pet" />;
         case 4:
           return <ReviewStep adminMode={true} customerId={selectedCustomerId} />;
         case 5:
@@ -117,16 +115,16 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
       }
     }
 
-    // Customer mode: Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation
+    // Customer mode: Service → DateTime → Customer → Pet → Review → Confirmation
     switch (currentStep) {
       case 0:
         return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
       case 1:
         return <DateTimeStep />;
       case 2:
-        return <CustomerStep mode="customer" />;
+        return <DetailsStep mode="customer" section="customer" />;
       case 3:
-        return <PetStep customerId={selectedCustomerId} mode="customer" />;
+        return <DetailsStep mode="customer" section="pet" />;
       case 4:
         return <ReviewStep />;
       case 5:
@@ -145,7 +143,7 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
   // Don't show header/progress on confirmation step
   const showProgress = currentStep < confirmationStep;
 
-  // Only show price summary on Review step (now includes add-ons)
+  // Only show price summary on Review step (includes add-ons)
   // walkin: Review is step 3
   // admin: Review is step 4
   // customer: Review is step 4
@@ -188,6 +186,7 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
               currentStep={currentStep}
               onStepClick={handleStepClick}
               canNavigateToStep={canNavigateToStep}
+              stepLabels={[...MODE_CONFIG[mode].steps]}
             />
           </div>
         </div>

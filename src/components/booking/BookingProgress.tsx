@@ -6,21 +6,24 @@
 
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { BOOKING_STEP_LABELS } from '@/stores/bookingStore';
+import { MODE_CONFIG } from '@/hooks/useBookingModal';
 
 interface BookingProgressProps {
   currentStep: number;
   onStepClick?: (step: number) => void;
   canNavigateToStep?: (step: number) => boolean;
+  stepLabels?: string[];
 }
 
 export function BookingProgress({
   currentStep,
   onStepClick,
   canNavigateToStep,
+  stepLabels,
 }: BookingProgressProps) {
-  // Don't show confirmation step in progress
-  const visibleSteps = BOOKING_STEP_LABELS.slice(0, -1);
+  // Use provided labels or default to customer mode, excluding confirmation
+  const allSteps = stepLabels || MODE_CONFIG.customer.steps;
+  const visibleSteps = allSteps.slice(0, -1);
 
   return (
     <div className="w-full py-5">

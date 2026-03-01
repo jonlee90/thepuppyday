@@ -114,7 +114,7 @@ export const MODE_CONFIG = {
       'Select Date & Time',     // Step 1
       'Your Information',       // Step 2
       'Pet Information',        // Step 3
-      'Review Your Booking',    // Step 4 (Now includes add-ons)
+      'Review Your Booking',    // Step 4 (Includes add-ons)
       'Booking Confirmed',      // Step 5
     ],
     showTrustSignals: true,
@@ -133,9 +133,9 @@ export const MODE_CONFIG = {
     stepTitles: [
       'Select a Service',       // Step 0
       'Select Date & Time',     // Step 1
-      'Customer Information',   // Step 2
-      'Pet Information',        // Step 3
-      'Review Appointment',     // Step 4 (Now includes add-ons)
+      'Customer Details',       // Step 2
+      'Pet Details',            // Step 3
+      'Review Appointment',     // Step 4 (Includes add-ons)
       'Appointment Created',    // Step 5
     ],
     showTrustSignals: false,
@@ -153,8 +153,8 @@ export const MODE_CONFIG = {
     steps: ['Service', 'Customer', 'Pet', 'Review', 'Confirmation'],
     stepTitles: [
       'Select a Service',       // Step 0
-      'Customer Information',   // Step 1
-      'Pet Information',        // Step 2
+      'Customer Details',       // Step 1
+      'Pet Details',            // Step 2
       'Review & Confirm',       // Step 3 (Includes add-ons)
       'Walk-In Confirmed',      // Step 4
     ],

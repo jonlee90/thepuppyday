@@ -22,7 +22,7 @@ export {
 
 // Steps
 export { ServiceStep } from './steps/ServiceStep';
-export { PetStep } from './steps/PetStep';
+export { DetailsStep } from './steps/DetailsStep';
 export { DateTimeStep } from './steps/DateTimeStep';
 export { AddonsStep } from './steps/AddonsStep';
 export { ReviewStep } from './steps/ReviewStep';

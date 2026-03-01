@@ -87,7 +87,14 @@ export function BookingModal({
   const preSelectedCustomerId = propCustomerId || modalStore.preSelectedCustomerId;
 
   const config = MODE_CONFIG[mode];
-  const { currentStep, reset, nextStep, prevStep, selectDateTime } = bookingStore;
+  const { currentStep, reset, nextStep, prevStep, selectDateTime, setMode } = bookingStore;
+
+  // Sync mode to booking store when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setMode(mode);
+    }
+  }, [isOpen, mode, setMode]);
 
   // Auto-set date/time to NOW for walk-in mode when modal opens
   useEffect(() => {
@@ -210,7 +217,7 @@ export function BookingModal({
   const handleContinue = useCallback(async () => {
     const config = MODE_CONFIG[mode];
     const isReviewStep =
-      (mode === 'walkin' && currentStep === 3) || // Walk-in: Step 3 is last before confirmation
+      (mode === 'walkin' && currentStep === 3) || // Walk-in: Step 3 is review
       (mode !== 'walkin' && currentStep === 4);   // Customer/Admin: Step 4 is review
 
     if (isReviewStep) {
@@ -339,7 +346,7 @@ export function BookingModal({
               )}
 
               {/* Content Area */}
-              <div className="flex-1 overflow-y-auto overscroll-contain">
+              <div className="flex-1 overflow-y-auto overscroll-contain pb-10">
                 <div className="px-6 py-4">
                   <BookingWizard
                     embedded={true}
@@ -415,7 +422,7 @@ export function BookingModal({
               )}
 
               {/* Content Area */}
-              <div className="flex-1 overflow-y-auto overscroll-contain">
+              <div className="flex-1 overflow-y-auto overscroll-contain pb-10">
                 <div className="p-4 pb-4">
                   <BookingWizard
                     embedded={true}
