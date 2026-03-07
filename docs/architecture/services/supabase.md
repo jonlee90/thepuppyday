@@ -1,13 +1,14 @@
 # Supabase Service - Architecture Documentation
 
 > **Module**: Supabase Integration
-> **Location**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\lib\supabase\`
-> **Status**: ✅ Completed
+> **Location**: `src/lib/supabase/`
+> **Status**: Completed
 > **Provider**: Supabase (PostgreSQL + Auth + Storage + Realtime)
+> **Last Updated**: 2026-03-06
 
 ## Overview
 
-Supabase provides the backend infrastructure for The Puppy Day application, including PostgreSQL database, authentication, file storage, and real-time subscriptions.
+Supabase provides the backend infrastructure for The Puppy Day application, including PostgreSQL database, authentication, file storage, and real-time subscriptions. The client layer supports mock mode for development without external dependencies.
 
 ---
 
@@ -15,13 +16,24 @@ Supabase provides the backend infrastructure for The Puppy Day application, incl
 
 ### Browser Client (`client.ts`)
 
-**File**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\lib\supabase\client.ts`
+**File**: `src/lib/supabase/client.ts`
 
-**Purpose**: Client-side Supabase client for browser usage.
+**Purpose**: Client-side Supabase client for browser usage. Singleton pattern with mock support.
 
+**Exports**:
 ```typescript
-import { createBrowserClient } from '@supabase/ssr';
+// Primary client creation function
+export function createClient(): AppSupabaseClient
+
+// Alias - get existing client or create new one
+export function getClient(): AppSupabaseClient
+```
+
+**Implementation**:
+```typescript
 import { config } from '@/lib/config';
+import { createMockClient } from '@/mocks/supabase/client';
+import { createBrowserClient } from '@supabase/ssr';
 
 let browserClient: AppSupabaseClient | null = null;
 
@@ -39,6 +51,13 @@ export function createClient(): AppSupabaseClient {
     );
   }
 
+  return browserClient;
+}
+
+export function getClient(): AppSupabaseClient {
+  if (!browserClient) {
+    return createClient();
+  }
   return browserClient;
 }
 ```
@@ -60,33 +79,68 @@ export function MyComponent() {
 }
 ```
 
+**Type**: `AppSupabaseClient = MockSupabaseClient | SupabaseClient`
+
 ---
 
 ### Server Client (`server.ts`)
 
-**File**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\lib\supabase\server.ts`
+**File**: `src/lib/supabase/server.ts`
 
-**Purpose**: Server-side Supabase client for API routes and Server Components.
+**Purpose**: Server-side Supabase client for API routes and Server Components. Three functions exported.
+
+**Exports**:
+```typescript
+// Primary server client with cookie-based auth
+export async function createServerSupabaseClient(): Promise<AppSupabaseClient>
+
+// Service role client that bypasses RLS
+export function createServiceRoleClient(): SupabaseClient | MockSupabaseClient
+
+// Alias for createServerSupabaseClient (backward compatibility)
+export const createClient = createServerSupabaseClient;
+```
+
+#### createServerSupabaseClient()
+
+Creates a Supabase client with cookie-based authentication for Server Components and Route Handlers.
 
 ```typescript
+import { config } from '@/lib/config';
+import { createMockClient } from '@/mocks/supabase/client';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export async function createServerSupabaseClient() {
+export async function createServerSupabaseClient(): Promise<AppSupabaseClient> {
   const cookieStore = await cookies();
 
+  if (config.useMocks) {
+    // Pass cookies to mock client for server-side auth
+    return createMockClient({
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+      },
+    });
+  }
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    config.supabase.url,
+    config.supabase.anonKey,
     {
       cookies: {
         getAll() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Ignored in Server Components (middleware handles session refresh)
+          }
         },
       },
     }
@@ -94,33 +148,113 @@ export async function createServerSupabaseClient() {
 }
 ```
 
-**Usage in Server Components**:
+**Mock-Aware Cookie Forwarding**: When `config.useMocks` is true, the mock client receives a `cookies` option so the `MockAuth` class can read the Zustand auth cookie (`auth-storage`) from the server-side cookie store. This enables the mock auth system to reconstruct the user session in API routes.
+
+#### createServiceRoleClient()
+
+**CRITICAL**: Creates a Supabase client with the service role key, which **bypasses all RLS policies**. Only use for trusted server-side operations where the authenticated user's permissions are insufficient (e.g., admin API routes that query customer data).
+
 ```typescript
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-export default async function Page() {
-  const supabase = await createServerSupabaseClient();
-  const { data } = await supabase.from('services').select('*');
-
-  return <div>{/* Render data */}</div>;
-}
-```
-
-**Usage in API Routes**:
-```typescript
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-
-export async function GET(request: NextRequest) {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export function createServiceRoleClient(): SupabaseClient | MockSupabaseClient {
+  if (config.useMocks) {
+    return createMockClient();
   }
 
-  // Proceed with authenticated request
+  return createSupabaseClient(config.supabase.url, config.supabase.serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }
 ```
+
+**Admin API + RLS Pattern**: When creating admin API routes that query customer data:
+1. Authenticate with `createServerSupabaseClient()` + `requireAdmin()`
+2. Query data with `createServiceRoleClient()` to bypass RLS
+
+```typescript
+// Example: Admin API route
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/auth/require-admin';
+
+export async function GET(request: NextRequest) {
+  // Step 1: Authenticate the admin
+  const supabase = await createServerSupabaseClient();
+  await requireAdmin(supabase);
+
+  // Step 2: Query with service role to bypass RLS
+  const serviceClient = createServiceRoleClient();
+  const { data } = await serviceClient
+    .from('appointments')
+    .select('*, customer:users(*)');
+
+  return NextResponse.json(data);
+}
+```
+
+#### createClient (alias)
+
+```typescript
+export const createClient = createServerSupabaseClient;
+```
+
+Backward compatibility alias. Same function, different name.
+
+---
+
+## Mock Client
+
+**File**: `src/mocks/supabase/client.ts`
+
+**Purpose**: In-memory Supabase client that mimics the real API for development and testing.
+
+**Options**:
+```typescript
+interface MockClientOptions {
+  cookies?: {
+    getAll: () => { name: string; value: string }[];
+  };
+}
+
+export function createMockClient(options?: MockClientOptions): MockSupabaseClient
+```
+
+**Supported APIs**:
+
+| API | Mock Implementation |
+|-----|---------------------|
+| `from(table).select()` | In-memory query builder with filters, ordering, pagination |
+| `from(table).insert()` | Adds to in-memory store with auto-generated IDs |
+| `from(table).update()` | Updates matching records in store |
+| `from(table).delete()` | Removes matching records from store |
+| `from(table).upsert()` | Acts like insert in mock mode |
+| `auth.signUp()` | Creates user in mock store |
+| `auth.signInWithPassword()` | Finds user by email (accepts any password) |
+| `auth.signOut()` | Clears session |
+| `auth.getUser()` | Returns current mock user |
+| `auth.getSession()` | Returns current mock session |
+| `auth.resetPasswordForEmail()` | Logs to console |
+| `auth.updateUser()` | Updates user metadata |
+| `auth.onAuthStateChange()` | Fires initial callback |
+| `storage.from(bucket).upload()` | Logs to console, returns mock path |
+| `storage.from(bucket).getPublicUrl()` | Returns `/mock-storage/...` URL |
+| `storage.from(bucket).remove()` | Logs to console |
+| `rpc(functionName, params)` | Supports `increment_banner_clicks` |
+
+**Query Builder Features**:
+- Filters: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `ilike`, `like`, `not`
+- Ordering: `order(column, { ascending })`
+- Pagination: `limit(count)`, `range(from, to)`
+- Single result: `single()`, `maybeSingle()`
+- Foreign key joins: `select('*, prices:service_prices(*)')` - parses join syntax and enriches records
+- Inner joins: `select('*, table!inner(column)')` - filters by related table
+
+**Mock Auth Session Persistence**:
+- Client-side: Uses `localStorage` with key `thepuppyday_mock_auth`
+- Server-side: Reads Zustand auth cookie (`auth-storage`) from cookie store
 
 ---
 
@@ -132,17 +266,9 @@ const { data, error } = await supabase.auth.signUp({
   email: 'user@example.com',
   password: 'securePassword123',
   options: {
+    data: { first_name: 'John', last_name: 'Doe', phone: '5551234567' },
     emailRedirectTo: `${window.location.origin}/auth/callback`,
   },
-});
-
-// Create user profile in users table
-await supabase.from('users').insert({
-  id: data.user.id,
-  email: data.user.email,
-  first_name: firstName,
-  last_name: lastName,
-  role: 'customer',
 });
 ```
 
@@ -159,25 +285,19 @@ const { data, error } = await supabase.auth.signInWithPassword({
 const { error } = await supabase.auth.signOut();
 ```
 
-### Password Reset
-```typescript
-// Request reset
-const { data, error } = await supabase.auth.resetPasswordForEmail(
-  'user@example.com',
-  {
-    redirectTo: `${window.location.origin}/auth/reset-password`,
-  }
-);
-
-// Update password (after redirect)
-const { data, error } = await supabase.auth.updateUser({
-  password: 'newSecurePassword123',
-});
-```
-
 ### Get Current User
 ```typescript
 const { data: { user } } = await supabase.auth.getUser();
+```
+
+### Password Reset
+```typescript
+await supabase.auth.resetPasswordForEmail('user@example.com', {
+  redirectTo: `${window.location.origin}/auth/reset-password`,
+});
+
+// After redirect
+await supabase.auth.updateUser({ password: 'newPassword123' });
 ```
 
 ---
@@ -187,12 +307,10 @@ const { data: { user } } = await supabase.auth.getUser();
 ### Select
 ```typescript
 // Simple select
-const { data, error } = await supabase
-  .from('appointments')
-  .select('*');
+const { data, error } = await supabase.from('appointments').select('*');
 
 // Select with joins
-const { data, error } = await supabase
+const { data } = await supabase
   .from('appointments')
   .select(`
     *,
@@ -201,21 +319,19 @@ const { data, error } = await supabase
     service:services!service_id(name, duration_minutes)
   `);
 
-// Select with filters
-const { data, error } = await supabase
+// Select with filters and ordering
+const { data } = await supabase
   .from('appointments')
   .select('*')
   .eq('customer_id', userId)
   .gte('scheduled_at', new Date().toISOString())
   .order('scheduled_at', { ascending: true });
 
-// Select with pagination
-const page = 1;
-const limit = 25;
-const { data, error } = await supabase
+// Pagination
+const { data } = await supabase
   .from('appointments')
   .select('*')
-  .range((page - 1) * limit, page * limit - 1);
+  .range(0, 24); // First 25 rows
 ```
 
 ### Insert
@@ -272,48 +388,31 @@ CREATE POLICY "Admins can view all appointments"
   USING (is_admin());
 ```
 
-**Users can insert their own appointments**:
-```sql
-CREATE POLICY "Users can create own appointments"
-  ON appointments FOR INSERT
-  WITH CHECK (customer_id = auth.uid());
-```
-
 ### Helper Functions
 
-**is_admin()**:
 ```sql
+-- Check if current user is admin
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS BOOLEAN
-LANGUAGE SQL
-SECURITY DEFINER
-SET search_path = public
+LANGUAGE SQL SECURITY DEFINER SET search_path = public
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM users
-    WHERE id = auth.uid()
-    AND role = 'admin'
+    SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
   );
 $$;
-```
 
-**is_staff()**:
-```sql
+-- Check if current user is staff (admin or groomer)
 CREATE OR REPLACE FUNCTION is_staff()
 RETURNS BOOLEAN
-LANGUAGE SQL
-SECURITY DEFINER
-SET search_path = public
+LANGUAGE SQL SECURITY DEFINER SET search_path = public
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM users
-    WHERE id = auth.uid()
-    AND role IN ('admin', 'groomer')
+    SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('admin', 'groomer')
   );
 $$;
 ```
 
-**Note**: `SECURITY DEFINER` prevents infinite recursion in RLS policies.
+**Note**: `SECURITY DEFINER` prevents infinite recursion in RLS policies that query the `users` table.
 
 ---
 
@@ -321,16 +420,6 @@ $$;
 
 ### Upload File
 ```typescript
-const file = event.target.files[0];
-
-// Compress image before upload
-const compressedFile = await imageCompression(file, {
-  maxSizeMB: 1,
-  maxWidthOrHeight: 1920,
-});
-
-// Upload to storage
-const fileName = `${Date.now()}_${file.name}`;
 const { data, error } = await supabase.storage
   .from('gallery')
   .upload(`public/${fileName}`, compressedFile);
@@ -349,27 +438,10 @@ const { error } = await supabase.storage
   .remove(['public/image.jpg']);
 ```
 
-### Storage Policies
-```sql
--- Authenticated users can upload
-CREATE POLICY "Authenticated can upload"
-  ON storage.objects FOR INSERT
-  WITH CHECK (
-    bucket_id = 'gallery' AND
-    auth.role() = 'authenticated'
-  );
-
--- Public can view
-CREATE POLICY "Public can view"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'gallery');
-```
-
 ---
 
 ## Real-Time Subscriptions
 
-### Subscribe to Table Changes
 ```typescript
 useEffect(() => {
   const channel = supabase
@@ -377,14 +449,12 @@ useEffect(() => {
     .on(
       'postgres_changes',
       {
-        event: '*',  // INSERT, UPDATE, DELETE
+        event: '*',
         schema: 'public',
         table: 'appointments',
       },
       (payload) => {
-        console.log('Change received!', payload);
-        // Update local state
-        fetchAppointments();
+        fetchAppointments(); // Refresh local state
       }
     )
     .subscribe();
@@ -395,46 +465,11 @@ useEffect(() => {
 }, []);
 ```
 
-### Filter by Specific Rows
-```typescript
-const channel = supabase
-  .channel('user-appointments')
-  .on(
-    'postgres_changes',
-    {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'appointments',
-      filter: `customer_id=eq.${userId}`,
-    },
-    handleUpdate
-  )
-  .subscribe();
-```
-
 ---
 
 ## Type Safety
 
-**Generated Types** (from Supabase CLI):
-```bash
-npx supabase gen types typescript --project-id your-project > src/types/supabase.ts
-```
-
-**Usage**:
-```typescript
-import { Database } from '@/types/supabase';
-
-const supabase = createClient<Database>();
-
-// Fully typed queries
-const { data } = await supabase
-  .from('appointments')
-  .select('*, customer:users(*)');
-// TypeScript knows exact shape of returned data
-```
-
-**Custom Types** (`C:\Users\Jon\Documents\claude projects\thepuppyday\src\types\database.ts`):
+**Custom Types** (`src/types/database.ts`):
 ```typescript
 export interface User {
   id: string;
@@ -453,39 +488,11 @@ export interface Appointment {
   scheduled_at: string;
   status: AppointmentStatus;
   // ... more fields
-
-  // Joined data (optional)
   customer?: User;
   pet?: Pet;
   service?: Service;
 }
 ```
-
----
-
-## Mock Mode
-
-**Development with Mock Data**:
-
-When `NEXT_PUBLIC_USE_MOCKS=true`, the app uses an in-memory mock database instead of real Supabase.
-
-**Mock Client** (`C:\Users\Jon\Documents\claude projects\thepuppyday\src\mocks\supabase\client.ts`):
-```typescript
-export function createMockClient(): MockSupabaseClient {
-  return {
-    from: (table: string) => createMockQueryBuilder(table),
-    auth: createMockAuth(),
-    storage: createMockStorage(),
-    // ... mock implementations
-  };
-}
-```
-
-**Benefits**:
-- Fast development without external dependencies
-- Seeded test data
-- No API rate limits
-- Deterministic behavior for testing
 
 ---
 
@@ -499,201 +506,37 @@ const { data, error } = await supabase
 
 if (error) {
   console.error('Database error:', error);
-  // Handle error appropriately
   throw new Error('Failed to fetch appointments');
 }
 
-// Use data safely
 return data;
 ```
 
-**Common Errors**:
+**Common PostgreSQL Error Codes**:
 - `23505`: Unique constraint violation
 - `23503`: Foreign key constraint violation
 - `42501`: Insufficient privilege (RLS policy)
 
 ---
 
----
+## Environment Variables
 
-## Phase 11: Calendar Error Recovery
-
-### New Tables
-
-#### `calendar_sync_retry_queue`
-Stores failed calendar sync operations for retry with exponential backoff.
-
-```typescript
-const { data, error } = await supabase
-  .from('calendar_sync_retry_queue')
-  .insert({
-    calendar_connection_id: connectionId,
-    operation_type: 'create',
-    appointment_id: appointmentId,
-    event_data: eventPayload,
-    error_type: 'auth_error',
-    error_message: 'Token expired',
-    retry_count: 0,
-    max_retries: 3,
-    next_retry_at: new Date(Date.now() + 60000).toISOString() // 1 minute
-  });
-```
-
-**Retry Logic**:
-- First retry: 1 minute
-- Second retry: 5 minutes
-- Third retry: 15 minutes
-- Max 3 attempts, then manual intervention required
-
-#### `calendar_api_quota`
-Tracks daily Google Calendar API usage.
-
-```typescript
-// Increment quota (via stored procedure)
-const { error } = await supabase.rpc('increment_quota', {
-  target_date: new Date().toISOString().split('T')[0]
-});
-
-// Check quota status
-const { data } = await supabase
-  .from('calendar_api_quota')
-  .select('*')
-  .eq('date', new Date().toISOString().split('T')[0])
-  .single();
-
-const percentageUsed = (data.request_count / data.daily_limit) * 100;
-const isWarning = percentageUsed >= data.warning_threshold;
-```
-
-### Updated Tables
-
-#### `calendar_connections` (Phase 11 Fields)
-Added error tracking fields for auto-pause functionality.
-
-```typescript
-const { data, error } = await supabase
-  .from('calendar_connections')
-  .update({
-    consecutive_failures: 0,      // Reset on success
-    auto_sync_paused: false,      // Resume sync
-    paused_at: null,
-    pause_reason: null
-  })
-  .eq('id', connectionId);
-
-// Auto-pause after 10 consecutive failures
-if (consecutiveFailures >= 10) {
-  await supabase
-    .from('calendar_connections')
-    .update({
-      auto_sync_paused: true,
-      paused_at: new Date().toISOString(),
-      pause_reason: 'Automatic pause after 10 consecutive failures'
-    })
-    .eq('id', connectionId);
-}
-```
-
-### New Stored Procedures
-
-#### `increment_quota(target_date DATE)`
-```typescript
-// Called automatically by calendar sync service
-const { error } = await supabase.rpc('increment_quota', {
-  target_date: '2025-12-26'
-});
-```
-
-#### `cleanup_retry_queue()`
-```typescript
-// Run daily via cron job
-const { data } = await supabase.rpc('cleanup_retry_queue');
-console.log(`Cleaned up ${data} old retry entries`);
-```
-
-#### `cleanup_quota_records()`
-```typescript
-// Run weekly via cron job
-const { data } = await supabase.rpc('cleanup_quota_records');
-console.log(`Cleaned up ${data} old quota records`);
-```
-
-### New Views
-
-#### `retry_queue_summary`
-```typescript
-const { data } = await supabase
-  .from('retry_queue_summary')
-  .select('*');
-
-// Returns aggregated retry queue stats
-// {
-//   operation_type: 'create',
-//   error_type: 'auth_error',
-//   pending_count: 5,
-//   avg_retries: 1.8,
-//   max_retries: 3
-// }
-```
-
-#### `calendar_health_summary`
-```typescript
-const { data } = await supabase
-  .from('calendar_health_summary')
-  .select('*');
-
-// Returns connection health for all active connections
-// {
-//   id: 'uuid',
-//   user_id: 'uuid',
-//   provider: 'google',
-//   auto_sync_enabled: true,
-//   auto_sync_paused: false,
-//   consecutive_failures: 2,
-//   last_sync_at: '2025-12-26T10:00:00Z',
-//   pending_retries: 3
-// }
-```
-
-### Security Patterns (Phase 11)
-
-#### RLS Policies for New Tables
-
-**calendar_sync_retry_queue**:
-```sql
--- Admins can view all retry entries
-CREATE POLICY "Admins can view retry queue"
-  ON calendar_sync_retry_queue FOR SELECT
-  USING (is_admin());
-
--- System can insert/update retry entries
-CREATE POLICY "System can manage retry queue"
-  ON calendar_sync_retry_queue FOR ALL
-  USING (auth.role() = 'service_role');
-```
-
-**calendar_api_quota**:
-```sql
--- Admins can view quota
-CREATE POLICY "Admins can view quota"
-  ON calendar_api_quota FOR SELECT
-  USING (is_admin());
-
--- System can update quota
-CREATE POLICY "System can manage quota"
-  ON calendar_api_quota FOR ALL
-  USING (auth.role() = 'service_role');
-```
+| Variable | Usage |
+|----------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key (for RLS-protected queries) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (bypasses RLS, server-only) |
+| `NEXT_PUBLIC_USE_MOCKS` | Set to `true` for mock mode |
 
 ---
 
 ## Related Documentation
 
 - [Database Schema](../ARCHITECTURE.md#database-schema)
-- [RLS Policies](../security/rls.md)
-- [Mock Services](../testing/mocks.md)
-- [Calendar Settings UI](../routes/admin-panel.md#97-calendar-settings-adminsettingscalendar-)
+- [Admin API + RLS Pattern](../ARCHITECTURE.md#admin-api--rls-pattern-critical)
+- [Notification Service](./notifications.md) - Uses Supabase for template and log storage
 
 ---
 
-**Last Updated**: 2025-12-26
+**Last Updated**: 2026-03-06 by Claude Code
+**Changes**: Documented createServiceRoleClient(), documented createClient alias and getClient(), fixed all paths to relative, documented mock-aware cookie forwarding, added admin API + RLS pattern example, documented mock client capabilities, accurate to source code.

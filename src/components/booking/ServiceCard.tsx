@@ -153,7 +153,7 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
             <div className="space-y-1">
               <div className="flex items-baseline gap-2">
                 <span className="text-[22px] font-bold text-[#434E54] leading-none tracking-tight">
-                  {priceRange.formatted}
+                  ${priceRange.min}
                 </span>
               {priceRange.min !== priceRange.max && (
                 <motion.p

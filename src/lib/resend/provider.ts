@@ -12,7 +12,7 @@ import type { EmailProvider, EmailParams, EmailResult } from '../notifications/t
 /**
  * Default from email address for The Puppy Day
  */
-const DEFAULT_FROM_EMAIL = 'puppyday14936@gmail.com';
+const DEFAULT_FROM_EMAIL = 'The Puppy Day <noreply@thepuppyday.com>';
 
 // ============================================================================
 // RESEND PROVIDER

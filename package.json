@@ -47,8 +47,10 @@
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.68.0",
     "recharts": "^3.5.1",
+    "resend": "^6.9.3",
     "swiper": "^12.0.3",
     "tailwind-merge": "^3.4.0",
+    "twilio": "^5.12.2",
     "zod": "^4.1.13",
     "zustand": "^5.0.9"
   },

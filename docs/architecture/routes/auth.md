@@ -1,290 +1,178 @@
 # Authentication Routes - Architecture Documentation
 
 > **Module**: Authentication Flows
-> **Status**: ✅ Completed (Phase 1)
+> **Status**: Completed (Phase 1)
 > **Base Path**: `(auth)/`
 > **Authentication**: Redirects if already authenticated
+> **Last Updated**: 2026-03-06
 
 ## Overview
 
-Authentication routes handle user login, registration, and password management using Supabase Auth with email/password provider.
+Authentication routes handle user login, registration, and password management using Supabase Auth with email/password provider. All auth pages are client components that use the `useAuth` hook for Supabase interactions.
+
+---
+
+## Route Structure
+
+```
+src/app/(auth)/
+├── layout.tsx              # Auth layout with header, gradient bg, footer
+├── loading.tsx             # Auth page loading skeleton
+├── error.tsx               # Auth error boundary
+├── login/
+│   └── page.tsx            # Login page (/login)
+├── register/
+│   └── page.tsx            # Registration page (/register)
+├── forgot-password/
+│   └── page.tsx            # Forgot password (/forgot-password)
+└── reset-password/
+    └── page.tsx            # Reset password (/reset-password)
+```
+
+### Route Group Behavior
+
+The `(auth)` directory is a route group that does NOT create a URL segment. Routes are `/login`, `/register`, etc. (not `/auth/login`).
 
 ---
 
 ## Routes
 
 ### 1. Login (`/login`)
-**File**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\app\(auth)\login\page.tsx`
+**File**: `src/app/(auth)/login/page.tsx`
+
+Client component using `useAuth().signIn` and `react-hook-form` with Zod validation.
 
 **Form Fields**:
 - Email (required, validated)
-- Password (required, min 6 characters)
-- Remember Me checkbox
+- Password (required)
 
 **Flow**:
 1. User submits credentials
-2. Call `supabase.auth.signInWithPassword({ email, password })`
+2. Call `signIn()` from `useAuth` hook (wraps `supabase.auth.signInWithPassword`)
 3. On success: Redirect to `returnTo` query param or `/dashboard`
-4. On error: Display error message
-
-**Error Handling**:
-- Invalid credentials: "Invalid email or password"
-- Account not activated: "Please check your email to activate your account"
-- Network errors: "Unable to connect. Please try again."
+4. On error: Display inline error message
 
 ---
 
 ### 2. Register (`/register`)
-**File**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\app\(auth)\register\page.tsx`
+**File**: `src/app/(auth)/register/page.tsx`
+
+Client component using `useAuth().signUp` and `react-hook-form` with Zod validation.
 
 **Form Fields**:
 - First Name (required)
 - Last Name (required)
-- Email (required, unique check)
-- Phone (optional, formatted)
-- Password (required, min 8 chars, strength indicator)
+- Email (required)
+- Phone (optional)
+- Password (required, strength validation)
 - Confirm Password (required, must match)
-- Terms acceptance checkbox
 
 **Flow**:
-1. Validate form data (Zod schema)
-2. Create Supabase Auth user: `supabase.auth.signUp({ email, password })`
-3. Create user profile in `users` table with role='customer'
-4. Send verification email
-5. Redirect to verification pending page
-
-**Validation**:
-```typescript
-const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
-  confirmPassword: z.string(),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  phone: z.string().optional(),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-```
+1. Validate form data via `registerSchema`
+2. Call `signUp()` from `useAuth` hook (wraps `supabase.auth.signUp`)
+3. Creates Supabase Auth user and `users` table profile with `role='customer'`
+4. Redirect on success
 
 ---
 
 ### 3. Forgot Password (`/forgot-password`)
-**File**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\app\(auth)\forgot-password\page.tsx`
+**File**: `src/app/(auth)/forgot-password/page.tsx`
 
-**Form Fields**:
-- Email (required)
+**Form Fields**: Email (required)
 
 **Flow**:
 1. User enters email
-2. Call `supabase.auth.resetPasswordForEmail({ email })`
-3. Display success message: "Password reset link sent to your email"
-4. Email contains link to `/reset-password?token=xxx`
+2. Call `supabase.auth.resetPasswordForEmail()`
+3. Display success message with instructions to check email
 
 ---
 
 ### 4. Reset Password (`/reset-password`)
-**File**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\app\(auth)\reset-password\page.tsx`
+**File**: `src/app/(auth)/reset-password/page.tsx`
 
-**Form Fields**:
-- New Password (required, strength validation)
-- Confirm Password (required, must match)
+**Form Fields**: New Password, Confirm Password
 
 **Flow**:
 1. Extract reset token from URL
-2. Verify token validity
-3. User submits new password
-4. Call `supabase.auth.updateUser({ password: newPassword })`
-5. Redirect to `/login` with success message
+2. User submits new password
+3. Call `supabase.auth.updateUser({ password })`
+4. Redirect to `/login` with success message
 
 ---
 
 ## Layout (`layout.tsx`)
 
-**File**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\app\(auth)\layout.tsx`
+**File**: `src/app/(auth)/layout.tsx`
 
-**Design**:
+Server component that fetches business info for the footer.
+
+**Structure**:
 ```tsx
-<div className="min-h-screen bg-gradient-to-b from-[#FFFBF7] via-[#F8EEE5] to-[#FFFBF7] flex items-center justify-center">
-  <div className="w-full max-w-md px-4">
-    <div className="text-center mb-8">
-      <Logo className="h-16 mx-auto" />
-      <h1 className="text-2xl font-semibold mt-4">Puppy Day</h1>
-    </div>
-    <div className="bg-white rounded-xl shadow-lg p-8">
-      {children}
-    </div>
-  </div>
+<div className="min-h-screen flex flex-col">
+  <header>  {/* White header with logo + "Back to Home" link */} </header>
+  <main>    {/* Gradient bg, centered max-w-md card */}
+    {children}
+  </main>
+  <Footer businessInfo={businessInfo} />
 </div>
 ```
 
 **Features**:
-- Centered card design
-- Logo and branding
-- Gradient background matching brand
-- Mobile-responsive
+- Logo linking to homepage
+- "Back to Home" navigation link
+- Gradient background (`from-[#F8EEE5] via-[#FFFBF7] to-[#EAE0D5]`)
+- Marketing footer for brand consistency
 
 ---
 
-## Data Flow
+## Error & Loading States
 
-### Login Flow
-```
-Client                    Supabase Auth              Users Table
-  |                             |                         |
-  |-- signInWithPassword ------>|                         |
-  |                             |-- Verify credentials -->|
-  |                             |                         |
-  |<---- Auth Session ----------|                         |
-  |                             |                         |
-  |-- Fetch user profile -------|------------------------>|
-  |<---- User data ---------------------------------|
-  |                             |                         |
-  |-- Redirect to /dashboard -->|                         |
-```
+**Error Boundary** (`error.tsx`): Catches errors during auth flows with retry option.
 
-### Registration Flow
-```
-Client                    Supabase Auth              Users Table
-  |                             |                         |
-  |-- signUp ------------------>|                         |
-  |                             |-- Create auth user ---->|
-  |<---- Auth User -------------|                         |
-  |                             |                         |
-  |-- Create profile in users table ---------------------->|
-  |<---- Profile created -------------------------------|
-  |                             |                         |
-  |-- Send verification email ->|                         |
-  |<---- Verification sent -----|                         |
-```
+**Loading State** (`loading.tsx`): Skeleton card matching the auth form layout.
+
+---
+
+## API Endpoints
+
+The auth flow uses Supabase client-side SDK directly (no custom API routes for registration or verification).
+
+**Debug endpoint**:
+
+| Route | Method | Purpose |
+|-------|--------|---------|
+| `/api/auth/debug` | GET | Debug auth state (session, user, role) - development only |
 
 ---
 
 ## Security
 
 ### Password Requirements
+Enforced by Zod schema (`src/lib/validations/auth.ts`):
 - Minimum 8 characters
 - At least 1 uppercase letter
 - At least 1 lowercase letter
 - At least 1 number
-- Recommended: Special character
-
-### Email Verification
-- New accounts require email verification before full access
-- Verification link expires in 24 hours
-- Can resend verification email
 
 ### Session Management
 - Session cookies managed by Supabase Auth
 - HttpOnly, Secure, SameSite=Lax
-- 7-day session expiry (configurable)
 
-### CSRF Protection
-- Supabase Auth handles CSRF tokens
-- Same-site cookie policy
+### Middleware Protection
+**File**: `middleware.ts`
+
+Authenticated users accessing auth routes (`/login`, `/register`, `/forgot-password`) are redirected to `/dashboard`.
 
 ---
 
 ## State Management
 
-**Zustand Store**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\stores\auth-store.ts`
-
-```typescript
-interface AuthState {
-  user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  setUser: (user: User | null) => void;
-  setLoading: (loading: boolean) => void;
-  clearAuth: () => void;
-}
-```
-
-**Persistence**:
-- User data persisted to localStorage
-- Rehydrates on page load
-- Syncs with Supabase session
-
----
-
-## Middleware Protection
-
-**File**: `C:\Users\Jon\Documents\claude projects\thepuppyday\middleware.ts`
-
-**Auth Routes Behavior**:
-```typescript
-const authRoutes = ['/login', '/register', '/forgot-password'];
-
-// If user is authenticated and tries to access auth routes, redirect to dashboard
-if (isAuthenticated && authRoutes.some(route => pathname.startsWith(route))) {
-  return NextResponse.redirect(new URL('/dashboard', request.url));
-}
-```
-
----
-
-## API Endpoints
-
-### POST `/api/auth/register`
-Creates new customer account with profile data.
-
-### POST `/api/auth/resend-verification`
-Resends verification email to unverified users.
-
----
-
-## Error Handling
-
-### Common Errors
-- **Invalid credentials**: Wrong email/password
-- **Email already registered**: Duplicate account
-- **Weak password**: Password doesn't meet requirements
-- **Network error**: Supabase connection failure
-- **Rate limit exceeded**: Too many attempts
-
-### Error Display
-```tsx
-{error && (
-  <Alert variant="error" className="mb-4">
-    <AlertCircle className="w-5 h-5" />
-    <span>{error}</span>
-  </Alert>
-)}
-```
-
----
-
-## Testing
-
-### Unit Tests
-```typescript
-describe('Login Form', () => {
-  it('validates email format', () => {
-    const result = loginSchema.parse({ email: 'invalid' });
-    expect(result.success).toBe(false);
-  });
-
-  it('requires password', () => {
-    const result = loginSchema.parse({ email: 'test@example.com' });
-    expect(result.success).toBe(false);
-  });
-});
-```
-
-### Integration Tests
-- Test full login flow with mock Supabase
-- Verify redirect after successful login
-- Check error handling for invalid credentials
+**Auth Hook** (`src/hooks/use-auth.ts`): Provides `signIn`, `signUp`, `signOut`, `user`, `isLoading`, `isAuthenticated`.
 
 ---
 
 ## Related Documentation
 
-- [Middleware Protection](../security/middleware.md)
+- [Customer Portal](./customer-portal.md)
+- [Admin Panel](./admin-panel.md)
 - [Supabase Auth](../services/supabase.md#authentication)
-- [Auth Store](../state/auth-store.md)
-
----
-
-**Last Updated**: 2025-12-20

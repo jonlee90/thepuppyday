@@ -1,9 +1,10 @@
 # UI Components - Architecture Documentation
 
 > **Module**: Base UI Components
-> **Location**: `C:\Users\Jon\Documents\claude projects\thepuppyday\src\components\ui\`
-> **Status**: ✅ Completed
+> **Location**: `src/components/ui/`
+> **Status**: Completed
 > **Design System**: DaisyUI + Clean & Elegant Professional
+> **Last Updated**: 2026-03-06
 
 ## Overview
 
@@ -15,7 +16,7 @@ Base reusable UI components built on DaisyUI with custom styling to match The Pu
 
 ### Button (`button.tsx`)
 
-**Purpose**: Primary interactive element with multiple variants and states.
+**Purpose**: Primary interactive element with multiple variants, sizes, loading state, and icon support. Implemented as a `forwardRef` component.
 
 **Props**:
 ```typescript
@@ -23,6 +24,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link' | 'outline' | 'error' | 'success' | 'warning' | 'info';
   size?: 'xs' | 'sm' | 'md' | 'lg';
   isLoading?: boolean;
+  loadingText?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
@@ -36,34 +38,31 @@ import { Button } from '@/components/ui/button';
   Click Me
 </Button>
 
-<Button variant="primary" isLoading leftIcon={<Plus />}>
+<Button variant="primary" isLoading loadingText="Saving..." leftIcon={<Plus />}>
   Save Changes
 </Button>
 ```
 
 **Variants**:
-- `primary`: Charcoal (#434E54) - Main CTAs
-- `secondary`: Lighter cream (#EAE0D5) - Secondary actions
-- `accent`: Sky blue (#4ECDC4) - Playful accents
-- `ghost`: Transparent - Tertiary actions
-- `outline`: Bordered - Alternative style
+- `primary`: `btn-primary` - Main CTAs
+- `secondary`: `btn-secondary` - Secondary actions
+- `accent`: `btn-accent` - Playful accents
+- `ghost`: `btn-ghost` - Tertiary actions
+- `outline`: `btn-outline` - Alternative style
 - `error`, `success`, `warning`, `info`: Contextual actions
+
+**Loading State**: When `isLoading` is true, the button is disabled and shows a DaisyUI `loading-spinner` followed by either `loadingText` or the original `children`.
 
 **DaisyUI Classes**:
 ```tsx
-className={cn(
-  'btn',                      // Base DaisyUI button
-  variantClasses[variant],    // Variant-specific class
-  sizeClasses[size],          // Size-specific class
-  className                   // Custom className override
-)}
+className={cn('btn', variantClasses[variant], sizeClasses[size], className)}
 ```
 
 ---
 
 ### Input (`input.tsx`)
 
-**Purpose**: Form text input with label, error states, and icons.
+**Purpose**: Form text input with label, error states, helper text, and left/right element slots. Implemented as a `forwardRef` component.
 
 **Props**:
 ```typescript
@@ -71,9 +70,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  fullWidth?: boolean;
+  leftElement?: React.ReactNode;
+  rightElement?: React.ReactNode;
 }
 ```
 
@@ -86,401 +84,299 @@ import { Input } from '@/components/ui/input';
   type="email"
   placeholder="your@email.com"
   error={errors.email?.message}
-  leftIcon={<Mail className="w-4 h-4" />}
+  leftElement={<Mail className="w-4 h-4" />}
   required
 />
 ```
 
-**States**:
-- Normal: `border-gray-200`
-- Focus: `focus:ring-2 focus:ring-primary`
-- Error: `border-error` with error message below
-- Disabled: `opacity-50 cursor-not-allowed`
+**Features**:
+- DaisyUI `form-control` wrapper with `label` and `label-text`
+- Error state uses `input-error` class with `label-text-alt text-error` message
+- Helper text shown below input when no error is present
+- `leftElement` and `rightElement` positioned absolutely inside input
+- `aria-invalid` and `aria-describedby` attributes for accessibility
+- Auto-generates `id` from `props.name` if not provided
 
 ---
 
-### Select (`select.tsx`)
+### Skeleton (`skeleton.tsx`)
 
-**Purpose**: Dropdown select input.
+**Purpose**: Animated placeholder for loading states. Base `Skeleton` component plus pre-built variants.
 
-**Props**:
+**Components**:
 ```typescript
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
-  error?: string;
-  options: { value: string; label: string }[];
-  placeholder?: string;
-}
+// Base skeleton - animated pulse with rounded corners
+function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)
+
+// Pre-built variants
+function SkeletonCard()       // Card with avatar, title, text, and button placeholders
+function SkeletonImage({ className }: { className?: string })
+function SkeletonText({ lines = 3 }: { lines?: number })
+function SkeletonAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' })
+function SkeletonButton({ className }: { className?: string })
 ```
 
 **Usage**:
 ```tsx
-<Select
-  label="Pet Size"
-  options={[
-    { value: 'small', label: 'Small (0-18 lbs)' },
-    { value: 'medium', label: 'Medium (19-35 lbs)' },
-    { value: 'large', label: 'Large (36-65 lbs)' },
-    { value: 'xlarge', label: 'X-Large (66+ lbs)' },
-  ]}
-  placeholder="Select size"
-  error={errors.size?.message}
-/>
+import { Skeleton, SkeletonCard, SkeletonText } from '@/components/ui/skeleton';
+
+// Custom skeleton
+<Skeleton className="h-8 w-48" />
+
+// Pre-built card skeleton
+<SkeletonCard />
+
+// Text block skeleton
+<SkeletonText lines={4} />
 ```
+
+**DaisyUI Classes**: Uses `animate-pulse rounded-md bg-base-300` for the base component.
+
+### Skeleton Presets (`skeletons/`)
+
+Pre-built skeleton components for specific page sections:
+
+| File | Purpose |
+|------|---------|
+| `AppointmentCardSkeleton.tsx` | Appointment card loading state |
+| `DashboardSkeleton.tsx` | Dashboard page loading state |
+| `PetCardSkeleton.tsx` | Pet card loading state |
+| `TableSkeleton.tsx` | Data table loading state |
+| `Skeleton.tsx` | Additional skeleton utilities |
+| `index.ts` | Barrel exports |
 
 ---
 
-### Textarea (`textarea.tsx`)
+### Toast (`toast.tsx`)
 
-**Purpose**: Multi-line text input.
+**Purpose**: Individual toast notification with animated entry/exit, auto-dismiss, and action support.
 
 **Props**:
 ```typescript
-interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  rows?: number;
+interface ToastProps {
+  toast: Toast; // from @/hooks/use-toast
+  onDismiss: (id: string) => void;
 }
 ```
 
-**Usage**:
-```tsx
-<Textarea
-  label="Special Instructions"
-  placeholder="Any special requests or medical notes"
-  rows={4}
-  maxLength={500}
-  helperText="500 characters maximum"
-/>
-```
-
----
-
-### Checkbox (`checkbox.tsx`)
-
-**Purpose**: Boolean input with custom styling.
-
-**Props**:
+**Toast Type** (from `use-toast` hook):
 ```typescript
-interface CheckboxProps extends InputHTMLAttributes<HTMLInputElement> {
-  label: string;
+interface Toast {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
   description?: string;
+  duration?: number; // ms, auto-dismiss after this time
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 ```
 
-**Usage**:
-```tsx
-<Checkbox
-  label="I agree to terms and conditions"
-  description="By checking this box, you agree to our privacy policy"
-  required
-/>
-```
-
-**DaisyUI Styling**:
-```tsx
-<input
-  type="checkbox"
-  className="checkbox checkbox-primary"  // DaisyUI checkbox with primary color
-/>
-```
+**Features**:
+- Framer Motion slide-in from right with scale animation
+- Type-specific SVG icons (checkmark, X, warning triangle, info circle)
+- Clean white card with left border accent in charcoal (#434E54)
+- Progress bar for timed toasts (linear countdown)
+- Dismiss button with hover state
+- Action button with underline styling
+- ARIA `role="alert"` and `aria-live="polite"` for accessibility
 
 ---
 
-### Radio (`radio.tsx`)
+### Toaster (`toaster.tsx`)
 
-**Purpose**: Single-choice selection from multiple options.
+**Purpose**: Toast container that renders all active toasts via React portal.
+
+**Usage**:
+```tsx
+// Add to root layout
+import { Toaster } from '@/components/ui/toaster';
+
+<Toaster />
+```
+
+**Features**:
+- Renders via `createPortal` to `document.body`
+- Fixed position: top-right on desktop, top-center on mobile
+- `z-[100]` to appear above all other content
+- Uses `AnimatePresence` for smooth mount/unmount transitions
+- Responsive: checks viewport width for mobile layout
+- Integrates with `useToast()` hook from `@/hooks/use-toast`
+
+---
+
+### EmptyState (`EmptyState.tsx`)
+
+**Purpose**: Placeholder component for sections with no data, featuring an icon, title, description, and optional action buttons.
 
 **Props**:
 ```typescript
-interface RadioProps extends InputHTMLAttributes<HTMLInputElement> {
+type EmptyStateIcon = 'calendar' | 'dog' | 'file' | 'gift' | 'search' | 'photo' | 'notification' | 'chart' | 'settings' | 'users';
+
+interface EmptyStateAction {
   label: string;
-  description?: string;
+  href?: string;
+  onClick?: () => void;
+  variant?: 'primary' | 'secondary';
 }
 
-interface RadioGroupProps {
-  label?: string;
-  error?: string;
-  children: React.ReactNode;
+interface EmptyStateProps {
+  icon?: EmptyStateIcon;
+  title: string;
+  description: string;
+  actions?: EmptyStateAction[];
+  action?: EmptyStateAction; // Deprecated, kept for backwards compatibility
+  className?: string;
+  size?: 'sm' | 'md' | 'lg';
 }
 ```
+
+**Predefined States** (exported as `emptyStates`):
+- `noAppointments` - "No appointments yet" with booking CTA
+- `noPets` - "No pets added" with add pet CTA
+- `noSearchResults` - "No results found"
+- `noNotifications` - "All caught up!"
+- `noReportCards` - "No report cards yet"
+- `noGalleryImages` - "Gallery is empty"
+- `noAnalyticsData` - "No data yet"
+- `noWaitlistEntries` - "Waitlist is empty"
 
 **Usage**:
 ```tsx
-<RadioGroup label="Time Preference" error={errors.time?.message}>
-  <Radio
-    name="time"
-    value="morning"
-    label="Morning (9:00 AM - 12:00 PM)"
-  />
-  <Radio
-    name="time"
-    value="afternoon"
-    label="Afternoon (12:00 PM - 5:00 PM)"
-  />
-  <Radio
-    name="time"
-    value="any"
-    label="Any Time"
-  />
-</RadioGroup>
+import { EmptyState, emptyStates } from '@/components/ui/EmptyState';
+
+// Using a predefined state
+<EmptyState {...emptyStates.noAppointments} />
+
+// Custom empty state
+<EmptyState
+  icon="search"
+  title="No results"
+  description="Try different search terms"
+  size="sm"
+/>
 ```
+
+**Design**: Centered layout with circular icon container (cream background), animated entry with Framer Motion. Action buttons render as `Link` components (if `href`) or `button` elements (if `onClick`).
 
 ---
 
-### Modal (`modal.tsx`)
+### ConfirmationModal (`ConfirmationModal.tsx`)
 
-**Purpose**: Dialog overlay for forms, confirmations, and content.
+**Purpose**: Accessible dialog for confirming destructive or important actions.
 
 **Props**:
 ```typescript
-interface ModalProps {
+interface ConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  children: React.ReactNode;
-  footer?: React.ReactNode;
+  onConfirm: () => void | Promise<void>;
+  title: string;
+  description: string;
+  confirmText?: string;    // Default: 'Confirm'
+  cancelText?: string;     // Default: 'Cancel'
+  variant?: 'default' | 'error';
+  isLoading?: boolean;     // External loading control
+  additionalInfo?: React.ReactNode;
 }
 ```
 
 **Usage**:
 ```tsx
-<Modal
-  isOpen={isModalOpen}
-  onClose={() => setIsModalOpen(false)}
-  title="Confirm Cancellation"
-  size="md"
-  footer={
-    <>
-      <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
-        Cancel
-      </Button>
-      <Button variant="error" onClick={handleConfirm}>
-        Confirm Cancellation
-      </Button>
-    </>
-  }
->
-  <p>Are you sure you want to cancel this appointment?</p>
-  <p className="text-sm text-gray-600 mt-2">
-    This action cannot be undone.
-  </p>
-</Modal>
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+
+<ConfirmationModal
+  isOpen={showCancel}
+  onClose={() => setShowCancel(false)}
+  onConfirm={handleCancelAppointment}
+  title="Cancel Appointment"
+  description="Are you sure you want to cancel this appointment?"
+  confirmText="Yes, Cancel"
+  variant="error"
+/>
 ```
 
-**Backdrop**:
-- Overlay: `bg-black/50 backdrop-blur-sm`
-- Closes on backdrop click (unless `closeOnBackdrop={false}`)
-- Closes on ESC key
+**Features**:
+- Framer Motion animated backdrop and modal
+- Focus trap via `createFocusTrap` from `@/lib/accessibility/focus`
+- Escape key closes modal (when not loading)
+- Backdrop click closes modal (when not loading)
+- Body scroll lock while open
+- `role="alertdialog"` with `aria-modal`, `aria-labelledby`, `aria-describedby`
+- Internal loading state management (auto-closes on success) or external via `isLoading` prop
+- Variant styling: `error` variant uses red confirm button and warning icon; `default` uses charcoal with question mark icon
 
 ---
 
-### Alert (`alert.tsx`)
+### StatusBadge (`StatusBadge.tsx`)
 
-**Purpose**: Status messages and notifications.
-
-**Props**:
-```typescript
-interface AlertProps {
-  variant: 'info' | 'success' | 'warning' | 'error';
-  title?: string;
-  children: React.ReactNode;
-  onClose?: () => void;
-  dismissible?: boolean;
-}
-```
-
-**Usage**:
-```tsx
-<Alert variant="success" dismissible onClose={() => setAlert(null)}>
-  <CheckCircle className="w-5 h-5" />
-  <span>Appointment booked successfully!</span>
-</Alert>
-
-<Alert variant="error" title="Booking Failed">
-  Unable to book appointment. Please try again or contact support.
-</Alert>
-```
-
-**DaisyUI Classes**:
-```tsx
-<div className={cn(
-  'alert',
-  variant === 'success' && 'alert-success',
-  variant === 'error' && 'alert-error',
-  variant === 'warning' && 'alert-warning',
-  variant === 'info' && 'alert-info',
-)}>
-```
-
----
-
-### Card (`card.tsx`)
-
-**Purpose**: Content container with consistent styling.
+**Purpose**: Appointment status indicator with colored dot and label.
 
 **Props**:
 ```typescript
-interface CardProps {
-  title?: string;
-  subtitle?: string;
-  children: React.ReactNode;
-  footer?: React.ReactNode;
-  image?: string;
-  hoverable?: boolean;
+interface StatusBadgeProps {
+  status: AppointmentStatus;
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 ```
 
+**Supported Statuses**:
+| Status | Label | Style |
+|--------|-------|-------|
+| `pending` | Pending | Light charcoal bg, muted dot |
+| `confirmed` | Confirmed | Medium charcoal bg |
+| `in_progress` | In Progress | Darker charcoal bg |
+| `completed` | Completed | Cream bg |
+| `cancelled` | Cancelled | Very light bg, muted text |
+| `no_show` | No Show | Light bg, muted text |
+
+**Fallback**: Unknown statuses are auto-formatted (underscores to spaces, title case) with default charcoal styling.
+
+**Helper Export**: `getStatusLabel(status)` returns just the display label string.
+
 **Usage**:
 ```tsx
-<Card
-  title="Basic Grooming"
-  subtitle="$40 - $85"
-  image="/images/basic-grooming.jpg"
-  hoverable
-  footer={
-    <Button variant="primary" fullWidth>
-      Book Now
-    </Button>
+import { StatusBadge } from '@/components/ui/StatusBadge';
+
+<StatusBadge status="confirmed" size="md" />
+```
+
+**Design**: Rounded pill (`rounded-full`) with inline dot indicator and font-medium text. Uses the brand charcoal (#434E54) color palette with varying opacity levels rather than semantic DaisyUI colors.
+
+---
+
+## Design Patterns
+
+### Controlled Components
+
+All form components are controlled:
+```tsx
+const [email, setEmail] = useState('');
+
+<Input
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+/>
+```
+
+### forwardRef Pattern
+
+Button and Input use `forwardRef` for ref forwarding:
+```tsx
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, ...props }, ref) => {
+    return <button ref={ref} className={cn('btn', ...)} {...props} />;
   }
->
-  <p>Includes shampoo, nail trim, ear cleaning, and sanitary cut.</p>
-</Card>
+);
+Button.displayName = 'Button';
 ```
 
-**DaisyUI Card Structure**:
-```tsx
-<div className="card bg-white shadow-md hover:shadow-lg transition-shadow">
-  {image && <figure><img src={image} alt={title} /></figure>}
-  <div className="card-body">
-    {title && <h3 className="card-title">{title}</h3>}
-    {children}
-  </div>
-  {footer && <div className="card-actions">{footer}</div>}
-</div>
-```
+### cn Utility
 
----
-
-### Badge (`badge.tsx`)
-
-**Purpose**: Status indicators and labels.
-
-**Props**:
-```typescript
-interface BadgeProps {
-  variant?: 'default' | 'primary' | 'success' | 'error' | 'warning' | 'info';
-  size?: 'sm' | 'md' | 'lg';
-  children: React.ReactNode;
-}
-```
-
-**Usage**:
-```tsx
-// Appointment status
-<Badge variant="success">Confirmed</Badge>
-<Badge variant="warning">Pending</Badge>
-<Badge variant="error">Cancelled</Badge>
-
-// Customer flags
-<Badge variant="primary" size="sm">VIP</Badge>
-```
-
-**DaisyUI Classes**:
-```tsx
-<span className={cn(
-  'badge',
-  variantClasses[variant],
-  sizeClasses[size]
-)} />
-```
-
----
-
-### LoadingSpinner (`loading-spinner.tsx`)
-
-**Purpose**: Loading state indicator.
-
-**Props**:
-```typescript
-interface LoadingSpinnerProps {
-  size?: 'xs' | 'sm' | 'md' | 'lg';
-  color?: 'primary' | 'secondary' | 'accent';
-  fullScreen?: boolean;
-}
-```
-
-**Usage**:
-```tsx
-// Inline spinner
-<LoadingSpinner size="md" />
-
-// Full-screen loading overlay
-<LoadingSpinner fullScreen size="lg" />
-```
-
-**DaisyUI Spinner**:
-```tsx
-<span className={cn(
-  'loading loading-spinner',
-  sizeClasses[size],
-  colorClasses[color]
-)} />
-```
-
----
-
-## Design Patterns
-
-### Composition Pattern
-
-Components are composable and follow single-responsibility principle:
-
-```tsx
-// Good: Composable
-<Card>
-  <div className="flex justify-between items-center">
-    <h3>Appointment Details</h3>
-    <Badge variant="success">Confirmed</Badge>
-  </div>
-  <p>January 15, 2025 at 10:00 AM</p>
-  <div className="mt-4">
-    <Button variant="outline">Reschedule</Button>
-    <Button variant="error">Cancel</Button>
-  </div>
-</Card>
-
-// Avoid: Monolithic component with too many responsibilities
-<AppointmentCard
-  showBadge
-  showActions
-  enableReschedule
-  enableCancel
-  // ... too many props
-/>
-```
-
-### Controlled vs Uncontrolled
-
-**Form Components** (controlled):
-```tsx
-const [email, setEmail] = useState('');
-
-<Input
-  value={email}
-  onChange={(e) => setEmail(e.target.value)}
-/>
-```
-
-**Modal** (controlled state):
-```tsx
-const [isOpen, setIsOpen] = useState(false);
-
-<Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-```
+All components use the `cn()` utility from `@/lib/utils` for conditional class merging (clsx + tailwind-merge).
 
 ---
 
@@ -501,8 +397,7 @@ All components follow WCAG AA standards:
 </Button>
 
 // Form labels associated with inputs
-<label htmlFor="email">Email Address</label>
-<Input id="email" type="email" />
+<Input id="email" label="Email Address" type="email" />
 ```
 
 ### Color Contrast
@@ -523,523 +418,6 @@ Components use DaisyUI theme variables defined in `globals.css`:
   --a: 78 205 196;    /* Accent: Sky Blue */
   --b1: 248 238 229;  /* Base: Warm cream background */
 }
-```
-
-**Custom Theme Overrides**:
-```tsx
-<Button className="bg-[#434E54] hover:bg-[#363F44]">
-  Custom Color
-</Button>
-```
-
----
-
-## Testing
-
-### Unit Tests
-
-```typescript
-import { render, screen } from '@testing-library/react';
-import { Button } from '@/components/ui/button';
-
-describe('Button', () => {
-  it('renders with correct text', () => {
-    render(<Button>Click Me</Button>);
-    expect(screen.getByText('Click Me')).toBeInTheDocument();
-  });
-
-  it('shows loading spinner when isLoading', () => {
-    render(<Button isLoading>Submit</Button>);
-    expect(screen.getByRole('button')).toBeDisabled();
-    expect(screen.getByRole('button')).toContainHTML('loading-spinner');
-  });
-
-  it('calls onClick when clicked', () => {
-    const handleClick = vi.fn();
-    render(<Button onClick={handleClick}>Click</Button>);
-
-    screen.getByRole('button').click();
-    expect(handleClick).toHaveBeenCalledOnce();
-  });
-});
-```
-
----
-
-## Phase 11: Calendar Error Recovery Components
-
-### QuotaWarning (`src/components/admin/calendar/QuotaWarning.tsx`)
-
-**Purpose**: Display Google Calendar API quota usage with warnings.
-
-**Props**:
-```typescript
-interface QuotaWarningProps {
-  date: string;
-  requestCount: number;
-  dailyLimit: number;
-  warningThreshold: number;
-}
-```
-
-**Usage**:
-```tsx
-<QuotaWarning
-  date="2025-12-26"
-  requestCount={800000}
-  dailyLimit={1000000}
-  warningThreshold={80}
-/>
-```
-
-**Visual States**:
-- Normal (< 80%): Info alert with progress bar
-- Warning (80-90%): Warning alert, yellow progress bar
-- Critical (> 90%): Error alert, red progress bar, auto-pause notification
-
-**Features**:
-- Real-time quota percentage calculation
-- Color-coded progress bar (DaisyUI progress component)
-- Requests remaining display
-- Auto-refresh via polling
-
----
-
-### SyncErrorRecovery (`src/components/admin/calendar/SyncErrorRecovery.tsx`)
-
-**Purpose**: Admin UI for managing failed calendar sync operations.
-
-**Props**:
-```typescript
-interface SyncErrorRecoveryProps {
-  connectionId: string;
-}
-```
-
-**Usage**:
-```tsx
-<SyncErrorRecovery connectionId={calendarConnection.id} />
-```
-
-**Features**:
-
-**Error Filtering**:
-- Dropdown to filter by error type (auth_error, quota_exceeded, network_error, etc.)
-- Filter by operation type (create, update, delete)
-- Clear filters button
-
-**Error List Display**:
-- Table with columns: Operation, Appointment, Error Type, Message, Retry Count, Next Retry
-- Pagination (50 errors per page)
-- Sort by created_at (newest first)
-
-**Retry Actions**:
-- **Retry Individual**: Button per error row
-- **Retry All**: Batch retry all filtered errors
-- **Resync**: Force delete + recreate in Google Calendar (nuclear option)
-
-**Visual Feedback**:
-- Loading states during retry operations
-- Success/error toast notifications
-- Disabled state for max-retried errors
-
-**DaisyUI Components Used**:
-- `table` - Error list table
-- `select` - Error type filter
-- `btn` - Action buttons (retry, resync)
-- `badge` - Error type badges
-- `alert` - No errors state
-
----
-
-### PausedSyncBanner (`src/components/admin/calendar/PausedSyncBanner.tsx`)
-
-**Purpose**: Alert banner when auto-sync is paused due to consecutive failures.
-
-**Props**:
-```typescript
-interface PausedSyncBannerProps {
-  connectionId: string;
-  pausedAt: string;
-  pauseReason: string;
-  consecutiveFailures: number;
-  onResume: () => void;
-}
-```
-
-**Usage**:
-```tsx
-{connection.auto_sync_paused && (
-  <PausedSyncBanner
-    connectionId={connection.id}
-    pausedAt={connection.paused_at}
-    pauseReason={connection.pause_reason}
-    consecutiveFailures={connection.consecutive_failures}
-    onResume={handleResumeSync}
-  />
-)}
-```
-
-**Features**:
-- **Warning Alert**: DaisyUI alert-warning styling
-- **Pause Info**: Display pause reason and timestamp
-- **Failure Count**: Show consecutive failures before pause
-- **Resume Button**: CSRF-protected Server Action
-- **Dismissable**: Can be collapsed but persists until resumed
-
-**DaisyUI Components Used**:
-- `alert alert-warning` - Warning banner
-- `btn btn-primary` - Resume button
-- Icon from Lucide React (AlertTriangle)
-
----
-
-## Phase 10: Admin Responsive Layout Components
-
-### AdminMainContent (`src/components/admin/AdminMainContent.tsx`)
-
-**Purpose**: Wraps main admin content with dynamic padding that responds to sidebar collapse state.
-
-**Props**:
-```typescript
-interface AdminMainContentProps {
-  children: React.ReactNode;
-}
-```
-
-**Usage**:
-```tsx
-// In admin layout.tsx
-<AdminMainContent>
-  {children}
-</AdminMainContent>
-```
-
-**Features**:
-- **Dynamic Padding**: Adjusts left padding based on `isSidebarCollapsed` state
-  - Expanded: `lg:pl-64` (256px) + `max-w-7xl` (1280px)
-  - Collapsed: `lg:pl-20` (80px) + `max-w-[1600px]` (gains ~496px usable space)
-- **Responsive Breakpoints**:
-  - Mobile: `pt-14 pb-20` (header + bottom tabs)
-  - Tablet: `md:pl-[72px]` (icon sidebar)
-  - Desktop: `lg:pl-64` or `lg:pl-20` (based on collapse state)
-- **Smooth Transitions**: 300ms transition for padding and max-width changes
-- **Zustand Integration**: Reads `isSidebarCollapsed` from admin store
-
----
-
-### TabletSidebar (`src/components/admin/layout/TabletSidebar.tsx`)
-
-**Purpose**: Icon-only sidebar navigation for tablet devices (768-1023px).
-
-**Props**:
-```typescript
-interface TabletSidebarProps {
-  user: User;
-}
-```
-
-**Usage**:
-```tsx
-<TabletSidebar user={user} />
-```
-
-**Features**:
-- **Compact Layout**: 72px width (always visible)
-- **Icon Navigation**: Icons only, tooltips on hover
-- **Popover Submenus**: For Notifications and Settings sections
-- **Submenu Indicators**: Dots show which items have submenus
-- **Touch-Optimized**: 56px touch targets
-- **Active States**: Highlights current route
-- **Responsive**: Only visible on tablet breakpoint (md:flex lg:hidden)
-
-**Navigation Items**:
-- Dashboard (LayoutDashboard icon)
-- Analytics (BarChart3 icon)
-- Appointments (Calendar icon)
-- Waitlist (Clock icon)
-- Customers (Users icon)
-- Services (Scissors icon)
-- Gallery (Images icon)
-- Marketing (Megaphone icon)
-- Notifications (Bell icon) → Popover submenu
-- Settings (Settings icon) → Popover submenu
-
----
-
-### MobileHeader (`src/components/admin/layout/MobileHeader.tsx`)
-
-**Purpose**: Fixed top header for mobile devices with hamburger menu and branding.
-
-**Props**:
-```typescript
-interface MobileHeaderProps {
-  user: User;
-}
-```
-
-**Usage**:
-```tsx
-<MobileHeader user={user} />
-```
-
-**Features**:
-- **Fixed Positioning**: Top of viewport, z-index 50
-- **Hamburger Button**: Opens mobile drawer (`toggleMobileDrawer`)
-- **Centered Branding**: "Puppy Day Admin" logo with icon
-- **User Avatar**: Dropdown menu with sign-out option
-- **Responsive**: Only visible on mobile (md:hidden)
-- **Touch Targets**: 44x44px minimum (WCAG AA compliant)
-
----
-
-### MobileBottomTabs (`src/components/admin/layout/MobileBottomTabs.tsx`)
-
-**Purpose**: Fixed bottom tab navigation for mobile devices with elevated Walk-in button.
-
-**Props**: None (uses hooks for routing and state)
-
-**Usage**:
-```tsx
-<MobileBottomTabs />
-```
-
-**Features**:
-- **5 Tab Layout**: Home, Appointments, Walk-in (center), Customers, More
-- **Elevated Walk-in**: 56px circle button elevated above tab bar
-- **Walk-in Integration**: Opens BookingModal in walk-in mode
-- **Active States**: Top border indicator for active tab
-- **Touch-Optimized**: 48-56px touch targets (WCAG AAA)
-- **Drawer Trigger**: "More" tab opens mobile drawer
-- **Zustand Integration**: Manages active tab state, drawer state
-- **Responsive**: Only visible on mobile (md:hidden)
-
-**Tab Configuration**:
-```typescript
-const tabs = [
-  { id: 'home', label: 'Home', icon: LayoutDashboard, href: '/admin/dashboard' },
-  { id: 'appointments', label: 'Appts', icon: Calendar, href: '/admin/appointments' },
-  { id: 'walkin', label: 'Walk-in', icon: UserPlus, action: 'walkin' },
-  { id: 'customers', label: 'Customers', icon: Users, href: '/admin/customers' },
-  { id: 'more', label: 'More', icon: MoreHorizontal, action: 'drawer' }
-];
-```
-
----
-
-### NavPopover (`src/components/admin/layout/NavPopover.tsx`)
-
-**Purpose**: Reusable popover component for tablet sidebar submenus.
-
-**Props**:
-```typescript
-interface NavPopoverProps {
-  isOpen: boolean;
-  onClose: () => void;
-  anchorEl: HTMLElement | null;
-  items: Array<{
-    label: string;
-    href: string;
-    icon: React.ElementType;
-  }>;
-}
-```
-
-**Usage**:
-```tsx
-<NavPopover
-  isOpen={isNotificationsOpen}
-  onClose={() => setIsNotificationsOpen(false)}
-  anchorEl={notificationsButtonRef.current}
-  items={notificationItems}
-/>
-```
-
-**Features**:
-- **Auto-Positioning**: Positions relative to anchor element
-- **Click-Outside**: Closes when clicking outside popover
-- **ESC Key**: Closes on ESC key press
-- **Active Route**: Highlights current page
-- **Smooth Animation**: Fade in/out transition
-- **DaisyUI Card**: Styled with card, rounded-xl, shadow-lg
-- **Touch-Friendly**: Adequate spacing between items
-
----
-
-### Breakpoint Utilities (`src/lib/utils/breakpoints.ts`)
-
-**Purpose**: React hooks for responsive breakpoint detection.
-
-**Hooks**:
-```typescript
-// Get current breakpoint
-const breakpoint = useBreakpoint(); // 'mobile' | 'tablet' | 'desktop'
-
-// Check specific breakpoints
-const isMobile = useIsMobile();               // < 768px
-const isTablet = useIsTablet();               // 768-1023px
-const isDesktop = useIsDesktop();             // > 1024px
-const isTabletOrDesktop = useIsTabletOrDesktop(); // >= 768px
-
-// Custom media query
-const matches = useMediaQuery('(min-width: 900px)');
-```
-
-**Usage**:
-```tsx
-import { useBreakpoint, useIsMobile } from '@/lib/utils/breakpoints';
-
-function ResponsiveComponent() {
-  const breakpoint = useBreakpoint();
-  const isMobile = useIsMobile();
-
-  return (
-    <div>
-      {isMobile && <MobileView />}
-      {breakpoint === 'tablet' && <TabletView />}
-      {breakpoint === 'desktop' && <DesktopView />}
-    </div>
-  );
-}
-```
-
-**Features**:
-- **SSR-Safe**: Returns default values during server-side rendering
-- **Debounced**: Prevents excessive re-renders on window resize
-- **TypeScript**: Fully typed with proper return types
-- **Performant**: Uses matchMedia API, not window.innerWidth
-
----
-
-## Design Patterns
-
-### Composition Pattern
-
-Components are composable and follow single-responsibility principle:
-
-```tsx
-// Good: Composable
-<Card>
-  <div className="flex justify-between items-center">
-    <h3>Appointment Details</h3>
-    <Badge variant="success">Confirmed</Badge>
-  </div>
-  <p>January 15, 2025 at 10:00 AM</p>
-  <div className="mt-4">
-    <Button variant="outline">Reschedule</Button>
-    <Button variant="error">Cancel</Button>
-  </div>
-</Card>
-
-// Avoid: Monolithic component with too many responsibilities
-<AppointmentCard
-  showBadge
-  showActions
-  enableReschedule
-  enableCancel
-  // ... too many props
-/>
-```
-
-### Controlled vs Uncontrolled
-
-**Form Components** (controlled):
-```tsx
-const [email, setEmail] = useState('');
-
-<Input
-  value={email}
-  onChange={(e) => setEmail(e.target.value)}
-/>
-```
-
-**Modal** (controlled state):
-```tsx
-const [isOpen, setIsOpen] = useState(false);
-
-<Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-```
-
----
-
-## Accessibility
-
-All components follow WCAG AA standards:
-
-### Keyboard Navigation
-- All interactive elements are keyboard-accessible
-- Tab order follows visual flow
-- Focus indicators visible (`focus:ring-2 focus:ring-primary`)
-
-### Screen Readers
-```tsx
-// ARIA labels for icon-only buttons
-<Button aria-label="Close modal">
-  <X className="w-4 h-4" />
-</Button>
-
-// Form labels associated with inputs
-<label htmlFor="email">Email Address</label>
-<Input id="email" type="email" />
-```
-
-### Color Contrast
-- Text on background: 7.2:1 (charcoal on cream)
-- Error text: 4.5:1 minimum
-- Disabled states: Visual + ARIA indicators
-
----
-
-## Theming
-
-Components use DaisyUI theme variables defined in `globals.css`:
-
-```css
-[data-theme="light"] {
-  --p: 67 78 84;      /* Primary: Charcoal */
-  --s: 234 224 213;   /* Secondary: Cream */
-  --a: 78 205 196;    /* Accent: Sky Blue */
-  --b1: 248 238 229;  /* Base: Warm cream background */
-}
-```
-
-**Custom Theme Overrides**:
-```tsx
-<Button className="bg-[#434E54] hover:bg-[#363F44]">
-  Custom Color
-</Button>
-```
-
----
-
-## Testing
-
-### Unit Tests
-
-```typescript
-import { render, screen } from '@testing-library/react';
-import { Button } from '@/components/ui/button';
-
-describe('Button', () => {
-  it('renders with correct text', () => {
-    render(<Button>Click Me</Button>);
-    expect(screen.getByText('Click Me')).toBeInTheDocument();
-  });
-
-  it('shows loading spinner when isLoading', () => {
-    render(<Button isLoading>Submit</Button>);
-    expect(screen.getByRole('button')).toBeDisabled();
-    expect(screen.getByRole('button')).toContainHTML('loading-spinner');
-  });
-
-  it('calls onClick when clicked', () => {
-    const handleClick = vi.fn();
-    render(<Button onClick={handleClick}>Click</Button>);
-
-    screen.getByRole('button').click();
-    expect(handleClick).toHaveBeenCalledOnce();
-  });
-});
 ```
 
 ---
@@ -1048,8 +426,9 @@ describe('Button', () => {
 
 - [Design System](../ARCHITECTURE.md#global-design-system)
 - [DaisyUI Documentation](https://daisyui.com/components/)
-- [Calendar Settings Page](../routes/admin-panel.md#97-calendar-settings-adminsettingscalendar-)
+- [Booking Flow Components](./booking-flow.md)
 
 ---
 
-**Last Updated**: 2025-12-27
+**Last Updated**: 2026-03-06 by Claude Code
+**Changes**: Removed non-existent components (select, textarea, checkbox, radio, modal, alert, card, badge, loading-spinner). Added actual components: Skeleton, Toast/Toaster, EmptyState, ConfirmationModal, StatusBadge. Fixed Input props (leftElement/rightElement not leftIcon/rightIcon). Removed admin layout section. Fixed all paths to relative.

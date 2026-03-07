@@ -46,6 +46,7 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
     selectedService,
     selectPet,
     setNewPetData,
+    nextStep,
   } = useBookingStore();
 
   const { isAuthenticated, user, login } = useAuthStore();
@@ -191,13 +192,16 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
       const result = await login(loginForm.email, loginForm.password);
       if (!result.success) {
         setLoginError(result.error || 'Invalid email or password');
+      } else if (section === 'customer') {
+        // Auto-advance to next step after successful login
+        nextStep();
       }
     } catch {
       setLoginError('An error occurred during login. Please try again.');
     } finally {
       setIsLoggingIn(false);
     }
-  }, [loginForm, login]);
+  }, [loginForm, login, section, nextStep]);
 
   const validateNewCustomerForm = useCallback(async () => {
     const errors: Record<string, string> = {};
@@ -275,11 +279,16 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
       });
 
       setIsCreatingCustomer(false);
+
+      // Auto-advance to next step after successful customer form submission
+      if (section === 'customer') {
+        nextStep();
+      }
     } catch (error) {
       console.error('Error creating customer:', error);
       setIsCreatingCustomer(false);
     }
-  }, [newCustomerForm, validateNewCustomerForm, setSelectedCustomerId, setGuestInfo]);
+  }, [newCustomerForm, validateNewCustomerForm, setSelectedCustomerId, setGuestInfo, section, nextStep]);
 
   // --- Pet Handlers ---
   const handleSelectPet = (pet: Pet) => {
