@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, X, Calendar } from 'lucide-react';
 import type { NotificationLogFilters } from '@/types/notification-log';
 import type { NotificationChannel, NotificationStatus } from '@/types/database';
@@ -23,16 +23,22 @@ interface LogFiltersProps {
 export function LogFilters({ filters, onFilterChange, onApplyFilters }: LogFiltersProps) {
   const [searchInput, setSearchInput] = useState(filters.search || '');
 
-  // Debounce search input
+  // Keep a ref to always have the latest filters without adding them to the
+  // debounce effect dependency array (avoids stale closure and infinite loops).
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+
+  // Debounce search input — use filtersRef.current inside the callback to
+  // read the latest filters without capturing a stale closure.
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchInput !== filters.search) {
-        onFilterChange({ ...filters, search: searchInput });
+      if (searchInput !== filtersRef.current.search) {
+        onFilterChange({ ...filtersRef.current, search: searchInput });
       }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, onFilterChange]);
 
   const handleChannelChange = (channel: NotificationChannel | 'all') => {
     onFilterChange({ ...filters, channel });

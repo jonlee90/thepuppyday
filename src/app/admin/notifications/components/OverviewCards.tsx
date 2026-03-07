@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Mail, MessageSquare, TrendingUp, TrendingDown, DollarSign, AlertCircle } from 'lucide-react';
 import type { NotificationsSummary } from '@/types/notifications-dashboard';
 
@@ -8,7 +9,7 @@ interface OverviewCardsProps {
   periodLabel: string;
 }
 
-export function OverviewCards({ summary, periodLabel }: OverviewCardsProps) {
+export const OverviewCards = memo(function OverviewCards({ summary, periodLabel }: OverviewCardsProps) {
   const deliveryRateIsLow = summary.delivery_rate < 90;
   const smsCostDollars = (summary.sms_cost_cents / 100).toFixed(2);
 
@@ -133,4 +134,4 @@ export function OverviewCards({ summary, periodLabel }: OverviewCardsProps) {
       </div>
     </div>
   );
-}
+});

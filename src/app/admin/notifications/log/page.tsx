@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import type {
   NotificationLogListItem,
@@ -42,12 +42,7 @@ export default function NotificationLogPage() {
   const [resendLog, setResendLog] = useState<NotificationLogListItem | null>(null);
   const [showResendModal, setShowResendModal] = useState(false);
 
-  // Fetch logs when filters or page changes
-  useEffect(() => {
-    fetchLogs();
-  }, [filters, currentPage]);
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -70,7 +65,12 @@ export default function NotificationLogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, currentPage]);
+
+  // Fetch logs when filters or page changes
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
   const handleFilterChange = (newFilters: NotificationLogFilters) => {
     setFilters(newFilters);
@@ -131,10 +131,10 @@ export default function NotificationLogPage() {
     }
   };
 
-  const handleResendSuccess = () => {
+  const handleResendSuccess = useCallback(() => {
     // Refresh logs after successful resend
     fetchLogs();
-  };
+  }, [fetchLogs]);
 
   const handleExportAll = async (): Promise<NotificationLogListItem[]> => {
     // Fetch all logs (without pagination) for export

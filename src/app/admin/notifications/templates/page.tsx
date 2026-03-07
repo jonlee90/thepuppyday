@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { NotificationTemplate } from '@/types/template';
 import { TemplateCard } from './components/TemplateCard';
 import { TemplateFilters, FilterOptions } from './components/TemplateFilters';
@@ -17,17 +17,7 @@ export default function TemplatesPage() {
     status: 'all',
   });
 
-  // Fetch templates
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-
-  // Apply filters
-  useEffect(() => {
-    applyFilters();
-  }, [templates, filters]);
-
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -44,9 +34,9 @@ export default function TemplatesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...templates];
 
     // Search filter
@@ -72,14 +62,24 @@ export default function TemplatesPage() {
     }
 
     setFilteredTemplates(filtered);
-  };
+  }, [templates, filters]);
 
-  const handleTest = async (templateId: string) => {
+  // Fetch templates on mount
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
+  // Apply filters whenever templates or filters change
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  const handleTest = useCallback(async (templateId: string) => {
     // TODO: Open test modal
     console.log('Test template:', templateId);
-  };
+  }, []);
 
-  const handleToggleActive = async (templateId: string, currentStatus: boolean) => {
+  const handleToggleActive = useCallback(async (templateId: string, currentStatus: boolean) => {
     try {
       const response = await fetch(`/api/admin/notifications/templates/${templateId}`, {
         method: 'PUT',
@@ -100,7 +100,7 @@ export default function TemplatesPage() {
       console.error('Error toggling template:', err);
       alert('Failed to update template status');
     }
-  };
+  }, [fetchTemplates]);
 
   if (loading) {
     return (

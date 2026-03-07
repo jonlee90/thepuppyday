@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Bell, RefreshCw } from 'lucide-react';
 import { OverviewCards } from '../components/OverviewCards';
 import { TimelineChart } from '../components/TimelineChart';
@@ -18,7 +18,7 @@ export default function NotificationsDashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Fetch dashboard data
-  const fetchDashboardData = async (showRefreshIndicator = false) => {
+  const fetchDashboardData = useCallback(async (showRefreshIndicator = false) => {
     try {
       if (showRefreshIndicator) {
         setRefreshing(true);
@@ -42,17 +42,17 @@ export default function NotificationsDashboardPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [selectedPeriod]);
 
   // Load data on mount and when period changes
   useEffect(() => {
     fetchDashboardData();
-  }, [selectedPeriod]);
+  }, [fetchDashboardData]);
 
   // Handle manual refresh
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     fetchDashboardData(true);
-  };
+  }, [fetchDashboardData]);
 
   return (
     <div className="min-h-screen bg-[#F8EEE5] py-8">

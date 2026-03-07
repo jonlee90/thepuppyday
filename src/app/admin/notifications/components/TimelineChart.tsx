@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import type { TimelineDataPoint } from '@/types/notifications-dashboard';
@@ -8,7 +9,7 @@ interface TimelineChartProps {
   data: TimelineDataPoint[];
 }
 
-export function TimelineChart({ data }: TimelineChartProps) {
+export const TimelineChart = memo(function TimelineChart({ data }: TimelineChartProps) {
   // Format data for Recharts
   const chartData = data.map((point) => ({
     date: format(parseISO(point.date), 'MMM dd'),
@@ -97,4 +98,4 @@ export function TimelineChart({ data }: TimelineChartProps) {
       </div>
     </div>
   );
-}
+});

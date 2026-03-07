@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import type { NotificationTypeStats } from '@/types/notifications-dashboard';
 
@@ -44,7 +45,7 @@ function formatNotificationType(type: string): string {
     .join(' ');
 }
 
-export function TypeBreakdown({ data }: TypeBreakdownProps) {
+export const TypeBreakdown = memo(function TypeBreakdown({ data }: TypeBreakdownProps) {
   return (
     <div className="bg-white p-6 rounded-xl shadow-md">
       <div className="mb-6">
@@ -130,4 +131,4 @@ export function TypeBreakdown({ data }: TypeBreakdownProps) {
       </div>
     </div>
   );
-}
+});
