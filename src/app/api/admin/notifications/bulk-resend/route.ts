@@ -4,9 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import type { NotificationLog } from '@/types/database';
+import { getNotificationService } from '@/lib/notifications';
 import type { BulkResendRequest, BulkResendResponse } from '@/types/notifications';
 
 export async function POST(request: NextRequest) {
@@ -29,107 +29,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // In mock mode
-    if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
-      const { getMockStore } = await import('@/mocks/supabase/store');
-      const store = getMockStore();
+    // Use service role client for data queries (bypasses RLS)
+    const serviceClient = createServiceRoleClient();
 
-      let notificationsToResend: NotificationLog[] = [];
-
-      if (ids && ids.length > 0) {
-        // Get notifications by IDs
-        notificationsToResend = ids
-          .map((id) => store.selectById('notifications_log', id) as NotificationLog | null)
-          .filter((n): n is NotificationLog => n !== null);
-      } else if (filters) {
-        // Get all notifications matching filters
-        let allNotifications = store.select('notifications_log', {
-          order: { column: 'created_at', ascending: false },
-        }) as unknown as NotificationLog[];
-
-        // Apply filters
-        if (filters.status) {
-          allNotifications = allNotifications.filter(
-            (n) => n.status === filters.status
-          );
-        }
-        if (filters.channel) {
-          allNotifications = allNotifications.filter(
-            (n) => n.channel === filters.channel
-          );
-        }
-        if (filters.type) {
-          allNotifications = allNotifications.filter((n) => n.type === filters.type);
-        }
-
-        notificationsToResend = allNotifications;
-      }
-
-      console.log('[Bulk Resend] Resending', notificationsToResend.length, 'notifications');
-
-      let totalResent = 0;
-      let totalFailed = 0;
-      const errors: string[] = [];
-
-      for (const notification of notificationsToResend) {
-        try {
-          const newNotification: Partial<NotificationLog> = {
-            customer_id: notification.customer_id,
-            type: notification.type,
-            channel: notification.channel,
-            recipient: notification.recipient,
-            subject: notification.subject,
-            content: notification.content,
-            status: 'pending',
-            error_message: null,
-            sent_at: null,
-            clicked_at: null,
-            delivered_at: null,
-            message_id: null,
-            tracking_id: null,
-            report_card_id: notification.report_card_id,
-          };
-
-          const result = await (store as any).insert(
-            'notifications_log',
-            newNotification
-          );
-
-          if (result) {
-            // Simulate sending
-            setTimeout(() => {
-              store.update('notifications_log', result.id, {
-                status: 'sent',
-                sent_at: new Date().toISOString(),
-                delivered_at: new Date().toISOString(),
-              });
-            }, 1000);
-
-            totalResent++;
-          } else {
-            totalFailed++;
-            errors.push(`Failed to resend notification ${notification.id}`);
-          }
-        } catch (err) {
-          totalFailed++;
-          errors.push(
-            `Error resending ${notification.id}: ${err instanceof Error ? err.message : 'Unknown error'}`
-          );
-        }
-      }
-
-      const response: BulkResendResponse = {
-        success: totalFailed === 0,
-        totalResent,
-        totalFailed,
-        errors: errors.length > 0 ? errors : undefined,
-      };
-
-      return NextResponse.json(response);
-    }
-
-    // Production Supabase query
-    let query = (supabase as any).from('notifications_log').select('*');
+    // Fetch notifications to resend
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (serviceClient as any).from('notifications_log')
+      .select('id, customer_id, type, channel, recipient, template_data');
 
     if (ids && ids.length > 0) {
       query = query.in('id', ids);
@@ -160,37 +66,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Send each notification via the notification service (sequential to avoid rate limiting)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const notificationService = getNotificationService(serviceClient as any);
     let totalResent = 0;
     let totalFailed = 0;
     const errors: string[] = [];
 
     for (const notification of notifications || []) {
       try {
-        const { error: insertError } = await (supabase as any)
-          .from('notifications_log')
-          .insert({
-            customer_id: notification.customer_id,
-            type: notification.type,
-            channel: notification.channel,
-            recipient: notification.recipient,
-            subject: notification.subject,
-            content: notification.content,
-            status: 'pending',
-            error_message: null,
-            sent_at: null,
-            clicked_at: null,
-            delivered_at: null,
-            message_id: null,
-            tracking_id: null,
-            report_card_id: notification.report_card_id,
-          });
+        const result = await notificationService.send({
+          type: notification.type,
+          channel: notification.channel,
+          recipient: notification.recipient,
+          templateData: notification.template_data || {},
+          userId: notification.customer_id || undefined,
+        });
 
-        if (insertError) {
-          totalFailed++;
-          errors.push(`Failed to resend notification ${notification.id}`);
-        } else {
+        if (result.success) {
           totalResent++;
-          // TODO: Actually send the notification using Resend/Twilio
+        } else {
+          totalFailed++;
+          errors.push(`Failed to resend ${notification.id}: ${result.error}`);
         }
       } catch (err) {
         totalFailed++;

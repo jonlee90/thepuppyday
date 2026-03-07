@@ -4,10 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import type { NotificationLog } from '@/types/database';
-import type { ResendNotificationResponse } from '@/types/notifications';
+import { getNotificationService } from '@/lib/notifications';
 
 export async function POST(
   request: NextRequest,
@@ -26,72 +25,14 @@ export async function POST(
       );
     }
 
-    // In mock mode
-    if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
-      const { getMockStore } = await import('@/mocks/supabase/store');
-      const store = getMockStore();
+    // Use service role client for data queries (bypasses RLS)
+    const serviceClient = createServiceRoleClient();
 
-      // Get the notification
-      const notification = store.selectById(
-        'notifications_log',
-        id
-      ) as NotificationLog | null;
-
-      if (!notification) {
-        return NextResponse.json(
-          { success: false, error: 'Notification not found' },
-          { status: 404 }
-        );
-      }
-
-      // Create a new notification record (resending)
-      const newNotification: Partial<NotificationLog> = {
-        customer_id: notification.customer_id,
-        type: notification.type,
-        channel: notification.channel,
-        recipient: notification.recipient,
-        subject: notification.subject,
-        content: notification.content,
-        status: 'pending',
-        error_message: null,
-        sent_at: null,
-        clicked_at: null,
-        delivered_at: null,
-        message_id: null,
-        tracking_id: null,
-        report_card_id: notification.report_card_id,
-      };
-
-      const result = await (store as any).insert('notifications_log', newNotification);
-
-      if (!result) {
-        return NextResponse.json(
-          { success: false, error: 'Failed to create resend notification' },
-          { status: 500 }
-        );
-      }
-
-      // Simulate sending
-      setTimeout(() => {
-        store.update('notifications_log', result.id, {
-          status: 'sent',
-          sent_at: new Date().toISOString(),
-          delivered_at: new Date().toISOString(),
-        });
-      }, 1000);
-
-      const response: ResendNotificationResponse = {
-        success: true,
-        notificationId: result.id,
-      };
-
-      return NextResponse.json(response);
-    }
-
-    // Production Supabase query
-    const { data: notification, error: fetchError } = await (supabase as any)
+    // Fetch original notification
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: notification, error: fetchError } = await (serviceClient as any)
       .from('notifications_log')
-      .select('*')
+      .select('id, customer_id, type, channel, recipient, status, template_data')
       .eq('id', id)
       .single();
 
@@ -102,53 +43,28 @@ export async function POST(
       );
     }
 
-    // Create a new notification record
-    const { data: newNotification, error: insertError } = await (supabase as any)
-      .from('notifications_log')
-      .insert({
-        customer_id: notification.customer_id,
-        type: notification.type,
-        channel: notification.channel,
-        recipient: notification.recipient,
-        subject: notification.subject,
-        content: notification.content,
-        status: 'pending',
-        error_message: null,
-        sent_at: null,
-        clicked_at: null,
-        delivered_at: null,
-        message_id: null,
-        tracking_id: null,
-        report_card_id: notification.report_card_id,
-      })
-      .select()
-      .single();
+    // Send via notification service (handles mock/production internally)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const notificationService = getNotificationService(serviceClient as any);
+    const result = await notificationService.send({
+      type: notification.type,
+      channel: notification.channel,
+      recipient: notification.recipient,
+      templateData: notification.template_data || {},
+      userId: notification.customer_id || undefined,
+    });
 
-    if (insertError) {
-      console.error('[Resend Notification] Error creating notification:', insertError);
+    if (!result.success) {
       return NextResponse.json(
-        { success: false, error: 'Failed to create resend notification' },
+        { success: false, error: result.error || 'Failed to resend notification' },
         { status: 500 }
       );
     }
 
-    // TODO: Actually send the notification using Resend/Twilio
-    // For now, just mark as sent
-    await (supabase as any)
-      .from('notifications_log')
-      .update({
-        status: 'sent',
-        sent_at: new Date().toISOString(),
-        delivered_at: new Date().toISOString(),
-      })
-      .eq('id', newNotification.id);
-
-    const response: ResendNotificationResponse = {
+    return NextResponse.json({
       success: true,
-      notificationId: newNotification.id,
-    };
-
-    return NextResponse.json(response);
+      notificationId: result.logId,
+    });
   } catch (error) {
     console.error('[Resend Notification] Error:', error);
 

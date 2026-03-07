@@ -708,8 +708,27 @@ export async function POST(request: NextRequest) {
 
     // 7. Send notification only to active customers
     if (data.send_notification && customerStatus === 'active') {
-      // TODO: Integrate with notification service
-      console.log('Would send notification to active customer:', customerId);
+      try {
+        const { triggerBookingConfirmation } = await import(
+          '@/lib/notifications/triggers/booking-confirmation'
+        );
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await triggerBookingConfirmation(supabase as any, {
+          appointmentId: appointment.id,
+          customerId: customerId,
+          customerName: `${data.customer.first_name} ${data.customer.last_name}`,
+          customerEmail: data.customer.email || '',
+          customerPhone: data.customer.phone || null,
+          petName: data.pet.name,
+          serviceName: service.name,
+          scheduledAt: appointment.scheduled_at,
+          totalPrice: appointment.total_price || 0,
+        });
+      } catch (notifError) {
+        // Log but do not fail the appointment creation
+        console.error('[Admin Appointments] Notification trigger failed:', notifError);
+      }
     }
 
     // 8. Trigger calendar sync (auto-sync) - Task 0025
