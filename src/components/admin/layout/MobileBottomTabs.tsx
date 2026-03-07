@@ -1,6 +1,6 @@
 /**
  * Mobile Bottom Tab Navigation
- * Fixed bottom navigation bar for mobile devices (<768px)
+ * Fixed bottom navigation bar for mobile/tablet devices (<1024px)
  * 5 tabs: Home, Appointments, Walk-in (center elevated), Customers, More
  */
 
@@ -75,7 +75,7 @@ export function MobileBottomTabs() {
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#434E54]/10 shadow-lg">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#434E54]/10 shadow-lg">
       <div className="h-18 flex items-center justify-around px-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;

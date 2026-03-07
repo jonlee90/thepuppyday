@@ -10,13 +10,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import { ChartWrapper } from './ChartWrapper';
 import { CHART_COLORS, CHART_CONFIG, formatPercentage } from './index';
 
-interface RetentionChartProps {
-  dateRange: {
-    start: Date;
-    end: Date;
-  };
-}
-
 interface RetentionDataPoint {
   period: string;
   rate: number;
@@ -28,15 +21,31 @@ interface RetentionMetrics {
   churnRate: number;
 }
 
-export function RetentionChart({ dateRange }: RetentionChartProps) {
-  const [metrics, setMetrics] = useState<RetentionMetrics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface RetentionChartProps {
+  dateRange: {
+    start: Date;
+    end: Date;
+  };
+  retentionMetrics?: RetentionMetrics | null;
+  isLoading?: boolean;
+  error?: string | null;
+}
+
+export function RetentionChart({ dateRange, retentionMetrics: propMetrics, isLoading: propLoading, error: propError }: RetentionChartProps) {
+  const [selfMetrics, setSelfMetrics] = useState<RetentionMetrics | null>(null);
+  const [selfLoading, setSelfLoading] = useState(propMetrics === undefined);
+  const [selfError, setSelfError] = useState<string | null>(null);
+
+  const metrics = propMetrics !== undefined ? propMetrics : selfMetrics;
+  const isLoading = propMetrics !== undefined ? (propLoading ?? false) : selfLoading;
+  const error = propMetrics !== undefined ? (propError ?? null) : selfError;
 
   useEffect(() => {
+    if (propMetrics !== undefined) return;
+
     const fetchRetentionData = async () => {
-      setIsLoading(true);
-      setError(null);
+      setSelfLoading(true);
+      setSelfError(null);
 
       try {
         const params = new URLSearchParams({
@@ -50,17 +59,17 @@ export function RetentionChart({ dateRange }: RetentionChartProps) {
         }
 
         const result = await response.json();
-        setMetrics(result.data.retentionMetrics);
+        setSelfMetrics(result.data.retentionMetrics);
       } catch (err) {
         console.error('Error fetching retention data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load chart');
+        setSelfError(err instanceof Error ? err.message : 'Failed to load chart');
       } finally {
-        setIsLoading(false);
+        setSelfLoading(false);
       }
     };
 
     fetchRetentionData();
-  }, [dateRange]);
+  }, [dateRange, propMetrics]);
 
   if (isLoading) {
     return <ChartWrapper height={300} isLoading={true}><div /></ChartWrapper>;

@@ -1,11 +1,11 @@
 /**
  * Analytics Dashboard Component
- * Task 0048: Main dashboard with all analytics sections
+ * Main dashboard with all analytics sections wrapped in error boundaries
  */
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DateRangeSelector, DateRangePreset } from './DateRangeSelector';
 import { KPIGrid } from './KPIGrid';
 import { AppointmentTrendChart } from './charts/AppointmentTrendChart';
@@ -21,6 +21,11 @@ import { MarketingAnalytics } from './MarketingAnalytics';
 import { GroomerPerformanceDashboard } from './GroomerPerformanceDashboard';
 import { GroomerComparisonTable } from './GroomerComparisonTable';
 import { GroomerLeaderboard } from './GroomerLeaderboard';
+import { AnalyticsErrorBoundary } from './AnalyticsErrorBoundary';
+import { BookingSourceChart } from './BookingSourceChart';
+import { PetSizeChart } from './PetSizeChart';
+import { PeakHoursChart } from './PeakHoursChart';
+import { LoyaltyAnalytics } from './LoyaltyAnalytics';
 
 interface DateRange {
   start: Date;
@@ -28,7 +33,6 @@ interface DateRange {
 }
 
 export default function AnalyticsDashboard() {
-  // Initialize with last 30 days
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const end = new Date();
     const start = new Date();
@@ -38,8 +42,43 @@ export default function AnalyticsDashboard() {
     return { start, end };
   });
 
+  // Lift customer data fetch to dashboard level (eliminates duplicate fetch)
+  const [customerData, setCustomerData] = useState<{ customerTypes: any[]; retentionMetrics: any } | null>(null);
+  const [customerLoading, setCustomerLoading] = useState(true);
+  const [customerError, setCustomerError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const fetchCustomerData = async () => {
+      setCustomerLoading(true);
+      setCustomerError(null);
+      try {
+        const params = new URLSearchParams({
+          start: dateRange.start.toISOString(),
+          end: dateRange.end.toISOString(),
+        });
+        const response = await fetch(`/api/admin/analytics/charts/customers?${params}`, { signal: controller.signal });
+        if (!response.ok) throw new Error('Failed to fetch customer data');
+        const result = await response.json();
+        setCustomerData(result.data);
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        setCustomerError(err instanceof Error ? err.message : 'Failed to load data');
+      } finally {
+        setCustomerLoading(false);
+      }
+    };
+    fetchCustomerData();
+    return () => controller.abort();
+  }, [dateRange]);
+
   const handleDateRangeChange = (range: DateRange, preset: DateRangePreset) => {
     setDateRange(range);
+  };
+
+  const groomerDateRange = {
+    start: dateRange.start.toISOString(),
+    end: dateRange.end.toISOString(),
   };
 
   return (
@@ -52,96 +91,149 @@ export default function AnalyticsDashboard() {
         <ExportMenu dateRange={dateRange} />
       </div>
 
-      {/* KPI Grid - Task 0050 */}
-      <div className="card bg-white shadow-md p-6">
-        <h2 className="text-xl font-bold text-[#434E54] mb-4">Key Performance Indicators</h2>
-        <KPIGrid dateRange={dateRange} />
-      </div>
+      {/* KPIs */}
+      <AnalyticsErrorBoundary sectionName="KPIs">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Key Performance Indicators</h2>
+          <KPIGrid dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
 
-      {/* Appointment Trend Chart - Task 0051 */}
-      <div className="card bg-white shadow-md p-6">
-        <h2 className="text-xl font-bold text-[#434E54] mb-4">Appointment Trends</h2>
-        <AppointmentTrendChart dateRange={dateRange} />
-      </div>
+      {/* Appointment Trends */}
+      <AnalyticsErrorBoundary sectionName="Appointment Trends">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Appointment Trends</h2>
+          <AppointmentTrendChart dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
 
-      {/* Revenue Chart - Task 0052 */}
-      <div className="card bg-white shadow-md p-6">
-        <h2 className="text-xl font-bold text-[#434E54] mb-4">Revenue Breakdown</h2>
-        <RevenueChart dateRange={dateRange} />
-      </div>
+      {/* Revenue */}
+      <AnalyticsErrorBoundary sectionName="Revenue">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Revenue Breakdown</h2>
+          <RevenueChart dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
 
-      {/* Service Popularity Chart - Task 0053 */}
-      <div className="card bg-white shadow-md p-6">
-        <h2 className="text-xl font-bold text-[#434E54] mb-4">Service Popularity</h2>
-        <ServicePopularityChart dateRange={dateRange} />
-      </div>
+      {/* Service Popularity */}
+      <AnalyticsErrorBoundary sectionName="Service Popularity">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Service Popularity</h2>
+          <ServicePopularityChart dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
 
-      {/* Customer Analytics - Task 0054 */}
+      {/* Booking Sources */}
+      <AnalyticsErrorBoundary sectionName="Booking Sources">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Booking Sources</h2>
+          <BookingSourceChart dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
+
+      {/* Pet Sizes */}
+      <AnalyticsErrorBoundary sectionName="Pet Size Distribution">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Pet Size Distribution</h2>
+          <PetSizeChart dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
+
+      {/* Customer Types + Retention */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AnalyticsErrorBoundary sectionName="Customer Types">
+          <div className="card bg-white shadow-md p-6">
+            <h2 className="text-xl font-bold text-[#434E54] mb-4">Customer Types</h2>
+            <CustomerTypeChart
+              dateRange={dateRange}
+              customerData={customerData?.customerTypes}
+              isLoading={customerLoading}
+              error={customerError}
+            />
+          </div>
+        </AnalyticsErrorBoundary>
+        <AnalyticsErrorBoundary sectionName="Customer Retention">
+          <div className="card bg-white shadow-md p-6">
+            <h2 className="text-xl font-bold text-[#434E54] mb-4">Customer Retention</h2>
+            <RetentionChart
+              dateRange={dateRange}
+              retentionMetrics={customerData?.retentionMetrics}
+              isLoading={customerLoading}
+              error={customerError}
+            />
+          </div>
+        </AnalyticsErrorBoundary>
+      </div>
+
+      {/* Peak Hours */}
+      <AnalyticsErrorBoundary sectionName="Peak Hours">
         <div className="card bg-white shadow-md p-6">
-          <h2 className="text-xl font-bold text-[#434E54] mb-4">Customer Types</h2>
-          <CustomerTypeChart dateRange={dateRange} />
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Peak Hours</h2>
+          <PeakHoursChart dateRange={dateRange} />
         </div>
+      </AnalyticsErrorBoundary>
+
+      {/* Operational Metrics */}
+      <AnalyticsErrorBoundary sectionName="Operational Metrics">
         <div className="card bg-white shadow-md p-6">
-          <h2 className="text-xl font-bold text-[#434E54] mb-4">Customer Retention</h2>
-          <RetentionChart dateRange={dateRange} />
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Operational Metrics</h2>
+          <OperationalMetricsChart dateRange={dateRange} />
         </div>
-      </div>
+      </AnalyticsErrorBoundary>
 
-      {/* Operational Metrics - Task 0055 */}
-      <div className="card bg-white shadow-md p-6">
-        <h2 className="text-xl font-bold text-[#434E54] mb-4">Operational Metrics</h2>
-        <OperationalMetricsChart dateRange={dateRange} />
-      </div>
+      {/* Loyalty */}
+      <AnalyticsErrorBoundary sectionName="Loyalty Analytics">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Loyalty Program</h2>
+          <LoyaltyAnalytics dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
 
-      {/* Report Card Analytics - Task 0058 */}
-      <div className="card bg-white shadow-md p-6">
-        <h2 className="text-xl font-bold text-[#434E54] mb-4">Report Card Performance</h2>
-        <ReportCardAnalytics dateRange={dateRange} />
-      </div>
+      {/* Report Cards */}
+      <AnalyticsErrorBoundary sectionName="Report Card Performance">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Report Card Performance</h2>
+          <ReportCardAnalytics dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
 
-      {/* Waitlist Analytics - Task 0059 */}
-      <div className="card bg-white shadow-md p-6">
-        <h2 className="text-xl font-bold text-[#434E54] mb-4">Waitlist Performance</h2>
-        <WaitlistAnalytics dateRange={dateRange} />
-      </div>
+      {/* Waitlist */}
+      <AnalyticsErrorBoundary sectionName="Waitlist Performance">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Waitlist Performance</h2>
+          <WaitlistAnalytics dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
 
-      {/* Marketing Analytics - Task 0060 */}
-      <div className="card bg-white shadow-md p-6">
-        <h2 className="text-xl font-bold text-[#434E54] mb-4">Marketing Campaign Performance</h2>
-        <MarketingAnalytics dateRange={dateRange} />
-      </div>
+      {/* Marketing */}
+      <AnalyticsErrorBoundary sectionName="Marketing">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Marketing Campaign Performance</h2>
+          <MarketingAnalytics dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
 
-      {/* Groomer Performance Dashboard - Task 0061 */}
-      <div className="card bg-white shadow-md p-6">
-        <h2 className="text-xl font-bold text-[#434E54] mb-4">Groomer Performance</h2>
-        <GroomerPerformanceDashboard
-          dateRange={{
-            start: dateRange.start.toISOString(),
-            end: dateRange.end.toISOString(),
-          }}
-        />
-      </div>
+      {/* Groomer Performance */}
+      <AnalyticsErrorBoundary sectionName="Groomer Performance">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Groomer Performance</h2>
+          <GroomerPerformanceDashboard dateRange={groomerDateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
 
-      {/* Groomer Leaderboard - Task 0062 */}
-      <div className="card bg-white shadow-md p-6">
-        <GroomerLeaderboard
-          dateRange={{
-            start: dateRange.start.toISOString(),
-            end: dateRange.end.toISOString(),
-          }}
-        />
-      </div>
+      {/* Groomer Leaderboard */}
+      <AnalyticsErrorBoundary sectionName="Groomer Leaderboard">
+        <div className="card bg-white shadow-md p-6">
+          <GroomerLeaderboard dateRange={groomerDateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
 
-      {/* Groomer Comparison Table - Task 0062 */}
-      <div className="card bg-white shadow-md p-6">
-        <GroomerComparisonTable
-          dateRange={{
-            start: dateRange.start.toISOString(),
-            end: dateRange.end.toISOString(),
-          }}
-        />
-      </div>
+      {/* Groomer Comparison */}
+      <AnalyticsErrorBoundary sectionName="Groomer Comparison">
+        <div className="card bg-white shadow-md p-6">
+          <GroomerComparisonTable dateRange={groomerDateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
     </div>
   );
 }

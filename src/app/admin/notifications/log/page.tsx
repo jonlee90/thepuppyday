@@ -208,7 +208,7 @@ export default function NotificationLogPage() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[#434E54] mb-2">Notification Log</h1>
+            <h1 className="hidden lg:block text-3xl font-bold text-[#434E54] mb-2">Notification Log</h1>
             <p className="text-[#6B7280]">
               View and manage all notification logs with detailed filtering
             </p>

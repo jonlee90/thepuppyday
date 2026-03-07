@@ -21,7 +21,6 @@ interface AppointmentListViewProps {
 
 interface Filters {
   status: AppointmentStatus | '';
-  service: string;
   dateFrom: string;
   dateTo: string;
 }
@@ -43,10 +42,6 @@ interface AppointmentListItem {
   } | null;
 }
 
-interface ServiceListItem {
-  id: string;
-  name: string;
-}
 
 const DATE_RANGE_PRESETS = [
   { label: 'Today', value: 'today' },
@@ -63,7 +58,6 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filters, setFilters] = useState<Filters>({
     status: '',
-    service: '',
     dateFrom: '',
     dateTo: '',
   });
@@ -72,9 +66,8 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [sortBy, setSortBy] = useState<'scheduled_at' | 'customer' | 'status'>('scheduled_at');
+  const [sortBy, setSortBy] = useState<'scheduled_at' | 'customer' | 'status' | 'status_priority'>('status_priority');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [services, setServices] = useState<ServiceListItem[]>([]);
 
   // Calendar sync state
   const [calendarConnected, setCalendarConnected] = useState(false);
@@ -110,22 +103,6 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
     checkCalendarConnection();
   }, []);
 
-  // Fetch services for filter dropdown
-  useEffect(() => {
-    async function fetchServices() {
-      try {
-        if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
-          const { getMockStore } = await import('@/mocks/supabase/store');
-          const store = getMockStore();
-          const allServices = store.select('services');
-          setServices(allServices);
-        }
-      } catch (error) {
-        console.error('[AppointmentListView] Error fetching services:', error);
-      }
-    }
-    fetchServices();
-  }, []);
 
   // Fetch appointments
   const fetchAppointments = useCallback(async () => {
@@ -144,10 +121,6 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
 
       if (filters.status) {
         params.append('status', filters.status);
-      }
-
-      if (filters.service) {
-        params.append('service', filters.service);
       }
 
       if (filters.dateFrom) {
@@ -291,7 +264,6 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
     setSearchQuery('');
     setFilters({
       status: '',
-      service: '',
       dateFrom: '',
       dateTo: '',
     });
@@ -367,7 +339,6 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
     () =>
       searchQuery ||
       filters.status ||
-      filters.service ||
       filters.dateFrom ||
       filters.dateTo,
     [searchQuery, filters]
@@ -399,8 +370,8 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
           />
         </div>
 
-        {/* Filters Row */}
-        <div className="flex flex-wrap gap-4">
+        {/* Filters Row - Status + Dates on one line */}
+        <div className="flex flex-row items-center gap-3">
           {/* Status Filter */}
           <select
             value={filters.status}
@@ -408,7 +379,7 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
               setFilters((prev) => ({ ...prev, status: e.target.value as AppointmentStatus | '' }));
               setPage(1);
             }}
-            className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
+            className="select select-bordered select-sm bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
           >
             <option value="">All Statuses</option>
             <option value="pending">Pending</option>
@@ -419,28 +390,11 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
             <option value="no_show">No Show</option>
           </select>
 
-          {/* Service Filter */}
-          <select
-            value={filters.service}
-            onChange={(e) => {
-              setFilters((prev) => ({ ...prev, service: e.target.value }));
-              setPage(1);
-            }}
-            className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
-          >
-            <option value="">All Services</option>
-            {services.map((service) => (
-              <option key={service.id} value={service.id}>
-                {service.name}
-              </option>
-            ))}
-          </select>
-
           {/* Date Range Preset */}
           <select
             value={datePreset}
             onChange={(e) => handleDatePresetChange(e.target.value)}
-            className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
+            className="select select-bordered select-sm bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
           >
             <option value="">All Dates</option>
             {DATE_RANGE_PRESETS.map((preset) => (
@@ -458,7 +412,6 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
                 value={filters.dateFrom ? format(new Date(filters.dateFrom), 'yyyy-MM-dd') : ''}
                 onChange={(e) => {
                   if (e.target.value) {
-                    // Parse YYYY-MM-DD as local date, then convert to ISO for storage
                     const [year, month, day] = e.target.value.split('-').map(Number);
                     const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
                     setFilters((prev) => ({ ...prev, dateFrom: localDate.toISOString() }));
@@ -467,14 +420,13 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
                   }
                   setPage(1);
                 }}
-                className="input input-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
+                className="input input-bordered input-sm bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
               />
               <input
                 type="date"
                 value={filters.dateTo ? format(new Date(filters.dateTo), 'yyyy-MM-dd') : ''}
                 onChange={(e) => {
                   if (e.target.value) {
-                    // Parse YYYY-MM-DD as local date, set to end of day, then convert to ISO
                     const [year, month, day] = e.target.value.split('-').map(Number);
                     const localDate = new Date(year, month - 1, day, 23, 59, 59, 999);
                     setFilters((prev) => ({ ...prev, dateTo: localDate.toISOString() }));
@@ -483,7 +435,7 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
                   }
                   setPage(1);
                 }}
-                className="input input-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
+                className="input input-bordered input-sm bg-white border-[#E5E5E5] focus:border-[#434E54] focus:outline-none"
               />
             </>
           )}
@@ -492,10 +444,10 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="btn btn-ghost text-[#434E54] hover:bg-[#EAE0D5]"
+              className="btn btn-ghost btn-sm text-[#434E54] hover:bg-[#EAE0D5]"
             >
               <X className="w-4 h-4" />
-              Clear Filters
+              Clear
             </button>
           )}
         </div>
@@ -506,6 +458,17 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
         <table className="table table-zebra w-full">
           <thead>
             <tr className="bg-[#F8EEE5]">
+              <th
+                className="cursor-pointer hover:bg-[#EAE0D5] transition-colors"
+                onClick={() => handleSort('status_priority')}
+              >
+                <div className="flex items-center gap-2">
+                  Status
+                  {(sortBy === 'status' || sortBy === 'status_priority') && (
+                    <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
               <th
                 className="cursor-pointer hover:bg-[#EAE0D5] transition-colors"
                 onClick={() => handleSort('scheduled_at')}
@@ -530,17 +493,6 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
               </th>
               <th>Pet</th>
               <th>Service</th>
-              <th
-                className="cursor-pointer hover:bg-[#EAE0D5] transition-colors"
-                onClick={() => handleSort('status')}
-              >
-                <div className="flex items-center gap-2">
-                  Status
-                  {sortBy === 'status' && (
-                    <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </div>
-              </th>
               {calendarConnected && <th>Calendar Sync</th>}
               <th>Actions</th>
             </tr>
@@ -577,6 +529,11 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
                   onClick={() => onRowClick(apt.id)}
                 >
                   <td>
+                    <span className={`badge ${getStatusBadgeColor(apt.status)}`}>
+                      {getStatusLabel(apt.status)}
+                    </span>
+                  </td>
+                  <td>
                     <div className="font-medium text-[#434E54]">
                       {format(new Date(apt.scheduled_at), 'MMM d, yyyy')}
                     </div>
@@ -594,11 +551,6 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
                   </td>
                   <td className="text-[#434E54]">{apt.pet?.name || 'Unknown'}</td>
                   <td className="text-[#434E54]">{apt.service?.name || 'Unknown'}</td>
-                  <td>
-                    <span className={`badge ${getStatusBadgeColor(apt.status)}`}>
-                      {getStatusLabel(apt.status)}
-                    </span>
-                  </td>
                   {calendarConnected && (
                     <td>
                       <div className="flex items-center gap-2">

@@ -33,7 +33,7 @@ export default async function BookingSettingsPage() {
 
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#434E54]">Booking Settings</h1>
+        <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Booking Settings</h1>
         <p className="mt-2 text-[#434E54]/60">
           Configure appointment booking rules, policies, business hours, and blocked dates
         </p>

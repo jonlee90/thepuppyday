@@ -11,29 +11,9 @@ import {
   Calendar,
   AlertCircle,
 } from 'lucide-react';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Area, ResponsiveContainer } from 'recharts';
+import { ChartWrapper } from './charts/ChartWrapper';
+import { CHART_CONFIG } from './charts/index';
 
 interface GroomerPerformanceData {
   groomer_id: string;
@@ -48,8 +28,8 @@ interface GroomerPerformanceData {
     revenue_trend: number;
     addon_attachment_rate: number;
     addon_trend: number;
-    on_time_percentage: number;
-    on_time_trend: number;
+    completion_rate: number;
+    completion_rate_trend: number;
   };
   trends: {
     dates: string[];
@@ -116,46 +96,15 @@ export function GroomerPerformanceDashboard({ dateRange }: GroomerPerformanceDas
     return `${sign}${trend.toFixed(1)}%`;
   };
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        backgroundColor: '#434E54',
-        padding: 12,
-        titleColor: '#FFFFFF',
-        bodyColor: '#FFFFFF',
-        borderColor: '#EAE0D5',
-        borderWidth: 1,
-      },
-    },
-    scales: {
-      x: {
-        grid: {
-          display: false,
-        },
-        ticks: {
-          color: '#6B7280',
-          font: {
-            size: 11,
-          },
-        },
-      },
-      y: {
-        grid: {
-          color: '#F5F5F5',
-        },
-        ticks: {
-          color: '#6B7280',
-          font: {
-            size: 11,
-          },
-        },
-      },
-    },
+  // Transform parallel arrays to Recharts data format
+  const getChartData = () => {
+    if (!data?.trends?.dates) return [];
+    return data.trends.dates.map((date: string, i: number) => ({
+      date,
+      appointments: data.trends.appointments[i] ?? 0,
+      revenue: data.trends.revenue[i] ?? 0,
+      rating: data.trends.ratings[i] ?? 0,
+    }));
   };
 
   if (loading && !data) {
@@ -342,18 +291,18 @@ export function GroomerPerformanceDashboard({ dateRange }: GroomerPerformanceDas
             <div className="p-2.5 bg-[#EAE0D5] rounded-lg">
               <Clock className="w-5 h-5 text-[#434E54]" />
             </div>
-            <h3 className="text-sm font-medium text-[#6B7280]">On-Time Completion</h3>
+            <h3 className="text-sm font-medium text-[#6B7280]">Completion Rate</h3>
           </div>
           <div className="flex items-baseline gap-2 mb-2">
             <span className="text-3xl font-bold text-[#434E54]">
-              {metrics.on_time_percentage.toFixed(1)}%
+              {metrics.completion_rate.toFixed(1)}%
             </span>
-            {getTrendIcon(metrics.on_time_trend)}
+            {getTrendIcon(metrics.completion_rate_trend)}
           </div>
           <p className={`text-sm font-medium ${
-            metrics.on_time_trend >= 0 ? 'text-[#6BCB77]' : 'text-[#EF4444]'
+            metrics.completion_rate_trend >= 0 ? 'text-[#6BCB77]' : 'text-[#EF4444]'
           }`}>
-            {getTrendText(metrics.on_time_trend)} vs previous period
+            {getTrendText(metrics.completion_rate_trend)} vs previous period
           </p>
         </div>
       </div>
@@ -365,28 +314,22 @@ export function GroomerPerformanceDashboard({ dateRange }: GroomerPerformanceDas
           <h3 className="text-lg font-semibold text-[#434E54] mb-4">
             Appointments Trend
           </h3>
-          <div className="h-64">
-            <Line
-              data={{
-                labels: trends.dates,
-                datasets: [
-                  {
-                    label: 'Appointments',
-                    data: trends.appointments,
-                    borderColor: '#434E54',
-                    backgroundColor: 'rgba(67, 78, 84, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#434E54',
-                    pointBorderColor: '#FFFFFF',
-                    pointBorderWidth: 2,
-                  },
-                ],
-              }}
-              options={chartOptions}
-            />
-          </div>
+          <ChartWrapper height={256}>
+            <LineChart data={getChartData()} margin={CHART_CONFIG.margin}>
+              <CartesianGrid {...CHART_CONFIG.grid} />
+              <XAxis dataKey="date" {...CHART_CONFIG.axis} />
+              <YAxis {...CHART_CONFIG.axis} />
+              <Tooltip {...CHART_CONFIG.tooltip} />
+              <defs>
+                <linearGradient id="fillAppointments" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#434E54" stopOpacity={0.1} />
+                  <stop offset="95%" stopColor="#434E54" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area type="monotone" dataKey="appointments" fill="url(#fillAppointments)" stroke="none" />
+              <Line type="monotone" dataKey="appointments" stroke="#434E54" strokeWidth={2} dot={{ r: 4, fill: '#434E54', strokeWidth: 2, stroke: '#fff' }} />
+            </LineChart>
+          </ChartWrapper>
         </div>
 
         {/* Revenue Trend */}
@@ -394,41 +337,22 @@ export function GroomerPerformanceDashboard({ dateRange }: GroomerPerformanceDas
           <h3 className="text-lg font-semibold text-[#434E54] mb-4">
             Revenue Trend
           </h3>
-          <div className="h-64">
-            <Line
-              data={{
-                labels: trends.dates,
-                datasets: [
-                  {
-                    label: 'Revenue',
-                    data: trends.revenue,
-                    borderColor: '#6BCB77',
-                    backgroundColor: 'rgba(107, 203, 119, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#6BCB77',
-                    pointBorderColor: '#FFFFFF',
-                    pointBorderWidth: 2,
-                  },
-                ],
-              }}
-              options={{
-                ...chartOptions,
-                plugins: {
-                  ...chartOptions.plugins,
-                  tooltip: {
-                    ...chartOptions.plugins.tooltip,
-                    callbacks: {
-                      label: (context: any) => {
-                        return `Revenue: $${context.parsed.y.toLocaleString()}`;
-                      },
-                    },
-                  },
-                },
-              }}
-            />
-          </div>
+          <ChartWrapper height={256}>
+            <LineChart data={getChartData()} margin={CHART_CONFIG.margin}>
+              <CartesianGrid {...CHART_CONFIG.grid} />
+              <XAxis dataKey="date" {...CHART_CONFIG.axis} />
+              <YAxis {...CHART_CONFIG.axis} tickFormatter={(v) => `$${v.toLocaleString()}`} />
+              <Tooltip {...CHART_CONFIG.tooltip} formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']} />
+              <defs>
+                <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6BCB77" stopOpacity={0.1} />
+                  <stop offset="95%" stopColor="#6BCB77" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area type="monotone" dataKey="revenue" fill="url(#fillRevenue)" stroke="none" />
+              <Line type="monotone" dataKey="revenue" stroke="#6BCB77" strokeWidth={2} dot={{ r: 4, fill: '#6BCB77', strokeWidth: 2, stroke: '#fff' }} />
+            </LineChart>
+          </ChartWrapper>
         </div>
 
         {/* Rating Trend */}
@@ -436,38 +360,22 @@ export function GroomerPerformanceDashboard({ dateRange }: GroomerPerformanceDas
           <h3 className="text-lg font-semibold text-[#434E54] mb-4">
             Rating Trend
           </h3>
-          <div className="h-64">
-            <Line
-              data={{
-                labels: trends.dates,
-                datasets: [
-                  {
-                    label: 'Rating',
-                    data: trends.ratings,
-                    borderColor: '#FFB347',
-                    backgroundColor: 'rgba(255, 179, 71, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#FFB347',
-                    pointBorderColor: '#FFFFFF',
-                    pointBorderWidth: 2,
-                  },
-                ],
-              }}
-              options={{
-                ...chartOptions,
-                scales: {
-                  ...chartOptions.scales,
-                  y: {
-                    ...chartOptions.scales.y,
-                    min: 0,
-                    max: 5,
-                  },
-                },
-              }}
-            />
-          </div>
+          <ChartWrapper height={256}>
+            <LineChart data={getChartData()} margin={CHART_CONFIG.margin}>
+              <CartesianGrid {...CHART_CONFIG.grid} />
+              <XAxis dataKey="date" {...CHART_CONFIG.axis} />
+              <YAxis {...CHART_CONFIG.axis} domain={[0, 5]} />
+              <Tooltip {...CHART_CONFIG.tooltip} formatter={(value: number) => [value.toFixed(1), 'Rating']} />
+              <defs>
+                <linearGradient id="fillRating" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#FFB347" stopOpacity={0.1} />
+                  <stop offset="95%" stopColor="#FFB347" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area type="monotone" dataKey="rating" fill="url(#fillRating)" stroke="none" />
+              <Line type="monotone" dataKey="rating" stroke="#FFB347" strokeWidth={2} dot={{ r: 4, fill: '#FFB347', strokeWidth: 2, stroke: '#fff' }} />
+            </LineChart>
+          </ChartWrapper>
         </div>
       </div>
     </div>

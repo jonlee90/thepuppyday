@@ -133,7 +133,7 @@ export default function TemplatesPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#434E54] mb-2">Notification Templates</h1>
+          <h1 className="hidden lg:block text-3xl font-bold text-[#434E54] mb-2">Notification Templates</h1>
           <p className="text-[#6B7280]">
             Manage email and SMS templates for automated notifications
           </p>

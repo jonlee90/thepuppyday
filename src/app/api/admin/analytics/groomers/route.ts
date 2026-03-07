@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
           average_rating: 4.8,
           revenue: 12500,
           addon_rate: 65.2,
-          on_time_percentage: 92.5,
+          completion_rate: 92.5,
         },
         {
           groomer_id: 'groomer-2',
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
           average_rating: 4.6,
           revenue: 9800,
           addon_rate: 58.4,
-          on_time_percentage: 88.2,
+          completion_rate: 88.2,
         },
         {
           groomer_id: 'groomer-3',
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
           average_rating: 4.9,
           revenue: 8200,
           addon_rate: 72.1,
-          on_time_percentage: 95.0,
+          completion_rate: 95.0,
         },
       ];
 
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
             average_rating: 4.77,
             revenue: 10166.67,
             addon_rate: 65.23,
-            on_time_percentage: 91.9,
+            completion_rate: 91.9,
           },
         });
       }
@@ -97,12 +97,12 @@ export async function GET(request: NextRequest) {
           revenue_total: 30500,
           revenue_per_appointment: 265.22,
           addon_attachment_rate: 65.23,
-          on_time_percentage: 91.9,
+          completion_rate: 91.9,
           appointments_trend: 8.5,
           rating_trend: 0.2,
           revenue_trend: 12.3,
           addon_trend: 5.4,
-          on_time_trend: -1.2,
+          completion_rate_trend: -1.2,
         },
         trends: {
           dates: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
@@ -198,9 +198,9 @@ async function getIndividualGroomerPerformance(
       currentMetrics.addon_attachment_rate,
       previousMetrics.addon_attachment_rate
     ),
-    on_time_trend: calculatePercentChange(
-      currentMetrics.on_time_percentage,
-      previousMetrics.on_time_percentage
+    completion_rate_trend: calculatePercentChange(
+      currentMetrics.completion_rate,
+      previousMetrics.completion_rate
     ),
   };
 
@@ -266,7 +266,7 @@ async function getGroomerComparison(
         average_rating: metrics.average_rating,
         revenue: metrics.revenue_total,
         addon_rate: metrics.addon_attachment_rate,
-        on_time_percentage: metrics.on_time_percentage,
+        completion_rate: metrics.completion_rate,
       };
     })
   );
@@ -277,7 +277,7 @@ async function getGroomerComparison(
     average_rating: average(groomerStats.map(g => g.average_rating)),
     revenue: average(groomerStats.map(g => g.revenue)),
     addon_rate: average(groomerStats.map(g => g.addon_rate)),
-    on_time_percentage: average(groomerStats.map(g => g.on_time_percentage)),
+    completion_rate: average(groomerStats.map(g => g.completion_rate)),
   };
 
   return {
@@ -332,7 +332,7 @@ async function getGroomerLeaderboard(
           score = metrics.addon_attachment_rate;
           break;
         case 'on_time':
-          score = metrics.on_time_percentage;
+          score = metrics.completion_rate;
           break;
         default:
           score = metrics.revenue_total;
@@ -350,7 +350,7 @@ async function getGroomerLeaderboard(
         average_rating: metrics.average_rating,
         revenue: metrics.revenue_total,
         addon_rate: metrics.addon_attachment_rate,
-        on_time_percentage: metrics.on_time_percentage,
+        completion_rate: metrics.completion_rate,
       };
     })
   );
@@ -403,12 +403,12 @@ async function getAggregatePerformance(
       revenue_total: allMetrics.reduce((sum, m) => sum + m.revenue_total, 0),
       revenue_per_appointment: average(allMetrics.map(m => m.revenue_per_appointment)),
       addon_attachment_rate: average(allMetrics.map(m => m.addon_attachment_rate)),
-      on_time_percentage: average(allMetrics.map(m => m.on_time_percentage)),
+      completion_rate: average(allMetrics.map(m => m.completion_rate)),
       appointments_trend: 0,
       rating_trend: 0,
       revenue_trend: 0,
       addon_trend: 0,
-      on_time_trend: 0,
+      completion_rate_trend: 0,
     },
     trends: {
       dates: [],
@@ -489,10 +489,19 @@ async function calculateGroomerMetrics(
     ? reviewsList.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviewsList.length
     : 0;
 
-  // Calculate on-time percentage
-  // For now, we'll use a placeholder since we don't have actual completion time tracking
-  // In a real implementation, this would compare actual_end_time with scheduled_end_time
-  const onTimePercentage = appointmentsCompleted > 0 ? 85 : 0; // Placeholder
+  // Calculate completion rate (completed / total scheduled in period)
+  const { data: totalScheduled } = await supabase
+    .from('appointments')
+    .select('id')
+    .eq('groomer_id', groomerId)
+    .in('status', ['completed', 'cancelled', 'no_show'])
+    .gte('start_time', start)
+    .lte('start_time', end);
+
+  const totalScheduledCount = totalScheduled?.length ?? appointmentsCompleted;
+  const completionRate = totalScheduledCount > 0
+    ? Math.round((appointmentsCompleted / totalScheduledCount) * 1000) / 10
+    : 0;
 
   return {
     appointments_completed: appointmentsCompleted,
@@ -500,7 +509,7 @@ async function calculateGroomerMetrics(
     revenue_total: revenueTotal,
     revenue_per_appointment: revenuePerAppointment,
     addon_attachment_rate: addonAttachmentRate,
-    on_time_percentage: onTimePercentage,
+    completion_rate: completionRate,
   };
 }
 

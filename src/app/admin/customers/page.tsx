@@ -60,7 +60,7 @@ export default async function CustomersPage() {
             <Users className="w-6 h-6 text-[#434E54]" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-[#434E54]">Customers</h1>
+            <h1 className="hidden lg:block text-2xl font-bold text-[#434E54]">Customers</h1>
             <p className="text-sm text-gray-600 mt-0.5">
               View and manage customer accounts
             </p>

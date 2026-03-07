@@ -10,7 +10,7 @@ export default function PunchCardDemoPage() {
     <div className="min-h-screen bg-[#F8EEE5] p-8">
       <div className="max-w-5xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#434E54] mb-2">
+          <h1 className="hidden lg:block text-3xl font-bold text-[#434E54] mb-2">
             Punch Card Configuration
           </h1>
           <p className="text-[#6B7280]">

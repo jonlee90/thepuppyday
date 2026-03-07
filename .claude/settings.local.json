@@ -83,7 +83,9 @@
       "Bash(awk:*)",
       "Bash(python3:*)",
       "Bash(CLAUDE_PROJECT_DIR=/Users/jonathanlee/Desktop/thepuppyday bash:*)",
-      "mcp__plugin_playwright_playwright__browser_evaluate"
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "Bash(NODE_OPTIONS='--max-old-space-size=4096' npx next:*)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx next:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

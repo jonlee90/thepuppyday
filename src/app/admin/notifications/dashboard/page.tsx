@@ -65,7 +65,7 @@ export default function NotificationsDashboardPage() {
                 <Bell className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-[#434E54]">
+                <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">
                   Notifications Dashboard
                 </h1>
                 <p className="text-[#6B7280] mt-1">

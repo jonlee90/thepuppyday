@@ -159,7 +159,7 @@ export default async function SettingsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-[#434E54]">Settings</h1>
+        <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Settings</h1>
         <p className="mt-2 text-[#434E54]/60">
           Configure system settings, content, and preferences
         </p>

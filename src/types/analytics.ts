@@ -245,3 +245,82 @@ export interface RevenueForecast {
   confidence_interval_low: number;
   confidence_interval_high: number;
 }
+
+// ── API Response Interfaces ──────────────────────────────────────────
+
+export interface ReportCardApiResponse {
+  sent: { count: number; percentage: number };
+  opened: { count: number; percentage: number; avgTimeToOpen: number };
+  reviewed: { count: number; percentage: number; avgRating: number };
+  publicReviews: { count: number; percentage: number };
+  funnelData: Array<{ stage: string; count: number; rate: number }>;
+}
+
+export interface WaitlistApiResponse {
+  activeCount: number;
+  fillRate: { filled: number; total: number; percentage: number };
+  responseRate: { responded: number; total: number; percentage: number };
+  avgWaitTime: number;
+  conversionRate: { booked: number; total: number; percentage: number };
+  trends: Array<{ date: string; active: number; filled: number; conversion: number }>;
+}
+
+export interface MarketingApiResponse {
+  remindersSent: { count: number; sms: number; email: number };
+  clickThroughRate: { clicks: number; sent: number; percentage: number };
+  bookingConversion: { bookings: number; clicks: number; percentage: number };
+  revenue: { total: number; fromReminders: number; percentage: number };
+  costPerAcquisition: { totalCost: number; totalBookings: number; cpa: number };
+  byChannel: Array<{
+    channel: string;
+    sent: number;
+    clicks: number;
+    bookings: number;
+    revenue: number;
+    cost: number;
+  }>;
+}
+
+export interface OperationsApiResponse {
+  addonAttachmentRate: number;
+  cancellationRate: number;
+  noShowRate: number;
+  avgAppointmentDuration: number;
+  groomerProductivity: number;
+}
+
+export interface KPIApiResponse {
+  total_revenue: AnalyticsKPI;
+  total_appointments: AnalyticsKPI;
+  avg_booking_value: AnalyticsKPI;
+  retention_rate: AnalyticsKPI;
+  review_generation_rate: AnalyticsKPI;
+  waitlist_fill_rate: AnalyticsKPI;
+}
+
+export interface LoyaltyApiResponse {
+  activePrograms: number;
+  totalPunchesEarned: number;
+  totalRedemptions: number;
+  redemptionRate: number;
+  punchDistribution: Array<{ punches: number; count: number }>;
+  trends: Array<{ date: string; punches: number; redemptions: number }>;
+  topCustomers: Array<{ name: string; punches: number; redemptions: number }>;
+}
+
+export interface PeakHoursApiResponse {
+  heatmap: Array<{ day: number; hour: number; count: number }>;
+  byHour: Array<{ hour: number; count: number }>;
+  busiestDay: string;
+  busiestHour: number;
+  totalAppointments: number;
+}
+
+export interface BookingSourceApiResponse {
+  sources: Array<{ source: string; count: number; percentage: number }>;
+  trends: Array<{ date: string; walk_in: number; online: number; admin: number }>;
+}
+
+export interface PetSizeApiResponse {
+  sizes: Array<{ size: string; count: number; percentage: number; revenue: number }>;
+}

@@ -15,7 +15,7 @@ interface StatusTransitionButtonProps {
   transition: StatusTransition;
   appointmentId: string;
   disabled?: boolean;
-  onSuccess?: () => void;
+  onSuccess?: (toStatus?: string) => void;
 }
 
 export function StatusTransitionButton({
@@ -26,7 +26,7 @@ export function StatusTransitionButton({
 }: StatusTransitionButtonProps) {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
-  const [sendNotification, setSendNotification] = useState(true);
+  const [sendNotification, setSendNotification] = useState(false);
   const [sendEmail, setSendEmail] = useState(true);
   const [sendSms, setSendSms] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -70,7 +70,7 @@ export function StatusTransitionButton({
 
       setShowConfirmation(false);
       if (onSuccess) {
-        onSuccess();
+        onSuccess(transition.to);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

@@ -193,7 +193,7 @@ export function AdminCreateButton({ className, ...props }: Omit<BookingModalTrig
       className={className}
       {...props}
     >
-      Create Appointment
+      Create
     </BookingModalTrigger>
   );
 }

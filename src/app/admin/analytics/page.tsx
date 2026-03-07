@@ -31,7 +31,7 @@ export default async function AnalyticsPage() {
             <BarChart3 className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-[#434E54]">Analytics Dashboard</h1>
+            <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Analytics Dashboard</h1>
             <p className="text-gray-600">Business performance and operational metrics</p>
           </div>
         </div>

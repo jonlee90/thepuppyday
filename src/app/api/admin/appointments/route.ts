@@ -32,15 +32,44 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit;
 
+    // Status priority order for sorting
+    const STATUS_PRIORITY: Record<string, number> = {
+      pending: 0,
+      confirmed: 1,
+      in_progress: 2,
+      completed: 3,
+      cancelled: 4,
+      no_show: 5,
+    };
+
     // In mock mode, query from mock store
     if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
       const { getMockStore } = await import('@/mocks/supabase/store');
       const store = getMockStore();
 
-      // Get all appointments
+      // Get all appointments (fetch with scheduled_at order as base)
       let appointments = store.select('appointments', {
-        order: { column: sortBy, ascending: sortOrder === 'asc' },
+        order: { column: 'scheduled_at', ascending: true },
       }) as unknown as Appointment[];
+
+      // Apply status_priority sort after fetching
+      if (sortBy === 'status_priority') {
+        const asc = sortOrder === 'asc';
+        appointments = [...appointments].sort((a, b) => {
+          const statusDiff = (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99);
+          if (statusDiff !== 0) return asc ? statusDiff : -statusDiff;
+          // Secondary sort: scheduled_at ascending
+          return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
+        });
+      } else {
+        // Re-sort by requested column
+        appointments = [...appointments].sort((a, b) => {
+          const aVal = (a as Record<string, unknown>)[sortBy];
+          const bVal = (b as Record<string, unknown>)[sortBy];
+          const cmp = (aVal as string) < (bVal as string) ? -1 : (aVal as string) > (bVal as string) ? 1 : 0;
+          return sortOrder === 'asc' ? cmp : -cmp;
+        });
+      }
 
       console.log('[Admin API] Total appointments in store:', appointments.length);
       console.log('[Admin API] Date filters - from:', dateFrom, 'to:', dateTo);
@@ -139,6 +168,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Production Supabase query
+    const isStatusPrioritySort = sortBy === 'status_priority';
+
+    // For status_priority sort, fetch ALL rows (no .range()) so we can sort
+    // across the full dataset in JS, then paginate manually.
     let query = (supabase as any)
       .from('appointments')
       .select(
@@ -150,8 +183,12 @@ export async function GET(request: NextRequest) {
         groomer:users!groomer_id(*)
       `,
         { count: 'exact' }
-      )
-      .range(offset, offset + limit - 1);
+      );
+
+    // Only apply DB-level pagination for non-status_priority sorts
+    if (!isStatusPrioritySort) {
+      query = query.range(offset, offset + limit - 1);
+    }
 
     // Apply filters
     if (status) {
@@ -182,9 +219,13 @@ export async function GET(request: NextRequest) {
     // }
 
     // Apply sorting
-    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+    if (isStatusPrioritySort) {
+      query = query.order('scheduled_at', { ascending: true });
+    } else {
+      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+    }
 
-    const { data, error, count } = await query;
+    const { data: rawData, error, count } = await query;
 
     if (error) {
       console.error('[Admin API] Error fetching appointments:', error);
@@ -194,8 +235,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    let data = rawData || [];
+
+    // For status_priority: sort ALL rows in JS, then paginate manually
+    if (isStatusPrioritySort && data.length > 0) {
+      const asc = sortOrder === 'asc';
+      data = [...data].sort((a: Record<string, string>, b: Record<string, string>) => {
+        const statusDiff = (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99);
+        if (statusDiff !== 0) return asc ? statusDiff : -statusDiff;
+        return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
+      });
+      // Manual pagination
+      data = data.slice(offset, offset + limit);
+    }
+
     return NextResponse.json({
-      data: data || [],
+      data,
       pagination: {
         page,
         limit,

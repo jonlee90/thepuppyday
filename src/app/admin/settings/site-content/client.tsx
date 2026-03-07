@@ -108,7 +108,7 @@ export function SiteContentClient({ initialSettings }: SiteContentClientProps) {
 
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-[#434E54]">Site Content</h1>
+        <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Site Content</h1>
         <p className="mt-2 text-[#6B7280]">
           Manage homepage content, SEO settings, and business information
         </p>

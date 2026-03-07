@@ -217,7 +217,7 @@ export function AdminMobileNav({ user }: AdminMobileNavProps) {
       {/* Overlay */}
       {isMobileDrawerOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
           onClick={() => setMobileDrawerOpen(false)}
           aria-hidden="true"
         />
@@ -226,7 +226,7 @@ export function AdminMobileNav({ user }: AdminMobileNavProps) {
       {/* Slide-in Drawer */}
       <aside
         className={`
-          md:hidden fixed top-0 right-0 bottom-0 z-50 w-80 max-w-[85vw]
+          lg:hidden fixed top-0 right-0 bottom-0 z-50 w-80 max-w-[85vw]
           bg-white shadow-2xl transition-transform duration-300 ease-out
           ${isMobileDrawerOpen ? 'translate-x-0' : 'translate-x-full'}
         `}

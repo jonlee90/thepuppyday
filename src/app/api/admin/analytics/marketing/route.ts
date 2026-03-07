@@ -13,31 +13,38 @@ import type { Appointment } from '@/types/database';
 export const dynamic = 'force-dynamic';
 
 interface MarketingAnalyticsResponse {
-  remindersSent: number;
-  clicked: number;
-  clickRate: number;
-  converted: number;
-  conversionRate: number;
-  revenue: number;
-  smsCost: number;
-  cpa: number;
-  channelData: Array<{
-    date: string;
-    email: number;
+  remindersSent: {
+    count: number;
     sms: number;
-  }>;
-  detailData: Array<{
-    campaign: string;
+    email: number;
+  };
+  clickThroughRate: {
+    clicks: number;
+    sent: number;
+    percentage: number;
+  };
+  bookingConversion: {
+    bookings: number;
+    clicks: number;
+    percentage: number;
+  };
+  revenue: {
+    total: number;
+    fromReminders: number;
+    percentage: number;
+  };
+  costPerAcquisition: {
+    totalCost: number;
+    totalBookings: number;
+    cpa: number;
+  };
+  byChannel: Array<{
+    channel: string;
     sent: number;
     clicks: number;
-    conversions: number;
+    bookings: number;
     revenue: number;
-    roi: number;
-  }>;
-  insights: Array<{
-    metric: string;
-    value: string;
-    trend: string;
+    cost: number;
   }>;
 }
 
@@ -195,58 +202,20 @@ export async function GET(request: NextRequest) {
         });
       }
 
+      // Aggregate channel data into per-channel metrics
+      const emailTotal = mockChannelData.reduce((s, d) => s + d.email, 0);
+      const smsTotal = mockChannelData.reduce((s, d) => s + d.sms, 0);
+      const totalSent = emailTotal + smsTotal;
+
       const mockData: MarketingAnalyticsResponse = {
-        remindersSent: 345,
-        clicked: 178,
-        clickRate: 51.6,
-        converted: 89,
-        conversionRate: 50.0,
-        revenue: 6745.0,
-        smsCost: 127.35,
-        cpa: 1.43,
-        channelData: mockChannelData,
-        detailData: [
-          {
-            campaign: 'Spring Grooming Special',
-            sent: 156,
-            clicks: 89,
-            conversions: 42,
-            revenue: 3150.0,
-            roi: 245,
-          },
-          {
-            campaign: 'Breed Reminder - Golden Retrievers',
-            sent: 89,
-            clicks: 45,
-            conversions: 23,
-            revenue: 1725.0,
-            roi: 189,
-          },
-          {
-            campaign: 'Weekend Slots Available',
-            sent: 100,
-            clicks: 44,
-            conversions: 24,
-            revenue: 1870.0,
-            roi: 198,
-          },
-        ],
-        insights: [
-          {
-            metric: 'Click Rate',
-            value: '51.6%',
-            trend: '+12.3%',
-          },
-          {
-            metric: 'Conversion Rate',
-            value: '50.0%',
-            trend: '+8.7%',
-          },
-          {
-            metric: 'Avg ROI',
-            value: '211%',
-            trend: '+45%',
-          },
+        remindersSent: { count: totalSent, sms: smsTotal, email: emailTotal },
+        clickThroughRate: { clicks: 178, sent: totalSent, percentage: 51.6 },
+        bookingConversion: { bookings: 89, clicks: 178, percentage: 50.0 },
+        revenue: { total: 6745.0, fromReminders: 6745.0, percentage: 100 },
+        costPerAcquisition: { totalCost: 127.35, totalBookings: 89, cpa: 1.43 },
+        byChannel: [
+          { channel: 'Email', sent: emailTotal, clicks: 112, bookings: 56, revenue: 4200, cost: 0 },
+          { channel: 'SMS', sent: smsTotal, clicks: 66, bookings: 33, revenue: 2545, cost: 127.35 },
         ],
       };
 
@@ -357,44 +326,43 @@ export async function GET(request: NextRequest) {
       appointmentsList
     );
 
-    // Calculate insights
-    const avgRoi =
-      detailData.length > 0
-        ? Math.round(
-            detailData.reduce((sum, d) => sum + d.roi, 0) / detailData.length
-          )
-        : 0;
+    // Count email vs SMS sends
+    const emailSends = sendsList.filter((s) => {
+      if (!s.campaign_id) return false;
+      const campaign = campaignList.find((c) => c.id === s.campaign_id);
+      return campaign && (campaign.channel === 'email' || campaign.channel === 'both');
+    }).length;
 
-    const insights = [
-      {
-        metric: 'Click Rate',
-        value: `${clickRate}%`,
-        trend: clickRate > 40 ? '+Good' : 'Low',
-      },
-      {
-        metric: 'Conversion Rate',
-        value: `${conversionRate}%`,
-        trend: conversionRate > 40 ? '+Good' : 'Low',
-      },
-      {
-        metric: 'Avg ROI',
-        value: `${avgRoi}%`,
-        trend: avgRoi > 150 ? '+Excellent' : avgRoi > 100 ? '+Good' : 'Fair',
-      },
-    ];
+    // Build per-channel aggregates
+    const byChannelMap = new Map<string, { sent: number; clicks: number; bookings: number; revenue: number; cost: number }>();
+    for (const detail of detailData) {
+      const campaign = campaignList.find((c) => c.name === detail.campaign);
+      const ch = campaign?.channel || 'email';
+      const channels = ch === 'both' ? ['Email', 'SMS'] : [ch === 'sms' ? 'SMS' : 'Email'];
+      for (const channel of channels) {
+        const existing = byChannelMap.get(channel) || { sent: 0, clicks: 0, bookings: 0, revenue: 0, cost: 0 };
+        existing.sent += detail.sent;
+        existing.clicks += detail.clicks;
+        existing.bookings += detail.conversions;
+        existing.revenue += detail.revenue;
+        if (channel === 'SMS') {
+          existing.cost += calculateSmsCost(detail.sent);
+        }
+        byChannelMap.set(channel, existing);
+      }
+    }
+    const byChannel = Array.from(byChannelMap.entries()).map(([channel, data]) => ({
+      channel,
+      ...data,
+    }));
 
     const responseData: MarketingAnalyticsResponse = {
-      remindersSent,
-      clicked,
-      clickRate,
-      converted,
-      conversionRate,
-      revenue: Math.round(revenue * 100) / 100,
-      smsCost,
-      cpa,
-      channelData,
-      detailData,
-      insights,
+      remindersSent: { count: remindersSent, sms: smsSends, email: emailSends },
+      clickThroughRate: { clicks: clicked, sent: remindersSent, percentage: clickRate },
+      bookingConversion: { bookings: converted, clicks: clicked, percentage: conversionRate },
+      revenue: { total: Math.round(revenue * 100) / 100, fromReminders: Math.round(revenue * 100) / 100, percentage: 100 },
+      costPerAcquisition: { totalCost: smsCost, totalBookings: converted, cpa },
+      byChannel,
     };
 
     return NextResponse.json({ data: responseData });

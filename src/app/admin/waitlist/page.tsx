@@ -35,7 +35,7 @@ export default async function WaitlistPage() {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Waitlist Management</h1>
+        <h1 className="hidden lg:block text-3xl font-bold text-gray-900">Waitlist Management</h1>
         <p className="text-gray-600 mt-2">
           Manage customer waitlist entries and fill open appointment slots.
         </p>

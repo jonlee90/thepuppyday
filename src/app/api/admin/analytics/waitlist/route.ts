@@ -13,24 +13,27 @@ export const dynamic = 'force-dynamic';
 
 interface WaitlistAnalyticsResponse {
   activeCount: number;
-  totalRequests: number;
-  filled: number;
-  fillRate: number;
-  responded: number;
-  responseRate: number;
+  fillRate: {
+    filled: number;
+    total: number;
+    percentage: number;
+  };
+  responseRate: {
+    responded: number;
+    total: number;
+    percentage: number;
+  };
   avgWaitTime: number;
-  converted: number;
-  conversionRate: number;
-  trendData: Array<{
+  conversionRate: {
+    booked: number;
+    total: number;
+    percentage: number;
+  };
+  trends: Array<{
     date: string;
     active: number;
     filled: number;
-    converted: number;
-  }>;
-  insights: Array<{
-    metric: string;
-    value: string;
-    change: string;
+    conversion: number;
   }>;
 }
 
@@ -148,32 +151,14 @@ export async function GET(request: NextRequest) {
 
       const mockData: WaitlistAnalyticsResponse = {
         activeCount: 12,
-        totalRequests: 45,
-        filled: 28,
-        fillRate: 62.2,
-        responded: 24,
-        responseRate: 85.7,
+        fillRate: { filled: 28, total: 45, percentage: 62.2 },
+        responseRate: { responded: 24, total: 28, percentage: 85.7 },
         avgWaitTime: 18.5,
-        converted: 21,
-        conversionRate: 75.0,
-        trendData: mockTrendData,
-        insights: [
-          {
-            metric: 'Fill Rate',
-            value: '62.2%',
-            change: '+8.3%',
-          },
-          {
-            metric: 'Avg Wait Time',
-            value: '18.5 hrs',
-            change: '-3.2 hrs',
-          },
-          {
-            metric: 'Conversion Rate',
-            value: '75.0%',
-            change: '+5.1%',
-          },
-        ],
+        conversionRate: { booked: 21, total: 28, percentage: 75.0 },
+        trends: mockTrendData.map(d => ({
+          ...d,
+          conversion: d.converted,
+        })),
       };
 
       return NextResponse.json({ data: mockData });
@@ -220,37 +205,21 @@ export async function GET(request: NextRequest) {
     // Generate trend data
     const trendData = generateTrendData(entries, startDate, endDate);
 
-    // Calculate insights (comparing to overall averages)
-    const insights = [
-      {
-        metric: 'Fill Rate',
-        value: `${fillRate}%`,
-        change: fillRate > 60 ? '+Good' : 'Low',
-      },
-      {
-        metric: 'Avg Wait Time',
-        value: `${avgWaitTime} hrs`,
-        change: avgWaitTime < 24 ? 'Fast' : 'Slow',
-      },
-      {
-        metric: 'Conversion Rate',
-        value: `${conversionRate}%`,
-        change: conversionRate > 70 ? '+Good' : 'Low',
-      },
-    ];
+    // Map trend data to rename 'converted' → 'conversion'
+    const trends = trendData.map(d => ({
+      date: d.date,
+      active: d.active,
+      filled: d.filled,
+      conversion: d.converted,
+    }));
 
     const responseData: WaitlistAnalyticsResponse = {
       activeCount,
-      totalRequests,
-      filled,
-      fillRate,
-      responded,
-      responseRate,
+      fillRate: { filled, total: totalRequests, percentage: fillRate },
+      responseRate: { responded, total: filled, percentage: responseRate },
       avgWaitTime,
-      converted,
-      conversionRate,
-      trendData,
-      insights,
+      conversionRate: { booked: converted, total: filled, percentage: conversionRate },
+      trends,
     };
 
     return NextResponse.json({ data: responseData });

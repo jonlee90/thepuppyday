@@ -159,7 +159,7 @@ export default function NotificationCenterPage() {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#434E54] mb-2">Notification Center</h1>
+        <h1 className="hidden lg:block text-3xl font-bold text-[#434E54] mb-2">Notification Center</h1>
         <p className="text-gray-600">
           View and manage all SMS and Email notifications sent through the system
         </p>

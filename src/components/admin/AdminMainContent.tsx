@@ -19,10 +19,8 @@ export function AdminMainContent({ children }: AdminMainContentProps) {
     <main
       id="main-content"
       className={`
-        min-h-screen
-        pt-14 md:pt-0
-        pb-20 md:pb-0
-        md:pl-[72px]
+        pt-14 lg:pt-0
+        pb-20 lg:pb-0
         transition-all duration-300
         ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}
       `}
@@ -30,8 +28,8 @@ export function AdminMainContent({ children }: AdminMainContentProps) {
       <div
         className={`
           mx-auto
-          px-4 md:px-6 lg:px-8
-          py-4 md:py-6 lg:py-8
+          px-4 lg:px-8
+          py-4 lg:py-8
           transition-all duration-300
           ${isSidebarCollapsed ? 'max-w-[1600px]' : 'max-w-7xl'}
         `}

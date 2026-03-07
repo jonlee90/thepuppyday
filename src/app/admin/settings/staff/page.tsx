@@ -73,7 +73,7 @@ export default function StaffManagementPage() {
               <span>/</span>
               <span className="text-[#434E54] font-medium">Staff Management</span>
             </nav>
-            <h1 className="text-3xl font-bold text-[#434E54]">Staff Management</h1>
+            <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Staff Management</h1>
             <p className="text-[#6B7280] mt-2">
               Manage your team members, assign groomers to appointments, and track earnings
             </p>

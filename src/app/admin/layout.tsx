@@ -2,14 +2,14 @@
  * Admin Panel Layout
  * Server Component that fetches user data for admin/staff users
  * Authentication is enforced by middleware.ts
- * Responsive layout with desktop sidebar, tablet icon sidebar, and mobile bottom tabs
+ * Responsive layout with desktop sidebar (>=1024px) and mobile bottom tabs/header (<1024px)
  */
 
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
 import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
 import { AdminMainContent } from '@/components/admin/AdminMainContent';
-import { TabletSidebar, MobileHeader, MobileBottomTabs } from '@/components/admin/layout';
+import { MobileHeader, MobileBottomTabs } from '@/components/admin/layout';
 import { Toaster } from '@/components/ui/toaster';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getAuthenticatedAdmin } from '@/lib/admin/auth';
@@ -48,16 +48,13 @@ export default async function AdminLayout({
         {/* Desktop Sidebar (>1024px) - Full width 256px */}
         <AdminSidebar user={user} />
 
-        {/* Tablet Sidebar (768px-1023px) - Icon only 72px */}
-        <TabletSidebar user={user} />
-
-        {/* Mobile Header (<768px) - Fixed top */}
+        {/* Mobile Header (<1024px) - Fixed top */}
         <MobileHeader user={user} />
 
-        {/* Mobile Navigation Drawer (<768px) - Slide-in from right */}
+        {/* Mobile Navigation Drawer (<1024px) - Slide-in from right */}
         <AdminMobileNav user={user} />
 
-        {/* Mobile Bottom Tabs (<768px) - Fixed bottom */}
+        {/* Mobile Bottom Tabs (<1024px) - Fixed bottom */}
         <MobileBottomTabs />
 
         {/* Main content area - Responsive to sidebar collapse state */}

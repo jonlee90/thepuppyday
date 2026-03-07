@@ -30,7 +30,6 @@ import { getStatusBadgeColor, getStatusLabel, getAllowedTransitions, isTerminalS
 import { StatusTransitionButton } from './StatusTransitionButton';
 import type { Appointment, CustomerFlag, Service, Addon, Pet, ServicePrice } from '@/types/database';
 import type { User } from '@/types/database';
-import { CA_SALES_TAX_RATE } from '@/lib/booking/pricing';
 
 interface EditFormState {
   scheduled_date: string;
@@ -227,10 +226,14 @@ export function AppointmentDetailModal({
     }
   };
 
-  const handleStatusUpdateSuccess = () => {
-    fetchAppointmentDetails();
+  const handleStatusUpdateSuccess = (toStatus?: string) => {
     if (onUpdate) {
       onUpdate();
+    }
+    if (toStatus === 'cancelled') {
+      handleClose();
+    } else {
+      fetchAppointmentDetails();
     }
   };
 
@@ -398,9 +401,7 @@ export function AppointmentDetailModal({
     (p: any) => p.size === appointment.pet?.size
   )?.price || 0;
   const addonsTotal = appointment?.addons?.reduce((sum: number, a: any) => sum + a.price, 0) || 0;
-  const subtotal = basePrice + addonsTotal;
-  const tax = subtotal * CA_SALES_TAX_RATE;
-  const total = subtotal + tax;
+  const total = basePrice + addonsTotal;
 
   return (
     <dialog className="modal modal-open" role="dialog" aria-modal="true" aria-labelledby="appointment-modal-title">
@@ -893,18 +894,6 @@ export function AppointmentDetailModal({
                     <div className="text-[10px] text-[#9CA3AF] italic pl-2">No extras added</div>
                   )}
 
-                  {/* Subtotal */}
-                  <div className="flex justify-between text-xs pt-1.5 border-t border-dashed border-[#E5E5E5]">
-                    <span className="text-[#6B7280] font-medium">Subtotal</span>
-                    <span className="text-[#434E54] font-semibold">${subtotal.toFixed(2)}</span>
-                  </div>
-
-                  {/* Tax */}
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[#6B7280]">Tax (9.75%)</span>
-                    <span className="text-[#434E54] font-medium">${tax.toFixed(2)}</span>
-                  </div>
-
                   {/* Total */}
                   <div className="flex justify-between items-center pt-2 border-t border-[#434E54]">
                     <span className="text-sm font-semibold text-[#434E54]">Total</span>
@@ -1001,7 +990,7 @@ export function AppointmentDetailModal({
               {allowedTransitions.map((transition) => {
                 let disabled = false;
                 if (isPast && !isTerminal) {
-                  disabled = !(transition.to === 'completed' || transition.to === 'no_show');
+                  disabled = !(transition.to === 'completed' || transition.to === 'no_show' || transition.to === 'cancelled');
                 }
 
                 return (

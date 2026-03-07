@@ -18,7 +18,7 @@ export function AddOnsClient({ initialAddons }: AddOnsClientProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#434E54]">Add-Ons</h1>
+          <h1 className="hidden lg:block text-2xl font-bold text-[#434E54]">Add-Ons</h1>
           <p className="text-[#6B7280] mt-1">
             Manage add-on services and breed-based upsells
           </p>

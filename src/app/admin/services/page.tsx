@@ -67,7 +67,7 @@ export default async function ServicesPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#434E54]">Services</h1>
+        <h1 className="hidden lg:block text-2xl font-bold text-[#434E54]">Services</h1>
         <p className="text-[#6B7280] mt-1">
           Manage grooming services and size-based pricing
         </p>

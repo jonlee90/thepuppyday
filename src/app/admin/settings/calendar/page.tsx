@@ -258,7 +258,7 @@ export default async function CalendarSettingsPage({
           </ul>
         </div>
 
-        <h1 className="text-3xl font-bold text-[#434E54]">Calendar Integration Settings</h1>
+        <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Calendar Integration Settings</h1>
         <p className="mt-2 text-[#6B7280]">
           Manage your Google Calendar connection and sync settings.
         </p>

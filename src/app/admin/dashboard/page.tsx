@@ -169,7 +169,7 @@ export default async function AdminDashboard() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-[#434E54]">Dashboard</h1>
+        <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Dashboard</h1>
         <p className="mt-2 text-[#434E54]/60">
           Here's what's happening with your business today.
         </p>

@@ -48,7 +48,7 @@ export function BannersClient() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#434E54]">Promo Banners</h1>
+          <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Promo Banners</h1>
           <p className="mt-2 text-[#6B7280]">
             Create and manage promotional banners for your marketing site
           </p>

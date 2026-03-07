@@ -9,7 +9,6 @@ import { useState, useCallback } from 'react';
 import { DashboardStats } from '@/components/admin/dashboard/DashboardStats';
 import { TodayAppointments } from '@/components/admin/dashboard/TodayAppointments';
 import { PendingAppointments } from '@/components/admin/dashboard/PendingAppointments';
-import { DashboardWalkInButton } from '@/components/admin/dashboard/DashboardWalkInButton';
 import { useDashboardRealtime } from '@/hooks/admin/use-dashboard-realtime';
 import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import type { Tables } from '@/types/supabase';
@@ -76,9 +75,6 @@ export function DashboardClient({
 
   return (
     <>
-      {/* Walk-In Button (FAB on mobile, inline on desktop) - Uses booking modal */}
-      <DashboardWalkInButton />
-
       {/* Initial Load Error Banner */}
       {hasInitialErrors && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">

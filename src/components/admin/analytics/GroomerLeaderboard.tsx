@@ -25,7 +25,7 @@ interface GroomerRanking {
   average_rating: number;
   revenue: number;
   addon_rate: number;
-  on_time_percentage: number;
+  completion_rate: number;
 }
 
 interface GroomerLeaderboardData {
@@ -74,7 +74,7 @@ const METRICS: MetricOption[] = [
   },
   {
     value: 'on_time',
-    label: 'On-Time Performance',
+    label: 'Completion Rate',
     icon: Clock,
     color: '#A29BFE',
   },
@@ -129,7 +129,7 @@ export function GroomerLeaderboard({ dateRange }: GroomerLeaderboardProps) {
       case 'addon_rate':
         return `${groomer.addon_rate.toFixed(1)}%`;
       case 'on_time':
-        return `${groomer.on_time_percentage.toFixed(1)}%`;
+        return `${groomer.completion_rate.toFixed(1)}%`;
       default:
         return groomer.score.toString();
     }

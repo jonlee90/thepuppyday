@@ -12,15 +12,24 @@ import type { ReportCard } from '@/types/database';
 export const dynamic = 'force-dynamic';
 
 interface ReportCardAnalyticsResponse {
-  sent: number;
-  opened: number;
-  openRate: number;
-  avgTimeToOpen: number;
-  reviewed: number;
-  reviewRate: number;
-  avgRating: number;
-  publicReviews: number;
-  publicReviewRate: number;
+  sent: {
+    count: number;
+    percentage: number;
+  };
+  opened: {
+    count: number;
+    percentage: number;
+    avgTimeToOpen: number;
+  };
+  reviewed: {
+    count: number;
+    percentage: number;
+    avgRating: number;
+  };
+  publicReviews: {
+    count: number;
+    percentage: number;
+  };
   funnelData: Array<{
     stage: string;
     count: number;
@@ -82,15 +91,10 @@ export async function GET(request: NextRequest) {
     if (useMocks) {
       // Generate mock report card analytics
       const mockData: ReportCardAnalyticsResponse = {
-        sent: 156,
-        opened: 124,
-        openRate: 79.5,
-        avgTimeToOpen: 4.2,
-        reviewed: 89,
-        reviewRate: 71.8,
-        avgRating: 4.7,
-        publicReviews: 67,
-        publicReviewRate: 75.3,
+        sent: { count: 156, percentage: 85.0 },
+        opened: { count: 124, percentage: 79.5, avgTimeToOpen: 4.2 },
+        reviewed: { count: 89, percentage: 71.8, avgRating: 4.7 },
+        publicReviews: { count: 67, percentage: 75.3 },
         funnelData: [
           { stage: 'Sent', count: 156, rate: 100 },
           { stage: 'Opened', count: 124, rate: 79.5 },
@@ -158,16 +162,15 @@ export async function GET(request: NextRequest) {
       { stage: 'Public', count: publicReviews, rate: publicReviewRate },
     ];
 
+    // Calculate sent percentage (of total cards created)
+    const totalCards = cards.length;
+    const sentPercentage = totalCards > 0 ? Math.round((sent / totalCards) * 1000) / 10 : 0;
+
     const responseData: ReportCardAnalyticsResponse = {
-      sent,
-      opened,
-      openRate,
-      avgTimeToOpen,
-      reviewed,
-      reviewRate,
-      avgRating,
-      publicReviews,
-      publicReviewRate,
+      sent: { count: sent, percentage: sentPercentage },
+      opened: { count: opened, percentage: openRate, avgTimeToOpen },
+      reviewed: { count: reviewed, percentage: reviewRate, avgRating },
+      publicReviews: { count: publicReviews, percentage: publicReviewRate },
       funnelData,
     };
 

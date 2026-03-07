@@ -17,7 +17,7 @@ interface GroomerStats {
   average_rating: number;
   revenue: number;
   addon_rate: number;
-  on_time_percentage: number;
+  completion_rate: number;
 }
 
 interface GroomerComparisonData {
@@ -27,7 +27,7 @@ interface GroomerComparisonData {
     average_rating: number;
     revenue: number;
     addon_rate: number;
-    on_time_percentage: number;
+    completion_rate: number;
   };
 }
 
@@ -112,7 +112,7 @@ export function GroomerComparisonTable({ dateRange }: GroomerComparisonTableProp
       'Avg Rating',
       'Revenue',
       'Add-on Rate',
-      'On-Time %',
+      'Completion %',
     ];
 
     const rows = getSortedGroomers().map((groomer) => [
@@ -121,7 +121,7 @@ export function GroomerComparisonTable({ dateRange }: GroomerComparisonTableProp
       groomer.average_rating.toFixed(2),
       groomer.revenue.toFixed(2),
       groomer.addon_rate.toFixed(1) + '%',
-      groomer.on_time_percentage.toFixed(1) + '%',
+      groomer.completion_rate.toFixed(1) + '%',
     ]);
 
     const csvContent = [
@@ -242,7 +242,7 @@ export function GroomerComparisonTable({ dateRange }: GroomerComparisonTableProp
                 <SortButton field="addon_rate" label="Add-on Rate" />
               </th>
               <th className="text-center">
-                <SortButton field="on_time_percentage" label="On-Time %" />
+                <SortButton field="completion_rate" label="Completion %" />
               </th>
             </tr>
           </thead>
@@ -304,12 +304,12 @@ export function GroomerComparisonTable({ dateRange }: GroomerComparisonTableProp
                 <td className="text-center">
                   <span
                     className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-medium ${
-                      isBelowAverage(groomer.on_time_percentage, data.averages.on_time_percentage)
+                      isBelowAverage(groomer.completion_rate, data.averages.completion_rate)
                         ? 'bg-[#FFB347]/10 text-[#FFB347]'
                         : 'text-[#434E54]'
                     }`}
                   >
-                    {groomer.on_time_percentage.toFixed(1)}%
+                    {groomer.completion_rate.toFixed(1)}%
                   </span>
                 </td>
               </tr>
@@ -331,7 +331,7 @@ export function GroomerComparisonTable({ dateRange }: GroomerComparisonTableProp
                 {data.averages.addon_rate.toFixed(1)}%
               </td>
               <td className="text-center text-[#434E54]">
-                {data.averages.on_time_percentage.toFixed(1)}%
+                {data.averages.completion_rate.toFixed(1)}%
               </td>
             </tr>
           </tbody>

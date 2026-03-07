@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerSupabaseClient();
     await requireAdmin(supabase);
 
-    // Fetch all appointments in period
+    // Fetch all appointments in period (include duration_minutes for real calculation)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: allAppointments, error: apptError } = await (supabase as any)
       .from('appointments')
@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
         id,
         status,
         scheduled_at,
+        duration_minutes,
         appointment_addons(id)
       `
       )
@@ -85,9 +86,13 @@ export async function GET(request: NextRequest) {
     ).length;
     const noShowRate = totalAppointments > 0 ? (noShowAppointments / totalAppointments) * 100 : 0;
 
-    // Calculate average appointment duration (mock value for now - would need actual duration tracking)
-    // In a real system, this would come from check-in/check-out times or estimated service duration
-    const avgAppointmentDuration = 75; // Default to 75 minutes
+    // Calculate average appointment duration from actual data
+    const completedWithDuration = (allAppointments || []).filter(
+      (apt: any) => apt.status === 'completed' && apt.duration_minutes > 0
+    );
+    const avgAppointmentDuration = completedWithDuration.length > 0
+      ? Math.round(completedWithDuration.reduce((sum: number, apt: any) => sum + apt.duration_minutes, 0) / completedWithDuration.length)
+      : 75; // Fallback to 75 minutes if no data
 
     // Calculate groomer productivity (appointments per day)
     const periodDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));

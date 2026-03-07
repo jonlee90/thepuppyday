@@ -10,28 +10,38 @@ import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { ChartWrapper } from './ChartWrapper';
 import { CHART_COLORS, CHART_CONFIG, formatNumber } from './index';
 
+interface CustomerTypeData {
+  name: string;
+  value: number;
+  [key: string]: string | number;
+}
+
 interface CustomerTypeChartProps {
   dateRange: {
     start: Date;
     end: Date;
   };
+  customerData?: CustomerTypeData[];
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-interface CustomerTypeData {
-  name: string;
-  value: number;
-  [key: string]: string | number; // Add index signature for Recharts compatibility
-}
+export function CustomerTypeChart({ dateRange, customerData: propData, isLoading: propLoading, error: propError }: CustomerTypeChartProps) {
+  const [selfData, setSelfData] = useState<CustomerTypeData[]>([]);
+  const [selfLoading, setSelfLoading] = useState(!propData);
+  const [selfError, setSelfError] = useState<string | null>(null);
 
-export function CustomerTypeChart({ dateRange }: CustomerTypeChartProps) {
-  const [customerData, setCustomerData] = useState<CustomerTypeData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use props if provided, otherwise self-fetch (backwards compat)
+  const customerData = propData ?? selfData;
+  const isLoading = propData !== undefined ? (propLoading ?? false) : selfLoading;
+  const error = propData !== undefined ? (propError ?? null) : selfError;
 
   useEffect(() => {
+    if (propData !== undefined) return; // Skip fetch if data provided via props
+
     const fetchCustomerData = async () => {
-      setIsLoading(true);
-      setError(null);
+      setSelfLoading(true);
+      setSelfError(null);
 
       try {
         const params = new URLSearchParams({
@@ -45,17 +55,17 @@ export function CustomerTypeChart({ dateRange }: CustomerTypeChartProps) {
         }
 
         const result = await response.json();
-        setCustomerData(result.data.customerTypes);
+        setSelfData(result.data.customerTypes);
       } catch (err) {
         console.error('Error fetching customer data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load chart');
+        setSelfError(err instanceof Error ? err.message : 'Failed to load chart');
       } finally {
-        setIsLoading(false);
+        setSelfLoading(false);
       }
     };
 
     fetchCustomerData();
-  }, [dateRange]);
+  }, [dateRange, propData]);
 
   const COLORS = [CHART_COLORS.primary, CHART_COLORS.info];
 

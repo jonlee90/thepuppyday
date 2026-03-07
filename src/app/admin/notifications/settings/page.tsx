@@ -106,7 +106,7 @@ export default function NotificationSettingsPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-[#434E54] mb-2">Notification Settings</h1>
+          <h1 className="hidden lg:block text-2xl font-semibold text-[#434E54] mb-2">Notification Settings</h1>
           <p className="text-[#6B7280]">
             Configure notification channels and delivery settings for each notification type
           </p>
