@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { NotificationSettingsRow } from '@/lib/notifications/database-types';
 
@@ -18,8 +18,11 @@ export async function GET() {
     const supabase = await createServerSupabaseClient();
     await requireAdmin(supabase);
 
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
+
     // Fetch all notification settings
-    const { data: settings, error } = (await (supabase as any)
+    const { data: settings, error } = (await (serviceClient as any)
       .from('notification_settings')
       .select(
         'notification_type, email_enabled, sms_enabled, schedule_enabled, schedule_cron, max_retries, retry_delays_seconds, last_sent_at, total_sent_count, total_failed_count, created_at, updated_at'

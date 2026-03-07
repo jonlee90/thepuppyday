@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { isValidUUID } from '@/lib/utils/validation';
 
@@ -55,8 +55,11 @@ export async function GET(
       );
     }
 
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
+
     // Fetch template with all fields
-    const { data: template, error } = (await (supabase as any)
+    const { data: template, error } = (await (serviceClient as any)
       .from('notification_templates')
       .select('*')
       .eq('id', id)
@@ -107,6 +110,9 @@ export async function PUT(
       );
     }
 
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
+
     const body = await request.json();
     const {
       subject_template,
@@ -118,7 +124,7 @@ export async function PUT(
     } = body;
 
     // Fetch current template to get version
-    const { data: currentTemplate, error: fetchError } = (await (supabase as any)
+    const { data: currentTemplate, error: fetchError } = (await (serviceClient as any)
       .from('notification_templates')
       .select('*')
       .eq('id', id)
@@ -238,7 +244,7 @@ export async function PUT(
     }
 
     // Save current version to history before updating
-    const { error: historyError } = await (supabase as any)
+    const { error: historyError } = await (serviceClient as any)
       .from('notification_template_history')
       .insert({
         template_id: id,
@@ -262,7 +268,7 @@ export async function PUT(
     }
 
     // Update template
-    const { data: template, error: updateError } = (await (supabase as any)
+    const { data: template, error: updateError } = (await (serviceClient as any)
       .from('notification_templates')
       .update(updateData)
       .eq('id', id)

@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { NotificationLogRow } from '@/lib/notifications/database-types';
 
@@ -98,6 +98,9 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerSupabaseClient();
     await requireAdmin(supabase);
 
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
+
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
     const period = searchParams.get('period') || '30d';
@@ -150,13 +153,13 @@ export async function GET(request: NextRequest) {
       { data: currentData, error: currentError },
       { data: previousData, error: previousError },
     ] = await Promise.all([
-      (supabase as any)
+      (serviceClient as any)
         .from('notifications_log')
         .select('*')
         .eq('is_test', false)
         .gte('created_at', currentPeriod.start)
         .lte('created_at', currentPeriod.end),
-      (supabase as any)
+      (serviceClient as any)
         .from('notifications_log')
         .select('*')
         .eq('is_test', false)

@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 
 interface NotificationLogListItem {
@@ -49,6 +49,9 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
     await requireAdmin(supabase);
+
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -120,7 +123,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build count query for total
-    let countQuery = (supabase as any)
+    let countQuery = (serviceClient as any)
       .from('notifications_log')
       .select('*', { count: 'exact', head: true });
 
@@ -158,7 +161,7 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit);
 
     // Build data query with LEFT JOIN to users table
-    let dataQuery = (supabase as any)
+    let dataQuery = (serviceClient as any)
       .from('notifications_log')
       .select(`
         id,

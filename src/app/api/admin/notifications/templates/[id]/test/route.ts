@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { isValidUUID } from '@/lib/utils/validation';
 import { createTemplateEngine } from '@/lib/notifications/template-engine';
@@ -48,6 +48,9 @@ export async function POST(
       );
     }
 
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
+
     // Parse request body
     const body = await request.json();
     const { recipient_email, recipient_phone, sample_data, channel } = body;
@@ -60,7 +63,7 @@ export async function POST(
     }
 
     // Fetch template
-    const { data: template, error } = (await (supabase as any)
+    const { data: template, error } = (await (serviceClient as any)
       .from('notification_templates')
       .select('id, name, type, channel, subject_template, html_template, text_template')
       .eq('id', id)
@@ -121,7 +124,7 @@ export async function POST(
     const rendered_text = engine.render(template.text_template, sample_data);
 
     // Create logger
-    const logger = createNotificationLogger(supabase);
+    const logger = createNotificationLogger(serviceClient as any);
 
     // Create log entry for test notification
     const logId = await logger.create({

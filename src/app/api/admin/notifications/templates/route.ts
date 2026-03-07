@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 
 interface NotificationTemplate {
@@ -34,6 +34,9 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerSupabaseClient();
     await requireAdmin(supabase);
 
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
+
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type');
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest) {
     const activeOnly = searchParams.get('active_only') === 'true';
 
     // Build query
-    let query = (supabase as any)
+    let query = (serviceClient as any)
       .from('notification_templates')
       .select(
         'id, name, description, type, trigger_event, channel, is_active, version, variables, created_at, updated_at'

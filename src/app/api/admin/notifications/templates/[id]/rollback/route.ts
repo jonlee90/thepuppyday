@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { isValidUUID } from '@/lib/utils/validation';
 
@@ -70,6 +70,9 @@ export async function POST(
       );
     }
 
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
+
     // Parse request body
     const body = await request.json();
     const { version, reason } = body;
@@ -89,7 +92,7 @@ export async function POST(
     }
 
     // Fetch current template
-    const { data: currentTemplate, error: currentError } = (await (supabase as any)
+    const { data: currentTemplate, error: currentError } = (await (serviceClient as any)
       .from('notification_templates')
       .select('*')
       .eq('id', id)
@@ -114,7 +117,7 @@ export async function POST(
     }
 
     // Fetch historical version
-    const { data: historicalVersion, error: historyError } = (await (supabase as any)
+    const { data: historicalVersion, error: historyError } = (await (serviceClient as any)
       .from('notification_template_history')
       .select('*')
       .eq('template_id', id)
@@ -132,7 +135,7 @@ export async function POST(
     }
 
     // Save current version to history before rollback
-    const { error: saveHistoryError } = await (supabase as any)
+    const { error: saveHistoryError } = await (serviceClient as any)
       .from('notification_template_history')
       .insert({
         template_id: id,
@@ -171,7 +174,7 @@ export async function POST(
       updated_by: user.id,
     };
 
-    const { data: updatedTemplate, error: updateError } = (await (supabase as any)
+    const { data: updatedTemplate, error: updateError } = (await (serviceClient as any)
       .from('notification_templates')
       .update(updateData)
       .eq('id', id)
