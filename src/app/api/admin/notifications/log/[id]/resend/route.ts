@@ -9,13 +9,12 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { requireAdmin } from '@/lib/admin/auth';
 import { isValidUUID } from '@/lib/utils/validation';
 import { getNotificationService } from '@/lib/notifications';
-import type { NotificationChannel } from '@/types/database';
 
 interface NotificationLogRow {
   id: string;
   customer_id: string | null;
   type: string;
-  channel: NotificationChannel;
+  channel: 'email' | 'sms';
   recipient: string;
   status: 'pending' | 'sent' | 'failed';
   template_data: Record<string, unknown> | null;

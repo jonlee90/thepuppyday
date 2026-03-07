@@ -490,8 +490,8 @@ function calculateFailureReasons(notifications: NotificationLogRow[]): FailureRe
   return Object.entries(reasonGroups)
     .map(([reason, count]): FailureReason => ({
       reason,
-      count: count as number,
-      percentage: Math.round((count as number / total) * 100 * 100) / 100,
+      count,
+      percentage: Math.round((count / total) * 100 * 100) / 100,
     }))
     .sort((a, b) => b.count - a.count); // Sort by count descending
 }
