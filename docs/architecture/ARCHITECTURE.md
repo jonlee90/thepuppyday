@@ -1,8 +1,8 @@
 # The Puppy Day - Master Architecture Documentation
 
-> **Version**: 1.3
-> **Last Updated**: 2026-03-06
-> **Status**: Production-Ready (Phases 1-6, 8-9, 11 Complete | Phase 7 Pending | Phase 10 In Progress)
+> **Version**: 1.4
+> **Last Updated**: 2026-03-07
+> **Status**: Production-Ready (Phases 1-6, 8-9, 11 Complete | Admin Dashboard Redesign Complete | Phase 7 Pending | Phase 10 In Progress)
 
 ## Table of Contents
 
@@ -62,6 +62,7 @@
 | 9 | Admin Settings | Completed | Business settings, staff management, site content, banners |
 | 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), comprehensive testing, performance optimization |
 | 11 | Calendar Error Recovery | Completed | Retry queue, error recovery UI, quota tracking, auto-pause system |
+| F | Admin Dashboard Redesign | Completed | Replaced DashboardStats/TodayAppointments/PendingAppointments with RevenueOverview, DashboardTimeline, ProductivityWidget, WaitlistWidget, PendingActionsWidget, QuickAccess pills; useDashboardData hook; revenue-overview API endpoint |
 
 ---
 
@@ -1441,9 +1442,10 @@ HMAC-SHA256 signed tokens with expiration for email unsubscribe links.
 #### Admin Dashboard
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/api/admin/dashboard/stats` | Dashboard statistics |
-| GET | `/api/admin/dashboard/appointments` | Today's appointments |
+| GET | `/api/admin/dashboard/revenue-overview` | Today/week/month revenue with change percentages (admin-dashboard-redesign) |
+| GET | `/api/admin/dashboard/appointments` | Today's appointments with customer/pet/service joins |
 | GET | `/api/admin/dashboard/pending-appointments` | Pending appointments |
+| GET | `/api/admin/dashboard/stats` | Legacy stats endpoint (retained, not used by new dashboard) |
 | GET | `/api/admin/dashboard/activity` | Recent activity |
 
 #### Admin Notifications
