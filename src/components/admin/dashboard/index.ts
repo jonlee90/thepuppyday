@@ -1,6 +1,10 @@
 export { ActivityFeed } from './ActivityFeed';
-export { DashboardStats } from './DashboardStats';
+export { DashboardHeader } from './DashboardHeader';
+export { RevenueOverview } from './RevenueOverview';
+export { DashboardTimeline } from './DashboardTimeline';
+export { ProductivityWidget } from './ProductivityWidget';
+export { WaitlistWidget } from './WaitlistWidget';
+export { PendingActionsWidget } from './PendingActionsWidget';
 export { QuickAccess } from './QuickAccess';
-export { TodayAppointments } from './TodayAppointments';
 export { WalkInButton } from './WalkInButton';
 export { CalendarSyncWidget } from './CalendarSyncWidget';

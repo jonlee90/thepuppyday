@@ -1,10 +1,10 @@
 # Admin Panel Routes - Architecture Documentation
 
 > **Module**: Admin Panel
-> **Status**: Phases 5, 6, 8, 9, 11 Complete | Phase 7 Pending (Payments)
+> **Status**: Phases 5, 6, 8, 9, 11 Complete | Phase 7 Pending (Payments) | Admin Dashboard Redesign Complete
 > **Base Path**: `admin/`
 > **Authentication**: Required (admin or groomer role)
-> **Last Updated**: 2026-03-06
+> **Last Updated**: 2026-03-07
 
 ## Overview
 
@@ -94,19 +94,30 @@ src/app/admin/
 ### 1. Dashboard (`/admin/dashboard`)
 **File**: `src/app/admin/dashboard/page.tsx`
 
-Server component that fetches dashboard data, rendered by `DashboardClient.tsx`.
+Thin server component — renders `<DashboardClient />` only. All data fetching is client-side.
 
-**Sections**:
-- Stats cards (today's appointments, revenue, pending tasks)
-- Today's schedule
-- Recent activity feed
-- Quick actions (Create Appointment, Walk-in, View Waitlist)
+**Architecture**: See full component docs at `docs/architecture/components/admin-dashboard.md`
+
+**Key Components**:
+- `DashboardHeader` — title, business-timezone date, New Booking + Walk-in buttons
+- `RevenueOverview` — 3-card grid (Today / This Week / This Month) with animated counters and trend badges
+- `DashboardTimeline` — vertical timeline of today's appointments with NowIndicator and status actions
+- `ProductivityWidget` — SVG ring showing completion ratio, capacity %, avg revenue/apt
+- `WaitlistWidget` — self-fetching waitlist summary with fill rate and top 3 entries
+- `PendingActionsWidget` — up to 5 pending appointments with inline confirm
+- `QuickAccess` — 6 compact navigation pills
+
+**Data Hook**: `useDashboardData` (`src/hooks/admin/use-dashboard-data.ts`) — fires all 3 endpoints in parallel on mount, 30s polling, Supabase Realtime in production, `refetch()` on status updates
 
 **API Routes Used**:
-- `/api/admin/dashboard/stats`
-- `/api/admin/dashboard/appointments`
-- `/api/admin/dashboard/pending-appointments`
-- `/api/admin/dashboard/activity`
+- `GET /api/admin/dashboard/revenue-overview` — today/week/month revenue with change percents
+- `GET /api/admin/dashboard/appointments` — today's appointments with joins
+- `GET /api/admin/dashboard/pending-appointments` — pending appointments
+- `POST /api/admin/appointments/{id}/status` — inline status updates from timeline/pending widget
+
+**Deprecated** (no longer used):
+- `useDashboardRealtime` hook — superseded by `useDashboardData`
+- `DashboardStats.tsx`, `TodayAppointments.tsx`, `PendingAppointments.tsx` — deleted
 
 ---
 

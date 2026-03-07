@@ -1,7 +1,10 @@
 /**
- * Dashboard Realtime Hook
- * Handles real-time updates for dashboard data
- * Falls back to polling in mock mode
+ * @deprecated
+ * Dashboard Realtime Hook — superseded by `useDashboardData` (src/hooks/admin/use-dashboard-data.ts).
+ * This file is retained for reference only and is no longer imported anywhere.
+ * It will be removed in a future cleanup pass.
+ *
+ * Original purpose: Handled real-time updates for dashboard data, fell back to polling in mock mode.
  */
 
 'use client';
