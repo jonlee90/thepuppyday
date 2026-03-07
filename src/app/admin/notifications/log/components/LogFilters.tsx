@@ -80,12 +80,6 @@ export function LogFilters({ filters, onFilterChange, onApplyFilters }: LogFilte
     filters.start_date ||
     filters.end_date;
 
-  // All notification types
-  const allNotificationTypes = [
-    ...TRANSACTIONAL_NOTIFICATION_TYPES,
-    ...MARKETING_NOTIFICATION_TYPES,
-  ];
-
   return (
     <div className="bg-white rounded-xl shadow-md p-6 mb-6">
       {/* Search Input */}
