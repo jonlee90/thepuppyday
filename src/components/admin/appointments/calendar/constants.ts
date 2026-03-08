@@ -9,10 +9,10 @@ export const BUSINESS_HOURS = {
   daysOfWeek: [1, 2, 3, 4, 5, 6], // Mon-Sat
 };
 
-// Display hours (business hours + 1 hour buffer after close)
+// Display hours (business hours + extended hours for late appointments)
 export const DISPLAY_HOURS = {
   start: 9, // 9 AM
-  end: 18, // 6 PM (business close 5 PM + 1 hour)
+  end: 20, // 8 PM (extended from 6 PM for flexibility)
 };
 
 // Slot configuration
