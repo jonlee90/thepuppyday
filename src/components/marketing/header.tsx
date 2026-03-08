@@ -21,7 +21,7 @@ export function Header() {
       setIsScrolled(window.scrollY > 20);
 
       // Determine active section based on scroll position
-      const sections = ['home', 'services', 'booking', 'about', 'contact'];
+      const sections = ['services', 'gallery', 'testimonials', 'about', 'contact'];
       const scrollPosition = window.scrollY + 100;
 
       for (const section of sections) {
@@ -43,8 +43,9 @@ export function Header() {
   }, []);
 
   const navLinks = [
-    { label: 'Home', href: '#home' },
     { label: 'Services', href: '#services' },
+    { label: 'Gallery', href: '#gallery' },
+    { label: 'Reviews', href: '#testimonials' },
     { label: 'About Us', href: '#about' },
     { label: 'Contact', href: '#contact' },
   ];
@@ -144,12 +145,12 @@ export function Header() {
 
             {/* Desktop CTA Button */}
             <div className="hidden lg:block">
-              <button
-                onClick={handleBookNowClick}
+              <Link
+                href="/login"
                 className="px-6 py-2.5 text-sm font-semibold text-white bg-[#434E54] rounded-lg hover:bg-[#363F44] transition-all duration-200 shadow-sm hover:shadow-md"
               >
-                Book Now
-              </button>
+                Sign In
+              </Link>
             </div>
 
             {/* Mobile Menu Button */}

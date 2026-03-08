@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import {
   getAudienceFromSegment,
@@ -27,13 +27,14 @@ interface RouteContext {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
 
     const { id } = await context.params;
 
     // Get campaign details
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: campaign, error: campaignError } = await (supabase as any)
+    const { data: campaign, error: campaignError } = await (serviceClient as any)
       .from('marketing_campaigns')
       .select('*')
       .eq('id', id)
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     console.log(`[Campaign Send API] Starting send for campaign: ${campaign.name}`);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: updatedCampaign, error: updateError } = await (supabase as any)
+    const { data: updatedCampaign, error: updateError } = await (serviceClient as any)
       .from('marketing_campaigns')
       .update({ status: 'sending', updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
       // Update campaign back to draft
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
+      await (serviceClient as any)
         .from('marketing_campaigns')
         .update({ status: 'draft' })
         .eq('id', id);
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
       // Update campaign back to draft
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
+      await (serviceClient as any)
         .from('marketing_campaigns')
         .update({ status: 'draft' })
         .eq('id', id);
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
         // Update campaign status to 'sent' and set sent_at timestamp
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any)
+        await (serviceClient as any)
           .from('marketing_campaigns')
           .update({
             status: 'sent',
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         console.error('[Campaign Send API] Error sending campaign notifications:', sendError);
         // Update campaign status to reflect failure
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any)
+        await (serviceClient as any)
           .from('marketing_campaigns')
           .update({ status: 'draft' })
           .eq('id', id);

@@ -88,7 +88,7 @@ async function getMarketingData() {
   const supabase = await createServerSupabaseClient();
 
   // Fetch site content and other marketing data in parallel
-  const [siteContent, servicesRes, bannersRes, beforeAfterRes, galleryRes, settingsRes] =
+  const [siteContent, servicesRes, bannersRes, beforeAfterRes, galleryRes, settingsRes, addonsRes] =
     await Promise.all([
       getSiteContent(),
       (supabase as any)
@@ -104,6 +104,11 @@ async function getMarketingData() {
         .eq('is_published', true)
         .order('display_order'),
       (supabase as any).from('settings').select('*').single(),
+      (supabase as any)
+        .from('addons')
+        .select('id, name, price')
+        .eq('is_active', true)
+        .order('display_order'),
     ]);
 
   // Filter banners by date range
@@ -126,6 +131,7 @@ async function getMarketingData() {
     beforeAfterPairs: (beforeAfterRes.data as BeforeAfterPair[]) || [],
     galleryImages: (galleryRes.data as GalleryImage[]) || [],
     businessHours: settingsRes.data?.business_hours || {},
+    addons: (addonsRes.data as Array<{ id: string; name: string; price: number }>) || [],
   };
 }
 
@@ -163,7 +169,7 @@ export default async function MarketingPage() {
       {/* Services Section */}
       <section id="services" className="relative py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#EAE0D5]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <ServiceGrid services={data.services} />
+          <ServiceGrid services={data.services} addons={data.addons} />
           <GroomingToolDecoration/>
         </div>
       </section>

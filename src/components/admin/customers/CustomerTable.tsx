@@ -12,7 +12,7 @@ import { Search, ChevronLeft, ChevronRight, Users, ArrowUpDown, ArrowUp, ArrowDo
 import { format } from 'date-fns';
 import { CustomerFlagBadge } from './CustomerFlagBadge';
 import { isWalkinPlaceholderEmail } from '@/lib/utils';
-import type { User, CustomerFlag, CustomerMembership } from '@/types/database';
+import type { User, CustomerFlag } from '@/types/database';
 
 /**
  * Security: Escape special regex characters to prevent ReDoS attacks
@@ -27,7 +27,6 @@ interface CustomerWithStats extends User {
   pets_count: number;
   appointments_count: number;
   flags: CustomerFlag[];
-  active_membership: CustomerMembership | null;
 }
 
 interface CustomerTableProps {
@@ -241,13 +240,12 @@ export function CustomerTable({ onCustomerClick, initialCustomers = [] }: Custom
                   </button>
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-[#434E54]">Flags</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-[#434E54]">Member</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12">
+                  <td colSpan={6} className="text-center py-12">
                     <div className="flex items-center justify-center gap-2 text-gray-500">
                       <div className="w-5 h-5 border-2 border-gray-300 border-t-[#434E54] rounded-full animate-spin" />
                       <span>Loading customers...</span>
@@ -256,7 +254,7 @@ export function CustomerTable({ onCustomerClick, initialCustomers = [] }: Custom
                 </tr>
               ) : customers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12">
+                  <td colSpan={6} className="text-center py-12">
                     <div className="flex flex-col items-center gap-3">
                       <Users className="w-12 h-12 text-gray-300" />
                       <div>
@@ -317,15 +315,6 @@ export function CustomerTable({ onCustomerClick, initialCustomers = [] }: Custom
                     </td>
                     <td className="py-3 px-4">
                       <CustomerFlagBadge flags={customer.flags} maxVisible={2} size="sm" />
-                    </td>
-                    <td className="py-3 px-4">
-                      {customer.active_membership ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium border border-green-200">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="text-sm text-gray-400">-</span>
-                      )}
                     </td>
                   </tr>
                 ))

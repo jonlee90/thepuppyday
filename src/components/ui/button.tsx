@@ -66,7 +66,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading ? (
           <>
-            <span className="loading loading-spinner loading-sm text-white" />
+            <span className="loading loading-spinner loading-sm !text-white" />
             {loadingText || children}
           </>
         ) : (

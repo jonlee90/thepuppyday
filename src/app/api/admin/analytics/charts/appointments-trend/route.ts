@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 
 /**
@@ -121,11 +121,12 @@ export async function GET(request: NextRequest) {
 
     // Production implementation - require admin auth
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Fetch current period appointments
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: currentAppointments, error: currentError } = await (supabase as any)
+    const { data: currentAppointments, error: currentError } = await (serviceClient as any)
       .from('appointments')
       .select('scheduled_at')
       .gte('scheduled_at', startDate.toISOString())
@@ -138,7 +139,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch previous period appointments
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: prevAppointments, error: prevError } = await (supabase as any)
+    const { data: prevAppointments, error: prevError } = await (serviceClient as any)
       .from('appointments')
       .select('scheduled_at')
       .gte('scheduled_at', prevStartDate.toISOString())

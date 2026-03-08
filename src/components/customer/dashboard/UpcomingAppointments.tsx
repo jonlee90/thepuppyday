@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { useBookingModal } from '@/hooks/useBookingModal';
 import type { AppointmentStatus } from '@/types/database';
 
 interface AppointmentSummary {
@@ -26,6 +27,7 @@ interface UpcomingAppointmentsProps {
 }
 
 export function UpcomingAppointments({ appointments, maxItems = 3 }: UpcomingAppointmentsProps) {
+  const { open: openBookingModal } = useBookingModal();
   const displayAppointments = appointments.slice(0, maxItems);
 
   const formatDate = (dateString: string) => {
@@ -58,7 +60,7 @@ export function UpcomingAppointments({ appointments, maxItems = 3 }: UpcomingApp
           description="Book your next grooming session to keep your pup looking great!"
           action={{
             label: 'Book Appointment',
-            href: '/book',
+            onClick: () => openBookingModal({ mode: 'customer' }),
           }}
         />
       </div>

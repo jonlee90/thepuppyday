@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { isTransitionAllowed } from '@/lib/admin/appointment-status';
 import { sendAppointmentNotification } from '@/lib/admin/notifications';
@@ -31,6 +31,7 @@ export async function POST(
   try {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const body: StatusUpdateRequest = await request.json();
@@ -185,7 +186,7 @@ export async function POST(
     }
 
     // Production Supabase query
-    const { data: appointment, error: fetchError } = await (supabase as any)
+    const { data: appointment, error: fetchError } = await (serviceClient as any)
       .from('appointments')
       .select('*')
       .eq('id', id)
@@ -220,7 +221,7 @@ export async function POST(
       updates.cancellation_reason = cancellationReason;
     }
 
-    const { data: updatedAppointment, error: updateError } = await (supabase as any)
+    const { data: updatedAppointment, error: updateError } = await (serviceClient as any)
       .from('appointments')
       .update(updates)
       .eq('id', id)
@@ -237,7 +238,7 @@ export async function POST(
 
     // Update customer no_show_count if marking as no-show
     if (newStatus === 'no_show') {
-      const { data: customer } = await (supabase as any)
+      const { data: customer } = await (serviceClient as any)
         .from('users')
         .select('*')
         .eq('id', appointment.customer_id)
@@ -245,7 +246,7 @@ export async function POST(
 
       if (customer) {
         const currentNoShowCount = (customer.preferences as any)?.no_show_count || 0;
-        await (supabase as any)
+        await (serviceClient as any)
           .from('users')
           .update({
             preferences: {
@@ -263,9 +264,9 @@ export async function POST(
         try {
           // Fetch customer, pet, and service in parallel
           const [{ data: customer }, { data: pet }, { data: service }] = await Promise.all([
-            (supabase as any).from('users').select('*').eq('id', appointment.customer_id).single(),
-            (supabase as any).from('pets').select('*').eq('id', appointment.pet_id).single(),
-            (supabase as any).from('services').select('*').eq('id', appointment.service_id).single(),
+            (serviceClient as any).from('users').select('*').eq('id', appointment.customer_id).single(),
+            (serviceClient as any).from('pets').select('*').eq('id', appointment.pet_id).single(),
+            (serviceClient as any).from('services').select('*').eq('id', appointment.service_id).single(),
           ]);
 
           if (customer && pet && service) {
@@ -325,7 +326,7 @@ export async function POST(
       );
 
       // Fetch appointment with joined data for sync
-      const { data: appointmentForSync } = await (supabase as any)
+      const { data: appointmentForSync } = await (serviceClient as any)
         .from('appointments')
         .select(`
           *,

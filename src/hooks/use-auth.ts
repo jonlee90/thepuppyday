@@ -23,7 +23,7 @@ export interface UseAuthReturn {
   isLoading: boolean;
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null; user: User | null }>;
-  signUp: (data: SignUpData) => Promise<{ error: Error | null }>;
+  signUp: (data: SignUpData) => Promise<{ error: Error | null; requiresEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
 }
@@ -43,35 +43,38 @@ export function useAuth(): UseAuthReturn {
       console.log('[Auth] Initializing auth state...');
 
       try {
-        console.log('[Auth] Calling supabase.auth.getSession()...');
+        console.log('[Auth] Calling supabase.auth.getUser()...');
 
-        // Use getSession for client-side initialization - reads from local storage
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Use getUser() - authenticates against Supabase Auth server (secure)
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
 
         if (!mounted) {
           console.log('[Auth] Component unmounted, skipping state update');
           return;
         }
 
-        if (sessionError) {
-          console.error('[Auth] Error getting session:', sessionError);
+        if (userError) {
+          // AuthSessionMissingError is expected when no session exists (e.g. on /login page)
+          if (userError.name !== 'AuthSessionMissingError') {
+            console.error('[Auth] Error getting user:', userError);
+          }
           setUser(null);
           return;
         }
 
-        console.log('[Auth] getSession() completed, user:', session?.user?.id || 'none');
+        console.log('[Auth] getUser() completed, user:', user?.id || 'none');
 
-        if (session?.user) {
+        if (user) {
           console.log('[Auth] Fetching user data from users table...');
           // Fetch full user data from users table
-          const { data: userData, error: userError } = await (supabase as any)
+          const { data: userData, error: dbError } = await (supabase as any)
             .from('users')
             .select('*')
-            .eq('id', session.user.id)
+            .eq('id', user.id)
             .single();
 
-          if (userError) {
-            console.error('[Auth] Error fetching user data:', userError);
+          if (dbError) {
+            console.error('[Auth] Error fetching user data:', dbError);
             // If we can't fetch user data, still set loading to false
             setUser(null);
             return;
@@ -113,29 +116,22 @@ export function useAuth(): UseAuthReturn {
     const setupAuthListener = () => {
       // Listen for auth state changes
       const { data } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
+        async (event) => {
           if (!mounted) return;
 
           console.log('[Auth] Auth state change event:', event);
 
           if (event === 'SIGNED_OUT') {
             clearAuth();
-          } else if (event === 'SIGNED_IN' && session?.user) {
-            const { data: userData } = await (supabase as any)
-              .from('users')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
+          } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            // Use getUser() instead of session.user — validates JWT with server
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user || !mounted) return;
 
-            if (mounted && userData) {
-              setUser(userData as User);
-            }
-          } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-            // Update user data on token refresh
             const { data: userData } = await (supabase as any)
               .from('users')
               .select('*')
-              .eq('id', session.user.id)
+              .eq('id', user.id)
               .single();
 
             if (mounted && userData) {
@@ -235,7 +231,7 @@ export function useAuth(): UseAuthReturn {
   );
 
   const signUp = useCallback(
-    async (data: SignUpData): Promise<{ error: Error | null }> => {
+    async (data: SignUpData): Promise<{ error: Error | null; requiresEmailConfirmation: boolean }> => {
       const supabase = createClient();
 
       try {
@@ -252,11 +248,14 @@ export function useAuth(): UseAuthReturn {
         });
 
         if (error) {
-          return { error };
+          return { error, requiresEmailConfirmation: false };
         }
 
-        if (authData.user) {
-          // Fetch the created user data
+        // If no session, email confirmation is required
+        const requiresEmailConfirmation = !authData.session;
+
+        if (authData.user && !requiresEmailConfirmation) {
+          // Only fetch and set user if we have an active session
           const { data: userData } = await (supabase as any)
             .from('users')
             .select('*')
@@ -268,9 +267,9 @@ export function useAuth(): UseAuthReturn {
           }
         }
 
-        return { error: null };
+        return { error: null, requiresEmailConfirmation };
       } catch (error) {
-        return { error: error as Error };
+        return { error: error as Error, requiresEmailConfirmation: false };
       }
     },
     [setUser]

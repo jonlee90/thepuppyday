@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { Appointment, StaffCommission, User, Payment } from '@/types/database';
 
@@ -127,6 +127,7 @@ function groupByPeriod(
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Parse query parameters
@@ -277,7 +278,7 @@ export async function GET(request: NextRequest) {
     end.setHours(23, 59, 59, 999);
 
     // Build query for appointments
-    let query = (supabase as any)
+    let query = (serviceClient as any)
       .from('appointments')
       .select(`
         *,
@@ -304,7 +305,7 @@ export async function GET(request: NextRequest) {
     console.log('[Earnings API] Found', appointments?.length || 0, 'appointments in range');
 
     // Get all commission settings
-    const { data: commissions } = await (supabase as any)
+    const { data: commissions } = await (serviceClient as any)
       .from('staff_commissions')
       .select('*');
 
@@ -315,7 +316,7 @@ export async function GET(request: NextRequest) {
 
     // Get all payments for tips
     const appointmentIds = (appointments || []).map((apt: any) => apt.id);
-    const { data: payments } = await (supabase as any)
+    const { data: payments } = await (serviceClient as any)
       .from('payments')
       .select('appointment_id, tip_amount')
       .in('appointment_id', appointmentIds);

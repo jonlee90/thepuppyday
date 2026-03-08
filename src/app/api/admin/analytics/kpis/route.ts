@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 
 /**
@@ -85,11 +85,12 @@ export async function GET(request: NextRequest) {
 
     // Production implementation - require admin auth
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Calculate total revenue for current and previous periods
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: currentRevenue } = await (supabase as any)
+    const { data: currentRevenue } = await (serviceClient as any)
       .from('appointments')
       .select('total_price')
       .gte('scheduled_at', startDate.toISOString())
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
       .in('status', ['completed', 'confirmed']);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: prevRevenue } = await (supabase as any)
+    const { data: prevRevenue } = await (serviceClient as any)
       .from('appointments')
       .select('total_price')
       .gte('scheduled_at', prevStartDate.toISOString())
@@ -131,7 +132,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate retention rate (customers with 2+ appointments)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: customers } = await (supabase as any)
+    const { data: customers } = await (serviceClient as any)
       .from('appointments')
       .select('customer_id')
       .gte('scheduled_at', startDate.toISOString())
@@ -149,7 +150,7 @@ export async function GET(request: NextRequest) {
 
     // Similar calculation for previous period
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: prevCustomers } = await (supabase as any)
+    const { data: prevCustomers } = await (serviceClient as any)
       .from('appointments')
       .select('customer_id')
       .gte('scheduled_at', prevStartDate.toISOString())
@@ -169,7 +170,7 @@ export async function GET(request: NextRequest) {
 
     // Review generation rate (appointments with review_submitted)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: reviewAppointments } = await (supabase as any)
+    const { data: reviewAppointments } = await (serviceClient as any)
       .from('appointments')
       .select('review_submitted')
       .gte('scheduled_at', startDate.toISOString())
@@ -181,7 +182,7 @@ export async function GET(request: NextRequest) {
 
     // Similar for previous period
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: prevReviewAppointments } = await (supabase as any)
+    const { data: prevReviewAppointments } = await (serviceClient as any)
       .from('appointments')
       .select('review_submitted')
       .gte('scheduled_at', prevStartDate.toISOString())
@@ -196,7 +197,7 @@ export async function GET(request: NextRequest) {
 
     // Waitlist fill rate (waitlist entries converted to appointments)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: waitlistEntries } = await (supabase as any)
+    const { data: waitlistEntries } = await (serviceClient as any)
       .from('waitlist')
       .select('appointment_id')
       .gte('created_at', startDate.toISOString())
@@ -208,7 +209,7 @@ export async function GET(request: NextRequest) {
 
     // Similar for previous period
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: prevWaitlistEntries } = await (supabase as any)
+    const { data: prevWaitlistEntries } = await (serviceClient as any)
       .from('waitlist')
       .select('appointment_id')
       .gte('created_at', prevStartDate.toISOString())

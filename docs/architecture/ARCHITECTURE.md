@@ -60,7 +60,7 @@
 | 7 | Payments & Memberships | Pending | Stripe integration, memberships, loyalty program |
 | 8 | Notifications | Completed | Templates, triggers, preferences, email/SMS providers, unsubscribe system |
 | 9 | Admin Settings | Completed | Business settings, staff management, site content, banners |
-| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), comprehensive testing, performance optimization |
+| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), comprehensive testing pending |
 | 11 | Calendar Error Recovery | Completed | Retry queue, error recovery UI, quota tracking, auto-pause system |
 | F | Admin Dashboard Redesign | Completed | Replaced DashboardStats/TodayAppointments/PendingAppointments with RevenueOverview, DashboardTimeline, ProductivityWidget, WaitlistWidget, PendingActionsWidget, QuickAccess pills; useDashboardData hook; revenue-overview API endpoint |
 
@@ -1313,6 +1313,34 @@ export async function GET(request: NextRequest) {
     .select('*, addons:appointment_addons(*)');
 
   return NextResponse.json({ data });
+}
+```
+
+**Variable Naming Conventions**: Two patterns exist in the codebase — both are correct:
+- **Pattern A** (`authSupabase` / `supabase`): Auth client named `authSupabase`, service role named `supabase`. Used in: `appointments/[id]`, `customers/[id]`, `customers/[id]/appointments`, `report-cards`.
+- **Pattern B** (`supabase` / `serviceClient`): Auth client named `supabase`, service role named `serviceClient`. Used in: `services/[id]`, `waitlist/[id]/book`, `complete-past`.
+
+**CRITICAL**: Never reference `serviceClient` from a file using Pattern A, or vice versa. The bulk RLS fix script caused broken `(serviceClient as any)` references in Pattern A files — this was fixed in Phase 10.
+
+**Performance**: Parallelize independent queries with `Promise.all()` where possible. Example from `customers/[id]/route.ts`:
+```typescript
+const [
+  { data: pets },
+  { data: flags },
+  { data: loyaltyPoints },
+  { data: loyaltyTransactions },
+] = await Promise.all([
+  supabase.from('pets').select('*').eq('owner_id', customerId),
+  supabase.from('customer_flags').select('*').eq('customer_id', customerId),
+  supabase.from('customer_loyalty').select('*').eq('customer_id', customerId).single(),
+  supabase.from('loyalty_punches').select('*').eq('customer_id', customerId).limit(5),
+]);
+```
+
+**Security**: Every admin endpoint MUST call `requireAdmin()`. Missing auth checks are security holes. The catch block should handle Unauthorized errors:
+```typescript
+if (error instanceof Error && error.message.includes('Unauthorized')) {
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 }
 ```
 

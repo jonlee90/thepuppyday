@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { User, Appointment, StaffCommission } from '@/types/database';
 
@@ -26,6 +26,7 @@ export async function GET(
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const { id: staffId } = await params;
@@ -134,7 +135,7 @@ export async function GET(
 
     // Production Supabase query
     // Get staff profile
-    const { data: profile, error: profileError } = await (supabase as any)
+    const { data: profile, error: profileError } = await (serviceClient as any)
       .from('users')
       .select('*')
       .eq('id', staffId)
@@ -158,7 +159,7 @@ export async function GET(
     }
 
     // Count completed appointments
-    const { count: completedCount } = await (supabase as any)
+    const { count: completedCount } = await (serviceClient as any)
       .from('appointments')
       .select('*', { count: 'exact', head: true })
       .eq('groomer_id', staffId)
@@ -169,7 +170,7 @@ export async function GET(
     const sevenDaysFromNow = new Date(now);
     sevenDaysFromNow.setDate(now.getDate() + 7);
 
-    const { count: upcomingCount } = await (supabase as any)
+    const { count: upcomingCount } = await (serviceClient as any)
       .from('appointments')
       .select('*', { count: 'exact', head: true })
       .eq('groomer_id', staffId)
@@ -178,12 +179,12 @@ export async function GET(
       .lte('scheduled_at', sevenDaysFromNow.toISOString());
 
     // Get average rating
-    const { data: reportCards } = await (supabase as any)
+    const { data: reportCards } = await (serviceClient as any)
       .from('report_cards')
       .select('rating, appointment_id')
       .not('rating', 'is', null);
 
-    const { data: staffAppointments } = await (supabase as any)
+    const { data: staffAppointments } = await (serviceClient as any)
       .from('appointments')
       .select('id')
       .eq('groomer_id', staffId);
@@ -201,7 +202,7 @@ export async function GET(
       : null;
 
     // Get recent appointments (last 10)
-    const { data: recentAppointments } = await (supabase as any)
+    const { data: recentAppointments } = await (serviceClient as any)
       .from('appointments')
       .select(`
         *,
@@ -214,7 +215,7 @@ export async function GET(
       .limit(10);
 
     // Get commission settings
-    const { data: commissionData } = await (supabase as any)
+    const { data: commissionData } = await (serviceClient as any)
       .from('staff_commissions')
       .select('*')
       .eq('groomer_id', staffId)

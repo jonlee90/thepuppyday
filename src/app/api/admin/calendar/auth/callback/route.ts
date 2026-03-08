@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { exchangeCodeForTokens } from '@/lib/calendar/oauth';
 import { createConnection } from '@/lib/calendar/connection';
 import { google } from 'googleapis';
@@ -14,6 +14,7 @@ import { createAuthenticatedClient } from '@/lib/calendar/oauth';
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const searchParams = request.nextUrl.searchParams;
 
     // Extract OAuth callback parameters
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
     const adminId = state;
 
     // Verify the admin user exists
-    const { data: adminUser, error: userError } = await (supabase as any)
+    const { data: adminUser, error: userError } = await (serviceClient as any)
       .from('users')
       .select('id, email, role')
       .eq('id', adminId)

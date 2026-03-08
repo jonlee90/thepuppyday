@@ -33,9 +33,9 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
       className={cn(
         'group relative w-full text-left bg-white rounded-xl overflow-hidden',
         'transition-shadow duration-300',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4A261] focus-visible:ring-offset-4',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#434E54] focus-visible:ring-offset-4',
         isSelected
-          ? 'shadow-[0_20px_60px_-15px_rgba(244,162,97,0.4)] ring-1 ring-[#F4A261]/30'
+          ? 'shadow-[0_20px_60px_-15px_rgba(67,78,84,0.4)] ring-1 ring-[#434E54]/30'
           : 'shadow-[0_8px_30px_-5px_rgba(67,78,84,0.15)] hover:shadow-[0_20px_60px_-15px_rgba(67,78,84,0.25)]'
       )}
       aria-pressed={isSelected}
@@ -61,7 +61,7 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-gradient-to-br from-[#F4A261]/20 to-transparent pointer-events-none"
+                  className="absolute inset-0 bg-gradient-to-br from-[#434E54]/20 to-transparent pointer-events-none"
                 />
               )}
             </AnimatePresence>
@@ -115,7 +115,7 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
               animate={{ scale: 1, rotate: 0 }}
               exit={{ scale: 0, rotate: 180 }}
               transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-              className="absolute top-4 right-4 w-10 h-10 bg-[#F4A261] rounded-full
+              className="absolute top-4 right-4 w-10 h-10 bg-[#434E54] rounded-full
                          flex items-center justify-center shadow-lg"
             >
               <svg
@@ -175,7 +175,7 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
         {/* Selected state accent line */}
         {isSelected && (
           <motion.div
-            className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-[#F4A261] to-[#434E54]"
+            className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-[#EAE0D5] to-[#434E54]"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             exit={{ scaleX: 0 }}

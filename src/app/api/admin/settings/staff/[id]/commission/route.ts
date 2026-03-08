@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import type { StaffCommission, ServiceOverride } from '@/types/database';
@@ -43,13 +43,14 @@ export async function GET(
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const { id: staffId } = await params;
     console.log('[Commission API] GET - Staff ID:', staffId);
 
     // Verify staff exists
-    const { data: staffUser, error: staffError } = await (supabase as any)
+    const { data: staffUser, error: staffError } = await (serviceClient as any)
       .from('users')
       .select('id, role')
       .eq('id', staffId)
@@ -89,7 +90,7 @@ export async function GET(
     }
 
     // Production Supabase query
-    const { data: commissionData, error: commissionError } = await (supabase as any)
+    const { data: commissionData, error: commissionError } = await (serviceClient as any)
       .from('staff_commissions')
       .select('*')
       .eq('groomer_id', staffId)
@@ -144,6 +145,7 @@ export async function PUT(
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
     const { id: staffId } = await params;
@@ -164,7 +166,7 @@ export async function PUT(
     const { rate_type, rate, include_addons, service_overrides } = validation.data;
 
     // Verify staff exists
-    const { data: staffUser, error: staffError } = await (supabase as any)
+    const { data: staffUser, error: staffError } = await (serviceClient as any)
       .from('users')
       .select('id, role')
       .eq('id', staffId)
@@ -182,7 +184,7 @@ export async function PUT(
     if (service_overrides && service_overrides.length > 0) {
       // Verify all service IDs exist
       const serviceIds = service_overrides.map((so) => so.service_id);
-      const { data: services, error: servicesError } = await (supabase as any)
+      const { data: services, error: servicesError } = await (serviceClient as any)
         .from('services')
         .select('id')
         .in('id', serviceIds);
@@ -263,7 +265,7 @@ export async function PUT(
     }
 
     // Production Supabase upsert
-    const { data: updatedCommission, error: upsertError } = await (supabase as any)
+    const { data: updatedCommission, error: upsertError } = await (serviceClient as any)
       .from('staff_commissions')
       .upsert(
         {
@@ -292,7 +294,7 @@ export async function PUT(
     console.log('[Commission API] Updated commission settings for:', staffId);
 
     // Log audit entry (get old value first)
-    const { data: oldCommission } = await (supabase as any)
+    const { data: oldCommission } = await (serviceClient as any)
       .from('staff_commissions')
       .select('*')
       .eq('groomer_id', staffId)

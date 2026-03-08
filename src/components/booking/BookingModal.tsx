@@ -87,14 +87,18 @@ export function BookingModal({
   const preSelectedCustomerId = propCustomerId || modalStore.preSelectedCustomerId;
 
   const config = MODE_CONFIG[mode];
-  const { currentStep, reset, nextStep, prevStep, selectDateTime, setMode } = bookingStore;
+  const { currentStep, reset, nextStep, prevStep, selectDateTime, setMode, setStep } = bookingStore;
 
-  // Sync mode to booking store when modal opens
+  // Sync mode and initial step to booking store when modal opens
   useEffect(() => {
     if (isOpen) {
+      reset();
       setMode(mode);
+      if (modalStore.initialStep > 0) {
+        setStep(modalStore.initialStep);
+      }
     }
-  }, [isOpen, mode, setMode]);
+  }, [isOpen, mode, setMode, reset, setStep, modalStore.initialStep]);
 
   // Auto-set date/time to NOW for walk-in mode when modal opens
   useEffect(() => {
@@ -118,10 +122,9 @@ export function BookingModal({
     }
   }, [isOpen, mode, selectDateTime]);
 
-  // Reset form state when modal closes (safety net for all close paths)
+  // Reset form state when modal closes (delayed to allow close animation)
   useEffect(() => {
     if (!isOpen) {
-      // Reset booking state after modal close animation completes
       const timer = setTimeout(() => {
         reset();
       }, 300);

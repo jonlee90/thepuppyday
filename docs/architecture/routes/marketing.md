@@ -4,7 +4,7 @@
 > **Status**: Completed (Phase 2)
 > **Base Path**: `(marketing)/`
 > **Authentication**: Not Required
-> **Last Updated**: 2026-03-06
+> **Last Updated**: 2026-03-07
 
 ## Overview
 
@@ -122,9 +122,11 @@ Server component that fetches business info for the footer.
 **Components**:
 
 ### Header
-- Fixed navigation with logo, section links (Home, Services, Gallery, About, Contact)
-- "Book Now" CTA button
-- Mobile hamburger menu
+- Fixed navigation with logo, section links (Services, Gallery, Reviews, About Us, Contact)
+- Scroll spy highlights active section based on viewport position (sections: `services`, `gallery`, `testimonials`, `about`, `contact`)
+- Logo click scrolls to top and resets active section
+- "Sign In" CTA button (desktop), "Book Now" in mobile menu
+- Mobile hamburger menu with AnimatePresence slide animation
 
 ### Footer
 - Business info (address, phone, email)

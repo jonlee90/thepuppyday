@@ -6,7 +6,7 @@
  */
 
 import { NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import type { BookingSettings } from '@/types/settings';
@@ -31,13 +31,14 @@ const DEFAULT_BOOKING_SETTINGS: BookingSettings = {
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access
     await requireAdmin(supabase);
 
     // Fetch booking settings from settings table
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingRecord, error } = (await (supabase as any)
+    const { data: settingRecord, error } = (await (serviceClient as any)
       .from('settings')
       .select('value, updated_at')
       .eq('key', 'booking_settings')
@@ -109,6 +110,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access and get admin user
     const { user: admin } = await requireAdmin(supabase);
@@ -153,7 +155,7 @@ export async function PUT(request: Request) {
 
     // Fetch old settings for audit log
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: oldSettingRecord } = (await (supabase as any)
+    const { data: oldSettingRecord } = (await (serviceClient as any)
       .from('settings')
       .select('value')
       .eq('key', 'booking_settings')
@@ -163,7 +165,7 @@ export async function PUT(request: Request) {
 
     // Update or insert booking settings
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingSetting } = (await (supabase as any)
+    const { data: existingSetting } = (await (serviceClient as any)
       .from('settings')
       .select('id')
       .eq('key', 'booking_settings')
@@ -172,7 +174,7 @@ export async function PUT(request: Request) {
     if (existingSetting) {
       // Update existing setting
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: updateError } = (await (supabase as any)
+      const { error: updateError } = (await (serviceClient as any)
         .from('settings')
         .update({
           value: newSettings,
@@ -190,7 +192,7 @@ export async function PUT(request: Request) {
     } else {
       // Insert new setting
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: insertError } = (await (supabase as any)
+      const { error: insertError } = (await (serviceClient as any)
         .from('settings')
         .insert({
           key: 'booking_settings',

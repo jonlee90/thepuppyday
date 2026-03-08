@@ -5,22 +5,24 @@
 
 'use client';
 
+import { useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useBookingModal } from '@/hooks/useBookingModal';
 
 interface QuickAction {
   label: string;
   description: string;
-  href: string;
+  href?: string;
+  onClick?: () => void;
   icon: React.ReactNode;
   primary?: boolean;
 }
 
-const quickActions: QuickAction[] = [
+const staticQuickActions: Omit<QuickAction, 'onClick'>[] = [
   {
     label: 'Book Appointment',
     description: 'Schedule your next grooming',
-    href: '/book',
     primary: true,
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -65,6 +67,22 @@ interface QuickActionsProps {
 }
 
 export function QuickActions({ showAll = false }: QuickActionsProps) {
+  const { open: openBookingModal } = useBookingModal();
+
+  const handleBookAppointment = useCallback(() => {
+    openBookingModal({ mode: 'customer' });
+  }, [openBookingModal]);
+
+  const quickActions: QuickAction[] = useMemo(
+    () =>
+      staticQuickActions.map((a) =>
+        a.label === 'Book Appointment'
+          ? { ...a, onClick: handleBookAppointment }
+          : a
+      ),
+    [handleBookAppointment]
+  );
+
   const displayActions = showAll ? quickActions : quickActions.slice(0, 4);
 
   return (
@@ -76,29 +94,19 @@ export function QuickActions({ showAll = false }: QuickActionsProps) {
 
       {/* Actions grid */}
       <div className="p-4 grid grid-cols-2 gap-3">
-        {displayActions.map((action, index) => (
-          <motion.div
-            key={action.href}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-          >
-            <Link
-              href={action.href}
-              className={`
-                block p-4 rounded-lg transition-all duration-200
-                ${action.primary
-                  ? 'bg-[#434E54] text-white hover:bg-[#434E54]/90 shadow-md hover:shadow-lg'
-                  : 'bg-[#EAE0D5]/30 text-[#434E54] hover:bg-[#EAE0D5]/50'
-                }
-              `}
-            >
+        {displayActions.map((action, index) => {
+          const className = `
+            block w-full text-left p-4 rounded-lg transition-all duration-200
+            ${action.primary
+              ? 'bg-[#434E54] text-white hover:bg-[#434E54]/90 shadow-md hover:shadow-lg'
+              : 'bg-[#EAE0D5]/30 text-[#434E54] hover:bg-[#EAE0D5]/50'
+            }
+          `;
+          const inner = (
+            <>
               <div className={`
                 w-10 h-10 rounded-full flex items-center justify-center mb-3
-                ${action.primary
-                  ? 'bg-white/20'
-                  : 'bg-[#434E54]/10'
-                }
+                ${action.primary ? 'bg-white/20' : 'bg-[#434E54]/10'}
               `}>
                 {action.icon}
               </div>
@@ -106,9 +114,23 @@ export function QuickActions({ showAll = false }: QuickActionsProps) {
               <p className={`text-xs ${action.primary ? 'text-white/70' : 'text-[#434E54]/60'}`}>
                 {action.description}
               </p>
-            </Link>
-          </motion.div>
-        ))}
+            </>
+          );
+          return (
+            <motion.div
+              key={action.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              {action.onClick ? (
+                <button onClick={action.onClick} className={className}>{inner}</button>
+              ) : (
+                <Link href={action.href!} className={className}>{inner}</Link>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );

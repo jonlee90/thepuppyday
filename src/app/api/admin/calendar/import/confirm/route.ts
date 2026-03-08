@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import type { AppSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { getActiveConnection } from '@/lib/calendar/connection';
@@ -58,6 +58,7 @@ interface ImportConfirmResponse {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
     console.log('[Import Confirm] Admin user:', adminUser.email);

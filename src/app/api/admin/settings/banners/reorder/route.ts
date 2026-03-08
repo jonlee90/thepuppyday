@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import { ReorderBannersSchema } from '@/types/banner';
@@ -32,6 +32,7 @@ import { ReorderBannersSchema } from '@/types/banner';
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
 
     // Parse and validate request body
@@ -66,7 +67,7 @@ export async function PUT(request: NextRequest) {
 
     // Fetch existing banners to validate all IDs exist
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingBanners, error: fetchError } = (await (supabase as any)
+    const { data: existingBanners, error: fetchError } = (await (serviceClient as any)
       .from('promo_banners')
       .select('id, display_order')
       .in('id', bannerIds)) as {
@@ -95,7 +96,7 @@ export async function PUT(request: NextRequest) {
     // Update each banner individually but check for errors
     const updatePromises = banners.map(async (banner) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { error } = await (serviceClient as any)
         .from('promo_banners')
         .update({
           display_order: banner.display_order,

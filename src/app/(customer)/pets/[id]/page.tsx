@@ -7,7 +7,8 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { DashboardSkeleton } from '@/components/ui/skeletons';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { BookAppointmentButton } from '@/components/customer/BookAppointmentButton';
+import { createServerSupabaseClient, getCurrentUser } from '@/lib/supabase/server';
 
 interface PetDetailPageProps {
   params: Promise<{ id: string }>;
@@ -55,23 +56,6 @@ async function getPetReportCards(petId: string) {
   return reportCards || [];
 }
 
-// Get user info from session
-async function getUserInfo() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.user) {
-    return null;
-  }
-
-  const { data: userData } = await (supabase as any)
-    .from('users')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
-
-  return userData;
-}
 
 // Format date for display
 function formatDate(dateString: string) {
@@ -92,7 +76,7 @@ const sizeLabels: Record<string, string> = {
 
 export default async function PetDetailPage({ params }: PetDetailPageProps) {
   const resolvedParams = await params;
-  const userData = await getUserInfo();
+  const userData = await getCurrentUser();
 
   if (!userData) {
     return null;
@@ -194,8 +178,7 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
 
               {/* Quick action */}
               <div className="mt-6 pt-6 border-t border-[#434E54]/10">
-                <Link
-                  href={`/book?pet=${pet.id}`}
+                <BookAppointmentButton
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg
                            bg-[#434E54] text-white font-semibold text-sm
                            hover:bg-[#434E54]/90 transition-all duration-200
@@ -205,7 +188,7 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   Book Appointment
-                </Link>
+                </BookAppointmentButton>
               </div>
             </div>
           </div>
@@ -245,12 +228,9 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
           {appointments.length === 0 ? (
             <div className="p-6 text-center">
               <p className="text-[#434E54]/60">No appointments yet</p>
-              <Link
-                href={`/book?pet=${pet.id}`}
-                className="text-[#434E54] font-medium hover:underline mt-2 inline-block"
-              >
+              <BookAppointmentButton className="text-[#434E54] font-medium hover:underline mt-2 inline-block">
                 Book first appointment
-              </Link>
+              </BookAppointmentButton>
             </div>
           ) : (
             <div className="divide-y divide-[#434E54]/10">

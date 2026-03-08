@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, type AppSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, type AppSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { processWebhookNotification } from '@/lib/calendar/webhook/processor';
 
 /**
@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Create Supabase client
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify webhook channel exists in database
     // @ts-expect-error - AppSupabaseClient union type issue

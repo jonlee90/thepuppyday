@@ -7,7 +7,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PetCardSkeletonGrid } from '@/components/ui/skeletons';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getCurrentUser } from '@/lib/supabase/server';
 
 // Fetch pets
 async function getPets(userId: string) {
@@ -22,23 +22,6 @@ async function getPets(userId: string) {
   return pets || [];
 }
 
-// Get user info from session
-async function getUserInfo() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.user) {
-    return null;
-  }
-
-  const { data: userData } = await (supabase as any)
-    .from('users')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
-
-  return userData;
-}
 
 // Size to label mapping
 const sizeLabels: Record<string, string> = {
@@ -49,7 +32,7 @@ const sizeLabels: Record<string, string> = {
 };
 
 export default async function PetsPage() {
-  const userData = await getUserInfo();
+  const userData = await getCurrentUser();
 
   if (!userData) {
     return null;

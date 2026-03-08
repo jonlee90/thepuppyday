@@ -8,6 +8,7 @@
 import { CustomerNav } from '@/components/customer/CustomerNav';
 import { Toaster } from '@/components/ui/toaster';
 import { useAuth } from '@/hooks/use-auth';
+import { BookingModalProvider } from '@/components/booking';
 
 export default function CustomerLayout({
   children,
@@ -31,26 +32,28 @@ export default function CustomerLayout({
   // Middleware ensures user is authenticated and has customer role
   // So we can safely render the layout
   return (
-    <div className="min-h-screen bg-[#F8EEE5]">
-      {/* Navigation */}
-      <CustomerNav
-        user={{
-          firstName: user?.first_name || 'Guest',
-          lastName: user?.last_name || 'User',
-          email: user?.email || '',
-          avatarUrl: user?.avatar_url,
-        }}
-      />
+    <BookingModalProvider>
+      <div className="min-h-screen bg-[#F8EEE5]">
+        {/* Navigation */}
+        <CustomerNav
+          user={{
+            firstName: user?.first_name || 'Guest',
+            lastName: user?.last_name || 'User',
+            email: user?.email || '',
+            avatarUrl: user?.avatar_url,
+          }}
+        />
 
-      {/* Main content area */}
-      <main id="main-content" className="lg:pl-64 pb-20 lg:pb-0">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-          {children}
-        </div>
-      </main>
+        {/* Main content area */}
+        <main id="main-content" className="lg:pl-64 pb-20 lg:pb-0">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+            {children}
+          </div>
+        </main>
 
-      {/* Toast notifications */}
-      <Toaster />
-    </div>
+        {/* Toast notifications */}
+        <Toaster />
+      </div>
+    </BookingModalProvider>
   );
 }

@@ -6,8 +6,8 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useBookingModalStore } from '@/hooks/useBookingModal';
 import { Scissors, Sparkles, Check, ChevronDown } from 'lucide-react';
 import type { Service } from '@/types/database';
 import type { LucideIcon } from 'lucide-react';
@@ -16,6 +16,7 @@ interface ServiceCardProps {
   service: Service | 'add-ons-info'; // Can be a Service object or special add-ons identifier
   onLearnMore?: () => void;
   isFeatured?: boolean;
+  addons?: Array<{ id: string; name: string; price: number }>;
 }
 
 // Hardcoded service data with pricing by size
@@ -81,8 +82,8 @@ const SERVICE_DATA: Record<string, {
   },
 };
 
-export function ServiceCard({ service, onLearnMore, isFeatured = false }: ServiceCardProps) {
-  const router = useRouter();
+export function ServiceCard({ service, onLearnMore, isFeatured = false, addons }: ServiceCardProps) {
+  const openModal = useBookingModalStore((state) => state.openModal);
   const [isIncludedExpanded, setIsIncludedExpanded] = useState(false);
 
   // Check if this is the special add-ons info card
@@ -206,9 +207,9 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false }: Servic
           )}
 
           {/* Add-on Services List */}
-          {('addonServices' in data ? data.addonServices : [])?.map((addon, idx) => (
+          {(addons ?? ('addonServices' in data ? data.addonServices : []))?.map((addon, idx) => (
             <div
-              key={idx}
+              key={'id' in addon ? addon.id : idx}
               className="flex items-center justify-between bg-[#F8EEE5]/50 rounded-xl px-4 py-3 mb-2"
             >
               <div className="flex items-center gap-3">
@@ -216,7 +217,7 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false }: Servic
                 <span className="font-medium text-[#434E54] text-sm">{addon.name}</span>
               </div>
               <div className="text-lg font-bold text-[#434E54]">
-                {addon.priceRange ? `$${addon.priceRange}` : `$${addon.price}`}
+                {'priceRange' in addon && addon.priceRange ? `$${addon.priceRange}` : `$${addon.price}`}
               </div>
             </div>
           ))}
@@ -285,7 +286,7 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false }: Servic
               }`}
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(`/booking?service=${serviceId}`);
+                openModal({ mode: 'customer', preSelectedServiceId: serviceId, initialStep: 1 });
               }}
             >
               Book This Service

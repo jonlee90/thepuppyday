@@ -6,7 +6,7 @@
  */
 
 import { NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import type { BlockedDate, BookingSettings } from '@/types/settings';
@@ -61,13 +61,14 @@ interface ConflictResponse {
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access
     await requireAdmin(supabase);
 
     // Fetch booking settings from settings table
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingRecord, error } = (await (supabase as any)
+    const { data: settingRecord, error } = (await (serviceClient as any)
       .from('settings')
       .select('value')
       .eq('key', 'booking_settings')
@@ -115,6 +116,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access and get admin user
     const { user: admin } = await requireAdmin(supabase);
@@ -155,7 +157,7 @@ export async function POST(request: Request) {
 
       // Query appointments table for conflicts
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: appointments, error: appointmentsError } = (await (supabase as any)
+      const { data: appointments, error: appointmentsError } = (await (serviceClient as any)
         .from('appointments')
         .select('scheduled_at, status')
         .gte('scheduled_at', startDate.toISOString())
@@ -199,7 +201,7 @@ export async function POST(request: Request) {
 
     // Fetch current booking settings
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingRecord, error: fetchError } = (await (supabase as any)
+    const { data: settingRecord, error: fetchError } = (await (serviceClient as any)
       .from('settings')
       .select('value')
       .eq('key', 'booking_settings')
@@ -246,7 +248,7 @@ export async function POST(request: Request) {
 
     // Check if settings record exists
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingSetting } = (await (supabase as any)
+    const { data: existingSetting } = (await (serviceClient as any)
       .from('settings')
       .select('id')
       .eq('key', 'booking_settings')
@@ -255,7 +257,7 @@ export async function POST(request: Request) {
     if (existingSetting) {
       // Update existing setting
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: updateError } = (await (supabase as any)
+      const { error: updateError } = (await (serviceClient as any)
         .from('settings')
         .update({
           value: updatedSettings,
@@ -273,7 +275,7 @@ export async function POST(request: Request) {
     } else {
       // Insert new setting
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: insertError } = (await (supabase as any)
+      const { error: insertError } = (await (serviceClient as any)
         .from('settings')
         .insert({
           key: 'booking_settings',
@@ -332,6 +334,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access and get admin user
     const { user: admin } = await requireAdmin(supabase);
@@ -374,7 +377,7 @@ export async function DELETE(request: Request) {
 
     // Fetch current booking settings
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingRecord, error: fetchError } = (await (supabase as any)
+    const { data: settingRecord, error: fetchError } = (await (serviceClient as any)
       .from('settings')
       .select('value')
       .eq('key', 'booking_settings')
@@ -422,7 +425,7 @@ export async function DELETE(request: Request) {
 
     // Update settings in database
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: updateError } = (await (supabase as any)
+    const { error: updateError } = (await (serviceClient as any)
       .from('settings')
       .update({
         value: updatedSettings,

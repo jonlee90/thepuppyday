@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { Addon } from '@/types/database';
 import {
@@ -154,8 +154,9 @@ export async function PATCH(
       addonUpdate.display_order = display_order;
     }
 
-    // Update add-on
-    const { data: addon, error } = (await (supabase as any)
+    // Update add-on (use service role to bypass RLS)
+    const serviceClient = createServiceRoleClient();
+    const { data: addon, error } = (await (serviceClient as any)
       .from('addons')
       .update(addonUpdate)
       .eq('id', id)
@@ -200,7 +201,8 @@ export async function DELETE(
     }
 
     // Security: Check for existing appointment add-ons before deletion
-    const { data: appointmentAddons, error: apptAddonsError } = (await (supabase as any)
+    const serviceClient = createServiceRoleClient();
+    const { data: appointmentAddons, error: apptAddonsError } = (await (serviceClient as any)
       .from('appointment_addons')
       .select('id')
       .eq('addon_id', id)
@@ -224,7 +226,7 @@ export async function DELETE(
     }
 
     // Delete add-on
-    const { error } = await (supabase as any)
+    const { error } = await (serviceClient as any)
       .from('addons')
       .delete()
       .eq('id', id);

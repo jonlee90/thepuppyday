@@ -9,7 +9,7 @@ import { notFound } from 'next/navigation';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { DashboardSkeleton } from '@/components/ui/skeletons';
 import { AppointmentDetailClient } from '@/components/customer/appointments';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getCurrentUser } from '@/lib/supabase/server';
 import type { AppointmentStatus } from '@/types/database';
 
 interface AppointmentDetailPageProps {
@@ -55,23 +55,6 @@ async function hasReportCard(appointmentId: string) {
   return !!data;
 }
 
-// Get user info from session
-async function getUserInfo() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.user) {
-    return null;
-  }
-
-  const { data: userData } = await (supabase as any)
-    .from('users')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
-
-  return userData;
-}
 
 // Format date for display
 function formatDate(dateString: string) {
@@ -97,7 +80,7 @@ function formatTime(dateString: string) {
 
 export default async function AppointmentDetailPage({ params }: AppointmentDetailPageProps) {
   const resolvedParams = await params;
-  const userData = await getUserInfo();
+  const userData = await getCurrentUser();
 
   if (!userData) {
     return null;

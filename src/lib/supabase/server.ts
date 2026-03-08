@@ -2,6 +2,7 @@
  * Supabase server client for Server Components and API routes
  */
 
+import { cache } from 'react';
 import { config } from '@/lib/config';
 import { createMockClient, type MockSupabaseClient } from '@/mocks/supabase/client';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
@@ -73,3 +74,23 @@ export function createServiceRoleClient(): SupabaseClient | MockSupabaseClient {
  * Alias for createServerSupabaseClient for backward compatibility
  */
 export const createClient = createServerSupabaseClient;
+
+/**
+ * Get the currently authenticated user + their public profile.
+ * Wrapped in React.cache() so the getUser() network call and DB query
+ * are deduplicated within a single server request (server-cache-react).
+ * Uses getUser() (not getSession()) so the JWT is verified server-side.
+ */
+export const getCurrentUser = cache(async (): Promise<Record<string, any> | null> => {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: userData } = await (supabase as any)
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  return userData ?? null;
+});

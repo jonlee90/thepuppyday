@@ -85,7 +85,14 @@
       "Bash(CLAUDE_PROJECT_DIR=/Users/jonathanlee/Desktop/thepuppyday bash:*)",
       "mcp__plugin_playwright_playwright__browser_evaluate",
       "Bash(NODE_OPTIONS='--max-old-space-size=4096' npx next:*)",
-      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx next:*)"
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx next:*)",
+      "Bash(npx vitest:*)",
+      "Bash(for f in \"src/app/api/admin/services/[id]/route.ts\" \"src/app/api/admin/services/route.ts\" \"src/app/api/admin/appointments/[id]/status/route.ts\" \"src/app/api/admin/appointments/complete-past/route.ts\" \"src/app/api/admin/customers/[id]/flags/route.ts\" \"src/app/api/admin/customers/[id]/flags/[flagId]/route.ts\" \"src/app/api/admin/gallery/route.ts\" \"src/app/api/admin/campaigns/route.ts\" \"src/app/api/admin/campaigns/[id]/send/route.ts\" \"src/app/api/admin/settings/banners/route.ts\" \"src/app/api/admin/settings/banners/[id]/route.ts\" \"src/app/api/admin/settings/banners/reorder/route.ts\" \"src/app/api/admin/settings/booking/route.ts\" \"src/app/api/admin/settings/booking/blocked-dates/route.ts\" \"src/app/api/admin/settings/business-hours/route.ts\" \"src/app/api/admin/settings/site-content/route.ts\" \"src/app/api/admin/settings/loyalty/route.ts\" \"src/app/api/admin/settings/loyalty/earning-rules/route.ts\" \"src/app/api/admin/settings/loyalty/redemption-rules/route.ts\" \"src/app/api/admin/settings/loyalty/referral/route.ts\" \"src/app/api/admin/settings/staff/route.ts\" \"src/app/api/admin/settings/staff/[id]/commission/route.ts\" \"src/app/api/admin/settings/templates/route.ts\" \"src/app/api/admin/settings/templates/reset/route.ts\" \"src/app/api/admin/settings/phase6/route.ts\" \"src/app/api/admin/waitlist/[id]/book/route.ts\" \"src/app/api/admin/waitlist/fill-slot/route.ts\" \"src/app/api/admin/calendar/settings/route.ts\" \"src/app/api/admin/calendar/import/confirm/route.ts\" \"src/app/api/admin/calendar/webhook/route.ts\")",
+      "Bash(do)",
+      "Read(//Users/jonathanlee/Desktop/thepuppyday/**)",
+      "Bash(done)",
+      "Bash(do:*)",
+      "Bash(sed:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

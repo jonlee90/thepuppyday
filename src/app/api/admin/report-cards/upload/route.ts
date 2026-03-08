@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 
 /**
  * POST - Upload report card photo to Supabase Storage
@@ -12,6 +12,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Check authentication
     const {
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await (supabase as any).storage
+    const { data: uploadData, error: uploadError } = await (serviceClient as any).storage
       .from('report-card-photos')
       .upload(filePath, buffer, {
         contentType: file.type,
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
     // Get public URL
     const {
       data: { publicUrl },
-    } = (supabase as any).storage.from('report-card-photos').getPublicUrl(filePath);
+    } = (serviceClient as any).storage.from('report-card-photos').getPublicUrl(filePath);
 
     return NextResponse.json({
       success: true,

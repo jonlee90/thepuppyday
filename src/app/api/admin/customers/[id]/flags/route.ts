@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { CustomerFlagType, CustomerFlagColor } from '@/types/database';
 
@@ -19,6 +19,7 @@ interface RouteContext {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
     const { id: customerId } = await context.params;
 
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const flagColor: CustomerFlagColor = color || getDefaultColor(flag_type);
 
     // Create flag
-    const { data: flag, error: insertError } = await (supabase as any)
+    const { data: flag, error: insertError } = await (serviceClient as any)
       .from('customer_flags')
       .insert({
         customer_id: customerId,

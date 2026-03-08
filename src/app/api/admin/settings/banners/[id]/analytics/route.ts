@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { PromoBanner } from '@/types/database';
 
@@ -179,6 +179,7 @@ export async function GET(
   const params = await context.params;
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const bannerId = params.id;
@@ -188,7 +189,7 @@ export async function GET(
 
     // Fetch banner
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: banner, error } = (await (supabase as any)
+    const { data: banner, error } = (await (serviceClient as any)
       .from('promo_banners')
       .select('*')
       .eq('id', bannerId)

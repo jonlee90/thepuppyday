@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { Setting } from '@/types/database';
 import type {
@@ -21,6 +21,7 @@ import { DEFAULT_NOTIFICATION_TEMPLATES } from '@/types/settings';
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access
     await requireAdmin(supabase);
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
     ];
 
     // Fetch current templates
-    const { data: currentSetting } = (await (supabase as any)
+    const { data: currentSetting } = (await (serviceClient as any)
       .from('settings')
       .select('*')
       .eq('key', 'templates')
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
     }
 
     // Update templates setting
-    const { error } = await (supabase as any)
+    const { error } = await (serviceClient as any)
       .from('settings')
       .update({
         value: updatedTemplates,

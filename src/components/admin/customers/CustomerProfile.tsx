@@ -21,7 +21,6 @@ import {
   ChevronDown,
   ChevronUp,
   Award,
-  CreditCard,
   Flag,
   Plus,
 } from 'lucide-react';
@@ -30,14 +29,13 @@ import { CustomerFlagBadge, SingleFlagBadge } from './CustomerFlagBadge';
 import { CustomerFlagForm, RemoveFlagConfirmation } from './CustomerFlagForm';
 import { isWalkinPlaceholderEmail } from '@/lib/utils';
 import { usePhoneMask, formatPhoneNumber } from '@/hooks/usePhoneMask';
-import type { User as UserType, Pet, CustomerFlag, CustomerMembership } from '@/types/database';
+import type { User as UserType, Pet, CustomerFlag } from '@/types/database';
 
 interface CustomerDetail extends UserType {
   pets: Pet[];
   flags: CustomerFlag[];
   loyalty_points: any;
   loyalty_transactions: any[];
-  active_membership: CustomerMembership | null;
 }
 
 interface CustomerProfileProps {
@@ -537,61 +535,6 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
           <div className="text-center py-8 bg-gray-50 rounded-lg">
             <Award className="w-12 h-12 text-gray-300 mx-auto mb-2" />
             <p className="text-gray-600">Not enrolled in loyalty program</p>
-          </div>
-        )}
-      </div>
-
-      {/* Section 6: Membership */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-lg font-semibold text-[#434E54] flex items-center gap-2 mb-4">
-          <CreditCard className="w-5 h-5" />
-          Membership
-        </h2>
-
-        {customer.active_membership ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-[#434E54]">
-                  {customer.active_membership.membership?.name}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  ${customer.active_membership.membership?.price}/
-                  {customer.active_membership.membership?.billing_frequency}
-                </p>
-              </div>
-              <span className="px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm font-medium border border-green-200">
-                Active
-              </span>
-            </div>
-
-            {customer.active_membership.current_period_end && (
-              <p className="text-sm text-gray-600">
-                Renews on{' '}
-                {format(
-                  new Date(customer.active_membership.current_period_end),
-                  'MMMM dd, yyyy'
-                )}
-              </p>
-            )}
-
-            {customer.active_membership.membership?.benefits && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Benefits:</h4>
-                <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                  {customer.active_membership.membership.benefits.map(
-                    (benefit: string, index: number) => (
-                      <li key={index}>{benefit}</li>
-                    )
-                  )}
-                </ul>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-600">No active membership</p>
           </div>
         )}
       </div>

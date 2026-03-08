@@ -7,6 +7,7 @@
 
 import { motion } from 'framer-motion';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
+import { useBookingModal } from '@/hooks/useBookingModal';
 
 interface ContactSectionProps {
   phone: string;
@@ -19,6 +20,8 @@ export function ContactSection({
   email,
   address,
 }: ContactSectionProps) {
+  const { open: openBookingModal } = useBookingModal();
+
   return (
     <section id="contact" className="py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#EAE0D5]">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -130,12 +133,12 @@ export function ContactSection({
             </div>
 
             {/* CTA Button */}
-            <a
-              href="/login"
+            <button
+              onClick={() => openBookingModal({ mode: 'customer' })}
               className="mt-12 block w-full text-center px-8 py-4 text-lg font-semibold text-white bg-[#434E54] rounded-xl shadow-md hover:bg-[#363F44] hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
             >
               Book Appointment Now
-            </a>
+            </button>
           </motion.div>
         </div>
       </div>

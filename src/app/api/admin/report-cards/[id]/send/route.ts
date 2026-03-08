@@ -5,7 +5,7 @@
  * Allows admins to manually send or resend report cards to customers.
  */
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { NextResponse, after } from 'next/server';
 
@@ -35,6 +35,7 @@ interface RouteParams {
 export async function POST(request: Request, { params }: RouteParams) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Check admin authorization
     const admin = await requireAdmin(supabase);
@@ -55,7 +56,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     // Fetch report card
-    const { data: reportCard, error: fetchError } = await (supabase as any)
+    const { data: reportCard, error: fetchError } = await (serviceClient as any)
       .from('report_cards')
       .select('id, appointment_id, is_draft, dont_send, sent_at')
       .eq('id', reportCardId)
@@ -109,7 +110,7 @@ export async function POST(request: Request, { params }: RouteParams) {
         { data: appointment, error: appointmentError },
         { data: fullReportCard },
       ] = await Promise.all([
-        (supabase as any)
+        (serviceClient as any)
           .from('appointments')
           .select(
             `
@@ -120,7 +121,7 @@ export async function POST(request: Request, { params }: RouteParams) {
           )
           .eq('id', reportCard.appointment_id)
           .single(),
-        (supabase as any)
+        (serviceClient as any)
           .from('report_cards')
           .select('before_photo_url, after_photo_url')
           .eq('id', reportCard.id)

@@ -35,8 +35,6 @@ export interface SegmentCriteria {
   /** Filter by total visits count */
   min_visits?: number;
   max_visits?: number;
-  /** Filter by membership status */
-  has_membership?: boolean;
   /** Filter by loyalty status */
   loyalty_eligible?: boolean;
   /** Filter by specific pet size */

@@ -7,7 +7,7 @@
 
 import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import type {
@@ -82,13 +82,14 @@ const DEFAULT_LOYALTY_SETTINGS: LoyaltySettings = {
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access
     await requireAdmin(supabase);
 
     // Fetch loyalty settings from settings table
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingRecord, error: settingsError } = (await (supabase as any)
+    const { data: settingRecord, error: settingsError } = (await (serviceClient as any)
       .from('settings')
       .select('value, updated_at')
       .eq('key', 'loyalty_program')
@@ -159,6 +160,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access and get admin user
     const { user: admin } = await requireAdmin(supabase);
@@ -194,7 +196,7 @@ export async function PUT(request: Request) {
 
     // Fetch existing settings for merging
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: oldSettingRecord } = (await (supabase as any)
+    const { data: oldSettingRecord } = (await (serviceClient as any)
       .from('settings')
       .select('value')
       .eq('key', 'loyalty_program')
@@ -214,7 +216,7 @@ export async function PUT(request: Request) {
 
     // Upsert loyalty settings (settings.key has UNIQUE constraint)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: upsertError } = (await (supabase as any)
+    const { error: upsertError } = (await (serviceClient as any)
       .from('settings')
       .upsert(
         {

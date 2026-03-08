@@ -4,7 +4,7 @@
 > **Status**: Completed (Phase 4)
 > **Base Path**: `(customer)/`
 > **Authentication**: Required (customer, admin, or groomer role)
-> **Last Updated**: 2026-03-06
+> **Last Updated**: 2026-03-07
 
 ## Overview
 
@@ -33,8 +33,6 @@ src/app/(customer)/
 │   └── page.tsx            # User profile (/profile)
 ├── loyalty/
 │   └── page.tsx            # Loyalty program (/loyalty)
-├── membership/
-│   └── page.tsx            # Membership status (/membership)
 └── report-cards/
     └── page.tsx            # Report cards list (/report-cards)
 ```
@@ -89,6 +87,8 @@ Client component (`'use client'`) that uses the `useAuth` hook for user data.
 
 Welcome message, upcoming appointments, recent report cards, loyalty points, quick actions.
 
+**QuickActions** (`src/components/customer/dashboard/QuickActions.tsx`): Quick action grid with Book Appointment, Add Pet, View Report Cards, Loyalty Rewards. Uses `useMemo` for derived `quickActions` array and `useCallback` for the booking modal handler to prevent unnecessary re-renders.
+
 ### 2. Appointments (`/appointments`)
 **File**: `src/app/(customer)/appointments/page.tsx`
 
@@ -118,12 +118,7 @@ Server component that fetches user data from the `users` table.
 
 Points balance, transaction history, rewards catalog (Phase 7).
 
-### 6. Membership (`/membership`)
-**File**: `src/app/(customer)/membership/page.tsx`
-
-Current membership status, benefits, billing (Phase 7).
-
-### 7. Report Cards (`/report-cards`)
+### 6. Report Cards (`/report-cards`)
 **File**: `src/app/(customer)/report-cards/page.tsx`
 
 Grid of all grooming report cards for the customer's pets with before/after photos.

@@ -9,7 +9,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/admin/auth';
 import { z } from 'zod';
 
 const bookingSchema = z.object({
@@ -40,9 +41,11 @@ export async function POST(
     const { id: waitlistId } = await params;
 
     const supabase = await createServerSupabaseClient();
+    await requireAdmin(supabase);
+    const serviceClient = createServiceRoleClient();
 
     // Get waitlist entry with related data
-    const { data: waitlistEntry, error: waitlistError } = await (supabase as any)
+    const { data: waitlistEntry, error: waitlistError } = await (serviceClient as any)
       .from('waitlist')
       .select(
         `
@@ -78,16 +81,29 @@ export async function POST(
       );
     }
 
-    // Get service pricing for the pet size
-    const { data: pet } = await (supabase as any)
-      .from('pets')
-      .select('size')
-      .eq('id', waitlistEntry.pet_id)
-      .single();
+    // Get pet size and check for slot conflicts in parallel
+    const slotDate = new Date(validated.scheduled_at);
+    const dateStart = new Date(slotDate);
+    dateStart.setHours(0, 0, 0, 0);
+    const dateEnd = new Date(slotDate);
+    dateEnd.setHours(23, 59, 59, 999);
+
+    const [{ data: pet }, { data: allAppointments }] = await Promise.all([
+      (serviceClient as any)
+        .from('pets')
+        .select('size')
+        .eq('id', waitlistEntry.pet_id)
+        .single(),
+      (serviceClient as any)
+        .from('appointments')
+        .select('*')
+        .gte('scheduled_at', dateStart.toISOString())
+        .lte('scheduled_at', dateEnd.toISOString()),
+    ]);
 
     const petSize = pet?.size || 'medium';
 
-    const { data: servicePrice } = await (supabase as any)
+    const { data: servicePrice } = await (serviceClient as any)
       .from('service_prices')
       .select('*')
       .eq('service_id', waitlistEntry.service_id)
@@ -108,19 +124,6 @@ export async function POST(
 
     // Get service duration
     const durationMinutes = waitlistEntry.service.duration_minutes || 60;
-
-    // Check for slot conflicts
-    const slotDate = new Date(validated.scheduled_at);
-    const dateStart = new Date(slotDate);
-    dateStart.setHours(0, 0, 0, 0);
-    const dateEnd = new Date(slotDate);
-    dateEnd.setHours(23, 59, 59, 999);
-
-    const { data: allAppointments } = await (supabase as any)
-      .from('appointments')
-      .select('*')
-      .gte('scheduled_at', dateStart.toISOString())
-      .lte('scheduled_at', dateEnd.toISOString());
 
     // Check for conflicts
     const slotStart = new Date(validated.scheduled_at);
@@ -155,7 +158,7 @@ export async function POST(
     const maxAttempts = 10;
 
     while (attempts < maxAttempts) {
-      const { data: existing } = await (supabase as any)
+      const { data: existing } = await (serviceClient as any)
         .from('appointments')
         .select('id')
         .eq('booking_reference', reference)
@@ -173,7 +176,7 @@ export async function POST(
     }
 
     // Create appointment
-    const { data: appointment, error: apptError } = await (supabase as any)
+    const { data: appointment, error: apptError } = await (serviceClient as any)
       .from('appointments')
       .insert({
         customer_id: waitlistEntry.customer_id,
@@ -199,7 +202,7 @@ export async function POST(
     }
 
     // Update waitlist entry to 'booked'
-    const { error: updateError } = await (supabase as any)
+    const { error: updateError } = await (serviceClient as any)
       .from('waitlist')
       .update({
         status: 'booked',
@@ -226,6 +229,9 @@ export async function POST(
         { error: 'Validation error', details: error.issues },
         { status: 400 }
       );
+    }
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     console.error('Error booking from waitlist:', error);
     return NextResponse.json(

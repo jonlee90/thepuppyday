@@ -4,11 +4,10 @@
  */
 
 import { Suspense } from 'react';
-import Link from 'next/link';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { AppointmentCardSkeletonList } from '@/components/ui/skeletons';
 import { AppointmentCard } from '@/components/customer/appointments';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { BookAppointmentButton } from '@/components/customer/BookAppointmentButton';
+import { createServerSupabaseClient, getCurrentUser } from '@/lib/supabase/server';
 
 // Fetch appointments
 async function getAppointments(userId: string) {
@@ -23,23 +22,6 @@ async function getAppointments(userId: string) {
   return appointments || [];
 }
 
-// Get user info from session
-async function getUserInfo() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.user) {
-    return null;
-  }
-
-  const { data: userData } = await (supabase as any)
-    .from('users')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
-
-  return userData;
-}
 
 // Group appointments by status
 function groupAppointments(appointments: any[]) {
@@ -66,7 +48,7 @@ function groupAppointments(appointments: any[]) {
 }
 
 export default async function AppointmentsPage() {
-  const userData = await getUserInfo();
+  const userData = await getCurrentUser();
 
   if (!userData) {
     return null;
@@ -86,8 +68,7 @@ export default async function AppointmentsPage() {
               View and manage your grooming appointments
             </p>
           </div>
-          <Link
-            href="/book"
+          <BookAppointmentButton
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg
                      bg-[#434E54] text-white font-semibold text-sm
                      hover:bg-[#434E54]/90 transition-all duration-200
@@ -97,20 +78,23 @@ export default async function AppointmentsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             Book New
-          </Link>
+          </BookAppointmentButton>
         </div>
 
         {appointments.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm border border-[#434E54]/10 overflow-hidden">
-            <EmptyState
-              icon="calendar"
-              title="No Appointments Yet"
-              description="Book your first grooming appointment to get started!"
-              action={{
-                label: 'Book Appointment',
-                href: '/book',
-              }}
-            />
+            <div className="flex flex-col items-center justify-center text-center py-12 px-6">
+              <div className="w-20 h-20 rounded-full bg-[#EAE0D5] flex items-center justify-center text-[#434E54]/60 mb-6">
+                <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-[#434E54] mb-2">No Appointments Yet</h3>
+              <p className="text-base text-[#434E54]/70 max-w-sm mb-6">Book your first grooming appointment to get started!</p>
+              <BookAppointmentButton className="px-6 py-3 font-semibold rounded-lg transition-colors bg-[#434E54] text-white hover:bg-[#363F44]">
+                Book Appointment
+              </BookAppointmentButton>
+            </div>
           </div>
         ) : (
           <>

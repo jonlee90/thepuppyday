@@ -9,6 +9,7 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { requireAdmin } from '@/lib/admin/auth';
 import { z } from 'zod';
 import { calculatePrice } from '@/lib/booking/pricing';
+import { triggerBookingConfirmation } from '@/lib/notifications/triggers/booking-confirmation';
 import { generateWalkinEmail } from '@/lib/utils';
 import type { Appointment, User, Pet, Service, PetSize, ServiceWithPrices, Addon } from '@/types/database';
 import type { CreateAppointmentResponse } from '@/types/admin-appointments';
@@ -16,6 +17,7 @@ import type { CreateAppointmentResponse } from '@/types/admin-appointments';
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Parse query parameters
@@ -172,7 +174,7 @@ export async function GET(request: NextRequest) {
 
     // For status_priority sort, fetch ALL rows (no .range()) so we can sort
     // across the full dataset in JS, then paginate manually.
-    let query = (supabase as any)
+    let query = (serviceClient as any)
       .from('appointments')
       .select(
         `
@@ -709,10 +711,6 @@ export async function POST(request: NextRequest) {
     // 7. Send notification only to active customers
     if (data.send_notification && customerStatus === 'active') {
       try {
-        const { triggerBookingConfirmation } = await import(
-          '@/lib/notifications/triggers/booking-confirmation'
-        );
-
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await triggerBookingConfirmation(supabase as any, {
           appointmentId: appointment.id,

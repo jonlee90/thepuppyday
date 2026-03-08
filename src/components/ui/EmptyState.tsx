@@ -90,7 +90,7 @@ export const emptyStates = {
     icon: 'calendar' as const,
     title: 'No appointments yet',
     description: 'Book your first grooming appointment to keep your furry friend looking their best.',
-    actions: [{ label: 'Book Appointment', href: '/book', variant: 'primary' as const }],
+    actions: [{ label: 'Book Appointment', variant: 'primary' as const }],
   },
   noPets: {
     icon: 'dog' as const,

@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import { ReferralProgramSchema, type ReferralProgram } from '@/types/settings';
@@ -31,11 +31,12 @@ import { ReferralProgramSchema, type ReferralProgram } from '@/types/settings';
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Fetch referral program settings from settings table
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingsData, error: settingsError } = await (supabase as any)
+    const { data: settingsData, error: settingsError } = await (serviceClient as any)
       .from('settings')
       .select('value')
       .eq('key', 'referral_program')
@@ -55,7 +56,7 @@ export async function GET() {
     // Calculate statistics from referrals table
     // Total referrals count
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count: totalReferrals, error: totalError } = await (supabase as any)
+    const { count: totalReferrals, error: totalError } = await (serviceClient as any)
       .from('referrals')
       .select('id', { count: 'exact', head: true });
 
@@ -65,7 +66,7 @@ export async function GET() {
 
     // Successful conversions (completed status)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count: successfulConversions, error: conversionsError } = await (supabase as any)
+    const { count: successfulConversions, error: conversionsError } = await (serviceClient as any)
       .from('referrals')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'completed');
@@ -76,7 +77,7 @@ export async function GET() {
 
     // Bonuses awarded (either referrer or referee bonus)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count: bonusesAwarded, error: bonusesError } = await (supabase as any)
+    const { count: bonusesAwarded, error: bonusesError } = await (serviceClient as any)
       .from('referrals')
       .select('id', { count: 'exact', head: true })
       .or('referrer_bonus_awarded.eq.true,referee_bonus_awarded.eq.true');
@@ -125,6 +126,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
 
     // Parse and validate request body
@@ -145,7 +147,7 @@ export async function PUT(request: NextRequest) {
 
     // Fetch old settings for audit log
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: oldSettingsData } = await (supabase as any)
+    const { data: oldSettingsData } = await (serviceClient as any)
       .from('settings')
       .select('value')
       .eq('key', 'referral_program')
@@ -155,7 +157,7 @@ export async function PUT(request: NextRequest) {
 
     // Update settings table
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: updateError } = await (supabase as any)
+    const { error: updateError } = await (serviceClient as any)
       .from('settings')
       .upsert(
         {
@@ -184,18 +186,18 @@ export async function PUT(request: NextRequest) {
 
     // Calculate fresh statistics
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count: totalReferrals } = await (supabase as any)
+    const { count: totalReferrals } = await (serviceClient as any)
       .from('referrals')
       .select('id', { count: 'exact', head: true });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count: successfulConversions } = await (supabase as any)
+    const { count: successfulConversions } = await (serviceClient as any)
       .from('referrals')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'completed');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count: bonusesAwarded } = await (supabase as any)
+    const { count: bonusesAwarded } = await (serviceClient as any)
       .from('referrals')
       .select('id', { count: 'exact', head: true })
       .or('referrer_bonus_awarded.eq.true,referee_bonus_awarded.eq.true');

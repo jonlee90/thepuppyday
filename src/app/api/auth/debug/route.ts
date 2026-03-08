@@ -10,10 +10,7 @@ export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
 
-    // Get session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    // Get user
+    // Get authenticated user (verified by Supabase Auth server)
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     // Get user data from public.users if authenticated
@@ -31,7 +28,6 @@ export async function GET() {
     return NextResponse.json({
       timestamp: new Date().toISOString(),
       auth: {
-        hasSession: !!session,
         hasUser: !!user,
         userId: user?.id || null,
         userEmail: user?.email || null,
@@ -43,7 +39,6 @@ export async function GET() {
         lastName: userData?.last_name || null,
       },
       errors: {
-        session: sessionError?.message || null,
         user: userError?.message || null,
       },
     });

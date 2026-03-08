@@ -6,9 +6,11 @@
 
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { LayoutDashboard, Calendar, Scissors, PawPrint, ClipboardList } from 'lucide-react';
+import { useBookingModal } from '@/hooks/useBookingModal';
 
 interface NavItem {
   label: string;
@@ -73,8 +75,6 @@ const navItems: NavItem[] = [
   },
 ];
 
-// Mobile navigation only shows 5 items max
-const mobileNavItems = navItems.slice(0, 5);
 
 interface CustomerNavProps {
   user?: {
@@ -85,14 +85,32 @@ interface CustomerNavProps {
   };
 }
 
+const mobileTabs = [
+  { id: 'home', label: 'Home', icon: LayoutDashboard, href: '/dashboard' },
+  { id: 'appointments', label: 'Appointments', icon: Calendar, href: '/appointments' },
+  { id: 'book', label: 'Book', icon: Scissors, action: 'book' as const },
+  { id: 'pets', label: 'Pets', icon: PawPrint, href: '/pets' },
+  { id: 'report-cards', label: 'Reports', icon: ClipboardList, href: '/report-cards' },
+] as const;
+
 export function CustomerNav({ user }: CustomerNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { open: openBookingModal } = useBookingModal();
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
       return pathname === '/dashboard';
     }
     return pathname.startsWith(href);
+  };
+
+  const handleMobileTabClick = (tab: typeof mobileTabs[number]) => {
+    if ('action' in tab && tab.action === 'book') {
+      openBookingModal({ mode: 'customer' });
+    } else if ('href' in tab && tab.href) {
+      router.push(tab.href);
+    }
   };
 
   return (
@@ -166,8 +184,8 @@ export function CustomerNav({ user }: CustomerNavProps) {
 
         {/* Book Appointment CTA */}
         <div className="p-4 border-t border-[#434E54]/10">
-          <Link
-            href="/book"
+          <button
+            onClick={() => openBookingModal({ mode: 'customer' })}
             className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg
                      bg-[#434E54] text-white font-semibold
                      hover:bg-[#434E54]/90 transition-all duration-200
@@ -177,7 +195,7 @@ export function CustomerNav({ user }: CustomerNavProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             Book Appointment
-          </Link>
+          </button>
         </div>
 
         {/* Logout */}
@@ -197,35 +215,52 @@ export function CustomerNav({ user }: CustomerNavProps) {
 
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#434E54]/10 shadow-lg">
-        <div className="flex items-center justify-around h-16 px-2 safe-area-inset-bottom">
-          {mobileNavItems.map((item) => {
-            const active = isActive(item.href);
+        <div className="h-18 flex items-center justify-around px-2">
+          {mobileTabs.map((tab) => {
+            const Icon = tab.icon;
+            const active = 'href' in tab ? isActive(tab.href) : false;
+
+            // Book button (center, elevated)
+            if (tab.id === 'book') {
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleMobileTabClick(tab)}
+                  className="flex flex-col items-center justify-center relative"
+                  style={{ flex: '0 0 20%' }}
+                  aria-label={tab.label}
+                >
+                  <div className="absolute -top-6 w-14 h-14 bg-[#434E54] rounded-full flex items-center justify-center shadow-lg hover:bg-[#363F44] transition-colors">
+                    <Icon className="w-7 h-7 text-white" />
+                  </div>
+                  <span className="text-xs font-medium text-[#434E54] mt-9">
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            }
+
+            // Regular tabs
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`
-                  flex flex-col items-center justify-center min-w-[64px] py-1 px-2
-                  transition-all duration-200
-                  ${active
-                    ? 'text-[#434E54]'
-                    : 'text-[#434E54]/50 hover:text-[#434E54]/70'
-                  }
-                `}
+              <button
+                key={tab.id}
+                onClick={() => handleMobileTabClick(tab)}
+                className={`flex flex-col items-center justify-center py-2 relative transition-colors ${
+                  active ? 'text-[#434E54]' : 'text-[#9CA3AF] hover:text-[#6B7280]'
+                }`}
+                style={{ flex: '0 0 20%' }}
+                aria-label={tab.label}
+                aria-current={active ? 'page' : undefined}
               >
-                <div className={`
-                  p-1 rounded-lg transition-all duration-200
-                  ${active ? 'bg-[#EAE0D5]' : ''}
-                `}>
-                  {item.icon}
-                </div>
-                <span className={`
-                  text-xs mt-0.5 transition-all duration-200
-                  ${active ? 'font-semibold' : 'font-medium'}
-                `}>
-                  {item.label}
+                {/* Top indicator line for active tab */}
+                {active && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-[#434E54] rounded-b-full" />
+                )}
+                <Icon className="w-6 h-6 mb-1" />
+                <span className={`text-xs font-medium ${active ? 'text-[#434E54]' : 'text-[#6B7280]'}`}>
+                  {tab.label}
                 </span>
-              </Link>
+              </button>
             );
           })}
         </div>

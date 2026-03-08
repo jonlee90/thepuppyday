@@ -5,15 +5,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import type { User, Pet, Appointment, CustomerFlag, CustomerMembership } from '@/types/database';
+import type { User, Pet, Appointment, CustomerFlag } from '@/types/database';
 
 interface CustomerWithStats extends User {
   pets_count: number;
   appointments_count: number;
   flags: CustomerFlag[];
-  active_membership: CustomerMembership | null;
 }
 
 /**
@@ -22,6 +21,7 @@ interface CustomerWithStats extends User {
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const { searchParams } = new URL(request.url);
@@ -40,27 +40,22 @@ export async function GET(request: NextRequest) {
       { data: allPets, error: petsError },
       { data: allAppointments, error: appointmentsError },
       { data: allFlags, error: flagsError },
-      { data: allMemberships, error: membershipsError },
     ] = await Promise.all([
-      (supabase as any)
+      (serviceClient as any)
         .from('users')
         .select('*')
         .eq('role', 'customer')
         .order('created_at', { ascending: false }),
-      (supabase as any)
+      (serviceClient as any)
         .from('pets')
         .select('id, owner_id, name, is_active'),
-      (supabase as any)
+      (serviceClient as any)
         .from('appointments')
         .select('id, customer_id'),
-      (supabase as any)
+      (serviceClient as any)
         .from('customer_flags')
         .select('*')
         .eq('is_active', true),
-      (supabase as any)
-        .from('customer_memberships')
-        .select('*, membership:memberships(*)')
-        .eq('status', 'active'),
     ]);
 
     if (customersError) {
@@ -83,28 +78,21 @@ export async function GET(request: NextRequest) {
       console.error('[Customers API] Error fetching flags:', flagsError);
     }
 
-    if (membershipsError) {
-      console.error('[Customers API] Error fetching memberships:', membershipsError);
-    }
-
     // Build customer stats
     const pets = (allPets || []) as Pet[];
     const appointments = (allAppointments || []) as Appointment[];
     const flags = (allFlags || []) as CustomerFlag[];
-    const memberships = (allMemberships || []) as CustomerMembership[];
 
     const customersWithStats: CustomerWithStats[] = (allCustomers || []).map((customer: User) => {
       const customerPets = pets.filter((p) => p.owner_id === customer.id && p.is_active);
       const customerAppointments = appointments.filter((a) => a.customer_id === customer.id);
       const customerFlags = flags.filter((f) => f.customer_id === customer.id);
-      const customerMembership = memberships.find((m) => m.customer_id === customer.id) || null;
 
       return {
         ...customer,
         pets_count: customerPets.length,
         appointments_count: customerAppointments.length,
         flags: customerFlags,
-        active_membership: customerMembership,
       };
     });
 

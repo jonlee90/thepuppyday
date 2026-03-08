@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 
 interface DaySchedule {
@@ -26,6 +26,7 @@ interface BusinessHours {
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const body = await request.json();
@@ -59,7 +60,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update or insert business hours setting
-    const { data: existingSetting } = (await (supabase as any)
+    const { data: existingSetting } = (await (serviceClient as any)
       .from('settings')
       .select('id')
       .eq('key', 'business_hours')
@@ -67,7 +68,7 @@ export async function PUT(request: NextRequest) {
 
     if (existingSetting) {
       // Update existing setting
-      const { error: updateError } = (await (supabase as any)
+      const { error: updateError } = (await (serviceClient as any)
         .from('settings')
         .update({
           value: businessHours,
@@ -84,7 +85,7 @@ export async function PUT(request: NextRequest) {
       }
     } else {
       // Insert new setting
-      const { error: insertError } = (await (supabase as any)
+      const { error: insertError } = (await (serviceClient as any)
         .from('settings')
         .insert({
           key: 'business_hours',

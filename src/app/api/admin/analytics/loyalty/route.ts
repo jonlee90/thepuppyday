@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { config } from '@/lib/config';
 
@@ -79,6 +79,7 @@ export async function GET(request: NextRequest) {
 
     // Production - require admin auth
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Actual tables: loyalty_points (customer_id, points_balance, lifetime_points)
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch all loyalty accounts (active programs)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: loyaltyAccounts, error: accountsError } = await (supabase as any)
+    const { data: loyaltyAccounts, error: accountsError } = await (serviceClient as any)
       .from('loyalty_points')
       .select('customer_id, points_balance, lifetime_points');
 
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch transactions in date range
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: transactions, error: txError } = await (supabase as any)
+    const { data: transactions, error: txError } = await (serviceClient as any)
       .from('loyalty_transactions')
       .select('id, customer_id, points, type, created_at')
       .gte('created_at', startDate.toISOString())
@@ -185,7 +186,7 @@ export async function GET(request: NextRequest) {
     let topCustomers: { name: string; punches: number; redemptions: number }[] = [];
     if (topCustomerIds.length > 0) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: users } = await (supabase as any)
+      const { data: users } = await (serviceClient as any)
         .from('users')
         .select('id, full_name')
         .in('id', topCustomerIds);

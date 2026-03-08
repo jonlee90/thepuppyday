@@ -30,7 +30,6 @@ interface RevenueDataPoint {
   period: string;
   services: number;
   addons: number;
-  memberships: number;
   avgBookingValue: number;
 }
 
@@ -90,7 +89,6 @@ export function RevenueChart({ dateRange }: RevenueChartProps) {
             const labels: Record<string, string> = {
               services: 'Services',
               addons: 'Add-ons',
-              memberships: 'Memberships',
               avgBookingValue: 'Avg Booking',
             };
             return [formatCurrency(value), labels[name] || name];
@@ -110,13 +108,6 @@ export function RevenueChart({ dateRange }: RevenueChartProps) {
           stackId="revenue"
           fill={CHART_COLORS.info}
           name="Add-ons"
-        />
-        <Bar
-          yAxisId="left"
-          dataKey="memberships"
-          stackId="revenue"
-          fill={CHART_COLORS.success}
-          name="Memberships"
         />
         <Line
           yAxisId="right"

@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { CustomerFlagType, CustomerFlagColor } from '@/types/database';
 
@@ -20,6 +20,7 @@ interface RouteContext {
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
     const { id: customerId, flagId } = await context.params;
 
@@ -69,7 +70,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (color !== undefined) updateData.color = color;
 
     // Update flag
-    const { data: flag, error: updateError } = await (supabase as any)
+    const { data: flag, error: updateError } = await (serviceClient as any)
       .from('customer_flags')
       .update(updateData)
       .eq('id', flagId)
@@ -110,11 +111,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
     const { id: customerId, flagId } = await context.params;
 
     // Soft delete by setting is_active to false
-    const { data: flag, error: deleteError } = await (supabase as any)
+    const { data: flag, error: deleteError } = await (serviceClient as any)
       .from('customer_flags')
       .update({ is_active: false })
       .eq('id', flagId)

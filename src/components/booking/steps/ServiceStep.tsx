@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { ServiceCard } from '../ServiceCard';
 import { useServices } from '@/hooks/useServices';
@@ -19,17 +19,10 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
   const { selectedServiceId, selectService } = useBookingStore();
 
   // Filter out "Add-Ons" service - add-ons are handled separately in Step 4
-  const bookableServices = services.filter((service) => service.name !== 'Add-Ons');
-
-  // Pre-select service if provided
-  useEffect(() => {
-    if (preSelectedServiceId && !selectedServiceId && bookableServices.length > 0) {
-      const preSelected = bookableServices.find((s) => s.id === preSelectedServiceId);
-      if (preSelected) {
-        selectService(preSelected);
-      }
-    }
-  }, [preSelectedServiceId, selectedServiceId, bookableServices, selectService]);
+  const bookableServices = useMemo(
+    () => services.filter((service) => service.name !== 'Add-Ons'),
+    [services]
+  );
 
   const handleSelectService = (service: ServiceWithPrices) => {
     selectService(service);

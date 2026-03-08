@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { Setting } from '@/types/database';
 import type {
@@ -20,6 +20,7 @@ import { DEFAULT_PHASE6_SETTINGS } from '@/types/settings';
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access
     await requireAdmin(supabase);
@@ -34,7 +35,7 @@ export async function GET() {
       'retention_reminder_days',
     ];
 
-    const { data: settings, error } = (await (supabase as any)
+    const { data: settings, error } = (await (serviceClient as any)
       .from('settings')
       .select('*')
       .in('key', settingKeys)) as { data: Setting[] | null; error: Error | null };
@@ -92,6 +93,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access
     await requireAdmin(supabase);
@@ -149,7 +151,7 @@ export async function PUT(request: Request) {
 
     // Update each setting
     for (const update of updates) {
-      const { error } = await (supabase as any)
+      const { error } = await (serviceClient as any)
         .from('settings')
         .update({
           value: update.value,
@@ -170,7 +172,7 @@ export async function PUT(request: Request) {
     }
 
     // Fetch and return updated settings
-    const { data: updatedSettings } = (await (supabase as any)
+    const { data: updatedSettings } = (await (serviceClient as any)
       .from('settings')
       .select('*')
       .in('key', [

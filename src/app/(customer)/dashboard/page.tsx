@@ -1,11 +1,11 @@
 /**
  * Customer Dashboard Page
- * Shows upcoming appointments, loyalty status, quick actions, and membership info
+ * Shows upcoming appointments, loyalty status, and quick actions
  */
 
-import { UpcomingAppointments, QuickActions, MembershipStatus } from '@/components/customer/dashboard';
+import { UpcomingAppointments, QuickActions } from '@/components/customer/dashboard';
 import { LoyaltyPunchCard } from '@/components/customer/loyalty';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getCurrentUser } from '@/lib/supabase/server';
 import type { AppointmentStatus } from '@/types/database';
 
 // Fetch dashboard data - parallelized for better performance
@@ -20,7 +20,6 @@ async function getDashboardData(userId: string) {
       loyaltyDataResult,
       loyaltySettingsResult,
       loyaltyPunchesResult,
-      membershipResult,
     ] = await Promise.all([
       // Get user's pets with breed info
       (supabase as any)
@@ -58,13 +57,6 @@ async function getDashboardData(userId: string) {
         .eq('customer_loyalty.customer_id', userId)
         .order('created_at', { ascending: true }),
 
-      // Get membership
-      (supabase as any)
-        .from('customer_memberships')
-        .select('*, memberships(*)')
-        .eq('customer_id', userId)
-        .eq('status', 'active')
-        .single(),
     ]);
 
     // Log errors (but don't crash - return empty data)
@@ -83,17 +75,12 @@ async function getDashboardData(userId: string) {
     if (loyaltyPunchesResult.error && loyaltyPunchesResult.error.code !== 'PGRST116') {
       console.error('[Dashboard] Error fetching loyalty punches:', loyaltyPunchesResult.error);
     }
-    if (membershipResult.error && membershipResult.error.code !== 'PGRST116') {
-      console.error('[Dashboard] Error fetching membership:', membershipResult.error);
-    }
-
     return {
       pets: petsResult.data || [],
       appointments: appointmentsResult.data || [],
       loyalty: loyaltyDataResult.data || null,
       loyaltySettings: loyaltySettingsResult.data || null,
       loyaltyPunches: loyaltyPunchesResult.data || [],
-      membership: membershipResult.data || null,
     };
   } catch (error) {
     console.error('[Dashboard] Unexpected error fetching dashboard data:', error);
@@ -104,47 +91,10 @@ async function getDashboardData(userId: string) {
       loyalty: null,
       loyaltySettings: null,
       loyaltyPunches: [],
-      membership: null,
     };
   }
 }
 
-// Get user info from session
-async function getUserInfo() {
-  try {
-    const supabase = await createServerSupabaseClient();
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError) {
-      console.error('[Dashboard] Error getting session:', sessionError);
-      return null;
-    }
-
-    if (!session?.user) {
-      console.log('[Dashboard] No active session found');
-      return null;
-    }
-
-    console.log('[Dashboard] Session found for user:', session.user.id);
-
-    const { data: userData, error: userError } = await (supabase as any)
-      .from('users')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
-
-    if (userError) {
-      console.error('[Dashboard] Error fetching user data:', userError);
-      return null;
-    }
-
-    console.log('[Dashboard] User data fetched successfully');
-    return userData;
-  } catch (error) {
-    console.error('[Dashboard] Unexpected error in getUserInfo:', error);
-    return null;
-  }
-}
 
 // Transform appointments for the widget
 function transformAppointments(appointments: any[]) {
@@ -169,7 +119,7 @@ function transformPunches(punches: any[]) {
 }
 
 export default async function CustomerDashboard() {
-  const userData = await getUserInfo();
+  const userData = await getCurrentUser();
 
   if (!userData) {
     // Show error message instead of null
@@ -201,22 +151,6 @@ export default async function CustomerDashboard() {
   const currentPunches = data.loyalty?.current_punches || 0;
   const freeWashesAvailable = (data.loyalty?.free_washes_earned || 0) - (data.loyalty?.free_washes_redeemed || 0);
   const isCloseToGoal = threshold - currentPunches <= 2;
-
-  // Transform membership data if exists
-  const membershipData = data.membership ? {
-    planName: data.membership.memberships?.name || 'Membership',
-    status: data.membership.status as 'active' | 'paused' | 'cancelled' | 'expired',
-    currentPeriodEnd: data.membership.current_period_end,
-    groomsRemaining: data.membership.grooms_remaining || 0,
-    groomsPerPeriod: data.membership.memberships?.grooms_per_period || 4,
-    monthlyPrice: data.membership.memberships?.price || 0,
-    benefits: [
-      { label: 'Discounted grooming', included: true },
-      { label: 'Priority booking', included: true },
-      { label: 'Free nail trims', included: true },
-      { label: 'Members-only promotions', included: true },
-    ],
-  } : null;
 
   return (
     <div className="space-y-6">
@@ -256,8 +190,6 @@ export default async function CustomerDashboard() {
             compact
           />
 
-          {/* Membership status */}
-          <MembershipStatus membership={membershipData} />
         </div>
       </div>
 

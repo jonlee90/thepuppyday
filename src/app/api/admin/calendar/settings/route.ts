@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import type { AppSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { getActiveConnection } from '@/lib/calendar/connection';
@@ -19,6 +19,7 @@ import type { CalendarSyncSettings } from '@/types/calendar';
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
     console.log('[Calendar Sync Settings] GET - Admin user:', adminUser.email);
@@ -92,6 +93,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
     console.log('[Calendar Sync Settings] PUT - Admin user:', adminUser.email);

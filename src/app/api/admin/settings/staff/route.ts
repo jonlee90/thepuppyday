@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import type { User, StaffCommission } from '@/types/database';
@@ -41,6 +41,7 @@ interface StaffMemberResponse {
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
     console.log('[Staff API] GET - Admin user:', adminUser.email);
@@ -150,7 +151,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Production Supabase query
-    const query = (supabase as any)
+    const query = (serviceClient as any)
       .from('users')
       .select('*')
       .in('role', roleFilter === 'all' ? ['admin', 'groomer'] : [roleFilter]);
@@ -169,7 +170,7 @@ export async function GET(request: NextRequest) {
     const enrichedStaff: StaffMemberResponse[] = await Promise.all(
       (staffData || []).map(async (staffMember: User) => {
         // Count completed appointments
-        const { count: appointmentCount } = await (supabase as any)
+        const { count: appointmentCount } = await (serviceClient as any)
           .from('appointments')
           .select('*', { count: 'exact', head: true })
           .eq('groomer_id', staffMember.id)
@@ -180,7 +181,7 @@ export async function GET(request: NextRequest) {
         const sevenDaysFromNow = new Date(now);
         sevenDaysFromNow.setDate(now.getDate() + 7);
 
-        const { count: upcomingCount } = await (supabase as any)
+        const { count: upcomingCount } = await (serviceClient as any)
           .from('appointments')
           .select('*', { count: 'exact', head: true })
           .eq('groomer_id', staffMember.id)
@@ -189,12 +190,12 @@ export async function GET(request: NextRequest) {
           .lte('scheduled_at', sevenDaysFromNow.toISOString());
 
         // Get average rating
-        const { data: reportCards } = await (supabase as any)
+        const { data: reportCards } = await (serviceClient as any)
           .from('report_cards')
           .select('rating, appointment_id')
           .not('rating', 'is', null);
 
-        const { data: staffAppointments } = await (supabase as any)
+        const { data: staffAppointments } = await (serviceClient as any)
           .from('appointments')
           .select('id')
           .eq('groomer_id', staffMember.id);
@@ -212,7 +213,7 @@ export async function GET(request: NextRequest) {
           : null;
 
         // Get commission settings
-        const { data: commissionData } = await (supabase as any)
+        const { data: commissionData } = await (serviceClient as any)
           .from('staff_commissions')
           .select('*')
           .eq('groomer_id', staffMember.id)
@@ -263,6 +264,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
     console.log('[Staff API] POST - Admin user:', adminUser.email);
@@ -282,7 +284,7 @@ export async function POST(request: NextRequest) {
     const { email, first_name, last_name, phone, role } = validation.data;
 
     // Check if email already exists
-    const { data: existingUser } = await (supabase as any)
+    const { data: existingUser } = await (serviceClient as any)
       .from('users')
       .select('id')
       .eq('email', email)
@@ -336,7 +338,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Production Supabase insert
-    const { data: newStaff, error: insertError } = await (supabase as any)
+    const { data: newStaff, error: insertError } = await (serviceClient as any)
       .from('users')
       .insert({
         email,

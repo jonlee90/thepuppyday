@@ -5,7 +5,7 @@
  */
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { requireAdmin } from '@/lib/admin/auth';
+import { requireAdmin, getAuthenticatedAdmin } from '@/lib/admin/auth';
 import { CalendarSettingsClient } from './CalendarSettingsClient';
 import { getActiveConnection } from '@/lib/calendar/connection';
 import { getValidAccessToken } from '@/lib/calendar/token-manager';
@@ -170,11 +170,9 @@ async function getCalendarData(): Promise<{
 }> {
   try {
     const supabase = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const adminResult = await getAuthenticatedAdmin(supabase);
 
-    if (!user) {
+    if (!adminResult) {
       return {
         connectionStatus: { connected: false },
         syncSettings: null,
@@ -182,6 +180,8 @@ async function getCalendarData(): Promise<{
         error: 'User not authenticated',
       };
     }
+
+    const { user } = adminResult;
 
     // Fetch connection status (direct DB query)
     const connectionStatus = await getConnectionStatus(supabase, user.id);

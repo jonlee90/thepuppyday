@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     const supabase = createServiceRoleClient();
 
     // Fetch report card
-    const { data: reportCard, error: fetchError } = await (supabase as any)
+    const { data: reportCard, error: fetchError } = await supabase
       .from('report_cards')
       .select('*')
       .eq('appointment_id', appointmentId)
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const supabase = createServiceRoleClient();
 
     // Check if report card already exists
-    const { data: existingReportCard } = await (supabase as any)
+    const { data: existingReportCard } = await supabase
       .from('report_cards')
       .select('id, created_at')
       .eq('appointment_id', formState.appointment_id)
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     if (existingReportCard) {
       // Update existing report card
-      const { data: updated, error: updateError } = await (supabase as any)
+      const { data: updated, error: updateError } = await supabase
         .from('report_cards')
         .update({
           mood: formState.mood,
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       reportCardId = updated.id;
     } else {
       // Create new report card
-      const { data: created, error: createError } = await (supabase as any)
+      const { data: created, error: createError } = await supabase
         .from('report_cards')
         .insert({
           appointment_id: formState.appointment_id,

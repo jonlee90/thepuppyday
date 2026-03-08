@@ -4,7 +4,7 @@
  * Server Component that fetches appointment data
  */
 
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { ReportCardForm } from '@/components/admin/report-cards/ReportCardForm';
 
@@ -18,17 +18,8 @@ export default async function ReportCardPage({ params }: PageProps) {
   const { id: appointmentId } = await params;
   const supabase = await createServerSupabaseClient();
 
-  // Check authentication
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    redirect('/login');
-  }
-
   // Fetch appointment with related data
+  // Auth is guaranteed by middleware + AdminLayout
   const { data: appointment, error: appointmentError } = await (supabase as any)
     .from('appointments')
     .select(`

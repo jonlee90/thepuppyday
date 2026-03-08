@@ -3,7 +3,7 @@
  * Returns today's appointments with full details
  */
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { NextResponse } from 'next/server';
 import type { Appointment } from '@/types/database';
@@ -12,6 +12,7 @@ import { getTodayInBusinessTimezone } from '@/lib/utils/timezone';
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access
     await requireAdmin(supabase);
@@ -20,7 +21,7 @@ export async function GET() {
     const { todayStart, todayEnd } = getTodayInBusinessTimezone();
 
     // Fetch today's appointments with joined data
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (serviceClient as any)
       .from('appointments')
       .select(`
         *,

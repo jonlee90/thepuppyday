@@ -3,7 +3,7 @@
  * Returns aggregated statistics for today's dashboard
  */
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { NextResponse } from 'next/server';
 import { getTodayInBusinessTimezone } from '@/lib/utils/timezone';
@@ -16,6 +16,7 @@ export interface DashboardStats {
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access
     await requireAdmin(supabase);
@@ -24,7 +25,7 @@ export async function GET() {
     const { todayStart, todayEnd } = getTodayInBusinessTimezone();
 
     // Fetch all appointments scheduled today with their pricing details
-    const appointmentsResult = await (supabase as any)
+    const appointmentsResult = await (serviceClient as any)
       .from('appointments')
       .select(`
         id,

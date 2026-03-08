@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { SegmentCriteria, SegmentPreview } from '@/types/marketing';
 
@@ -10,6 +10,7 @@ import type { SegmentCriteria, SegmentPreview } from '@/types/marketing';
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Require admin authentication
     await requireAdmin(supabase);
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Production implementation - build dynamic query
-    const query = (supabase as any)
+    const query = (serviceClient as any)
       .from('users')
       .select(
         `
