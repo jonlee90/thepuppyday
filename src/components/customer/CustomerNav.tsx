@@ -83,6 +83,7 @@ interface CustomerNavProps {
     email: string;
     avatarUrl?: string | null;
   };
+  loyaltyEnabled?: boolean;
 }
 
 const mobileTabs = [
@@ -93,7 +94,7 @@ const mobileTabs = [
   { id: 'report-cards', label: 'Reports', icon: ClipboardList, href: '/report-cards' },
 ] as const;
 
-export function CustomerNav({ user }: CustomerNavProps) {
+export function CustomerNav({ user, loyaltyEnabled = true }: CustomerNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { open: openBookingModal } = useBookingModal();
@@ -159,7 +160,7 @@ export function CustomerNav({ user }: CustomerNavProps) {
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           <ul className="space-y-1">
-            {navItems.map((item) => {
+            {navItems.filter((item) => loyaltyEnabled || item.href !== '/loyalty').map((item) => {
               const active = isActive(item.href);
               return (
                 <li key={item.href}>

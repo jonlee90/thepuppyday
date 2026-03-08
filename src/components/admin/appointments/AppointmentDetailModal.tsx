@@ -26,7 +26,8 @@ import {
   PawPrint,
   MapPin,
 } from 'lucide-react';
-import { getStatusBadgeColor, getStatusLabel, getAllowedTransitions, isTerminalStatus, isAppointmentInPast } from '@/lib/admin/appointment-status';
+import { getAllowedTransitions, isTerminalStatus, isAppointmentInPast } from '@/lib/admin/appointment-status';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StatusTransitionButton } from './StatusTransitionButton';
 import type { Appointment, CustomerFlag, Service, Addon, Pet, ServicePrice } from '@/types/database';
 import type { User } from '@/types/database';
@@ -433,13 +434,7 @@ export function AppointmentDetailModal({
                 {/* Status Badge - Inline */}
                 {appointment && (
                   <>
-                    <span
-                      className={`badge badge-sm ${getStatusBadgeColor(appointment.status)}`}
-                      role="status"
-                      aria-label={`Appointment status: ${getStatusLabel(appointment.status)}`}
-                    >
-                      {getStatusLabel(appointment.status)}
-                    </span>
+                    <StatusBadge status={appointment.status} size="sm" />
                     {isPast && !isTerminal && (
                       <span className="text-xs text-[#9CA3AF]">(Past)</span>
                     )}

@@ -11,6 +11,7 @@ import { Search, UserPlus, LogIn, UserCheck, PawPrint } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
+import { useAuth } from '@/hooks/use-auth';
 import { guestInfoSchema } from '@/lib/booking/validation';
 import { z } from 'zod';
 import { usePhoneMask, formatPhoneNumber } from '@/hooks/usePhoneMask';
@@ -49,7 +50,8 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
     nextStep,
   } = useBookingStore();
 
-  const { isAuthenticated, user, login } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { signIn } = useAuth();
 
   // --- Customer Section State ---
   const [searchQuery, setSearchQuery] = useState('');
@@ -189,9 +191,9 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
     setLoginError('');
 
     try {
-      const result = await login(loginForm.email, loginForm.password);
-      if (!result.success) {
-        setLoginError(result.error || 'Invalid email or password');
+      const result = await signIn(loginForm.email, loginForm.password);
+      if (result.error) {
+        setLoginError(result.error.message || 'Invalid email or password');
       } else if (section === 'customer') {
         // Auto-advance to next step after successful login
         nextStep();
@@ -201,7 +203,7 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
     } finally {
       setIsLoggingIn(false);
     }
-  }, [loginForm, login, section, nextStep]);
+  }, [loginForm, signIn, section, nextStep]);
 
   const validateNewCustomerForm = useCallback(async () => {
     const errors: Record<string, string> = {};

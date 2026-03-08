@@ -68,11 +68,11 @@ export function AppointmentCalendar({
   const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number } | null>(null);
   const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Touch gestures
+  // Touch gestures (long-press only — swipe-to-navigate disabled intentionally)
   const { touchHandlers } = useCalendarTouch({
     onLongPress: () => {}, // Handled per-card
-    onSwipeLeft: navigateNext,
-    onSwipeRight: navigatePrev,
+    onSwipeLeft: () => {},
+    onSwipeRight: () => {},
   });
 
   // Drag & drop

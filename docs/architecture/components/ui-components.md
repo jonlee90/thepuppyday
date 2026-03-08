@@ -4,7 +4,7 @@
 > **Location**: `src/components/ui/`
 > **Status**: Completed
 > **Design System**: DaisyUI + Clean & Elegant Professional
-> **Last Updated**: 2026-03-06
+> **Last Updated**: 2026-03-07
 
 ## Overview
 
@@ -324,18 +324,20 @@ interface StatusBadgeProps {
 ```
 
 **Supported Statuses**:
-| Status | Label | Style |
-|--------|-------|-------|
-| `pending` | Pending | Light charcoal bg, muted dot |
-| `confirmed` | Confirmed | Medium charcoal bg |
-| `in_progress` | In Progress | Darker charcoal bg |
-| `completed` | Completed | Cream bg |
-| `cancelled` | Cancelled | Very light bg, muted text |
-| `no_show` | No Show | Light bg, muted text |
+| Status | Label | Dot/BG Color | Text Color |
+|--------|-------|-------------|------------|
+| `pending` | Pending | Yellow (#FCD34D) | Amber (#92400E) |
+| `confirmed` | Confirmed | Green (#10B981) | Dark green (#065F46) |
+| `in_progress` | In Progress | Gray (#6B7280) | Dark gray (#374151) |
+| `completed` | Completed | Charcoal (#434E54) | Charcoal (#434E54) |
+| `cancelled` | Cancelled | Red (#EF4444) | Dark red (#991B1B) |
+| `no_show` | No Show | Dark red (#DC2626) | Darker red (#7F1D1D) |
 
 **Fallback**: Unknown statuses are auto-formatted (underscores to spaces, title case) with default charcoal styling.
 
 **Helper Export**: `getStatusLabel(status)` returns just the display label string.
+
+**Shared Usage**: The StatusBadge is used across both customer and admin views, including `AppointmentListView` and `AppointmentDetailModal` (replacing the old DaisyUI `badge` + `getStatusBadgeColor()` pattern).
 
 **Usage**:
 ```tsx
@@ -344,7 +346,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 <StatusBadge status="confirmed" size="md" />
 ```
 
-**Design**: Rounded pill (`rounded-full`) with inline dot indicator and font-medium text. Uses the brand charcoal (#434E54) color palette with varying opacity levels rather than semantic DaisyUI colors.
+**Design**: Rounded pill (`rounded-full`) with inline dot indicator and font-medium text. Uses colorful, status-specific colors for clear visual differentiation.
 
 ---
 
@@ -430,5 +432,5 @@ Components use DaisyUI theme variables defined in `globals.css`:
 
 ---
 
-**Last Updated**: 2026-03-06 by Claude Code
-**Changes**: Removed non-existent components (select, textarea, checkbox, radio, modal, alert, card, badge, loading-spinner). Added actual components: Skeleton, Toast/Toaster, EmptyState, ConfirmationModal, StatusBadge. Fixed Input props (leftElement/rightElement not leftIcon/rightIcon). Removed admin layout section. Fixed all paths to relative.
+**Last Updated**: 2026-03-07 by Claude Code
+**Changes**: Updated StatusBadge to reflect colorful status-specific colors (yellow/green/gray/charcoal/red) replacing the previous monochrome charcoal palette. Noted shared usage across admin views.

@@ -46,11 +46,9 @@ export default function AppointmentsPage() {
   return (
     <div>
       <div>
-        {/* Desktop Header */}
+        {/* Desktop Header: title + actions */}
         <div className="hidden lg:flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-[#434E54] mb-2">Appointments</h1>
-          </div>
+          <h1 className="text-3xl font-bold text-[#434E54]">Appointments</h1>
           <div className="flex gap-3">
             <button
               onClick={() => setIsImportModalOpen(true)}
@@ -76,7 +74,7 @@ export default function AppointmentsPage() {
             }`}
           >
             <Calendar className="w-5 h-5" />
-            Calendar View
+            Calendar
           </button>
           <button
             onClick={() => setAppointmentsView('list')}
@@ -87,49 +85,40 @@ export default function AppointmentsPage() {
             }`}
           >
             <List className="w-5 h-5" />
-            List View
+            List
           </button>
         </div>
 
-        {/* Mobile Toolbar - Single consolidated row */}
+        {/* Mobile/Tablet Toolbar: view toggle + actions in one row */}
         <div className="flex lg:hidden items-center justify-between mb-4">
-          {/* Left: View Toggle - segmented control */}
-          <div className="flex bg-white rounded-lg border border-[#E5E5E5] shadow-sm p-1">
+          <div className="flex gap-2">
             <button
               onClick={() => setAppointmentsView('calendar')}
-              className={`flex items-center justify-center w-10 h-10 rounded-md transition-colors ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
                 appointmentsView === 'calendar'
-                  ? 'bg-[#434E54] text-white shadow-sm'
-                  : 'text-[#434E54] hover:bg-[#F8EEE5]'
+                  ? 'bg-[#434E54] text-white shadow-md'
+                  : 'bg-white text-[#434E54] hover:bg-[#FFFBF7] border border-[#E5E5E5]'
               }`}
-              aria-label="Calendar view"
             >
-              <Calendar className="w-5 h-5" />
+              <Calendar className="w-4 h-4" />
+              Calendar
             </button>
             <button
               onClick={() => setAppointmentsView('list')}
-              className={`flex items-center justify-center w-10 h-10 rounded-md transition-colors ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
                 appointmentsView === 'list'
-                  ? 'bg-[#434E54] text-white shadow-sm'
-                  : 'text-[#434E54] hover:bg-[#F8EEE5]'
+                  ? 'bg-[#434E54] text-white shadow-md'
+                  : 'bg-white text-[#434E54] hover:bg-[#FFFBF7] border border-[#E5E5E5]'
               }`}
-              aria-label="List view"
             >
-              <List className="w-5 h-5" />
+              <List className="w-4 h-4" />
+              List
             </button>
           </div>
-
-          {/* Right: Actions */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsImportModalOpen(true)}
-              className="flex items-center justify-center w-10 h-10 rounded-lg bg-white text-[#434E54] hover:bg-[#FFFBF7] border border-[#E5E5E5] shadow-sm transition-colors"
-              aria-label="Import CSV"
-            >
-              <Upload className="w-4 h-4" />
-            </button>
             <AdminCreateButton
               onSuccess={() => setRefreshKey((prev) => prev + 1)}
+              className="px-3 py-2 text-sm rounded-lg"
             />
           </div>
         </div>

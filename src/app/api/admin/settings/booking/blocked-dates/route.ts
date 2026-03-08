@@ -181,7 +181,8 @@ export async function POST(request: Request) {
         const conflictsByDate = new Map<string, number>();
 
         appointments.forEach((apt) => {
-          const aptDate = new Date(apt.scheduled_at).toISOString().split('T')[0];
+          const aptDateObj = new Date(apt.scheduled_at);
+          const aptDate = `${aptDateObj.getFullYear()}-${String(aptDateObj.getMonth() + 1).padStart(2, '0')}-${String(aptDateObj.getDate()).padStart(2, '0')}`;
           conflictsByDate.set(aptDate, (conflictsByDate.get(aptDate) || 0) + 1);
         });
 

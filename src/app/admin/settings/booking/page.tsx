@@ -13,6 +13,7 @@ import { BufferTimeSettings } from '@/components/admin/settings/booking/BufferTi
 import { BusinessHoursEditor } from '@/components/admin/settings/booking/BusinessHoursEditor';
 import { BlockedDatesSection } from '@/components/admin/settings/booking/BlockedDatesSection';
 import { RecurringBlockedDays } from '@/components/admin/settings/booking/RecurringBlockedDays';
+import { DefaultGroomerSetting } from '@/components/admin/settings/booking/DefaultGroomerSetting';
 
 export default async function BookingSettingsPage() {
   const supabase = await createServerSupabaseClient();
@@ -41,6 +42,12 @@ export default async function BookingSettingsPage() {
 
       {/* Settings Sections */}
       <div className="space-y-6">
+        {/* Default Groomer */}
+        <section>
+          <h2 className="text-xl font-semibold text-[#434E54] mb-4">Default Groomer</h2>
+          <DefaultGroomerSetting />
+        </section>
+
         {/* Booking Hours */}
         <section>
           <h2 className="text-xl font-semibold text-[#434E54] mb-4">Booking Hours</h2>

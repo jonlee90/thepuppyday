@@ -1,6 +1,6 @@
 /**
  * Appointment Detail Client Component
- * Client-side actions for appointment management (cancel, rebook)
+ * Client-side actions for appointment management (cancel, reschedule, rebook)
  */
 
 'use client';
@@ -8,9 +8,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { toast } from '@/hooks/use-toast';
 import type { AppointmentStatus } from '@/types/database';
+
+const RescheduleModal = dynamic(
+  () => import('./RescheduleModal').then((mod) => ({ default: mod.RescheduleModal })),
+  { ssr: false }
+);
 
 interface AppointmentDetailClientProps {
   appointmentId: string;
@@ -18,6 +24,9 @@ interface AppointmentDetailClientProps {
   scheduledAt: string;
   petId: string;
   serviceId: string;
+  serviceDuration: number;
+  petName: string;
+  serviceName: string;
   hasReportCard?: boolean;
 }
 
@@ -41,10 +50,14 @@ export function AppointmentDetailClient({
   scheduledAt,
   petId,
   serviceId,
+  serviceDuration,
+  petName,
+  serviceName,
   hasReportCard = false,
 }: AppointmentDetailClientProps) {
   const router = useRouter();
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
   const allowCancel = canCancel(status, scheduledAt);
@@ -125,14 +138,14 @@ export function AppointmentDetailClient({
 
           {/* Reschedule */}
           {allowReschedule && (
-            <Link
-              href={`/book?reschedule=${appointmentId}`}
+            <button
+              onClick={() => setShowRescheduleModal(true)}
               className="block w-full text-center py-2.5 px-4 rounded-lg
                        bg-[#EAE0D5] text-[#434E54] font-semibold text-sm
                        hover:bg-[#EAE0D5]/70 transition-colors"
             >
               Reschedule
-            </Link>
+            </button>
           )}
 
           {/* Cancel */}
@@ -165,6 +178,18 @@ export function AppointmentDetailClient({
           </p>
         )}
       </div>
+
+      {/* Reschedule Modal */}
+      <RescheduleModal
+        isOpen={showRescheduleModal}
+        onClose={() => setShowRescheduleModal(false)}
+        appointmentId={appointmentId}
+        currentScheduledAt={scheduledAt}
+        serviceId={serviceId}
+        serviceDuration={serviceDuration}
+        petName={petName}
+        serviceName={serviceName}
+      />
 
       {/* Cancellation Confirmation Modal */}
       <ConfirmationModal

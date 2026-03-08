@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
 import { formatCurrency, formatDuration, getSizeShortLabel } from '@/lib/booking/pricing';
+import { GroomerSelect } from '../GroomerSelect';
 import { Scissors, Check } from 'lucide-react';
 
 interface WalkinReviewStepProps {
@@ -36,6 +37,8 @@ export function WalkinReviewStep({ onComplete, customerId }: WalkinReviewStepPro
     nextStep,
     prevStep,
     setBookingResult,
+    selectedGroomerId,
+    setSelectedGroomerId,
   } = useBookingStore();
 
   const handleConfirm = async () => {
@@ -115,6 +118,7 @@ export function WalkinReviewStep({ onComplete, customerId }: WalkinReviewStepPro
         addon_ids: selectedAddons.map(addon => addon.id),
         appointment_date: appointmentDate,
         appointment_time: appointmentTime,
+        groomer_id: selectedGroomerId || undefined,
         payment_status: 'pending' as const,
         send_notification: false, // Don't send notifications for walk-ins
         source: 'walk_in' as const, // Mark as walk-in appointment
@@ -212,6 +216,14 @@ export function WalkinReviewStep({ onComplete, customerId }: WalkinReviewStepPro
           </div>
         </div>
       )}
+
+      {/* Groomer Selection */}
+      <div className="bg-white rounded-xl border border-[#434E54]/20 p-6">
+        <GroomerSelect
+          value={selectedGroomerId}
+          onChange={setSelectedGroomerId}
+        />
+      </div>
 
       {/* Booking Summary */}
       <div className="bg-white rounded-xl border border-[#434E54]/20 overflow-hidden">

@@ -84,7 +84,7 @@ src/app/api/
 | `/api/services` | GET | Fetch active services with pricing |
 | `/api/addons` | GET | Fetch active add-on services |
 | `/api/breeds` | GET | Fetch breed list |
-| `/api/availability` | GET | Check appointment availability by date/service |
+| `/api/availability` | GET | Check appointment availability by date/service (uses service role client to bypass RLS) |
 | `/api/appointments` | POST | Create new appointment (customer booking) |
 | `/api/pets` | GET, POST | List/create pets (authenticated) |
 | `/api/waitlist` | POST | Add to waitlist for full slots |
@@ -102,7 +102,7 @@ src/app/api/
 
 | Route | Methods | Purpose |
 |-------|---------|---------|
-| `/api/customer/appointments/[id]` | DELETE | Cancel appointment |
+| `/api/customer/appointments/[id]` | PUT, DELETE | Reschedule or cancel appointment |
 | `/api/customer/preferences/notifications` | GET, PUT | Notification preferences |
 
 ### Webhook Endpoints

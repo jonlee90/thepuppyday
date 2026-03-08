@@ -127,12 +127,16 @@ Thin server component — renders `<DashboardClient />` only. All data fetching 
 Client component with toggleable calendar/list views.
 
 **Views**:
-1. **Calendar View** (FullCalendar) - Day/week/month, color-coded by status
-2. **List View** - Filterable table with pagination and bulk actions
+1. **Calendar View** (FullCalendar) - Day/week/month, color-coded by status. Swipe-to-navigate is disabled (touch swipe callbacks are no-ops).
+2. **List View** - Filterable table with pagination and bulk actions. Calendar sync status fetching uses a `fetchedSyncIdsRef` to prevent infinite request loops.
+
+**Responsive Layout**:
+- **Desktop (lg+)**: "Appointments" h1 title shown in header row with action buttons; separate view toggle row below
+- **Mobile/Tablet (<lg)**: Title hidden (shown in mobile nav bar instead); single toolbar row with Calendar/List toggle buttons + Create button; Import CSV button hidden
 
 **Features**:
-- Appointment detail modal
-- CSV bulk import modal
+- Appointment detail modal (uses shared `StatusBadge` component)
+- CSV bulk import modal (desktop only)
 - Admin create button (opens BookingModal)
 
 **Manual Appointment Creation** (via BookingModal `mode="admin"`):

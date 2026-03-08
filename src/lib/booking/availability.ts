@@ -106,7 +106,11 @@ export function hasConflict(
   for (const appointment of existingAppointments) {
     // Parse appointment date and time
     const appointmentDate = new Date(appointment.scheduled_at);
-    const appointmentDateStr = appointmentDate.toISOString().split('T')[0];
+    // Use local date parts (not UTC) to match the calendar's local date string
+    const year = appointmentDate.getFullYear();
+    const month = String(appointmentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(appointmentDate.getDate()).padStart(2, '0');
+    const appointmentDateStr = `${year}-${month}-${day}`;
 
     // Skip if different date
     if (appointmentDateStr !== date) continue;
@@ -306,7 +310,7 @@ export function getNextAvailableDate(businessHours: BusinessHours): string {
 
   // Check up to 60 days ahead
   for (let i = 0; i < 60; i++) {
-    const dateStr = current.toISOString().split('T')[0];
+    const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
     if (isDateAvailable(dateStr, businessHours)) {
       return dateStr;
     }
@@ -314,7 +318,8 @@ export function getNextAvailableDate(businessHours: BusinessHours): string {
   }
 
   // Fallback to today if no available date found
-  return new Date().toISOString().split('T')[0];
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 /**

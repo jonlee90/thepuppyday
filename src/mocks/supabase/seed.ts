@@ -224,6 +224,9 @@ export const seedSettings: Setting[] = [
     sunday: { open: '00:00', close: '00:00', is_open: false },
   }, updated_at: new Date().toISOString() },
 
+  // Default Groomer
+  { id: generateId(), key: 'default_groomer', value: { groomer_id: null }, updated_at: new Date().toISOString() },
+
   // Phase 6 Settings - Report Cards
   { id: generateId(), key: 'report_card_auto_send_delay', value: DEFAULT_PHASE6_SETTINGS.report_card.auto_send_delay_minutes, updated_at: new Date().toISOString() },
   { id: generateId(), key: 'report_card_expiration_days', value: DEFAULT_PHASE6_SETTINGS.report_card.expiration_days, updated_at: new Date().toISOString() },

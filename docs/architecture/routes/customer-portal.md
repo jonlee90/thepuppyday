@@ -94,7 +94,9 @@ Welcome message, upcoming appointments, recent report cards, loyalty points, qui
 
 List of all appointments (upcoming and past) with status filters and sort options.
 
-**Appointment Detail** (`/appointments/[id]`): Full details, service info, addons, cancel/rebook actions.
+**Appointment Detail** (`/appointments/[id]`): Full details, service info, addons, cancel/reschedule/rebook actions. The page passes `serviceDuration`, `petName`, and `serviceName` props to the client component.
+
+**Rescheduling**: The `RescheduleModal` (`src/components/customer/appointments/RescheduleModal.tsx`) provides an in-page rescheduling flow using `CalendarPicker` + `TimeSlotGrid` to select a new date/time. Triggered via the Reschedule button on the appointment detail page (replaces the previous redirect to `/book?reschedule={id}`).
 
 ### 3. Pets (`/pets`)
 **File**: `src/app/(customer)/pets/page.tsx`
@@ -139,7 +141,7 @@ The customer portal uses only two custom API routes:
 
 | Route | Methods | Purpose |
 |-------|---------|---------|
-| `/api/customer/appointments/[id]` | DELETE | Cancel an appointment |
+| `/api/customer/appointments/[id]` | PUT, DELETE | Reschedule or cancel an appointment |
 | `/api/customer/preferences/notifications` | GET, PUT | Get/update notification preferences |
 
 **Public report card route**:

@@ -7,48 +7,43 @@ import { Suspense } from 'react';
 import { LoyaltyPunchCard } from '@/components/customer/loyalty';
 import { DashboardSkeleton } from '@/components/ui/skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { createServerSupabaseClient, getCurrentUser } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient, getCurrentUser } from '@/lib/supabase/server';
+import { getLoyaltySettings } from '@/lib/admin/loyalty-settings';
 
-// Fetch loyalty data
+// Fetch loyalty data in parallel
 async function getLoyaltyData(userId: string) {
   const supabase = await createServerSupabaseClient();
 
-  // Get loyalty data
-  const { data: loyaltyData } = await (supabase as any)
-    .from('customer_loyalty')
-    .select('*')
-    .eq('customer_id', userId)
-    .single();
+  const [loyaltyDataResult, loyaltyPunchesResult, redemptionsResult] = await Promise.all([
+    // Get loyalty record for customer
+    (supabase as any)
+      .from('customer_loyalty')
+      .select('*')
+      .eq('customer_id', userId)
+      .single(),
 
-  // Get loyalty settings
-  const { data: loyaltySettings } = await (supabase as any)
-    .from('loyalty_settings')
-    .select('*')
-    .single();
+    // Get loyalty punches for current cycle
+    (supabase as any)
+      .from('loyalty_punches')
+      .select('*, customer_loyalty!inner(customer_id)')
+      .eq('customer_loyalty.customer_id', userId)
+      .order('created_at', { ascending: false }),
 
-  // Get loyalty punches for current cycle
-  // Join through customer_loyalty to filter by customer_id
-  const { data: loyaltyPunches } = await (supabase as any)
-    .from('loyalty_punches')
-    .select('*, customer_loyalty!inner(customer_id)')
-    .eq('customer_loyalty.customer_id', userId)
-    .order('created_at', { ascending: false });
-
-  // Get redemptions through customer_loyalty join
-  const { data: redemptions } = await (supabase as any)
-    .from('loyalty_redemptions')
-    .select(`
-      *,
-      customer_loyalty!inner(customer_id)
-    `)
-    .eq('customer_loyalty.customer_id', userId)
-    .order('redeemed_at', { ascending: false });
+    // Get redemptions through customer_loyalty join
+    (supabase as any)
+      .from('loyalty_redemptions')
+      .select(`
+        *,
+        customer_loyalty!inner(customer_id)
+      `)
+      .eq('customer_loyalty.customer_id', userId)
+      .order('redeemed_at', { ascending: false }),
+  ]);
 
   return {
-    loyalty: loyaltyData,
-    loyaltySettings,
-    loyaltyPunches: loyaltyPunches || [],
-    redemptions: redemptions || [],
+    loyalty: loyaltyDataResult.data || null,
+    loyaltyPunches: loyaltyPunchesResult.data || [],
+    redemptions: redemptionsResult.data || [],
   };
 }
 
@@ -78,10 +73,33 @@ export default async function LoyaltyPage() {
     return null;
   }
 
-  const data = await getLoyaltyData(userData.id);
+  // Check loyalty program status before running any loyalty queries
+  const serviceClient = createServiceRoleClient();
+  const loyaltySettings = await getLoyaltySettings(serviceClient);
 
-  // Calculate loyalty info
-  const threshold = data.loyalty?.threshold_override || data.loyaltySettings?.default_threshold || 9;
+  if (!loyaltySettings.program.is_enabled) {
+    return (
+      <div className="space-y-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-[#434E54]">Loyalty Rewards</h1>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-[#434E54]/10 overflow-hidden p-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-[#EAE0D5] flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-[#434E54]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold text-[#434E54] mb-2">Loyalty Program Not Available</h2>
+          <p className="text-[#434E54]/60">
+            Our loyalty rewards program is currently unavailable. Check back soon!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const data = await getLoyaltyData(userData.id);
+  const threshold = data.loyalty?.threshold_override || loyaltySettings.program.punch_threshold;
   const currentPunches = data.loyalty?.current_punches || 0;
   const freeWashesEarned = data.loyalty?.free_washes_earned || 0;
   const freeWashesRedeemed = data.loyalty?.free_washes_redeemed || 0;

@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
+import { getTodayInBusinessTimezone } from '@/lib/utils/timezone';
 import { z } from 'zod';
 import { calculatePrice } from '@/lib/booking/pricing';
 import { triggerBookingConfirmation } from '@/lib/notifications/triggers/booking-confirmation';
@@ -44,6 +45,22 @@ export async function GET(request: NextRequest) {
       no_show: 5,
     };
 
+    // Date priority sort: today → future → past
+    const { todayStart, todayEnd } = getTodayInBusinessTimezone();
+    function datePrioritySort(a: { scheduled_at: string }, b: { scheduled_at: string }): number {
+      const aDate = new Date(a.scheduled_at);
+      const bDate = new Date(b.scheduled_at);
+      const todayStartDate = new Date(todayStart);
+      const todayEndDate = new Date(todayEnd);
+      const aGroup = aDate < todayStartDate ? 2 : aDate > todayEndDate ? 1 : 0;
+      const bGroup = bDate < todayStartDate ? 2 : bDate > todayEndDate ? 1 : 0;
+      if (aGroup !== bGroup) return aGroup - bGroup;
+      // Past group: most recent first (descending)
+      if (aGroup === 2) return bDate.getTime() - aDate.getTime();
+      // Today + Future: ascending
+      return aDate.getTime() - bDate.getTime();
+    }
+
     // In mock mode, query from mock store
     if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
       const { getMockStore } = await import('@/mocks/supabase/store');
@@ -54,8 +71,10 @@ export async function GET(request: NextRequest) {
         order: { column: 'scheduled_at', ascending: true },
       }) as unknown as Appointment[];
 
-      // Apply status_priority sort after fetching
-      if (sortBy === 'status_priority') {
+      // Apply sort after fetching
+      if (sortBy === 'date_priority') {
+        appointments = [...appointments].sort(datePrioritySort);
+      } else if (sortBy === 'status_priority') {
         const asc = sortOrder === 'asc';
         appointments = [...appointments].sort((a, b) => {
           const statusDiff = (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99);
@@ -171,8 +190,9 @@ export async function GET(request: NextRequest) {
 
     // Production Supabase query
     const isStatusPrioritySort = sortBy === 'status_priority';
+    const isDatePrioritySort = sortBy === 'date_priority';
 
-    // For status_priority sort, fetch ALL rows (no .range()) so we can sort
+    // For status_priority / date_priority sorts, fetch ALL rows (no .range()) so we can sort
     // across the full dataset in JS, then paginate manually.
     let query = (serviceClient as any)
       .from('appointments')
@@ -187,8 +207,8 @@ export async function GET(request: NextRequest) {
         { count: 'exact' }
       );
 
-    // Only apply DB-level pagination for non-status_priority sorts
-    if (!isStatusPrioritySort) {
+    // Only apply DB-level pagination for simple column sorts
+    if (!isStatusPrioritySort && !isDatePrioritySort) {
       query = query.range(offset, offset + limit - 1);
     }
 
@@ -221,7 +241,7 @@ export async function GET(request: NextRequest) {
     // }
 
     // Apply sorting
-    if (isStatusPrioritySort) {
+    if (isStatusPrioritySort || isDatePrioritySort) {
       query = query.order('scheduled_at', { ascending: true });
     } else {
       query = query.order(sortBy, { ascending: sortOrder === 'asc' });
@@ -239,7 +259,7 @@ export async function GET(request: NextRequest) {
 
     let data = rawData || [];
 
-    // For status_priority: sort ALL rows in JS, then paginate manually
+    // For status_priority / date_priority: sort ALL rows in JS, then paginate manually
     if (isStatusPrioritySort && data.length > 0) {
       const asc = sortOrder === 'asc';
       data = [...data].sort((a: Record<string, string>, b: Record<string, string>) => {
@@ -247,7 +267,9 @@ export async function GET(request: NextRequest) {
         if (statusDiff !== 0) return asc ? statusDiff : -statusDiff;
         return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
       });
-      // Manual pagination
+      data = data.slice(offset, offset + limit);
+    } else if (isDatePrioritySort && data.length > 0) {
+      data = [...data].sort(datePrioritySort);
       data = data.slice(offset, offset + limit);
     }
 

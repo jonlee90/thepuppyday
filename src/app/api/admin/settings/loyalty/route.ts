@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
+import { clearLoyaltySettingsCache } from '@/lib/admin/loyalty-settings';
 import type {
   LoyaltyEarningRules,
   LoyaltyRedemptionRules,
@@ -234,6 +235,9 @@ export async function PUT(request: Request) {
         { status: 500 }
       );
     }
+
+    // Clear settings cache so next read gets fresh data
+    clearLoyaltySettingsCache();
 
     // Log settings change to audit log (non-blocking)
     after(() => logSettingsChange(

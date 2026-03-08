@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import {
   getAvailableSlots,
   DEFAULT_BUSINESS_HOURS,
@@ -185,11 +185,12 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Get appointments for the requested date
+    // Get ALL appointments for the requested date (bypass RLS to see all users' appointments)
+    const serviceClient = createServiceRoleClient();
     const dateStart = new Date(date + 'T00:00:00').toISOString();
     const dateEnd = new Date(date + 'T23:59:59').toISOString();
 
-    const { data: appointments, error: apptError } = await (supabase as any)
+    const { data: appointments, error: apptError } = await (serviceClient as any)
       .from('appointments')
       .select('*')
       .gte('scheduled_at', dateStart)
@@ -216,8 +217,8 @@ export async function GET(req: NextRequest) {
       bookingSettings
     );
 
-    // Get waitlist counts for unavailable slots
-    const { data: waitlistEntries } = await (supabase as any)
+    // Get waitlist counts for unavailable slots (bypass RLS to see all entries)
+    const { data: waitlistEntries } = await (serviceClient as any)
       .from('waitlist')
       .select('*')
       .eq('requested_date', date)

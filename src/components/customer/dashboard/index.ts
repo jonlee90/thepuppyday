@@ -3,4 +3,5 @@
  */
 
 export { UpcomingAppointments } from './UpcomingAppointments';
-export { QuickActions } from './QuickActions';
+export { NextAppointmentCard } from './NextAppointmentCard';
+export { DashboardStatsBar } from './DashboardStatsBar';

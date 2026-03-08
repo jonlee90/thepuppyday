@@ -136,7 +136,7 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
                 <div>
                   <h1 className="text-2xl font-bold text-[#434E54]">{pet.name}</h1>
                   <p className="text-[#434E54]/60 mt-1">
-                    {pet.breed_name || 'Breed not specified'}
+                    {pet.breed_custom || 'Breed not specified'}
                   </p>
                 </div>
                 <Link
@@ -150,10 +150,10 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
 
               {/* Details grid */}
               <div className="grid grid-cols-2 gap-4">
-                {pet.weight_lbs && (
+                {pet.weight && (
                   <div>
                     <p className="text-xs text-[#434E54]/50 uppercase tracking-wide mb-1">Weight</p>
-                    <p className="font-semibold text-[#434E54]">{pet.weight_lbs} lbs</p>
+                    <p className="font-semibold text-[#434E54]">{pet.weight} lbs</p>
                   </div>
                 )}
                 {pet.size && (

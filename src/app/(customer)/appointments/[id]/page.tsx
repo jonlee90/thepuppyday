@@ -22,7 +22,7 @@ async function getAppointment(appointmentId: string, userId: string) {
 
   const { data: appointment } = await (supabase as any)
     .from('appointments')
-    .select('*, services(name, description, duration_minutes), pets(id, name, photo_url, breed_name, weight_lbs, size)')
+    .select('*, services(name, description, duration_minutes), pets(id, name, photo_url, breed_custom, weight, size)')
     .eq('id', appointmentId)
     .eq('customer_id', userId)
     .single();
@@ -250,8 +250,8 @@ export default async function AppointmentDetailPage({ params }: AppointmentDetai
                 <div>
                   <p className="font-semibold text-[#434E54]">{appointment.pets?.name}</p>
                   <p className="text-sm text-[#434E54]/60">
-                    {appointment.pets?.breed_name}
-                    {appointment.pets?.weight_lbs && ` • ${appointment.pets.weight_lbs} lbs`}
+                    {appointment.pets?.breed_custom}
+                    {appointment.pets?.weight && ` • ${appointment.pets.weight} lbs`}
                   </p>
                 </div>
                 <svg className="w-5 h-5 text-[#434E54]/40 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -267,6 +267,9 @@ export default async function AppointmentDetailPage({ params }: AppointmentDetai
               scheduledAt={appointment.scheduled_at}
               petId={appointment.pets?.id || ''}
               serviceId={appointment.service_id}
+              serviceDuration={appointment.services?.duration_minutes || 60}
+              petName={appointment.pets?.name || 'Your Pet'}
+              serviceName={appointment.services?.name || 'Grooming'}
               hasReportCard={hasReport}
             />
 

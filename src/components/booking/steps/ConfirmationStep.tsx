@@ -8,11 +8,13 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
+import { useBookingModalStore } from '@/hooks/useBookingModal';
 import { formatCurrency, formatDuration, getSizeShortLabel } from '@/lib/booking/pricing';
 import { formatTimeDisplay } from '@/lib/booking/availability';
 
 export function ConfirmationStep() {
   const { isAuthenticated } = useAuthStore();
+  const closeModal = useBookingModalStore((s) => s.closeModal);
   const {
     selectedService,
     selectedPet,
@@ -32,21 +34,28 @@ export function ConfirmationStep() {
   // Generate a reference number if not set (using useMemo to avoid impure function call)
   const referenceNumber = bookingReference || `TPD-PENDING`;
 
-  // Generate Google Calendar link
+  // Generate Google Calendar link using local time
   const generateGoogleCalendarLink = () => {
     if (!selectedDate || !selectedTimeSlot || !selectedService) return '#';
 
     const startDateTime = new Date(`${selectedDate}T${selectedTimeSlot}:00`);
     const endDateTime = new Date(startDateTime.getTime() + (selectedService.duration_minutes || 60) * 60000);
 
-    const formatDateTime = (date: Date) => {
-      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    // Format as local time: YYYYMMDDTHHmmss (no Z = Google treats as local)
+    const formatLocalDateTime = (date: Date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      const h = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      const s = String(date.getSeconds()).padStart(2, '0');
+      return `${y}${m}${d}T${h}${min}${s}`;
     };
 
     const params = new URLSearchParams({
       action: 'TEMPLATE',
       text: `Dog Grooming - ${selectedService.name} for ${petName}`,
-      dates: `${formatDateTime(startDateTime)}/${formatDateTime(endDateTime)}`,
+      dates: `${formatLocalDateTime(startDateTime)}/${formatLocalDateTime(endDateTime)}`,
       details: `Service: ${selectedService.name}\nPet: ${petName}\nLocation: 14936 Leffingwell Rd, La Mirada, CA 90638\nConfirmation: ${referenceNumber}`,
       location: '14936 Leffingwell Rd, La Mirada, CA 90638',
     });
@@ -321,18 +330,20 @@ export function ConfirmationStep() {
               </svg>
             </Link>
           )}
-          <Link
-            href="/"
-            onClick={reset}
+          <button
+            onClick={() => {
+              reset();
+              closeModal();
+            }}
             className="text-[#434E54] font-medium py-3 px-8 rounded-lg text-center
                      hover:bg-[#EAE0D5] transition-colors duration-200
                      flex-1 flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Back to Home
-          </Link>
+            Close
+          </button>
         </div>
       </motion.div>
 

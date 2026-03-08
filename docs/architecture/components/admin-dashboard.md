@@ -96,7 +96,7 @@ interface DashboardHeaderProps {
 **Behavior**:
 - Displays "Dashboard" heading and formatted business-timezone date
 - "New Booking" button visible on all breakpoints
-- "Walk-in" button: `hidden md:inline-flex` (mobile FAB `WalkInButton` handles mobile)
+- "Walk-in" button: `hidden lg:inline-flex` (hidden on both mobile and tablet; mobile FAB `WalkInButton` handles mobile)
 - Responsive: `flex-col md:flex-row` stacking
 
 ---
@@ -306,7 +306,7 @@ The following files were deleted as part of the admin-dashboard-redesign:
 | Tablet (768–1023px) | 3 columns | Single column | Flex wrap |
 | Desktop (>= 1024px) | 3 columns | `grid-cols-5` (Timeline 3 + Sidebar 2) | Inline row |
 
-Walk-in on mobile: `DashboardHeader`'s Walk-in button is `hidden md:inline-flex`; the `WalkInButton` FAB component handles mobile walk-ins.
+Walk-in on mobile/tablet: `DashboardHeader`'s Walk-in button is `hidden lg:inline-flex` (hidden on mobile and tablet); the `WalkInButton` FAB component handles mobile walk-ins.
 
 ---
 
