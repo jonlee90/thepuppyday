@@ -10,6 +10,7 @@ import { PUT } from '@/app/api/admin/notifications/templates/[id]/route';
 // Mock modules
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
 }));
 
 vi.mock('@/lib/admin/auth', () => ({
@@ -20,7 +21,7 @@ vi.mock('@/lib/utils/validation', () => ({
   isValidUUID: vi.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
 }));
 
-const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+const { createServerSupabaseClient, createServiceRoleClient } = await import('@/lib/supabase/server');
 const { requireAdmin } = await import('@/lib/admin/auth');
 
 describe('PUT /api/admin/notifications/templates/[id]', () => {
@@ -50,6 +51,7 @@ describe('PUT /api/admin/notifications/templates/[id]', () => {
     };
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabase);
     vi.mocked(requireAdmin).mockResolvedValue({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       user: { id: 'admin-1', role: 'admin' } as any,
@@ -139,7 +141,7 @@ describe('PUT /api/admin/notifications/templates/[id]', () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.error).toContain('Missing required variables');
+      expect(data.error).toContain('Required variables are not used in templates');
     });
 
     it('should accept templates with all required variables', async () => {
@@ -413,13 +415,47 @@ describe('PUT /api/admin/notifications/templates/[id]', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors', async () => {
-      mockSupabase.from.mockImplementation(() => ({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({ data: null, error: { message: 'Database error' } })),
-          })),
-        })),
-      }));
+      const existingTemplate = {
+        id: validUuid,
+        name: 'Test',
+        type: 'transactional',
+        trigger_event: 'test.event',
+        channel: 'email',
+        subject_template: 'Subject',
+        html_template: '<p>Body</p>',
+        text_template: 'Body',
+        variables: [],
+        is_active: true,
+        version: 1,
+        created_by: 'admin-1',
+        updated_by: 'admin-1',
+        description: null,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'notification_templates') {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn(() => Promise.resolve({ data: existingTemplate, error: null })),
+              })),
+            })),
+            update: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                select: vi.fn(() => ({
+                  single: vi.fn(() => Promise.resolve({ data: null, error: { message: 'Database error' } })),
+                })),
+              })),
+            })),
+          };
+        }
+        // notification_template_history insert succeeds
+        return {
+          insert: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        };
+      });
 
       const request = new NextRequest(`http://localhost/api/admin/notifications/templates/${validUuid}`, {
         method: 'PUT',

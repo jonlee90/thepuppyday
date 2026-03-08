@@ -217,6 +217,16 @@ describe('NotificationSettingsPage', () => {
     // Suppress console errors for this test
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
+    // The component re-throws errors so ChannelToggle can rollback state.
+    // The re-throw causes an unhandled rejection in the test environment.
+    // Intercept it at the process level to prevent Vitest from reporting it as an error.
+    const rejectionHandler = (reason: unknown) => {
+      if (reason instanceof Error && reason.message === 'Update failed') {
+        return; // swallow the expected error
+      }
+    };
+    process.on('unhandledRejection', rejectionHandler);
+
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ settings: mockSettings }),
@@ -242,6 +252,7 @@ describe('NotificationSettingsPage', () => {
       expect(screen.getByText('Update failed')).toBeInTheDocument();
     });
 
+    process.off('unhandledRejection', rejectionHandler);
     consoleErrorSpy.mockRestore();
   });
 

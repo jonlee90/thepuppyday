@@ -10,13 +10,14 @@ import { GET } from '@/app/api/admin/notifications/templates/route';
 // Mock modules
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
 }));
 
 vi.mock('@/lib/admin/auth', () => ({
   requireAdmin: vi.fn(),
 }));
 
-const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+const { createServerSupabaseClient, createServiceRoleClient } = await import('@/lib/supabase/server');
 const { requireAdmin } = await import('@/lib/admin/auth');
 
 describe('GET /api/admin/notifications/templates', () => {
@@ -38,6 +39,7 @@ describe('GET /api/admin/notifications/templates', () => {
     };
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabase);
     vi.mocked(requireAdmin).mockResolvedValue({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       user: { id: 'admin-1', role: 'admin' } as any,

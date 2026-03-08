@@ -162,8 +162,6 @@ describe('TestNotificationModal', () => {
   });
 
   it('shows error when recipient is missing', async () => {
-    const alertSpy = vi.spyOn(global, 'alert').mockImplementation(() => {});
-
     render(
       <TestNotificationModal
         templateId="test-123"
@@ -174,11 +172,9 @@ describe('TestNotificationModal', () => {
       />
     );
 
+    // Send button is disabled when no recipient is entered
     const sendButton = screen.getByRole('button', { name: /send test/i });
-    fireEvent.click(sendButton);
-
-    expect(alertSpy).toHaveBeenCalledWith('Please enter a email address');
-    alertSpy.mockRestore();
+    expect(sendButton).toBeDisabled();
   });
 
   it('handles send error', async () => {

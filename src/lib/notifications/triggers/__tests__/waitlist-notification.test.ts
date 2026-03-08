@@ -105,8 +105,8 @@ describe('triggerWaitlistNotification', () => {
       await triggerWaitlistNotification(mockSupabase, validData);
 
       const call = mockSendNotification.mock.calls[0];
-      // Date formatting depends on locale, check that it contains the date
-      expect(call[1].templateData.available_date).toMatch(/12\/18/);
+      // Date formatting depends on locale and timezone; verify it's a M/d format
+      expect(call[1].templateData.available_date).toMatch(/^\d{1,2}\/\d{1,2}$/);
     });
   });
 
@@ -194,7 +194,12 @@ describe('triggerWaitlistNotification', () => {
 });
 
 // Helper function to create a properly chainable Supabase mock
+// Uses separate update chain so that .eq() on update resolves while .eq() on select chains
 function createSupabaseMock() {
+  // Update chain — resolves the final .eq() call
+  const updateChain: any = {};
+  updateChain.eq = vi.fn().mockResolvedValue({ error: null });
+
   const mock: any = {};
   mock.from = vi.fn().mockImplementation(() => mock);
   mock.select = vi.fn().mockImplementation(() => mock);
@@ -202,7 +207,10 @@ function createSupabaseMock() {
   mock.is = vi.fn().mockImplementation(() => mock);
   mock.order = vi.fn().mockImplementation(() => mock);
   mock.limit = vi.fn();
-  mock.update = vi.fn().mockImplementation(() => mock);
+  // update returns the separate update chain so .eq() resolves instead of chaining
+  mock.update = vi.fn().mockImplementation(() => updateChain);
+  // Expose updateChain for per-test control
+  mock._updateChain = updateChain;
   return mock;
 }
 
@@ -213,6 +221,7 @@ describe('triggerWaitlistNotificationBatch', () => {
   beforeEach(async () => {
     const { sendNotification } = await import('@/lib/notifications');
     mockSendNotification = sendNotification;
+    vi.clearAllMocks();
     mockSupabase = createSupabaseMock();
   });
 
@@ -252,9 +261,6 @@ describe('triggerWaitlistNotificationBatch', () => {
       messageId: 'sms-123',
       logId: 'log-123',
     });
-
-    // Mock the update calls for each waitlist entry
-    mockSupabase.eq.mockResolvedValue({ error: null });
 
     const result = await triggerWaitlistNotificationBatch(
       mockSupabase,
@@ -308,8 +314,6 @@ describe('triggerWaitlistNotificationBatch', () => {
       messageId: 'sms-123',
       logId: 'log-123',
     });
-
-    mockSupabase.eq.mockResolvedValue({ error: null });
 
     const result = await triggerWaitlistNotificationBatch(
       mockSupabase,

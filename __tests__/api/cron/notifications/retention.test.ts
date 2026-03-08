@@ -10,13 +10,14 @@ import { GET, POST } from '@/app/api/cron/notifications/retention/route';
 // Mock modules
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
 }));
 
 vi.mock('@/lib/notifications', () => ({
   getNotificationService: vi.fn(),
 }));
 
-const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+const { createServerSupabaseClient, createServiceRoleClient } = await import('@/lib/supabase/server');
 const { getNotificationService } = await import('@/lib/notifications');
 
 describe('Retention Reminders Cron Job', () => {
@@ -69,6 +70,7 @@ describe('Retention Reminders Cron Job', () => {
     };
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabase);
     vi.mocked(getNotificationService).mockReturnValue(mockNotificationService);
   });
 
@@ -401,22 +403,14 @@ describe('Retention Reminders Cron Job', () => {
             })),
           };
         }
-        // For notifications_log - no recent reminders
-        return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  gte: vi.fn(() => ({
-                    limit: vi.fn(() => ({
-                      maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
-                    })),
-                  })),
-                })),
-              })),
-            })),
-          })),
-        };
+        // For notifications_log - no recent reminders (use flat chainable mock)
+        const logChain: any = {};
+        logChain.select = vi.fn().mockReturnValue(logChain);
+        logChain.eq = vi.fn().mockReturnValue(logChain);
+        logChain.gte = vi.fn().mockReturnValue(logChain);
+        logChain.limit = vi.fn().mockReturnValue(logChain);
+        logChain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        return logChain;
       });
 
       const request = new NextRequest('http://localhost/api/cron/notifications/retention');

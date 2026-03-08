@@ -20,19 +20,34 @@ const createMockSupabase = () => {
   // Create chainable mock methods
   const createChainableMock = () => {
     const chain: any = {
-      select: vi.fn().mockReturnValue(chain),
-      insert: vi.fn().mockReturnValue(chain),
-      update: vi.fn().mockReturnValue(chain),
-      eq: vi.fn().mockReturnValue(chain),
-      lt: vi.fn().mockReturnValue(chain),
-      gt: vi.fn().mockReturnValue(chain),
-      lte: vi.fn().mockReturnValue(chain),
-      gte: vi.fn().mockReturnValue(chain),
-      order: vi.fn().mockReturnValue(chain),
-      limit: vi.fn().mockReturnValue(chain),
+      select: vi.fn(),
+      insert: vi.fn(),
+      update: vi.fn(),
+      eq: vi.fn(),
+      lt: vi.fn(),
+      gt: vi.fn(),
+      lte: vi.fn(),
+      gte: vi.fn(),
+      not: vi.fn(),
+      order: vi.fn(),
+      limit: vi.fn(),
       single: vi.fn(),
       maybeSingle: vi.fn(),
+      returns: vi.fn(),
     };
+    // Wire up chainable returns after chain is initialized
+    chain.select.mockReturnValue(chain);
+    chain.insert.mockReturnValue(chain);
+    chain.update.mockReturnValue(chain);
+    chain.eq.mockReturnValue(chain);
+    chain.lt.mockReturnValue(chain);
+    chain.gt.mockReturnValue(chain);
+    chain.lte.mockReturnValue(chain);
+    chain.gte.mockReturnValue(chain);
+    chain.not.mockReturnValue(chain);
+    chain.order.mockReturnValue(chain);
+    chain.limit.mockReturnValue(chain);
+    chain.returns.mockReturnValue(chain);
     return chain;
   };
 
@@ -74,6 +89,9 @@ const createMockSupabase = () => {
     },
     get mockMaybeSingle() {
       return mockChain.maybeSingle;
+    },
+    get mockReturns() {
+      return mockChain.returns;
     },
   };
 };
@@ -213,13 +231,8 @@ describe('ExponentialBackoffRetryManager', () => {
       });
 
       // Mock database query chain for getPendingRetries
-      // The query is: select().eq('status', 'failed').lt('retry_count', maxRetries).lte('retry_after', now).order().limit()
-      mockSupabase.mockChain.select.mockReturnValueOnce(mockSupabase.mockChain);
-      mockSupabase.mockChain.eq.mockReturnValueOnce(mockSupabase.mockChain);
-      mockSupabase.mockChain.lt.mockReturnValueOnce(mockSupabase.mockChain);
-      mockSupabase.mockChain.lte.mockReturnValueOnce(mockSupabase.mockChain);
-      mockSupabase.mockChain.order.mockReturnValueOnce(mockSupabase.mockChain);
-      mockSupabase.mockChain.limit.mockResolvedValueOnce({
+      // The query ends with .returns() which is the terminal method
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: [mockLog],
         error: null,
       });
@@ -248,7 +261,7 @@ describe('ExponentialBackoffRetryManager', () => {
       );
 
       // Verify database update called
-      expect(mockSupabase.from).toHaveBeenCalledWith('notification_logs');
+      expect(mockSupabase.from).toHaveBeenCalledWith('notifications_log');
       expect(mockSupabase.mockUpdate).toHaveBeenCalled();
     });
 
@@ -260,7 +273,7 @@ describe('ExponentialBackoffRetryManager', () => {
       ];
 
       // Mock database query
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: mockLogs,
         error: null,
       });
@@ -306,7 +319,7 @@ describe('ExponentialBackoffRetryManager', () => {
       );
 
       // Mock database query
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: [mockLog],
         error: null,
       });
@@ -345,7 +358,7 @@ describe('ExponentialBackoffRetryManager', () => {
       );
 
       // Mock database query
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: [mockLog],
         error: null,
       });
@@ -376,7 +389,7 @@ describe('ExponentialBackoffRetryManager', () => {
       });
 
       // Mock database query
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: [mockLog],
         error: null,
       });
@@ -403,7 +416,7 @@ describe('ExponentialBackoffRetryManager', () => {
       });
 
       // Mock database query
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: [mockLog],
         error: null,
       });
@@ -430,7 +443,7 @@ describe('ExponentialBackoffRetryManager', () => {
       });
 
       // Mock database query
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: [mockLog],
         error: null,
       });
@@ -464,7 +477,7 @@ describe('ExponentialBackoffRetryManager', () => {
       );
 
       // Mock database query
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: mockLogs,
         error: null,
       });
@@ -491,7 +504,7 @@ describe('ExponentialBackoffRetryManager', () => {
       );
 
       // Mock database query
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: mockLogs,
         error: null,
       });
@@ -525,7 +538,7 @@ describe('ExponentialBackoffRetryManager', () => {
       ];
 
       // Mock database query
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: mockLogs,
         error: null,
       });
@@ -554,7 +567,7 @@ describe('ExponentialBackoffRetryManager', () => {
   describe('processRetries - edge cases', () => {
     it('should handle no pending retries', async () => {
       // Mock database query with empty result
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: [],
         error: null,
       });
@@ -572,7 +585,7 @@ describe('ExponentialBackoffRetryManager', () => {
 
     it('should handle database query error', async () => {
       // Mock database query error
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: null,
         error: { message: 'Database connection failed' },
       });
@@ -594,7 +607,7 @@ describe('ExponentialBackoffRetryManager', () => {
       });
 
       // Mock database query
-      mockSupabase.mockSelect.mockResolvedValueOnce({
+      mockSupabase.mockReturns.mockResolvedValueOnce({
         data: [mockLog],
         error: null,
       });

@@ -25,6 +25,7 @@ describe('triggerReportCardCompletion', () => {
       from: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
+      is: vi.fn().mockResolvedValue({ error: null }),
     };
 
     const { sendNotification } = await import('@/lib/notifications');
@@ -61,8 +62,6 @@ describe('triggerReportCardCompletion', () => {
         logId: 'log-124',
       });
 
-      mockSupabase.eq.mockResolvedValueOnce({ error: null });
-
       const result = await triggerReportCardCompletion(mockSupabase, validData);
 
       expect(result.success).toBe(true);
@@ -86,8 +85,6 @@ describe('triggerReportCardCompletion', () => {
         messageId: 'msg-123',
         logId: 'log-123',
       });
-
-      mockSupabase.eq.mockResolvedValueOnce({ error: null });
 
       const dataWithoutImages = {
         ...validData,
@@ -116,8 +113,6 @@ describe('triggerReportCardCompletion', () => {
         logId: 'log-123',
       });
 
-      mockSupabase.eq.mockResolvedValueOnce({ error: null });
-
       const result = await triggerReportCardCompletion(mockSupabase, validData);
 
       expect(result.smsSent).toBe(true);
@@ -142,8 +137,6 @@ describe('triggerReportCardCompletion', () => {
         messageId: 'email-123',
         logId: 'log-123',
       });
-
-      mockSupabase.eq.mockResolvedValueOnce({ error: null });
 
       const dataWithoutPhone = { ...validData, customerPhone: null };
       const result = await triggerReportCardCompletion(mockSupabase, dataWithoutPhone);
@@ -170,8 +163,6 @@ describe('triggerReportCardCompletion', () => {
         error: 'SMS error',
       });
 
-      mockSupabase.eq.mockResolvedValueOnce({ error: null });
-
       await triggerReportCardCompletion(mockSupabase, validData);
 
       expect(mockSupabase.from).toHaveBeenCalledWith('report_cards');
@@ -192,8 +183,6 @@ describe('triggerReportCardCompletion', () => {
         messageId: 'sms-123',
         logId: 'log-124',
       });
-
-      mockSupabase.eq.mockResolvedValueOnce({ error: null });
 
       await triggerReportCardCompletion(mockSupabase, validData);
 
@@ -218,7 +207,7 @@ describe('triggerReportCardCompletion', () => {
         logId: 'log-123',
       });
 
-      mockSupabase.eq.mockResolvedValueOnce({
+      mockSupabase.is.mockResolvedValueOnce({
         error: { message: 'Database error' },
       });
 

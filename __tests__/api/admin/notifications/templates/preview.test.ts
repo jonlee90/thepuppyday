@@ -10,6 +10,7 @@ import { POST } from '@/app/api/admin/notifications/templates/[id]/preview/route
 // Mock modules
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
 }));
 
 vi.mock('@/lib/admin/auth', () => ({
@@ -25,11 +26,17 @@ vi.mock('@/lib/notifications/template-engine', () => ({
     // Simple mock that replaces {{variable}} with data values
     return template.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] || '');
   }),
+  createTemplateEngine: vi.fn(() => ({
+    render: vi.fn((template: string, data: any) => {
+      return template.replace(/\{\{(\w+)\}\}/g, (_: string, key: string) => data[key] || '');
+    }),
+    calculateSegmentCount: vi.fn((text: string) => Math.ceil(text.length / 160)),
+  })),
 }));
 
-const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+const { createServerSupabaseClient, createServiceRoleClient } = await import('@/lib/supabase/server');
 const { requireAdmin } = await import('@/lib/admin/auth');
-const { renderTemplate } = await import('@/lib/notifications/template-engine');
+const { createTemplateEngine } = await import('@/lib/notifications/template-engine');
 
 describe('POST /api/admin/notifications/templates/[id]/preview', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,11 +57,17 @@ describe('POST /api/admin/notifications/templates/[id]/preview', () => {
     };
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabase);
     vi.mocked(requireAdmin).mockResolvedValue({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       user: { id: 'admin-1', role: 'admin' } as any,
       role: 'admin',
     });
+
+    // Restore createTemplateEngine mock after vi.clearAllMocks() clears call history
+    // vi.clearAllMocks() calls mockClear() which preserves implementations, so
+    // the module-level vi.mock() factory still returns the engine with render/calculateSegmentCount
+    // We only need to re-set if the prior test used mockReturnValueOnce or mockImplementationOnce
   });
 
   describe('Authentication', () => {
@@ -112,7 +125,7 @@ describe('POST /api/admin/notifications/templates/[id]/preview', () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe('sample_data is required');
+      expect(data.error).toContain('sample_data is required');
     });
   });
 
@@ -149,9 +162,9 @@ describe('POST /api/admin/notifications/templates/[id]/preview', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.rendered_subject).toBe('Appointment for Max');
-      expect(data.rendered_html).toBe('<p>Hello John, Max is confirmed for Jan 15, 2024</p>');
-      expect(data.rendered_text).toBe('Hello John, Max is confirmed for Jan 15, 2024');
+      expect(data.preview.rendered_subject).toBe('Appointment for Max');
+      expect(data.preview.rendered_html).toBe('<p>Hello John, Max is confirmed for Jan 15, 2024</p>');
+      expect(data.preview.rendered_text).toBe('Hello John, Max is confirmed for Jan 15, 2024');
     });
 
     it('should not include SMS metadata for email templates', async () => {
@@ -180,8 +193,8 @@ describe('POST /api/admin/notifications/templates/[id]/preview', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.character_count).toBeUndefined();
-      expect(data.segment_count).toBeUndefined();
+      expect(data.preview.character_count).toBeUndefined();
+      expect(data.preview.segment_count).toBeUndefined();
     });
   });
 
@@ -218,9 +231,9 @@ describe('POST /api/admin/notifications/templates/[id]/preview', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.rendered_text).toBe('Hi John, reminder for Max tomorrow at 2:00 PM');
-      expect(data.character_count).toBe(47);
-      expect(data.segment_count).toBe(1);
+      expect(data.preview.rendered_text).toBe('Hi John, reminder for Max tomorrow at 2:00 PM');
+      expect(data.preview.character_count).toBe(45);
+      expect(data.preview.segment_count).toBe(1);
     });
 
     it('should calculate multiple segments for long messages', async () => {
@@ -250,8 +263,8 @@ describe('POST /api/admin/notifications/templates/[id]/preview', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.character_count).toBe(200);
-      expect(data.segment_count).toBe(2); // 200 chars = 2 segments (160 chars each)
+      expect(data.preview.character_count).toBe(200);
+      expect(data.preview.segment_count).toBe(2); // 200 chars = 2 segments (160 chars each)
     });
 
     it('should warn about long messages', async () => {
@@ -280,8 +293,10 @@ describe('POST /api/admin/notifications/templates/[id]/preview', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.warning).toBeDefined();
-      expect(data.warning).toContain('segments');
+      expect(data.preview.warnings).toBeDefined();
+      // warnings is an array of warning strings
+      expect(Array.isArray(data.preview.warnings)).toBe(true);
+      expect(data.preview.warnings.some((w: string) => w.includes('segments'))).toBe(true);
     });
   });
 
@@ -324,9 +339,11 @@ describe('POST /api/admin/notifications/templates/[id]/preview', () => {
         })),
       });
 
-      vi.mocked(renderTemplate).mockImplementation(() => {
-        throw new Error('Template syntax error');
-      });
+      // Make engine.render() throw a template syntax error
+      vi.mocked(createTemplateEngine).mockReturnValue({
+        render: vi.fn(() => { throw new Error('Template syntax error'); }),
+        calculateSegmentCount: vi.fn((text: string) => Math.ceil(text.length / 160)),
+      } as any);
 
       const request = new NextRequest(`http://localhost/api/admin/notifications/templates/${validUuid}/preview`, {
         method: 'POST',

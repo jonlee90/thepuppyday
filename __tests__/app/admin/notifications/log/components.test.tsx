@@ -38,6 +38,10 @@ describe('LogFilters Component', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('renders all filter controls', () => {
     render(
       <LogFilters
@@ -48,9 +52,11 @@ describe('LogFilters Component', () => {
     );
 
     expect(screen.getByPlaceholderText(/search by email or phone/i)).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: /type/i })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: /channel/i })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: /status/i })).toBeInTheDocument();
+    // Selects are queried by their default display values since labels are not
+    // associated via htmlFor/id in the current component implementation
+    expect(screen.getByDisplayValue('All Types')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('All Channels')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('All Statuses')).toBeInTheDocument();
   });
 
   it('debounces search input', async () => {
@@ -70,16 +76,13 @@ describe('LogFilters Component', () => {
     // Should not call immediately
     expect(mockOnFilterChange).not.toHaveBeenCalled();
 
-    // After 300ms debounce
-    vi.advanceTimersByTime(300);
-    await waitFor(() => {
-      expect(mockOnFilterChange).toHaveBeenCalledWith({
-        ...defaultFilters,
-        search: 'test@example.com',
-      });
-    });
+    // Advance timers past the 300ms debounce and flush any queued microtasks
+    await vi.runAllTimersAsync();
 
-    vi.useRealTimers();
+    expect(mockOnFilterChange).toHaveBeenCalledWith({
+      ...defaultFilters,
+      search: 'test@example.com',
+    });
   });
 
   it('updates channel filter', () => {
@@ -91,7 +94,7 @@ describe('LogFilters Component', () => {
       />
     );
 
-    const channelSelect = screen.getByRole('combobox', { name: /channel/i });
+    const channelSelect = screen.getByDisplayValue('All Channels');
     fireEvent.change(channelSelect, { target: { value: 'email' } });
 
     expect(mockOnFilterChange).toHaveBeenCalledWith({
@@ -109,7 +112,7 @@ describe('LogFilters Component', () => {
       />
     );
 
-    const statusSelect = screen.getByRole('combobox', { name: /status/i });
+    const statusSelect = screen.getByDisplayValue('All Statuses');
     fireEvent.change(statusSelect, { target: { value: 'failed' } });
 
     expect(mockOnFilterChange).toHaveBeenCalledWith({
@@ -400,7 +403,7 @@ describe('ResendModal Component', () => {
       />
     );
 
-    expect(screen.getByText(/resend notification/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /resend notification/i })).toBeInTheDocument();
     expect(screen.getByText('john@example.com')).toBeInTheDocument();
     expect(screen.getByText('SMTP connection failed')).toBeInTheDocument();
   });

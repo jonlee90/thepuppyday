@@ -231,7 +231,17 @@ function createMockSupabase(): SupabaseClient {
               if (col === 'type') {
                 return {
                   eq: vi.fn((col2: string, val2: string) => ({
+                    eq: vi.fn((_col3: string, _val3: unknown) => ({
+                      single: vi.fn(async () => {
+                        const key = `${val}-${val2}`;
+                        const template = templates.get(key);
+                        return template
+                          ? { data: template, error: null }
+                          : { data: null, error: { message: 'Template not found' } };
+                      }),
+                    })),
                     single: vi.fn(async () => {
+                      // Fallback without is_active filter
                       const key = `${val}-${val2}`;
                       const template = templates.get(key);
                       return template

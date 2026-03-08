@@ -12,6 +12,8 @@ import {
   resetAllProviders,
   getProviderMode,
 } from '../index';
+import { resetMockResendProvider } from '../../../../mocks/resend/provider';
+import { resetMockTwilioProvider } from '../../../../mocks/twilio/provider';
 
 describe('Provider Factory', () => {
   // Save original environment variable
@@ -79,7 +81,9 @@ describe('Provider Factory', () => {
       process.env.NEXT_PUBLIC_USE_MOCKS = 'true';
 
       const provider1 = getEmailProvider();
+      // Must reset both the factory cache AND the underlying mock singleton
       resetEmailProvider();
+      resetMockResendProvider();
       const provider2 = getEmailProvider();
 
       expect(provider1).not.toBe(provider2);
@@ -136,7 +140,9 @@ describe('Provider Factory', () => {
       process.env.NEXT_PUBLIC_USE_MOCKS = 'true';
 
       const provider1 = getSMSProvider();
+      // Must reset both the factory cache AND the underlying mock singleton
       resetSMSProvider();
+      resetMockTwilioProvider();
       const provider2 = getSMSProvider();
 
       expect(provider1).not.toBe(provider2);
@@ -188,13 +194,18 @@ describe('Provider Factory', () => {
   describe('reset functions', () => {
     beforeEach(() => {
       process.env.NEXT_PUBLIC_USE_MOCKS = 'true';
+      // Also reset underlying mock provider singletons so new instances are created
+      resetMockResendProvider();
+      resetMockTwilioProvider();
     });
 
     it('should reset email provider only', () => {
       const email1 = getEmailProvider();
       const sms1 = getSMSProvider();
 
+      // Reset both the factory cache and underlying mock singleton
       resetEmailProvider();
+      resetMockResendProvider();
 
       const email2 = getEmailProvider();
       const sms2 = getSMSProvider();
@@ -207,7 +218,9 @@ describe('Provider Factory', () => {
       const email1 = getEmailProvider();
       const sms1 = getSMSProvider();
 
+      // Reset both the factory cache and underlying mock singleton
       resetSMSProvider();
+      resetMockTwilioProvider();
 
       const email2 = getEmailProvider();
       const sms2 = getSMSProvider();
@@ -220,7 +233,10 @@ describe('Provider Factory', () => {
       const email1 = getEmailProvider();
       const sms1 = getSMSProvider();
 
+      // Reset both factory caches and underlying mock singletons
       resetAllProviders();
+      resetMockResendProvider();
+      resetMockTwilioProvider();
 
       const email2 = getEmailProvider();
       const sms2 = getSMSProvider();
