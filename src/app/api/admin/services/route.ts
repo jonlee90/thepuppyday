@@ -191,20 +191,32 @@ export async function POST(request: NextRequest) {
       price: prices[size],
     }));
 
-    const { data: createdPrices, error: pricesError } = (await (serviceClient as any)
-      .from('service_prices')
-      .insert(pricesToInsert)
-      .select()) as {
-      data: ServicePrice[] | null;
-      error: Error | null;
-    };
+    let createdPrices: ServicePrice[] | null = null;
+    try {
+      const { data: pricesData, error: pricesError } = (await (serviceClient as any)
+        .from('service_prices')
+        .insert(pricesToInsert)
+        .select()) as {
+        data: ServicePrice[] | null;
+        error: Error | null;
+      };
 
-    if (pricesError) {
-      // Rollback: delete the service
-      // Note: This is a manual rollback and has a race condition window.
-      // For production, consider implementing as a PostgreSQL stored procedure.
-      await (serviceClient as any).from('services').delete().eq('id', service.id);
-      throw pricesError;
+      if (pricesError) {
+        throw pricesError;
+      }
+
+      createdPrices = pricesData;
+    } catch (priceInsertError) {
+      // Rollback: delete the service since prices failed to create.
+      // Note: This application-level rollback has a small race condition window.
+      // For true atomicity, use a PostgreSQL stored procedure (RPC).
+      console.error('[Admin API] Price insertion failed, rolling back service:', service.id, priceInsertError);
+      try {
+        await (serviceClient as any).from('services').delete().eq('id', service.id);
+      } catch (rollbackError) {
+        console.error('[Admin API] Rollback failed - manual cleanup may be needed for service:', service.id, rollbackError);
+      }
+      throw priceInsertError;
     }
 
     const serviceWithPrices: ServiceWithPrices = {

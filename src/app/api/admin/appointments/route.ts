@@ -45,9 +45,9 @@ export async function GET(request: NextRequest) {
       no_show: 5,
     };
 
-    // Date priority sort: today → future → past
+    // Date priority sort: today → future → past, then by status priority within each group
     const { todayStart, todayEnd } = getTodayInBusinessTimezone();
-    function datePrioritySort(a: { scheduled_at: string }, b: { scheduled_at: string }): number {
+    function datePrioritySort(a: { scheduled_at: string; status: string }, b: { scheduled_at: string; status: string }): number {
       const aDate = new Date(a.scheduled_at);
       const bDate = new Date(b.scheduled_at);
       const todayStartDate = new Date(todayStart);
@@ -55,10 +55,18 @@ export async function GET(request: NextRequest) {
       const aGroup = aDate < todayStartDate ? 2 : aDate > todayEndDate ? 1 : 0;
       const bGroup = bDate < todayStartDate ? 2 : bDate > todayEndDate ? 1 : 0;
       if (aGroup !== bGroup) return aGroup - bGroup;
-      // Past group: most recent first (descending)
-      if (aGroup === 2) return bDate.getTime() - aDate.getTime();
-      // Today + Future: ascending
-      return aDate.getTime() - bDate.getTime();
+      // Within same date group, sort by date first
+      let dateCmp: number;
+      if (aGroup === 2) {
+        // Past group: most recent first (descending)
+        dateCmp = bDate.getTime() - aDate.getTime();
+      } else {
+        // Today + Future: ascending
+        dateCmp = aDate.getTime() - bDate.getTime();
+      }
+      if (dateCmp !== 0) return dateCmp;
+      // Same date: sort by status priority (pending → confirmed → in_progress → completed → cancelled → no_show)
+      return (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99);
     }
 
     // In mock mode, query from mock store
@@ -92,9 +100,6 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      console.log('[Admin API] Total appointments in store:', appointments.length);
-      console.log('[Admin API] Date filters - from:', dateFrom, 'to:', dateTo);
-
       // Apply filters
       if (status) {
         appointments = appointments.filter((apt) => apt.status === status);
@@ -106,21 +111,17 @@ export async function GET(request: NextRequest) {
 
       if (dateFrom) {
         const dateFromDate = new Date(dateFrom);
-        console.log('[Admin API] Filtering by dateFrom:', dateFromDate);
         appointments = appointments.filter(
           (apt) => new Date(apt.scheduled_at) >= dateFromDate
         );
-        console.log('[Admin API] After dateFrom filter:', appointments.length);
       }
 
       if (dateTo) {
         const dateToEnd = new Date(dateTo);
         dateToEnd.setHours(23, 59, 59, 999);
-        console.log('[Admin API] Filtering by dateTo:', dateToEnd);
         appointments = appointments.filter(
           (apt) => new Date(apt.scheduled_at) <= dateToEnd
         );
-        console.log('[Admin API] After dateTo filter:', appointments.length);
       }
 
       // Apply search
@@ -166,17 +167,6 @@ export async function GET(request: NextRequest) {
           : null,
       }));
 
-      console.log('[Admin API] Returning', enrichedAppointments.length, 'enriched appointments');
-      if (enrichedAppointments.length > 0) {
-        console.log('[Admin API] Sample appointment:', {
-          id: enrichedAppointments[0].id,
-          scheduled_at: enrichedAppointments[0].scheduled_at,
-          customer: enrichedAppointments[0].customer?.email,
-          pet: enrichedAppointments[0].pet?.name,
-          service: enrichedAppointments[0].service?.name,
-        });
-      }
-
       return NextResponse.json({
         data: enrichedAppointments,
         pagination: {
@@ -192,8 +182,6 @@ export async function GET(request: NextRequest) {
     const isStatusPrioritySort = sortBy === 'status_priority';
     const isDatePrioritySort = sortBy === 'date_priority';
 
-    // For status_priority / date_priority sorts, fetch ALL rows (no .range()) so we can sort
-    // across the full dataset in JS, then paginate manually.
     let query = (serviceClient as any)
       .from('appointments')
       .select(
@@ -206,11 +194,6 @@ export async function GET(request: NextRequest) {
       `,
         { count: 'exact' }
       );
-
-    // Only apply DB-level pagination for simple column sorts
-    if (!isStatusPrioritySort && !isDatePrioritySort) {
-      query = query.range(offset, offset + limit - 1);
-    }
 
     // Apply filters
     if (status) {
@@ -241,11 +224,47 @@ export async function GET(request: NextRequest) {
     // }
 
     // Apply sorting
-    if (isStatusPrioritySort || isDatePrioritySort) {
+    if (isDatePrioritySort) {
+      // date_priority requires 3-group logic (today → future → past) that can't be expressed
+      // with simple .order() calls. Fetch all filtered rows, sort in JS, then paginate.
       query = query.order('scheduled_at', { ascending: true });
+
+      const { data: rawData, error } = await query;
+
+      if (error) {
+        console.error('[Admin API] Error fetching appointments:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch appointments' },
+          { status: 500 }
+        );
+      }
+
+      const allData = rawData || [];
+      allData.sort(datePrioritySort);
+      const total = allData.length;
+      const data = allData.slice(offset, offset + limit);
+
+      return NextResponse.json({
+        data,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    }
+
+    // For other sort modes, use DB-level ordering and pagination
+    if (isStatusPrioritySort) {
+      query = query
+        .order('status', { ascending: sortOrder === 'asc' })
+        .order('scheduled_at', { ascending: false });
     } else {
       query = query.order(sortBy, { ascending: sortOrder === 'asc' });
     }
+
+    query = query.range(offset, offset + limit - 1);
 
     const { data: rawData, error, count } = await query;
 
@@ -257,21 +276,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let data = rawData || [];
-
-    // For status_priority / date_priority: sort ALL rows in JS, then paginate manually
-    if (isStatusPrioritySort && data.length > 0) {
-      const asc = sortOrder === 'asc';
-      data = [...data].sort((a: Record<string, string>, b: Record<string, string>) => {
-        const statusDiff = (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99);
-        if (statusDiff !== 0) return asc ? statusDiff : -statusDiff;
-        return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
-      });
-      data = data.slice(offset, offset + limit);
-    } else if (isDatePrioritySort && data.length > 0) {
-      data = [...data].sort(datePrioritySort);
-      data = data.slice(offset, offset + limit);
-    }
+    const data = rawData || [];
 
     return NextResponse.json({
       data,
@@ -350,14 +355,10 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request body
     const body = await request.json();
-    console.log('[Create Appointment] Received body:', JSON.stringify(body, null, 2));
 
     const validationResult = CreateAppointmentSchema.safeParse(body);
 
     if (!validationResult.success) {
-      // Log full error for debugging
-      console.log('[Create Appointment] Validation failed:', JSON.stringify(validationResult.error?.format?.() || validationResult.error, null, 2));
-
       // Safely extract validation errors
       const validationErrors = validationResult.error?.errors?.map((err) => ({
         field: err.path.join('.'),
@@ -372,8 +373,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    console.log('[Create Appointment] Validation passed');
 
     const data = validationResult.data;
 
@@ -435,14 +434,6 @@ export async function POST(request: NextRequest) {
           ? data.customer.email
           : generateWalkinEmail(data.customer.phone);
 
-        console.log('[Create Appointment] Creating new customer with data:', {
-          email: customerEmail,
-          phone: data.customer.phone,
-          first_name: data.customer.first_name,
-          last_name: data.customer.last_name,
-          isWalkinPlaceholder: !data.customer.email || data.customer.email === '',
-        });
-
         const { data: newCustomer, error: customerError } = await supabase
           .from('users')
           .insert({
@@ -456,8 +447,6 @@ export async function POST(request: NextRequest) {
           })
           .select('id')
           .single();
-
-        console.log('[Create Appointment] Customer insert result:', { newCustomer, customerError });
 
         if (customerError || !newCustomer) {
           console.error('Error creating customer:', customerError);
@@ -579,9 +568,6 @@ export async function POST(request: NextRequest) {
       // Ensure we always have an array (Supabase can return null)
       addons = Array.isArray(addonsData) ? (addonsData as Addon[]) : [];
 
-      console.log('[Create Appointment] Requested addon IDs:', data.addon_ids);
-      console.log('[Create Appointment] Fetched addons:', addons.length, 'addons');
-
       // Warn if mismatch between requested and fetched addons
       if (addons.length !== data.addon_ids.length) {
         console.warn(
@@ -598,11 +584,6 @@ export async function POST(request: NextRequest) {
         petSize,
         addons
       );
-      console.log('[Create Appointment] Price breakdown calculated:', {
-        servicePrice: priceBreakdown.servicePrice,
-        addonsTotal: priceBreakdown.addonsTotal,
-        total: priceBreakdown.total,
-      });
     } catch (priceError) {
       console.error('[Create Appointment] Error calculating price:', priceError);
       return NextResponse.json(
@@ -677,58 +658,82 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Create appointment addons
-    if (data.addon_ids && Array.isArray(data.addon_ids) && data.addon_ids.length > 0) {
-      if (Array.isArray(addons) && addons.length > 0) {
-        try {
+    // --- Critical group: addons + payment ---
+    // If either fails, roll back the appointment to avoid inconsistent data.
+    // Note: This application-level rollback has a small race condition window.
+    // For true atomicity, use a PostgreSQL stored procedure (RPC).
+    try {
+      // 5. Create appointment addons
+      if (data.addon_ids && Array.isArray(data.addon_ids) && data.addon_ids.length > 0) {
+        if (Array.isArray(addons) && addons.length > 0) {
           const addonRecords = addons.map((addon) => ({
             appointment_id: appointment.id,
             addon_id: addon.id,
             price: addon.price,
           }));
 
-          console.log('[Create Appointment] Inserting addon records:', addonRecords.length);
-
           const { error: addonsInsertError } = await supabase
             .from('appointment_addons')
             .insert(addonRecords);
 
           if (addonsInsertError) {
-            console.error('[Create Appointment] Error creating appointment addons:', addonsInsertError);
-            // Don't fail the entire operation - appointment is already created
-          } else {
-            console.log('[Create Appointment] Successfully inserted', addonRecords.length, 'addon records');
+            throw new Error(`Failed to create appointment addons: ${addonsInsertError.message}`);
           }
-        } catch (addonError) {
-          console.error('[Create Appointment] Exception during addon insertion:', addonError);
-          // Don't fail - appointment is already created
+        } else {
+          console.warn('[Create Appointment] Addon IDs provided but no addons fetched. Requested:', data.addon_ids);
         }
-      } else {
-        console.warn('[Create Appointment] Addon IDs provided but no addons fetched. Requested:', data.addon_ids);
       }
+
+      // 6. Create payment record if paid/partially paid
+      if (
+        (data.payment_status === 'paid' || data.payment_status === 'partially_paid') &&
+        data.payment_details
+      ) {
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .insert({
+            appointment_id: appointment.id,
+            customer_id: customerId,
+            amount: data.payment_details.amount_paid,
+            tip_amount: 0,
+            status: data.payment_status === 'paid' ? 'succeeded' : 'pending',
+            payment_method: data.payment_details.payment_method,
+          });
+
+        if (paymentError) {
+          throw new Error(`Failed to create payment record: ${paymentError.message}`);
+        }
+      }
+    } catch (criticalError) {
+      // Rollback: delete the appointment and any addons that may have been created
+      console.error('[Create Appointment] Critical operation failed, rolling back appointment:', criticalError);
+      try {
+        // Delete addons first (foreign key dependency)
+        await supabase
+          .from('appointment_addons')
+          .delete()
+          .eq('appointment_id', appointment.id);
+        // Delete the appointment
+        await supabase
+          .from('appointments')
+          .delete()
+          .eq('id', appointment.id);
+      } catch (rollbackError) {
+        // Log rollback failure but return the original error to the client
+        console.error('[Create Appointment] Rollback failed - manual cleanup may be needed for appointment:', appointment.id, rollbackError);
+      }
+
+      return NextResponse.json(
+        {
+          error: 'Failed to create appointment (rolled back)',
+          details: criticalError instanceof Error ? criticalError.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
     }
 
-    // 6. Create payment record if paid/partially paid
-    if (
-      (data.payment_status === 'paid' || data.payment_status === 'partially_paid') &&
-      data.payment_details
-    ) {
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          appointment_id: appointment.id,
-          customer_id: customerId,
-          amount: data.payment_details.amount_paid,
-          tip_amount: 0,
-          status: data.payment_status === 'paid' ? 'succeeded' : 'pending',
-          payment_method: data.payment_details.payment_method,
-        });
-
-      if (paymentError) {
-        console.error('Error creating payment record:', paymentError);
-        // Don't fail the entire operation
-      }
-    }
+    // --- Non-critical operations (fire-and-forget) ---
+    // These should not block the response or cause the appointment creation to fail.
 
     // 7. Send notification only to active customers
     if (data.send_notification && customerStatus === 'active') {

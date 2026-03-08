@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 import type { CreateCampaignInput, MarketingCampaign } from '@/types/marketing';
 
 interface UseCreateCampaignResult {
@@ -36,9 +37,11 @@ export function useCreateCampaign(): UseCreateCampaignResult {
       }
 
       const result = await response.json();
+      toast.success('Campaign created');
       return result.data as MarketingCampaign;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      toast.error('Failed to create campaign');
       setError(errorMessage);
       return null;
     } finally {

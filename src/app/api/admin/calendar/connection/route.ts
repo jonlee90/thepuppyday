@@ -16,14 +16,12 @@ export async function GET() {
     const supabase = await createServerSupabaseClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
-    console.log('[Calendar Connection Status] Admin user:', adminUser.email);
 
     // Get active calendar connection
     const connection = await getActiveConnection(supabase, adminUser.id);
 
     // If no connection exists, return not connected status
     if (!connection) {
-      console.log('[Calendar Connection Status] No active connection for admin:', adminUser.id);
 
       const response: CalendarConnectionStatus = {
         connected: false,
@@ -32,7 +30,6 @@ export async function GET() {
       return NextResponse.json(response);
     }
 
-    console.log('[Calendar Connection Status] Active connection found:', connection.id);
 
     // Fetch sync statistics from the last 24 hours
     const twentyFourHoursAgo = new Date();
@@ -79,7 +76,6 @@ export async function GET() {
       },
     };
 
-    console.log('[Calendar Connection Status] Returning connection status with stats');
 
     return NextResponse.json(response);
   } catch (error) {

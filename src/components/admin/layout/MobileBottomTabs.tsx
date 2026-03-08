@@ -1,13 +1,13 @@
 /**
  * Mobile Bottom Tab Navigation
  * Fixed bottom navigation bar for mobile/tablet devices (<1024px)
- * 5 tabs: Home, Appointments, Walk-in (center elevated), Customers, More
+ * 7 tabs: Home, Appointments, Analytics, Walk-in (center elevated), Waitlist, Customers, More
  */
 
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Calendar, UserPlus, Users, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, Calendar, UserPlus, Users, MoreHorizontal, BarChart2, ClipboardList } from 'lucide-react';
 import { useAdminStore } from '@/stores/admin-store';
 import { useBookingModal } from '@/hooks/useBookingModal';
 
@@ -31,10 +31,22 @@ export function MobileBottomTabs() {
       href: '/admin/appointments',
     },
     {
+      id: 'analytics' as const,
+      label: 'Analytics',
+      icon: BarChart2,
+      href: '/admin/analytics',
+    },
+    {
       id: 'walkin' as const,
       label: 'Walk-in',
       icon: UserPlus,
       action: 'walkin',
+    },
+    {
+      id: 'waitlist' as const,
+      label: 'Waitlist',
+      icon: ClipboardList,
+      href: '/admin/waitlist',
     },
     {
       id: 'customers' as const,
@@ -88,7 +100,7 @@ export function MobileBottomTabs() {
                 key={tab.id}
                 onClick={() => handleTabClick(tab)}
                 className="flex flex-col items-center justify-center relative"
-                style={{ flex: '0 0 20%' }}
+                style={{ flex: '1 1 0' }}
                 aria-label={tab.label}
               >
                 {/* Elevated circle button */}
@@ -96,7 +108,7 @@ export function MobileBottomTabs() {
                   <Icon className="w-7 h-7 text-white" />
                 </div>
                 {/* Label below */}
-                <span className="text-xs font-medium text-[#434E54] mt-9">
+                <span className="text-[10px] font-medium leading-tight text-[#434E54] mt-9">
                   {tab.label}
                 </span>
               </button>
@@ -116,7 +128,7 @@ export function MobileBottomTabs() {
                     : 'text-[#9CA3AF] hover:text-[#6B7280]'
                 }
               `}
-              style={{ flex: '0 0 20%' }}
+              style={{ flex: '1 1 0' }}
               aria-label={tab.label}
               aria-current={active ? 'page' : undefined}
             >
@@ -129,7 +141,7 @@ export function MobileBottomTabs() {
               <Icon className="w-6 h-6 mb-1" />
 
               {/* Label */}
-              <span className={`text-xs font-medium ${active ? 'text-[#434E54]' : 'text-[#6B7280]'}`}>
+              <span className={`text-[10px] font-medium leading-tight ${active ? 'text-[#434E54]' : 'text-[#6B7280]'}`}>
                 {tab.label}
               </span>
             </button>

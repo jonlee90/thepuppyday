@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Manual Reminders Trigger] Starting manual job at:', new Date().toISOString());
 
     // Create Supabase client for authentication
     const authSupabase = await createServerSupabaseClient();
@@ -54,10 +53,6 @@ export async function POST(request: NextRequest) {
     const windowStart = new Date(now.getTime() + 23 * 60 * 60 * 1000);
     const windowEnd = new Date(now.getTime() + 25 * 60 * 60 * 1000);
 
-    console.log('[Manual Reminders Trigger] Time window:', {
-      windowStart: windowStart.toISOString(),
-      windowEnd: windowEnd.toISOString(),
-    });
 
     // Query appointments in the time window
     const { data: appointments, error: queryError } = await supabase
@@ -91,7 +86,6 @@ export async function POST(request: NextRequest) {
       throw new Error(`Failed to query appointments: ${queryError.message}`);
     }
 
-    console.log('[Manual Reminders Trigger] Found appointments:', appointments?.length || 0);
 
     let processed = 0;
     let sent = 0;
@@ -134,7 +128,6 @@ export async function POST(request: NextRequest) {
           }
 
           if (existingLog) {
-            console.log(`[Manual Reminders Trigger] Skipping appointment ${appointment.id}: Already sent`);
             skipped++;
             continue;
           }
@@ -174,7 +167,6 @@ export async function POST(request: NextRequest) {
 
           if (result.success) {
             sent++;
-            console.log(`[Manual Reminders Trigger] ✅ Sent reminder for appointment ${appointment.id}`);
           } else {
             failed++;
             console.error(`[Manual Reminders Trigger] ❌ Failed to send reminder for appointment ${appointment.id}:`, result.error);
@@ -195,7 +187,6 @@ export async function POST(request: NextRequest) {
       duration_ms: duration,
     };
 
-    console.log('[Manual Reminders Trigger] Job completed. Stats:', stats);
 
     return NextResponse.json({
       success: true,

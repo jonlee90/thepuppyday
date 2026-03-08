@@ -13,6 +13,7 @@ import { createGoogleCalendarClient } from '@/lib/calendar/google-client';
 import { parseCalendarEvent } from '@/lib/calendar/import/parser';
 import { validateEventForImport } from '@/lib/calendar/import/validation';
 import { findDuplicateAppointment } from '@/lib/calendar/import/duplicate-detection';
+import { escapeLikePattern } from '@/lib/utils/validation';
 import { createEventMapping } from '@/lib/calendar/event-mapping-repository';
 import { logSyncSuccess, logSyncFailure } from '@/lib/calendar/sync-logger';
 import { z } from 'zod';
@@ -61,7 +62,6 @@ export async function POST(request: NextRequest) {
     const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
-    console.log('[Import Confirm] Admin user:', adminUser.email);
 
     // Parse request body
     const body = await request.json();
@@ -78,7 +78,6 @@ export async function POST(request: NextRequest) {
 
     const { event_ids, options } = validationResult.data;
 
-    console.log('[Import Confirm] Importing', event_ids.length, 'events with options:', options);
 
     // Get active calendar connection
     const connection = await getActiveConnection(supabase, adminUser.id);
@@ -90,7 +89,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Import Confirm] Using connection:', connection.id);
 
     // Create Google Calendar client
     const calendarClient = createGoogleCalendarClient(
@@ -109,7 +107,6 @@ export async function POST(request: NextRequest) {
       const startTime = Date.now();
 
       try {
-        console.log(`[Import Confirm] Processing event ${eventId}...`);
 
         // Fetch event from Google Calendar
         const googleEvent = await calendarClient.getEvent(eventId);
@@ -146,7 +143,6 @@ export async function POST(request: NextRequest) {
         // Check for duplicates
         const duplicateMatch = await findDuplicateAppointment(supabase, parsedData);
         if (duplicateMatch && duplicateMatch.confidence >= 60 && options.skip_duplicates) {
-          console.log(`[Import Confirm] Event ${eventId} is a duplicate, skipping`);
 
           results.push({
             google_event_id: eventId,
@@ -300,7 +296,6 @@ export async function POST(request: NextRequest) {
           throw new Error(`Failed to create appointment: ${appointmentError?.message || 'Unknown error'}`);
         }
 
-        console.log(`[Import Confirm] Created appointment ${appointment.id}`);
 
         // Create event mapping
         await createEventMapping(supabase, {
@@ -310,7 +305,6 @@ export async function POST(request: NextRequest) {
           sync_direction: 'pull',
         });
 
-        console.log(`[Import Confirm] Created event mapping for ${eventId}`);
 
         // Log success
         await logSyncSuccess(
@@ -331,7 +325,6 @@ export async function POST(request: NextRequest) {
         });
         importedCount++;
 
-        console.log(`[Import Confirm] Successfully imported event ${eventId} as appointment ${appointment.id}`);
       } catch (error) {
         console.error(`[Import Confirm] Error importing event ${eventId}:`, error);
 
@@ -367,7 +360,6 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    console.log('[Import Confirm] Import completed:', response.summary);
 
     return NextResponse.json(response);
   } catch (error) {
@@ -405,7 +397,6 @@ async function matchOrCreateCustomer(
       .single();
 
     if (data) {
-      console.log('[Import Confirm] Matched customer by email:', data.id);
       return data.id;
     }
   }
@@ -420,7 +411,6 @@ async function matchOrCreateCustomer(
       .single();
 
     if (data) {
-      console.log('[Import Confirm] Matched customer by phone:', data.id);
       return data.id;
     }
   }
@@ -450,7 +440,6 @@ async function matchOrCreateCustomer(
       return null;
     }
 
-    console.log('[Import Confirm] Created new customer:', data.id);
     return data.id;
   }
 
@@ -477,7 +466,6 @@ async function matchOrCreatePet(
       .single();
 
     if (data) {
-      console.log('[Import Confirm] Matched pet by name:', data.id);
       return data.id;
     }
   }
@@ -500,7 +488,6 @@ async function matchOrCreatePet(
       return null;
     }
 
-    console.log('[Import Confirm] Created new pet:', data.id);
     return data.id;
   }
 
@@ -512,7 +499,6 @@ async function matchOrCreatePet(
     .eq('is_active', true);
 
   if (pets && pets.length === 1) {
-    console.log('[Import Confirm] Using customer\'s only pet:', pets[0].id);
     return pets[0].id;
   }
 
@@ -532,19 +518,17 @@ async function matchService(
     const { data } = await supabase
       .from('services')
       .select('id')
-      .ilike('name', `%${serviceName}%`)
+      .ilike('name', `%${escapeLikePattern(serviceName)}%`)
       .eq('is_active', true)
       .single();
 
     if (data) {
-      console.log('[Import Confirm] Matched service by name:', data.id);
       return data.id;
     }
   }
 
   // Use default service if provided
   if (defaultServiceId) {
-    console.log('[Import Confirm] Using default service:', defaultServiceId);
     return defaultServiceId;
   }
 

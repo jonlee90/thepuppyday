@@ -1,15 +1,14 @@
 /**
  * CustomerTable Component
- * Displays customer list with search, pagination, and sorting
+ * Displays customer list with search, infinite scroll, and sorting
  * Task 0017: Create CustomerTable component
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, ChevronLeft, ChevronRight, Users, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { format } from 'date-fns';
+import { Search, Users, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { CustomerFlagBadge } from './CustomerFlagBadge';
 import { isWalkinPlaceholderEmail } from '@/lib/utils';
 import type { User, CustomerFlag } from '@/types/database';
@@ -31,85 +30,108 @@ interface CustomerWithStats extends User {
 
 interface CustomerTableProps {
   onCustomerClick?: (customerId: string) => void;
-  initialCustomers?: CustomerWithStats[];
 }
 
 type SortField = 'name' | 'email' | 'appointments' | 'join_date';
-type SortOrder = 'asc' | 'desc';
 
-export function CustomerTable({ onCustomerClick, initialCustomers = [] }: CustomerTableProps) {
+export function CustomerTable({ onCustomerClick }: CustomerTableProps) {
   const router = useRouter();
-  const [customers, setCustomers] = useState<CustomerWithStats[]>(initialCustomers);
-  const [loading, setLoading] = useState(false);
+  const [customers, setCustomers] = useState<CustomerWithStats[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
-
-  // Filters and pagination
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(initialCustomers.length);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [sortBy, setSortBy] = useState<SortField>('name');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  const ITEMS_PER_PAGE = 50;
+  // Refs for IntersectionObserver — avoid recreating observer on every loading state change
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
+  const loadingMoreRef = useRef(false);
 
-  // Fetch customers - only when search/sort/page changes
+  // Derive hasMore — avoids extra setState call
+  const hasMore = customers.length < totalCount;
+
+  // Debounce search query
   useEffect(() => {
-    if (searchQuery || currentPage > 1 || sortBy !== 'name' || sortOrder !== 'asc') {
-      fetchCustomers();
-    }
-  }, [searchQuery, currentPage, sortBy, sortOrder]);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const fetchCustomers = async () => {
-    setLoading(true);
+  const fetchCustomers = useCallback(async () => {
+    if (page === 1) {
+      setLoading(true);
+      loadingRef.current = true;
+    } else {
+      setLoadingMore(true);
+      loadingMoreRef.current = true;
+    }
     setError('');
 
     try {
       const params = new URLSearchParams({
-        search: searchQuery,
-        page: currentPage.toString(),
-        limit: ITEMS_PER_PAGE.toString(),
+        page: page.toString(),
+        limit: '25',
         sortBy,
         sortOrder,
       });
+      if (debouncedSearch) params.append('search', debouncedSearch);
 
       const response = await fetch(`/api/admin/customers?${params}`);
       const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch customers');
-      }
+      if (!response.ok) throw new Error(result.error || 'Failed to fetch customers');
 
-      setCustomers(result.data);
-      setTotalPages(result.pagination.totalPages);
+      if (page === 1) {
+        setCustomers(result.data);
+      } else {
+        setCustomers((curr) => [...curr, ...result.data]);
+      }
       setTotalCount(result.pagination.total);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
+      loadingRef.current = false;
+      setLoadingMore(false);
+      loadingMoreRef.current = false;
     }
-  };
+  }, [page, debouncedSearch, sortBy, sortOrder]);
 
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1); // Reset to first page on search
-  };
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setCurrentPage(1);
-  };
+  // IntersectionObserver for infinite scroll — re-observes when sentinel mounts/unmounts
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingRef.current && !loadingMoreRef.current) {
+          setPage((p) => p + 1);
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore]);
 
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
-      // Toggle sort order
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      // New field, default to ascending
       setSortBy(field);
       setSortOrder('asc');
     }
-    setCurrentPage(1);
+    setPage(1);
   };
 
   const handleRowClick = (customerId: string) => {
@@ -121,9 +143,7 @@ export function CustomerTable({ onCustomerClick, initialCustomers = [] }: Custom
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortBy !== field) {
-      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
-    }
+    if (sortBy !== field) return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
     return sortOrder === 'asc' ? (
       <ArrowUp className="w-4 h-4 text-[#434E54]" />
     ) : (
@@ -135,7 +155,6 @@ export function CustomerTable({ onCustomerClick, initialCustomers = [] }: Custom
   // Security: Protected against XSS and ReDoS attacks
   const highlightText = (text: string) => {
     if (!searchQuery) return text;
-
     try {
       // Security: Escape user input to prevent RegEx injection
       const escapedQuery = escapeRegExp(searchQuery);
@@ -149,9 +168,8 @@ export function CustomerTable({ onCustomerClick, initialCustomers = [] }: Custom
           part
         )
       );
-    } catch (error) {
+    } catch {
       // Security: If regex fails, return text unstyled to prevent crashes
-      console.error('Error highlighting text:', error);
       return text;
     }
   };
@@ -159,43 +177,31 @@ export function CustomerTable({ onCustomerClick, initialCustomers = [] }: Custom
   return (
     <div className="space-y-4">
       {/* Search Bar */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search by name, email, phone, or pet name..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white
-                       focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
-                       placeholder:text-gray-400 transition-colors"
-          />
-        </div>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by name, email, phone, or pet name..."
+          className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-gray-200 bg-white
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+                     placeholder:text-gray-400 transition-colors"
+        />
         {searchQuery && (
           <button
-            onClick={handleClearSearch}
-            className="px-4 py-2.5 rounded-lg border border-gray-200 text-[#434E54]
-                       font-medium hover:bg-gray-50 transition-colors"
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#434E54]"
           >
-            Clear
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
       {/* Results Count */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-600">
-          {loading ? (
-            'Loading...'
-          ) : (
-            <>
-              Showing {customers.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-              {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount} customers
-            </>
-          )}
-        </p>
-      </div>
+      <p className="text-sm text-gray-600">
+        {loading ? 'Loading...' : `${totalCount} ${totalCount === 1 ? 'customer' : 'customers'}`}
+      </p>
 
       {/* Error State */}
       {error && (
@@ -246,10 +252,7 @@ export function CustomerTable({ onCustomerClick, initialCustomers = [] }: Custom
               {loading ? (
                 <tr>
                   <td colSpan={6} className="text-center py-12">
-                    <div className="flex items-center justify-center gap-2 text-gray-500">
-                      <div className="w-5 h-5 border-2 border-gray-300 border-t-[#434E54] rounded-full animate-spin" />
-                      <span>Loading customers...</span>
-                    </div>
+                    <span className="loading loading-spinner loading-lg text-[#434E54]" />
                   </td>
                 </tr>
               ) : customers.length === 0 ? (
@@ -267,9 +270,8 @@ export function CustomerTable({ onCustomerClick, initialCustomers = [] }: Custom
                       </div>
                       {searchQuery && (
                         <button
-                          onClick={handleClearSearch}
-                          className="px-4 py-2 rounded-lg bg-[#434E54] text-white font-medium
-                                     hover:bg-[#363F44] transition-colors"
+                          onClick={() => setSearchQuery('')}
+                          className="px-4 py-2 rounded-lg bg-[#434E54] text-white font-medium hover:bg-[#363F44] transition-colors"
                         >
                           Clear Search
                         </button>
@@ -324,55 +326,18 @@ export function CustomerTable({ onCustomerClick, initialCustomers = [] }: Custom
         </div>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200
-                       text-[#434E54] font-medium hover:bg-gray-50 transition-colors
-                       disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Previous
-          </button>
+      {/* Infinite scroll sentinel — only mounted when more rows exist */}
+      {hasMore && <div ref={sentinelRef} />}
 
-          <div className="flex items-center gap-2">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNumber = i + 1;
-              return (
-                <button
-                  key={pageNumber}
-                  onClick={() => setCurrentPage(pageNumber)}
-                  className={`
-                    w-10 h-10 rounded-lg font-medium transition-colors
-                    ${
-                      currentPage === pageNumber
-                        ? 'bg-[#434E54] text-white'
-                        : 'bg-white border border-gray-200 text-[#434E54] hover:bg-gray-50'
-                    }
-                  `}
-                >
-                  {pageNumber}
-                </button>
-              );
-            })}
-            {totalPages > 5 && <span className="text-gray-400">...</span>}
-          </div>
-
-          <button
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200
-                       text-[#434E54] font-medium hover:bg-gray-50 transition-colors
-                       disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      {/* Load-more status */}
+      <div className="py-4 text-center">
+        {loadingMore && (
+          <span className="loading loading-spinner loading-md text-[#434E54]" />
+        )}
+        {!hasMore && customers.length > 0 && !loading && (
+          <p className="text-sm text-[#6B7280]">All {totalCount} customers loaded</p>
+        )}
+      </div>
     </div>
   );
 }

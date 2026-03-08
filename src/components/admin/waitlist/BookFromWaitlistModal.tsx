@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Calendar, Clock, DollarSign, AlertCircle } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import type { WaitlistEntry } from '@/types/database';
 
 interface BookFromWaitlistModalProps {
@@ -68,10 +69,12 @@ export function BookFromWaitlistModal({
       }
 
       // Success
+      toast.success('Appointment booked');
       onSuccess();
       handleClose();
     } catch (err) {
-      console.error('Error booking from waitlist:', err);
+      console.error('[BookFromWaitlistModal] error:', err);
+      toast.error('Failed to book appointment');
       setError(err instanceof Error ? err.message : 'Failed to create booking');
     } finally {
       setIsSubmitting(false);

@@ -6,26 +6,82 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { DateRangeSelector, DateRangePreset } from './DateRangeSelector';
 import { KPIGrid } from './KPIGrid';
-import { AppointmentTrendChart } from './charts/AppointmentTrendChart';
-import { RevenueChart } from './charts/RevenueChart';
-import { ServicePopularityChart } from './charts/ServicePopularityChart';
-import { CustomerTypeChart } from './charts/CustomerTypeChart';
-import { RetentionChart } from './charts/RetentionChart';
-import { OperationalMetricsChart } from './charts/OperationalMetricsChart';
 import { ExportMenu } from './ExportMenu';
-import { ReportCardAnalytics } from './ReportCardAnalytics';
-import { WaitlistAnalytics } from './WaitlistAnalytics';
-import { MarketingAnalytics } from './MarketingAnalytics';
-import { GroomerPerformanceDashboard } from './GroomerPerformanceDashboard';
-import { GroomerComparisonTable } from './GroomerComparisonTable';
-import { GroomerLeaderboard } from './GroomerLeaderboard';
 import { AnalyticsErrorBoundary } from './AnalyticsErrorBoundary';
-import { BookingSourceChart } from './BookingSourceChart';
-import { PetSizeChart } from './PetSizeChart';
-import { PeakHoursChart } from './PeakHoursChart';
-import { LoyaltyAnalytics } from './LoyaltyAnalytics';
+
+// Loading skeleton for chart components
+const ChartSkeleton = () => (
+  <div className="animate-pulse bg-base-200 rounded-xl h-64" />
+);
+
+// Dynamic imports for heavy chart/analytics components
+const AppointmentTrendChart = dynamic(
+  () => import('./charts/AppointmentTrendChart').then((mod) => ({ default: mod.AppointmentTrendChart })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const RevenueChart = dynamic(
+  () => import('./charts/RevenueChart').then((mod) => ({ default: mod.RevenueChart })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const ServicePopularityChart = dynamic(
+  () => import('./charts/ServicePopularityChart').then((mod) => ({ default: mod.ServicePopularityChart })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const CustomerTypeChart = dynamic(
+  () => import('./charts/CustomerTypeChart').then((mod) => ({ default: mod.CustomerTypeChart })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const RetentionChart = dynamic(
+  () => import('./charts/RetentionChart').then((mod) => ({ default: mod.RetentionChart })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const OperationalMetricsChart = dynamic(
+  () => import('./charts/OperationalMetricsChart').then((mod) => ({ default: mod.OperationalMetricsChart })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const BookingSourceChart = dynamic(
+  () => import('./BookingSourceChart').then((mod) => ({ default: mod.BookingSourceChart })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const PetSizeChart = dynamic(
+  () => import('./PetSizeChart').then((mod) => ({ default: mod.PetSizeChart })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const PeakHoursChart = dynamic(
+  () => import('./PeakHoursChart').then((mod) => ({ default: mod.PeakHoursChart })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const GroomerPerformanceDashboard = dynamic(
+  () => import('./GroomerPerformanceDashboard').then((mod) => ({ default: mod.GroomerPerformanceDashboard })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const GroomerLeaderboard = dynamic(
+  () => import('./GroomerLeaderboard').then((mod) => ({ default: mod.GroomerLeaderboard })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const GroomerComparisonTable = dynamic(
+  () => import('./GroomerComparisonTable').then((mod) => ({ default: mod.GroomerComparisonTable })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const ReportCardAnalytics = dynamic(
+  () => import('./ReportCardAnalytics').then((mod) => ({ default: mod.ReportCardAnalytics })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const WaitlistAnalytics = dynamic(
+  () => import('./WaitlistAnalytics').then((mod) => ({ default: mod.WaitlistAnalytics })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const MarketingAnalytics = dynamic(
+  () => import('./MarketingAnalytics').then((mod) => ({ default: mod.MarketingAnalytics })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
+const LoyaltyAnalytics = dynamic(
+  () => import('./LoyaltyAnalytics').then((mod) => ({ default: mod.LoyaltyAnalytics })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
 
 interface DateRange {
   start: Date;

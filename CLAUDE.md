@@ -15,15 +15,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Tech Stack
 
-- **Framework**: Next.js 14+ (App Router) + TypeScript
-- **Styling**: Tailwind CSS + DaisyUI (https://daisyui.com/components/)
+- **Framework**: Next.js 16 (App Router) + TypeScript
+- **React**: 19.2
+- **Styling**: Tailwind CSS 4 + DaisyUI 5 (https://daisyui.com/components/)
 - **Animations**: Framer Motion
-- **Database**: Supabase (PostgreSQL)
+- **Database**: Supabase (PostgreSQL) — connected to live Supabase project
 - **Auth**: Supabase Auth
 - **Storage**: Supabase Storage
-- **Payments**: Stripe
+- **Payments**: Stripe (Phase 7 - pending)
 - **Email**: Resend
 - **SMS**: Twilio
+- **Calendar**: Google Calendar API (bidirectional sync)
+- **Charts**: Chart.js, Recharts
+- **Forms**: React Hook Form + Zod
+- **State**: Zustand
+
+## Development Mode
+
+Using **live Supabase** (`NEXT_PUBLIC_USE_MOCKS=false`). All API routes connect to the real Supabase database. Mock services are available as fallback but not active.
 
 ## Tool Orchestration
 
@@ -58,10 +67,6 @@ Invoke these skills **proactively** when their trigger conditions match — don'
 3. Use Context7 for library docs — never guess API signatures
 4. Skills are selective — only invoke those matching the current task type
 
-## Development Mode
-
-Currently using **mock services** (`NEXT_PUBLIC_USE_MOCKS=true`). External services (Supabase, Stripe, Resend, Twilio) are stubbed with in-memory implementations.
-
 ## Project Structure
 
 ```
@@ -82,7 +87,7 @@ src/
 │   ├── stripe/          # Stripe utilities
 │   ├── resend/          # Email utilities
 │   └── twilio/          # SMS utilities
-├── mocks/               # Mock service implementations
+├── mocks/               # Mock service implementations (inactive)
 ├── hooks/               # Custom React hooks
 ├── types/               # TypeScript types
 └── stores/              # Zustand state stores
@@ -101,7 +106,9 @@ docs/
 npm run dev          # Start development server
 npm run build        # Production build
 npm run lint         # Run ESLint
-npm run test         # Run tests
+npm run test         # Run all tests
+npm run test:ui      # Visual test UI
+npm run test:coverage # Coverage report
 ```
 
 ## Kiro SDD Workflow
@@ -116,6 +123,44 @@ This project uses Kiro Spec-Driven Development. For each phase:
 ## Session Context
 
 Before starting work, check `.claude/tasks/context_session_x.md` for current context. Update after each session.
+
+## UI Feedback Rules — Toast Notifications
+
+**RULE: Every database mutation (create, update, delete) MUST show a toast notification.**
+
+Use `toast` from `@/hooks/use-toast`:
+
+```ts
+import { toast } from '@/hooks/use-toast';
+
+// Success
+toast.success('Appointment confirmed');
+toast.success('Customer updated');
+toast.success('Record deleted');
+
+// Error (always in catch block)
+toast.error('Failed to confirm appointment');
+toast.error('Failed to save changes');
+```
+
+**Required for all:**
+- `POST` / `PUT` / `PATCH` / `DELETE` API calls from client components
+- Supabase `.insert()`, `.update()`, `.upsert()`, `.delete()` calls from client components
+- Form submissions that write to the database
+
+**Pattern:**
+```ts
+try {
+  const res = await fetch('/api/...', { method: 'POST', ... });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  toast.success('Done!');
+} catch (err) {
+  console.error('[ComponentName] action error:', err);
+  toast.error('Failed to complete action');
+}
+```
+
+**Message guidelines:** Keep messages short and specific (e.g. "Appointment confirmed", not "Success"). Use past tense for success, "Failed to …" for errors.
 
 ## Design System
 
@@ -215,4 +260,4 @@ See [Business Information](docs/architecture/ARCHITECTURE.md#business-informatio
 
 See [Development Phases](docs/architecture/ARCHITECTURE.md#development-phases) in ARCHITECTURE.md for complete phase details.
 
-**Current Status**: Phases 1-6, 8, 9, 11 completed | Phase 7 (Payments) pending | Phase 10 (Testing & Polish) in progress — booking modal refactor, responsive admin layout, and admin API RLS fixes done; comprehensive testing pending.
+**Current Status**: Phases 1-6, 8, 9, 11 completed | Phase F (Admin Dashboard Redesign) completed | Phase 7 (Payments) pending | Phase 10 (Testing & Polish) in progress — booking modal refactor, responsive admin layout, admin API RLS fixes, query parallelization, client component memoization, and admin pages performance audit done; comprehensive testing pending.

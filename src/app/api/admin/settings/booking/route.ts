@@ -57,7 +57,6 @@ export async function GET() {
 
     // If no settings found, return defaults
     if (!settingRecord) {
-      console.log('[Booking Settings API] No settings found, returning defaults');
       return NextResponse.json({
         data: DEFAULT_BOOKING_SETTINGS,
         last_updated: null,

@@ -29,13 +29,6 @@ export async function POST(request: NextRequest) {
     const resourceState = request.headers.get('x-goog-resource-state');
     const messageNumber = request.headers.get('x-goog-message-number');
 
-    console.log('Received webhook notification:', {
-      channelId,
-      resourceId,
-      resourceState,
-      messageNumber,
-      timestamp: new Date().toISOString(),
-    });
 
     // Validate required headers
     if (!channelId || !resourceId || !resourceState) {
@@ -82,7 +75,6 @@ export async function POST(request: NextRequest) {
     // Handle different resource states
     if (resourceState === 'sync') {
       // Initial sync notification - acknowledge but don't process
-      console.log('Received sync notification (initial webhook registration)');
       return NextResponse.json({ success: true, message: 'Sync acknowledged' });
     }
 
@@ -126,7 +118,6 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime;
 
-    console.log(`Webhook acknowledged in ${duration}ms`);
 
     return NextResponse.json({
       success: true,
@@ -160,11 +151,9 @@ async function processWebhookInBackground(
   supabase: AppSupabaseClient
 ): Promise<void> {
   try {
-    console.log(`Processing webhook for connection ${connectionId} in background...`);
 
     await processWebhookNotification(supabase, connectionId, resourceState);
 
-    console.log(`Webhook processing completed for connection ${connectionId}`);
   } catch (error) {
     console.error('Background webhook processing error:', error);
 

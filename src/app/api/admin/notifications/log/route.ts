@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
+import { escapeLikePattern } from '@/lib/utils/validation';
 
 interface NotificationLogListItem {
   id: string;
@@ -147,7 +148,7 @@ export async function GET(request: NextRequest) {
       countQuery = countQuery.lte('created_at', endDate);
     }
     if (search) {
-      countQuery = countQuery.ilike('recipient', `%${search}%`);
+      countQuery = countQuery.ilike('recipient', `%${escapeLikePattern(search)}%`);
     }
 
     // Execute count query
@@ -201,7 +202,7 @@ export async function GET(request: NextRequest) {
       dataQuery = dataQuery.lte('created_at', endDate);
     }
     if (search) {
-      dataQuery = dataQuery.ilike('recipient', `%${search}%`);
+      dataQuery = dataQuery.ilike('recipient', `%${escapeLikePattern(search)}%`);
     }
 
     // Order by created_at descending (most recent first)

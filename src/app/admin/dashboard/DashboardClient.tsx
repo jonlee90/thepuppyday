@@ -56,6 +56,14 @@ export function DashboardClient() {
         onRetry={refetch}
       />
 
+      {/* Needs Attention — full width, below revenue */}
+      <PendingActionsWidget
+        pending={pendingAppointments}
+        loading={loading.pending}
+        error={errors.pending}
+        onStatusUpdate={handleStatusUpdate}
+      />
+
       {/* Main Content Grid: Timeline (3 cols) + Sidebar (2 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Timeline */}
@@ -76,12 +84,6 @@ export function DashboardClient() {
             loading={loading.appointments}
           />
           <WaitlistWidget />
-          <PendingActionsWidget
-            pending={pendingAppointments}
-            loading={loading.pending}
-            error={errors.pending}
-            onStatusUpdate={handleStatusUpdate}
-          />
         </div>
       </div>
 

@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Edit, Loader2, Plus, Tag } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import { AddOnForm } from './AddOnForm';
 import type { Addon } from '@/types/database';
 
@@ -188,7 +189,7 @@ export function AddOnsList({ initialAddons = [] }: AddOnsListProps) {
       setAddons(data.addons || []);
     } catch (error) {
       console.error('Error fetching add-ons:', error);
-      alert('Failed to load add-ons');
+      toast.error('Failed to load add-ons');
     } finally {
       setIsLoading(false);
     }
@@ -218,8 +219,10 @@ export function AddOnsList({ initialAddons = [] }: AddOnsListProps) {
           })
         )
       );
+      toast.success('Add-ons reordered');
     } catch (error) {
-      console.error('Error updating display order:', error);
+      console.error('[AddOnsList] reorder error:', error);
+      toast.error('Failed to reorder add-ons');
       // Revert on error
       fetchAddons();
     }
@@ -241,9 +244,10 @@ export function AddOnsList({ initialAddons = [] }: AddOnsListProps) {
       setAddons((prev) =>
         prev.map((a) => (a.id === id ? { ...a, is_active: isActive } : a))
       );
+      toast.success(`Add-on ${isActive ? 'activated' : 'deactivated'}`);
     } catch (error) {
-      console.error('Error toggling add-on status:', error);
-      alert('Failed to update add-on status');
+      console.error('[AddOnsList] toggle error:', error);
+      toast.error('Failed to update add-on');
     }
   };
 

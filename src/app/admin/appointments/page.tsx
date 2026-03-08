@@ -6,13 +6,22 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Calendar, List, Upload } from 'lucide-react';
 import { useAdminStore } from '@/stores/admin-store';
 import { AppointmentCalendar } from '@/components/admin/appointments/AppointmentCalendar';
 import { AppointmentListView } from '@/components/admin/appointments/AppointmentListView';
-import { AppointmentDetailModal } from '@/components/admin/appointments/AppointmentDetailModal';
-import { CSVImportModal } from '@/components/admin/appointments/CSVImportModal';
 import { AdminCreateButton } from '@/components/booking';
+
+// Dynamic imports for heavy modal components
+const AppointmentDetailModal = dynamic(
+  () => import('@/components/admin/appointments/AppointmentDetailModal').then((mod) => ({ default: mod.AppointmentDetailModal })),
+  { ssr: false }
+);
+const CSVImportModal = dynamic(
+  () => import('@/components/admin/appointments/CSVImportModal').then((mod) => ({ default: mod.CSVImportModal })),
+  { ssr: false }
+);
 
 export default function AppointmentsPage() {
   const { appointmentsView, setAppointmentsView } = useAdminStore();

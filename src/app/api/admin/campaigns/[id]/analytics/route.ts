@@ -46,7 +46,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       );
     }
 
-    console.log(`[Campaign Analytics API] Getting analytics for campaign: ${campaign.name}`);
 
     // Get overall performance metrics
     const performance = await getCampaignPerformance(supabase, id);

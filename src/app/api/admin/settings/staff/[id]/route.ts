@@ -30,7 +30,6 @@ export async function GET(
     await requireAdmin(supabase);
 
     const { id: staffId } = await params;
-    console.log('[Staff Detail API] GET - Staff ID:', staffId);
 
     // In mock mode, query from mock store
     if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
@@ -41,7 +40,6 @@ export async function GET(
       const profile = store.selectById('users', staffId) as User | null;
 
       if (!profile) {
-        console.log('[Staff Detail API] Staff not found:', staffId);
         return NextResponse.json(
           { error: 'Staff member not found' },
           { status: 404 }
@@ -50,7 +48,6 @@ export async function GET(
 
       // Verify user is staff
       if (profile.role !== 'admin' && profile.role !== 'groomer') {
-        console.log('[Staff Detail API] User is not staff:', staffId);
         return NextResponse.json(
           { error: 'User is not a staff member' },
           { status: 400 }
@@ -123,12 +120,6 @@ export async function GET(
         commission_settings,
       };
 
-      console.log('[Staff Detail API] Returning staff detail:', {
-        id: staffId,
-        completed_appointments,
-        upcoming_appointments,
-        avg_rating: avg_rating ? Math.round(avg_rating * 10) / 10 : null,
-      });
 
       return NextResponse.json({ data: response });
     }
@@ -142,7 +133,6 @@ export async function GET(
       .single();
 
     if (profileError || !profile) {
-      console.log('[Staff Detail API] Staff not found:', staffId);
       return NextResponse.json(
         { error: 'Staff member not found' },
         { status: 404 }
@@ -151,7 +141,6 @@ export async function GET(
 
     // Verify user is staff
     if (profile.role !== 'admin' && profile.role !== 'groomer') {
-      console.log('[Staff Detail API] User is not staff:', staffId);
       return NextResponse.json(
         { error: 'User is not a staff member' },
         { status: 400 }
@@ -232,12 +221,6 @@ export async function GET(
       commission_settings: commissionData || null,
     };
 
-    console.log('[Staff Detail API] Returning staff detail:', {
-      id: staffId,
-      completed_appointments: completedCount || 0,
-      upcoming_appointments: upcomingCount || 0,
-      avg_rating: avg_rating ? Math.round(avg_rating * 10) / 10 : null,
-    });
 
     return NextResponse.json({ data: response });
   } catch (error) {

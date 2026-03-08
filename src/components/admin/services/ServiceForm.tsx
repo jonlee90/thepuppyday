@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import { SizeBasedPricingInputs } from './SizeBasedPricingInputs';
 import type { Service, ServicePrice, PetSize } from '@/types/database';
 
@@ -222,12 +223,13 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
         throw new Error(data.error || 'Failed to save service');
       }
 
+      toast.success(service ? 'Service updated' : 'Service created');
       setIsDirty(false);
       onSuccess();
       onClose();
     } catch (error) {
-      console.error('Error saving service:', error);
-      alert(error instanceof Error ? error.message : 'Failed to save service');
+      console.error('[ServiceForm] save error:', error);
+      toast.error(service ? 'Failed to update service' : 'Failed to create service');
     } finally {
       setIsSubmitting(false);
     }

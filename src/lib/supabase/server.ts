@@ -14,8 +14,10 @@ export type AppSupabaseClient = MockSupabaseClient | SupabaseClient;
 
 /**
  * Create a Supabase client for server-side use (Server Components, Route Handlers)
+ * Wrapped in React.cache() so multiple calls within the same server request
+ * return the same client instance (per-request deduplication).
  */
-export async function createServerSupabaseClient(): Promise<AppSupabaseClient> {
+export const createServerSupabaseClient = cache(async (): Promise<AppSupabaseClient> => {
   const cookieStore = await cookies();
 
   if (config.useMocks) {
@@ -51,23 +53,32 @@ export async function createServerSupabaseClient(): Promise<AppSupabaseClient> {
       },
     }
   );
-}
+});
 
 /**
- * Create a Supabase client with service role key for admin operations
+ * Create a Supabase client with service role key for admin operations.
  * WARNING: This bypasses RLS. Only use for trusted server-side operations.
+ *
+ * Uses a module-level singleton since the service role client has no
+ * per-request state (no cookies/session). Safe to reuse across requests.
  */
+let _serviceRoleClient: SupabaseClient | MockSupabaseClient | null = null;
+
 export function createServiceRoleClient(): SupabaseClient | MockSupabaseClient {
+  if (_serviceRoleClient) return _serviceRoleClient;
+
   if (config.useMocks) {
-    return createMockClient();
+    _serviceRoleClient = createMockClient();
+    return _serviceRoleClient;
   }
 
-  return createSupabaseClient(config.supabase.url, config.supabase.serviceRoleKey, {
+  _serviceRoleClient = createSupabaseClient(config.supabase.url, config.supabase.serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
   });
+  return _serviceRoleClient;
 }
 
 /**

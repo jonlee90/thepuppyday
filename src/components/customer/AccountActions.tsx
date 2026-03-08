@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 
 export function AccountActions() {
@@ -20,12 +21,15 @@ export function AccountActions() {
 
       if (!res.ok) {
         const data = await res.json();
+        toast.error('Failed to delete account');
         setDeleteError(data.error || 'Failed to delete account');
         return;
       }
 
+      toast.success('Account deleted');
       await signOut();
     } catch {
+      toast.error('Failed to delete account');
       setDeleteError('An error occurred. Please try again.');
     } finally {
       setIsDeleting(false);

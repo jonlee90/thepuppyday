@@ -2,11 +2,28 @@
  * Admin Customers Page
  * Lists all customers with search and filtering
  * Task 0017: Create /admin/customers page
+ *
+ * Thin server component — auth check only, all data fetching
+ * is handled by CustomerTable via /api/admin/customers.
  */
 
+import { Suspense } from 'react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/admin/auth';
 import { CustomerTable } from '@/components/admin/customers/CustomerTable';
 import { Users } from 'lucide-react';
+
+function CustomersTableSkeleton() {
+  return (
+    <div className="animate-pulse space-y-4">
+      <div className="flex gap-4">
+        <div className="h-10 bg-base-200 rounded-lg flex-1" />
+        <div className="h-10 bg-base-200 rounded-lg w-32" />
+      </div>
+      <div className="bg-base-200 rounded-xl h-96" />
+    </div>
+  );
+}
 
 export const metadata = {
   title: 'Customers | The Puppy Day Admin',
@@ -15,41 +32,7 @@ export const metadata = {
 
 export default async function CustomersPage() {
   const supabase = await createServerSupabaseClient();
-  // Note: Admin access is already verified by the layout
-
-  // Fetch customers data - separate queries to support mock client
-  const { data: customers } = (await (supabase as any)
-    .from('users')
-    .select('*')
-    .eq('role', 'customer')
-    .order('created_at', { ascending: false })
-    .limit(50)) as { data: any[] | null };
-
-  // Fetch related data in parallel
-  const { data: allPets } = (await (supabase as any)
-    .from('pets')
-    .select('*')) as { data: any[] | null };
-
-  const { data: allAppointments } = (await (supabase as any)
-    .from('appointments')
-    .select('*')) as { data: any[] | null };
-
-  const { data: allFlags } = (await (supabase as any)
-    .from('customer_flags')
-    .select('*')) as { data: any[] | null };
-
-  const { data: allMemberships } = (await (supabase as any)
-    .from('customer_memberships')
-    .select('*')) as { data: any[] | null };
-
-  // Transform data to match expected structure
-  const customersWithStats = (customers || []).map(customer => ({
-    ...customer,
-    pets_count: (allPets || []).filter(p => p.owner_id === customer.id).length,
-    appointments_count: (allAppointments || []).filter(a => a.customer_id === customer.id).length,
-    flags: (allFlags || []).filter(f => f.customer_id === customer.id),
-    active_membership: (allMemberships || []).find(m => m.customer_id === customer.id && m.status === 'active') || null,
-  }));
+  await requireAdmin(supabase);
 
   return (
     <div className="space-y-6">
@@ -69,7 +52,9 @@ export default async function CustomersPage() {
       </div>
 
       {/* Customer Table */}
-      <CustomerTable initialCustomers={customersWithStats} />
+      <Suspense fallback={<CustomersTableSkeleton />}>
+        <CustomerTable />
+      </Suspense>
     </div>
   );
 }

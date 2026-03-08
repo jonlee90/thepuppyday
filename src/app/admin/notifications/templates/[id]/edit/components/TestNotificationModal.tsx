@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { TemplateVariable, TemplateTestResponse } from '@/types/template';
 import { Send, CheckCircle, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
 interface TestNotificationModalProps {
@@ -41,7 +42,7 @@ export function TestNotificationModal({
 
   const handleSend = async () => {
     if (!recipient) {
-      alert(`Please enter a ${channel === 'email' ? 'email address' : 'phone number'}`);
+      toast.error(`Please enter a ${channel === 'email' ? 'email address' : 'phone number'}`);
       return;
     }
 
@@ -64,8 +65,10 @@ export function TestNotificationModal({
         throw new Error(data.error || 'Failed to send test notification');
       }
 
+      toast.success('Test notification sent');
       setResult(data);
     } catch (err) {
+      toast.error('Failed to send test notification');
       setResult({
         success: false,
         error: err instanceof Error ? err.message : 'An error occurred',

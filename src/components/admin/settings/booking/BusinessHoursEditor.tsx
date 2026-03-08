@@ -163,14 +163,25 @@ function validateBusinessHours(hours: BusinessHours): { isValid: boolean; warnin
 
 // ===== MAIN COMPONENT =====
 
-export function BusinessHoursEditor() {
-  // State
-  const [businessHours, setBusinessHours] = useState<BusinessHours>(DEFAULT_BUSINESS_HOURS);
-  const [originalHours, setOriginalHours] = useState<BusinessHours>(DEFAULT_BUSINESS_HOURS);
+interface BusinessHoursEditorProps {
+  initialSettings?: BookingSettings;
+  onSettingsUpdated?: (settings: BookingSettings) => void;
+}
+
+export function BusinessHoursEditor({ initialSettings, onSettingsUpdated }: BusinessHoursEditorProps) {
+  // State - initialize from props if available
+  const initialHours = initialSettings?.business_hours ?? DEFAULT_BUSINESS_HOURS;
+  const [businessHours, setBusinessHours] = useState<BusinessHours>(initialHours);
+  const [originalHours, setOriginalHours] = useState<BusinessHours>(initialHours);
   const [expandedDays, setExpandedDays] = useState<Set<DayOfWeek>>(new Set());
 
+  // Track the full settings object for merging on save
+  const [currentSettings, setCurrentSettings] = useState<BookingSettings | null>(
+    initialSettings ?? null
+  );
+
   // UI state
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{
     type: 'success' | 'error';
@@ -189,8 +200,10 @@ export function BusinessHoursEditor() {
     [businessHours, originalHours]
   );
 
-  // Fetch current settings
+  // Fetch current settings only if no initialSettings provided
   useEffect(() => {
+    if (initialSettings) return;
+
     const fetchSettings = async () => {
       setIsLoading(true);
       try {
@@ -200,18 +213,16 @@ export function BusinessHoursEditor() {
         const result = await response.json();
         if (result.data) {
           const settings = result.data as BookingSettings;
-
-          // Extract business_hours from settings if it exists
           const hours = settings.business_hours;
 
           if (hours) {
             setBusinessHours(hours);
             setOriginalHours(hours);
           } else {
-            // Use defaults
             setBusinessHours(DEFAULT_BUSINESS_HOURS);
             setOriginalHours(DEFAULT_BUSINESS_HOURS);
           }
+          setCurrentSettings(settings);
         }
       } catch (error) {
         console.error('Error fetching business hours:', error);
@@ -225,7 +236,14 @@ export function BusinessHoursEditor() {
     };
 
     fetchSettings();
-  }, []);
+  }, [initialSettings]);
+
+  // Sync with parent when initialSettings changes
+  useEffect(() => {
+    if (initialSettings) {
+      setCurrentSettings(initialSettings);
+    }
+  }, [initialSettings]);
 
   // Toggle day open/closed
   const toggleDayOpen = (day: DayOfWeek) => {
@@ -355,16 +373,9 @@ export function BusinessHoursEditor() {
     setSaveMessage(null);
 
     try {
-      // Fetch current settings to preserve other fields
-      const currentResponse = await fetch('/api/admin/settings/booking');
-      if (!currentResponse.ok) throw new Error('Failed to fetch current settings');
-
-      const currentResult = await currentResponse.json();
-      const currentSettings = currentResult.data as BookingSettings;
-
-      // Update with business hours
+      // Merge changed fields with current settings (no pre-fetch needed)
       const updatedSettings = {
-        ...currentSettings,
+        ...(currentSettings as BookingSettings),
         business_hours: businessHours,
       };
 
@@ -381,16 +392,16 @@ export function BusinessHoursEditor() {
         throw new Error(errorData.error || 'Failed to save business hours');
       }
 
-      // Refetch settings to confirm what was actually saved
-      const refreshResponse = await fetch('/api/admin/settings/booking');
-      if (refreshResponse.ok) {
-        const refreshResult = await refreshResponse.json();
-        if (refreshResult.data && refreshResult.data.business_hours) {
-          const savedHours = refreshResult.data.business_hours as BusinessHours;
-          setBusinessHours(savedHours);
-          setOriginalHours(savedHours);
-        }
+      // Use PUT response as new state (no post-fetch needed)
+      const result = await response.json();
+      const savedSettings = result.data as BookingSettings;
+
+      if (savedSettings.business_hours) {
+        setBusinessHours(savedSettings.business_hours);
+        setOriginalHours(savedSettings.business_hours);
       }
+      setCurrentSettings(savedSettings);
+      onSettingsUpdated?.(savedSettings);
 
       setSaveMessage({
         type: 'success',

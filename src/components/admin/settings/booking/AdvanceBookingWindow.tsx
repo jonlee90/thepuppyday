@@ -15,25 +15,45 @@ import { useState, useEffect, useMemo } from 'react';
 import { Calendar, Save, AlertCircle, AlertTriangle, Clock } from 'lucide-react';
 import type { BookingSettings } from '@/types/settings';
 
-export function AdvanceBookingWindow() {
-  // State for settings
-  const [minAdvanceHours, setMinAdvanceHours] = useState<number>(24);
-  const [maxAdvanceDays, setMaxAdvanceDays] = useState<number>(30);
+interface AdvanceBookingWindowProps {
+  initialSettings?: BookingSettings;
+  onSettingsUpdated?: (settings: BookingSettings) => void;
+}
+
+export function AdvanceBookingWindow({ initialSettings, onSettingsUpdated }: AdvanceBookingWindowProps) {
+  // State for settings - initialize from props if available
+  const [minAdvanceHours, setMinAdvanceHours] = useState<number>(
+    initialSettings?.min_advance_hours ?? 24
+  );
+  const [maxAdvanceDays, setMaxAdvanceDays] = useState<number>(
+    initialSettings?.max_advance_days ?? 30
+  );
 
   // Original values for unsaved changes tracking
-  const [originalMinHours, setOriginalMinHours] = useState<number>(24);
-  const [originalMaxDays, setOriginalMaxDays] = useState<number>(30);
+  const [originalMinHours, setOriginalMinHours] = useState<number>(
+    initialSettings?.min_advance_hours ?? 24
+  );
+  const [originalMaxDays, setOriginalMaxDays] = useState<number>(
+    initialSettings?.max_advance_days ?? 30
+  );
 
-  // UI state
-  const [isLoading, setIsLoading] = useState(true);
+  // Track the full settings object for merging on save
+  const [currentSettings, setCurrentSettings] = useState<BookingSettings | null>(
+    initialSettings ?? null
+  );
+
+  // UI state - no loading needed when settings come from props
+  const [isLoading, setIsLoading] = useState(!initialSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{
     type: 'success' | 'error';
     text: string;
   } | null>(null);
 
-  // Fetch current settings
+  // Fetch current settings only if no initialSettings provided
   useEffect(() => {
+    if (initialSettings) return;
+
     const fetchSettings = async () => {
       setIsLoading(true);
       try {
@@ -47,6 +67,7 @@ export function AdvanceBookingWindow() {
           setMaxAdvanceDays(settings.max_advance_days);
           setOriginalMinHours(settings.min_advance_hours);
           setOriginalMaxDays(settings.max_advance_days);
+          setCurrentSettings(settings);
         }
       } catch (error) {
         console.error('Error fetching booking settings:', error);
@@ -60,7 +81,14 @@ export function AdvanceBookingWindow() {
     };
 
     fetchSettings();
-  }, []);
+  }, [initialSettings]);
+
+  // Sync with parent when initialSettings changes
+  useEffect(() => {
+    if (initialSettings) {
+      setCurrentSettings(initialSettings);
+    }
+  }, [initialSettings]);
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = useMemo(() => {
@@ -100,16 +128,9 @@ export function AdvanceBookingWindow() {
     setSaveMessage(null);
 
     try {
-      // Fetch current settings to preserve other fields
-      const currentResponse = await fetch('/api/admin/settings/booking');
-      if (!currentResponse.ok) throw new Error('Failed to fetch current settings');
-
-      const currentResult = await currentResponse.json();
-      const currentSettings = currentResult.data as BookingSettings;
-
-      // Update only the advance booking fields
+      // Merge changed fields with current settings (no pre-fetch needed)
       const updatedSettings: BookingSettings = {
-        ...currentSettings,
+        ...(currentSettings as BookingSettings),
         min_advance_hours: minAdvanceHours,
         max_advance_days: maxAdvanceDays,
       };
@@ -127,18 +148,16 @@ export function AdvanceBookingWindow() {
         throw new Error(errorData.error || 'Failed to save settings');
       }
 
-      // Refetch settings to confirm what was actually saved
-      const refreshResponse = await fetch('/api/admin/settings/booking');
-      if (refreshResponse.ok) {
-        const refreshResult = await refreshResponse.json();
-        if (refreshResult.data) {
-          const settings = refreshResult.data as BookingSettings;
-          setMinAdvanceHours(settings.min_advance_hours);
-          setMaxAdvanceDays(settings.max_advance_days);
-          setOriginalMinHours(settings.min_advance_hours);
-          setOriginalMaxDays(settings.max_advance_days);
-        }
-      }
+      // Use PUT response as new state (no post-fetch needed)
+      const result = await response.json();
+      const savedSettings = result.data as BookingSettings;
+
+      setMinAdvanceHours(savedSettings.min_advance_hours);
+      setMaxAdvanceDays(savedSettings.max_advance_days);
+      setOriginalMinHours(savedSettings.min_advance_hours);
+      setOriginalMaxDays(savedSettings.max_advance_days);
+      setCurrentSettings(savedSettings);
+      onSettingsUpdated?.(savedSettings);
 
       setSaveMessage({
         type: 'success',

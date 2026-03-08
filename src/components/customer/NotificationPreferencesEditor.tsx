@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 
 interface NotificationPrefs {
   marketing_enabled: boolean;
@@ -35,10 +36,14 @@ export function NotificationPreferencesEditor({ initialPrefs }: NotificationPref
       if (!res.ok) {
         // Revert on failure
         setPrefs((p) => ({ ...p, [key]: !newValue }));
+        toast.error('Failed to update preference');
         setError('Failed to save preference. Please try again.');
+      } else {
+        toast.success('Preference updated');
       }
     } catch {
       setPrefs((p) => ({ ...p, [key]: !newValue }));
+      toast.error('Failed to update preference');
       setError('An error occurred. Please try again.');
     } finally {
       setSaving(null);

@@ -14,6 +14,7 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar, Plus, Trash2, AlertTriangle, X } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { BlockedDate } from '@/types/settings';
 
@@ -53,18 +54,11 @@ export function BlockedDatesManager({
   const [conflictData, setConflictData] = useState<ConflictResponse | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [dateToDelete, setDateToDelete] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Notify parent of loading state changes
   useEffect(() => {
     onLoadingChange?.(isLoading);
   }, [isLoading, onLoadingChange]);
-
-  // Show toast notification
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   // Fetch blocked dates from API
   const fetchBlockedDates = async () => {
@@ -78,7 +72,7 @@ export function BlockedDatesManager({
       onBlockedDatesChange(data.blocked_dates || []);
     } catch (error) {
       console.error('Error fetching blocked dates:', error);
-      showToast('error', 'Failed to load blocked dates');
+      toast.error('Failed to load blocked dates');
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +105,7 @@ export function BlockedDatesManager({
 
     // Validate date range
     if (isRange && formEndDate && new Date(formEndDate) < new Date(formDate)) {
-      showToast('error', 'End date must be on or after start date');
+      toast.error('End date must be on or after start date');
       return;
     }
 
@@ -146,11 +140,11 @@ export function BlockedDatesManager({
 
       // Success
       onBlockedDatesChange(data.blocked_dates);
-      showToast('success', 'Blocked date added successfully');
+      toast.success('Blocked date added');
       handleCloseAddModal();
     } catch (error) {
       console.error('Error adding blocked date:', error);
-      showToast('error', error instanceof Error ? error.message : 'Failed to add blocked date');
+      toast.error(error instanceof Error ? error.message : 'Failed to add blocked date');
     } finally {
       setIsLoading(false);
     }
@@ -188,12 +182,12 @@ export function BlockedDatesManager({
 
       // Success
       onBlockedDatesChange(data.blocked_dates);
-      showToast('success', 'Blocked date removed successfully');
+      toast.success('Blocked date removed');
       setShowDeleteConfirm(false);
       setDateToDelete(null);
     } catch (error) {
       console.error('Error removing blocked date:', error);
-      showToast('error', error instanceof Error ? error.message : 'Failed to remove blocked date');
+      toast.error(error instanceof Error ? error.message : 'Failed to remove blocked date');
     } finally {
       setIsLoading(false);
     }
@@ -511,25 +505,6 @@ export function BlockedDatesManager({
         )}
       </AnimatePresence>
 
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="toast toast-end"
-          >
-            <div
-              className={`alert ${
-                toast.type === 'success' ? 'alert-success' : 'alert-error'
-              } text-white`}
-            >
-              <span>{toast.message}</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

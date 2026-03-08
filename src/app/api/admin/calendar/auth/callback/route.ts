@@ -80,7 +80,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
-    console.log('[Calendar OAuth Callback] Processing callback for admin:', adminUser.email);
 
     // Exchange authorization code for tokens
     let tokens;
@@ -134,7 +133,6 @@ export async function GET(request: NextRequest) {
         calendarId
       );
 
-      console.log('[Calendar OAuth Callback] Connection created successfully for:', calendarEmail);
 
       // Redirect to settings page with success status
       const redirectUrl = new URL(

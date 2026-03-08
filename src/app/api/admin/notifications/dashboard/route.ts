@@ -111,8 +111,6 @@ export async function GET(request: NextRequest) {
     const currentPeriod = calculatePeriodDates(period, customStartDate, customEndDate);
     const previousPeriod = calculatePreviousPeriod(currentPeriod);
 
-    console.log('[Dashboard API] Current period:', currentPeriod);
-    console.log('[Dashboard API] Previous period:', previousPeriod);
 
     // In mock mode, query from mock store
     if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {

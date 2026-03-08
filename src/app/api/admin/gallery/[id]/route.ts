@@ -283,7 +283,6 @@ export async function DELETE(
           console.error('[Delete] Storage deletion failed:', storageError);
           // Continue anyway - database entry is already deleted
         } else {
-          console.log(`[Delete] Successfully deleted ${fileName} from storage`);
         }
       }
     } catch (urlError) {

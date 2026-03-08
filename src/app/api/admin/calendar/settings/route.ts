@@ -22,13 +22,11 @@ export async function GET() {
     const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
-    console.log('[Calendar Sync Settings] GET - Admin user:', adminUser.email);
 
     // Get active calendar connection
     const connection = await getActiveConnection(supabase, adminUser.id);
 
     if (!connection) {
-      console.log('[Calendar Sync Settings] No active connection for admin:', adminUser.id);
       return NextResponse.json(
         {
           error: 'No calendar connection found',
@@ -49,7 +47,6 @@ export async function GET() {
 
     if (settingsError || !settingsData) {
       // Return default settings if not found
-      console.log('[Calendar Sync Settings] No settings found, returning defaults');
       syncSettings = {
         sync_statuses: ['confirmed', 'in_progress'],
         auto_sync_enabled: true,
@@ -64,7 +61,6 @@ export async function GET() {
       syncSettings = settingsData.value as CalendarSyncSettings;
     }
 
-    console.log('[Calendar Sync Settings] Returning sync settings');
 
     return NextResponse.json({
       settings: syncSettings,
@@ -96,13 +92,11 @@ export async function PUT(request: NextRequest) {
     const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
-    console.log('[Calendar Sync Settings] PUT - Admin user:', adminUser.email);
 
     // Get active calendar connection
     const connection = await getActiveConnection(supabase, adminUser.id);
 
     if (!connection) {
-      console.log('[Calendar Sync Settings] No active connection for admin:', adminUser.id);
       return NextResponse.json(
         {
           error: 'No calendar connection found',
@@ -117,7 +111,6 @@ export async function PUT(request: NextRequest) {
     const validation = calendarSyncSettingsSchema.safeParse(body);
 
     if (!validation.success) {
-      console.log('[Calendar Sync Settings] Validation failed:', validation.error.errors);
       return NextResponse.json(
         {
           error: 'Validation failed',
@@ -129,7 +122,6 @@ export async function PUT(request: NextRequest) {
 
     const syncSettings = validation.data;
 
-    console.log('[Calendar Sync Settings] Updating settings:', syncSettings);
 
     // Check if settings already exist
     const { data: existingSettings } = await (supabase as AppSupabaseClient)
@@ -181,7 +173,6 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    console.log('[Calendar Sync Settings] Settings updated successfully');
 
     return NextResponse.json({
       success: true,

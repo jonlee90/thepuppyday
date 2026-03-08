@@ -94,7 +94,9 @@
       "Bash(do:*)",
       "Bash(sed:*)",
       "mcp__plugin_serena_serena__find_file",
-      "mcp__plugin_serena_serena__find_symbol"
+      "mcp__plugin_serena_serena__find_symbol",
+      "Bash(npx next:*)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx tsc:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

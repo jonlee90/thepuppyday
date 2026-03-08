@@ -39,7 +39,6 @@ export async function GET() {
 
     // If not found, fetch all service IDs and return defaults
     if (settingsError?.message === 'No rows found' || !settingRecord?.value) {
-      console.log('[Redemption Rules API] No settings found, fetching defaults');
 
       // Fetch all service IDs from database
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -308,11 +307,6 @@ export async function PUT(request: Request) {
       }
     }
 
-    console.log(
-      `[Redemption Rules API] Redemption rules updated by admin ${admin.id}:`,
-      `eligible_services=${eligible_services.length}, `,
-      `expiration_days=${expiration_days}, max_value=${max_value ?? 'unlimited'}`
-    );
 
     // Build descriptive message
     let message = 'Loyalty redemption rules updated successfully. ';

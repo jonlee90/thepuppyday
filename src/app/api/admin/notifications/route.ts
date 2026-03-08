@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
         order: { column: 'created_at', ascending: false },
       }) as unknown as NotificationLogRow[];
 
-      console.log('[Notifications API] Total notifications:', notifications.length);
 
       // Apply filters
       if (channel) {

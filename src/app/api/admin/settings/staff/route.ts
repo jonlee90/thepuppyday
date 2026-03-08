@@ -44,14 +44,12 @@ export async function GET(request: NextRequest) {
     const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
-    console.log('[Staff API] GET - Admin user:', adminUser.email);
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
     const roleFilter = searchParams.get('role') || 'all';
     const statusFilter = searchParams.get('status') || 'active';
 
-    console.log('[Staff API] Filters - role:', roleFilter, 'status:', statusFilter);
 
     // In mock mode, query from mock store
     if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
@@ -71,7 +69,6 @@ export async function GET(request: NextRequest) {
         staff = staff.filter((u) => u.role === 'admin' || u.role === 'groomer');
       }
 
-      console.log('[Staff API] Found', staff.length, 'staff members');
 
       // Enrich with stats
       const enrichedStaff: StaffMemberResponse[] = staff.map((staffMember) => {
@@ -143,7 +140,6 @@ export async function GET(request: NextRequest) {
         return a.last_name.localeCompare(b.last_name);
       });
 
-      console.log('[Staff API] Returning', enrichedStaff.length, 'enriched staff members');
 
       return NextResponse.json({
         data: enrichedStaff,
@@ -166,75 +162,101 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Enrich with stats
-    const enrichedStaff: StaffMemberResponse[] = await Promise.all(
-      (staffData || []).map(async (staffMember: User) => {
-        // Count completed appointments
-        const { count: appointmentCount } = await (serviceClient as any)
-          .from('appointments')
-          .select('*', { count: 'exact', head: true })
-          .eq('groomer_id', staffMember.id)
-          .eq('status', 'completed');
+    // Batch all stats queries (constant number of queries regardless of staff count)
+    const staffIds = (staffData || []).map((s: User) => s.id);
 
-        // Count upcoming appointments (next 7 days)
-        const now = new Date();
-        const sevenDaysFromNow = new Date(now);
-        sevenDaysFromNow.setDate(now.getDate() + 7);
+    const now = new Date();
+    const sevenDaysFromNow = new Date(now);
+    sevenDaysFromNow.setDate(now.getDate() + 7);
 
-        const { count: upcomingCount } = await (serviceClient as any)
-          .from('appointments')
-          .select('*', { count: 'exact', head: true })
-          .eq('groomer_id', staffMember.id)
-          .in('status', ['pending', 'confirmed'])
-          .gte('scheduled_at', now.toISOString())
-          .lte('scheduled_at', sevenDaysFromNow.toISOString());
+    // Run all 4 batch queries in parallel
+    const [
+      { data: completedRows },
+      { data: upcomingRows },
+      { data: ratingRows },
+      { data: commissionRows },
+    ] = await Promise.all([
+      // 1. Completed appointments per groomer
+      (serviceClient as any)
+        .from('appointments')
+        .select('groomer_id')
+        .in('groomer_id', staffIds)
+        .eq('status', 'completed'),
 
-        // Get average rating
-        const { data: reportCards } = await (serviceClient as any)
-          .from('report_cards')
-          .select('rating, appointment_id')
-          .not('rating', 'is', null);
+      // 2. Upcoming appointments per groomer (next 7 days)
+      (serviceClient as any)
+        .from('appointments')
+        .select('groomer_id')
+        .in('groomer_id', staffIds)
+        .in('status', ['pending', 'confirmed'])
+        .gte('scheduled_at', now.toISOString())
+        .lte('scheduled_at', sevenDaysFromNow.toISOString()),
 
-        const { data: staffAppointments } = await (serviceClient as any)
-          .from('appointments')
-          .select('id')
-          .eq('groomer_id', staffMember.id);
+      // 3. All report card ratings joined through appointments for these groomers
+      (serviceClient as any)
+        .from('appointments')
+        .select('groomer_id, report_cards(rating)')
+        .in('groomer_id', staffIds)
+        .not('report_cards', 'is', null),
 
-        const staffAppointmentIds = new Set(
-          (staffAppointments || []).map((apt: any) => apt.id)
-        );
+      // 4. All commission settings for these groomers
+      (serviceClient as any)
+        .from('staff_commissions')
+        .select('*')
+        .in('groomer_id', staffIds),
+    ]);
 
-        const staffRatings = (reportCards || [])
-          .filter((rc: any) => staffAppointmentIds.has(rc.appointment_id))
-          .map((rc: any) => rc.rating);
+    // Build lookup maps from batch results
+    const completedCountMap = new Map<string, number>();
+    for (const row of completedRows || []) {
+      completedCountMap.set(row.groomer_id, (completedCountMap.get(row.groomer_id) || 0) + 1);
+    }
 
-        const avg_rating = staffRatings.length > 0
-          ? staffRatings.reduce((sum: number, rating: number) => sum + rating, 0) / staffRatings.length
-          : null;
+    const upcomingCountMap = new Map<string, number>();
+    for (const row of upcomingRows || []) {
+      upcomingCountMap.set(row.groomer_id, (upcomingCountMap.get(row.groomer_id) || 0) + 1);
+    }
 
-        // Get commission settings
-        const { data: commissionData } = await (serviceClient as any)
-          .from('staff_commissions')
-          .select('*')
-          .eq('groomer_id', staffMember.id)
-          .single();
+    const ratingsMap = new Map<string, number[]>();
+    for (const row of ratingRows || []) {
+      // report_cards is returned as an array from the join; each entry has a rating
+      const cards = Array.isArray(row.report_cards) ? row.report_cards : [row.report_cards];
+      for (const card of cards) {
+        if (card && card.rating != null) {
+          const existing = ratingsMap.get(row.groomer_id) || [];
+          existing.push(card.rating);
+          ratingsMap.set(row.groomer_id, existing);
+        }
+      }
+    }
 
-        return {
-          id: staffMember.id,
-          email: staffMember.email,
-          first_name: staffMember.first_name,
-          last_name: staffMember.last_name,
-          phone: staffMember.phone,
-          role: staffMember.role,
-          avatar_url: staffMember.avatar_url,
-          created_at: staffMember.created_at,
-          appointment_count: appointmentCount || 0,
-          upcoming_appointments: upcomingCount || 0,
-          avg_rating: avg_rating ? Math.round(avg_rating * 10) / 10 : null,
-          commission_settings: commissionData || null,
-        };
-      })
-    );
+    const commissionMap = new Map<string, StaffCommission>();
+    for (const row of commissionRows || []) {
+      commissionMap.set(row.groomer_id, row);
+    }
+
+    // Assemble enriched staff from lookup maps
+    const enrichedStaff: StaffMemberResponse[] = (staffData || []).map((staffMember: User) => {
+      const ratings = ratingsMap.get(staffMember.id);
+      const avg_rating = ratings && ratings.length > 0
+        ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+        : null;
+
+      return {
+        id: staffMember.id,
+        email: staffMember.email,
+        first_name: staffMember.first_name,
+        last_name: staffMember.last_name,
+        phone: staffMember.phone,
+        role: staffMember.role,
+        avatar_url: staffMember.avatar_url,
+        created_at: staffMember.created_at,
+        appointment_count: completedCountMap.get(staffMember.id) || 0,
+        upcoming_appointments: upcomingCountMap.get(staffMember.id) || 0,
+        avg_rating: avg_rating ? Math.round(avg_rating * 10) / 10 : null,
+        commission_settings: commissionMap.get(staffMember.id) || null,
+      };
+    });
 
     // Sort by role DESC (admin first), then by last_name ASC
     enrichedStaff.sort((a, b) => {
@@ -267,14 +289,12 @@ export async function POST(request: NextRequest) {
     const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
-    console.log('[Staff API] POST - Admin user:', adminUser.email);
 
     // Parse and validate request body
     const body = await request.json();
     const validation = createStaffSchema.safeParse(body);
 
     if (!validation.success) {
-      console.log('[Staff API] Validation failed:', validation.error.errors);
       return NextResponse.json(
         { error: 'Validation failed', details: validation.error.errors },
         { status: 400 }
@@ -291,7 +311,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existingUser) {
-      console.log('[Staff API] Email already exists:', email);
       return NextResponse.json(
         { error: 'A user with this email already exists' },
         { status: 400 }
@@ -319,7 +338,6 @@ export async function POST(request: NextRequest) {
 
       store.insert('users', newStaff);
 
-      console.log('[Staff API] Created staff member:', newStaff.id);
 
       // Log audit entry (non-blocking)
       after(() => logSettingsChange(
@@ -360,7 +378,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Staff API] Created staff member:', newStaff.id);
 
     // Log audit entry (non-blocking)
     after(() => logSettingsChange(

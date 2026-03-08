@@ -121,7 +121,6 @@ export async function GET() {
         referral_program: dbSettings.referral_program ?? DEFAULT_LOYALTY_SETTINGS.referral_program,
       };
     } else {
-      console.log('[Loyalty Settings API] No settings found, using defaults');
     }
 
     // Calculate statistics
@@ -257,10 +256,6 @@ export async function PUT(request: Request) {
       stats,
     };
 
-    console.log(
-      `[Loyalty Settings API] Settings updated by admin ${admin.id}:`,
-      `is_enabled=${is_enabled}, punch_threshold=${punch_threshold}`
-    );
 
     // Note about disabling: Disabling program preserves existing punch data
     const message = is_enabled
@@ -336,7 +331,6 @@ async function calculateLoyaltyStats(
       pending_rewards: pendingCount ?? 0,
     };
 
-    console.log('[Loyalty Stats] Calculated stats:', stats);
 
     return stats;
   } catch (error) {

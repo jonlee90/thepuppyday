@@ -47,7 +47,6 @@ export async function GET(
     await requireAdmin(supabase);
 
     const { id: staffId } = await params;
-    console.log('[Commission API] GET - Staff ID:', staffId);
 
     // Verify staff exists
     const { data: staffUser, error: staffError } = await (serviceClient as any)
@@ -57,7 +56,6 @@ export async function GET(
       .single();
 
     if (staffError || !staffUser) {
-      console.log('[Commission API] Staff not found:', staffId);
       return NextResponse.json(
         { error: 'Staff member not found' },
         { status: 404 }
@@ -82,7 +80,6 @@ export async function GET(
         service_overrides: null,
       };
 
-      console.log('[Commission API] Returning commission settings for:', staffId);
 
       return NextResponse.json({
         data: commission_settings || defaultSettings,
@@ -105,7 +102,6 @@ export async function GET(
         service_overrides: null,
       };
 
-      console.log('[Commission API] No commission settings found, returning default');
 
       return NextResponse.json({
         data: defaultSettings,
@@ -120,7 +116,6 @@ export async function GET(
       );
     }
 
-    console.log('[Commission API] Returning commission settings for:', staffId);
 
     return NextResponse.json({
       data: commissionData,
@@ -149,14 +144,12 @@ export async function PUT(
     const { user: adminUser } = await requireAdmin(supabase);
 
     const { id: staffId } = await params;
-    console.log('[Commission API] PUT - Staff ID:', staffId, 'Admin:', adminUser.email);
 
     // Parse and validate request body
     const body = await request.json();
     const validation = commissionSettingsSchema.safeParse(body);
 
     if (!validation.success) {
-      console.log('[Commission API] Validation failed:', validation.error.errors);
       return NextResponse.json(
         { error: 'Validation failed', details: validation.error.errors },
         { status: 400 }
@@ -173,7 +166,6 @@ export async function PUT(
       .single();
 
     if (staffError || !staffUser) {
-      console.log('[Commission API] Staff not found:', staffId);
       return NextResponse.json(
         { error: 'Staff member not found' },
         { status: 404 }
@@ -201,7 +193,6 @@ export async function PUT(
       const invalidServiceIds = serviceIds.filter((id) => !validServiceIds.has(id));
 
       if (invalidServiceIds.length > 0) {
-        console.log('[Commission API] Invalid service IDs:', invalidServiceIds);
         return NextResponse.json(
           { error: `Invalid service IDs: ${invalidServiceIds.join(', ')}` },
           { status: 400 }
@@ -233,7 +224,6 @@ export async function PUT(
         };
 
         store.update('staff_commissions', existingCommission.id, updatedCommission);
-        console.log('[Commission API] Updated commission settings:', existingCommission.id);
       } else {
         // Insert new
         updatedCommission = {
@@ -248,7 +238,6 @@ export async function PUT(
         };
 
         store.insert('staff_commissions', updatedCommission);
-        console.log('[Commission API] Created commission settings:', updatedCommission.id);
       }
 
       // Log audit entry (non-blocking)
@@ -291,7 +280,6 @@ export async function PUT(
       );
     }
 
-    console.log('[Commission API] Updated commission settings for:', staffId);
 
     // Log audit entry (get old value first)
     const { data: oldCommission } = await (serviceClient as any)

@@ -31,6 +31,14 @@ interface RecurringBlockedDaysProps {
    * Optional callback when loading state changes
    */
   onLoadingChange?: (loading: boolean) => void;
+  /**
+   * Initial booking settings from server-side fetch
+   */
+  initialSettings?: BookingSettings;
+  /**
+   * Callback when settings are updated via save
+   */
+  onSettingsUpdated?: (settings: BookingSettings) => void;
 }
 
 interface BusinessHoursResponse {
@@ -63,20 +71,30 @@ const DAY_INDEX_TO_KEY = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday'
 
 export function RecurringBlockedDays({
   onLoadingChange,
+  initialSettings,
+  onSettingsUpdated,
 }: RecurringBlockedDaysProps) {
-  // Settings state
-  const [bookingSettings, setBookingSettings] = useState<BookingSettings | null>(null);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  // Settings state - initialize from props if available
+  const [bookingSettings, setBookingSettings] = useState<BookingSettings | null>(
+    initialSettings ?? null
+  );
+  const [isLoadingSettings, setIsLoadingSettings] = useState(!initialSettings);
 
   // Local state for recurring blocked days
-  const [recurringBlockedDays, setRecurringBlockedDays] = useState<number[]>([]);
+  const [recurringBlockedDays, setRecurringBlockedDays] = useState<number[]>(
+    initialSettings?.recurring_blocked_days ?? []
+  );
 
   // Original state for comparison
-  const [originalBlockedDays, setOriginalBlockedDays] = useState<number[]>([]);
+  const [originalBlockedDays, setOriginalBlockedDays] = useState<number[]>(
+    initialSettings?.recurring_blocked_days ?? []
+  );
 
-  // Business hours state
-  const [businessHours, setBusinessHours] = useState<BusinessHoursResponse | null>(null);
-  const [isLoadingBusinessHours, setIsLoadingBusinessHours] = useState(false);
+  // Business hours state - extract from initialSettings if available
+  const [businessHours, setBusinessHours] = useState<BusinessHoursResponse | null>(
+    (initialSettings?.business_hours as unknown as BusinessHoursResponse) ?? null
+  );
+  const [isLoadingBusinessHours, setIsLoadingBusinessHours] = useState(!initialSettings);
 
   // Appointment conflicts state
   const [appointmentConflicts, setAppointmentConflicts] = useState<Record<number, number>>({});
@@ -90,21 +108,33 @@ export function RecurringBlockedDays({
   const [showConflictWarning, setShowConflictWarning] = useState(false);
   const [conflictDayToToggle, setConflictDayToToggle] = useState<number | null>(null);
 
-  // Fetch booking settings on mount
+  // Fetch booking settings on mount only if no initialSettings
   useEffect(() => {
+    if (initialSettings) return;
     fetchBookingSettings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialSettings]);
 
   // Notify parent of loading state
   useEffect(() => {
     onLoadingChange?.(isSaving || isCheckingConflicts || isLoadingSettings);
   }, [isSaving, isCheckingConflicts, isLoadingSettings, onLoadingChange]);
 
-  // Fetch business hours on mount
+  // Fetch business hours on mount only if no initialSettings
   useEffect(() => {
+    if (initialSettings) return;
     fetchBusinessHours();
-  }, []);
+  }, [initialSettings]);
+
+  // Sync with parent when initialSettings changes
+  useEffect(() => {
+    if (initialSettings) {
+      setBookingSettings(initialSettings);
+      if (initialSettings.business_hours) {
+        setBusinessHours(initialSettings.business_hours as unknown as BusinessHoursResponse);
+      }
+    }
+  }, [initialSettings]);
 
   // Show toast notification
   const showToast = (type: 'success' | 'error' | 'warning', message: string) => {
@@ -327,9 +357,11 @@ export function RecurringBlockedDays({
       }
 
       // Success - update local state from server response
-      setBookingSettings(data.data);
-      setRecurringBlockedDays(data.data.recurring_blocked_days || []);
-      setOriginalBlockedDays(data.data.recurring_blocked_days || []);
+      const savedSettings = data.data as BookingSettings;
+      setBookingSettings(savedSettings);
+      setRecurringBlockedDays(savedSettings.recurring_blocked_days || []);
+      setOriginalBlockedDays(savedSettings.recurring_blocked_days || []);
+      onSettingsUpdated?.(savedSettings);
       showToast('success', 'Recurring blocked days saved successfully');
     } catch (error) {
       console.error('Error saving recurring blocked days:', error);

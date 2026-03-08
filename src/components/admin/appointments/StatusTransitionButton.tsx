@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { AlertTriangle, Send } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import type { AppointmentStatus } from '@/types/database';
 import type { StatusTransition } from '@/lib/admin/appointment-status';
 import { CANCELLATION_REASONS } from '@/lib/admin/appointment-status';
@@ -68,11 +69,14 @@ export function StatusTransitionButton({
         throw new Error(result.error || 'Failed to update status');
       }
 
+      toast.success(`Appointment ${transition.to}`);
       setShowConfirmation(false);
       if (onSuccess) {
         onSuccess(transition.to);
       }
     } catch (err) {
+      console.error('[StatusTransitionButton] error:', err);
+      toast.error('Failed to update status');
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);

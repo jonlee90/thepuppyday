@@ -73,8 +73,16 @@ export function useDashboardData(): DashboardData {
 
   // Use a ref to avoid stale-closure issues in the polling/realtime callbacks
   const fetchAllRef = useRef<() => void>(() => {});
+  // Guard to prevent concurrent fetches from overlapping triggers
+  const isFetchingRef = useRef(false);
+  // Track whether polling is logically active (for visibility change handler)
+  const isPollingRef = useRef(false);
 
   const fetchAll = useCallback(async () => {
+    if (isFetchingRef.current) return; // Skip if already fetching
+    isFetchingRef.current = true;
+
+    try {
     // Set loading true for all endpoints at the start of a fetch cycle
     setLoading({ revenue: true, appointments: true, pending: true });
 
@@ -122,6 +130,9 @@ export function useDashboardData(): DashboardData {
       setErrors((prev) => ({ ...prev, pending: true }));
     }
     setLoading((prev) => ({ ...prev, pending: false }));
+    } finally {
+      isFetchingRef.current = false;
+    }
   }, []);
 
   // Keep ref in sync so intervals/subscriptions always call the latest version
@@ -139,6 +150,7 @@ export function useDashboardData(): DashboardData {
     const startPolling = () => {
       if (pollTimer) return; // already polling
       setIsPolling(true);
+      isPollingRef.current = true;
       pollTimer = setInterval(() => {
         // Respect tab visibility — skip fetch when hidden, it will resume on show
         if (!document.hidden) {
@@ -153,12 +165,27 @@ export function useDashboardData(): DashboardData {
         pollTimer = null;
       }
       setIsPolling(false);
+      isPollingRef.current = false;
     };
 
     // Visibility change handler: resume fetching immediately when tab becomes visible
+    // and reset the polling timer to prevent overlap with the next scheduled poll
     const handleVisibilityChange = () => {
       if (!document.hidden) {
+        // Reset polling interval to prevent overlap with the immediate fetch
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
         fetchAllRef.current();
+        // Restart polling if it was active
+        if (isPollingRef.current) {
+          pollTimer = setInterval(() => {
+            if (!document.hidden) {
+              fetchAllRef.current();
+            }
+          }, POLL_INTERVAL_MS);
+        }
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -230,8 +257,6 @@ export function useDashboardData(): DashboardData {
         realtimeClient.removeChannel(channel);
       }
     };
-    // fetchAll is stable due to useCallback with no deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const refetch = useCallback(() => {

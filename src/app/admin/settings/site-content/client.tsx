@@ -13,6 +13,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 import { useSettingsForm } from '@/hooks/admin/use-settings-form';
 import { UnsavedChangesIndicator } from '@/components/admin/settings/UnsavedChangesIndicator';
 import { LeaveConfirmDialog } from '@/components/admin/settings/LeaveConfirmDialog';
@@ -90,9 +91,11 @@ export function SiteContentClient({ initialSettings }: SiteContentClientProps) {
       return data;
     },
     onSuccess: (data) => {
+      toast.success('Settings saved');
       console.log('Site content saved successfully:', data);
     },
     onError: (error) => {
+      toast.error('Failed to save settings');
       console.error('Failed to save site content:', error);
     },
   });

@@ -144,12 +144,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('[Earnings API] GET - Filters:', {
-      groomerId,
-      startDate,
-      endDate,
-      groupBy,
-    });
 
     // In mock mode, query from mock store
     if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
@@ -174,7 +168,6 @@ export async function GET(request: NextRequest) {
         appointments = appointments.filter((apt: any) => apt.groomer_id === groomerId);
       }
 
-      console.log('[Earnings API] Found', appointments.length, 'appointments in range');
 
       // Get all commission settings
       const commissions = store.select('staff_commissions', {}) as unknown as StaffCommission[];
@@ -261,13 +254,6 @@ export async function GET(request: NextRequest) {
         })),
       };
 
-      console.log('[Earnings API] Returning earnings report:', {
-        total_services,
-        total_revenue: response.summary.total_revenue,
-        total_commission: response.summary.total_commission,
-        groomers: response.by_groomer.length,
-        timeline_periods: response.timeline.length,
-      });
 
       return NextResponse.json({ data: response });
     }
@@ -302,7 +288,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('[Earnings API] Found', appointments?.length || 0, 'appointments in range');
 
     // Get all commission settings
     const { data: commissions } = await (serviceClient as any)
@@ -396,13 +381,6 @@ export async function GET(request: NextRequest) {
       })),
     };
 
-    console.log('[Earnings API] Returning earnings report:', {
-      total_services,
-      total_revenue: response.summary.total_revenue,
-      total_commission: response.summary.total_commission,
-      groomers: response.by_groomer.length,
-      timeline_periods: response.timeline.length,
-    });
 
     return NextResponse.json({ data: response });
   } catch (error) {

@@ -88,7 +88,6 @@ export async function POST(request: Request) {
     // Resume auto-sync
     await resumeAutoSync(supabase, connectionId);
 
-    console.log(`[Resume API] Auto-sync resumed for connection ${connectionId}`);
 
     return NextResponse.json({
       success: true,

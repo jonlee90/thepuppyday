@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { Clock, Save, AlertCircle, FileText, Mail, MessageSquare, Settings } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import { ReportCardSettings } from '@/components/admin/settings/ReportCardSettings';
 import { WaitlistSettings } from '@/components/admin/settings/WaitlistSettings';
 import { MarketingSettings } from '@/components/admin/settings/MarketingSettings';
@@ -106,6 +107,7 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
         throw new Error('Failed to save settings');
       }
 
+      toast.success('Business hours saved');
       setSaveMessage({
         type: 'success',
         text: 'Business hours saved successfully!',
@@ -117,6 +119,7 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
       }, 3000);
     } catch (error) {
       console.error('[Settings] Error saving:', error);
+      toast.error('Failed to save business hours');
       setSaveMessage({
         type: 'error',
         text: 'Failed to save settings. Please try again.',

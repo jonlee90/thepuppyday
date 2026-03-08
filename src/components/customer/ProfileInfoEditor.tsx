@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import { usePhoneMask } from '@/hooks/usePhoneMask';
 
@@ -68,10 +69,12 @@ export function ProfileInfoEditor({ user }: ProfileInfoEditorProps) {
       const result = await res.json();
 
       if (!res.ok) {
+        toast.error('Failed to update profile');
         setError(result.error || 'Failed to update profile');
         return;
       }
 
+      toast.success('Profile updated');
       setCurrentUser((prev) => ({
         ...prev,
         first_name: result.data.first_name,
@@ -80,6 +83,7 @@ export function ProfileInfoEditor({ user }: ProfileInfoEditorProps) {
       }));
       setIsEditing(false);
     } catch {
+      toast.error('Failed to update profile');
       setError('An error occurred. Please try again.');
     } finally {
       setIsSaving(false);

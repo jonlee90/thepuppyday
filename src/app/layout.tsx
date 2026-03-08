@@ -43,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme="light">
-      <body className={`${bricolage.variable} ${dmSans.variable} antialiased`}>
+      <body suppressHydrationWarning className={`${bricolage.variable} ${dmSans.variable} antialiased`}>
         {/* Skip to content link for keyboard navigation */}
         <a
           href="#main-content"

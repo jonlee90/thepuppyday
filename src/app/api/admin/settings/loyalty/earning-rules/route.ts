@@ -48,7 +48,6 @@ export async function GET() {
 
     // If not found, return defaults
     if (settingsError?.message === 'No rows found' || !settingRecord?.value) {
-      console.log('[Earning Rules API] No settings found, returning defaults');
       return NextResponse.json({
         data: DEFAULT_EARNING_RULES,
         last_updated: null,
@@ -254,11 +253,6 @@ export async function PUT(request: Request) {
       newEarningRules
     ));
 
-    console.log(
-      `[Earning Rules API] Earning rules updated by admin ${admin.id}:`,
-      `qualifying_services=${qualifying_services.length > 0 ? qualifying_services.join(',') : 'all'}, `,
-      `minimum_spend=${minimum_spend}, first_visit_bonus=${first_visit_bonus}`
-    );
 
     // Build descriptive message
     let message = 'Loyalty earning rules updated successfully. ';

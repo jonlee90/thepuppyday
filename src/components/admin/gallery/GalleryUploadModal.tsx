@@ -7,6 +7,7 @@
 
 import { useState, useRef, DragEvent } from 'react';
 import { X, Upload, Image as ImageIcon, AlertCircle, CheckCircle } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import { validateImageFile } from '@/lib/utils/validation';
 
 interface GalleryUploadModalProps {
@@ -128,6 +129,7 @@ export function GalleryUploadModal({ isOpen, onClose, onSuccess }: GalleryUpload
         throw new Error(data.error || 'Upload failed');
       }
 
+      toast.success('Images uploaded');
       setUploadProgress(
         `Successfully uploaded ${data.success} file(s)${
           data.failed > 0 ? `, ${data.failed} failed` : ''
@@ -149,7 +151,8 @@ export function GalleryUploadModal({ isOpen, onClose, onSuccess }: GalleryUpload
         onClose();
       }, 1500);
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('[GalleryUploadModal] upload error:', error);
+      toast.error('Failed to upload images');
       setUploadError(error instanceof Error ? error.message : 'Upload failed');
       setUploadProgress('');
     } finally {

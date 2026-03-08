@@ -11,7 +11,7 @@
  * - Retry logic for failed saves
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
 interface UseSettingsFormOptions<T> {
   /**
@@ -115,15 +115,12 @@ export function useSettingsForm<T extends Record<string, unknown>>({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
-
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pendingSaveDataRef = useRef<T | null>(null);
 
-  // Track dirty state
-  useEffect(() => {
-    const dirty = JSON.stringify(data) !== JSON.stringify(originalData);
-    setIsDirty(dirty);
+  // Derive dirty state directly from data comparison (no effect needed)
+  const isDirty = useMemo(() => {
+    return JSON.stringify(data) !== JSON.stringify(originalData);
   }, [data, originalData]);
 
   /**
@@ -160,7 +157,6 @@ export function useSettingsForm<T extends Record<string, unknown>>({
       setOriginalData(updatedData);
       setData(updatedData);
       setLastSaved(new Date());
-      setIsDirty(false);
       pendingSaveDataRef.current = null;
 
       onSuccess?.(updatedData);
@@ -205,7 +201,6 @@ export function useSettingsForm<T extends Record<string, unknown>>({
       setOriginalData(updatedData);
       setData(updatedData);
       setLastSaved(new Date());
-      setIsDirty(false);
       pendingSaveDataRef.current = null;
 
       onSuccess?.(updatedData);
@@ -230,7 +225,6 @@ export function useSettingsForm<T extends Record<string, unknown>>({
   const discard = useCallback(() => {
     setData(originalData);
     setError(null);
-    setIsDirty(false);
     pendingSaveDataRef.current = null;
 
     // Clear auto-save timer
@@ -246,7 +240,6 @@ export function useSettingsForm<T extends Record<string, unknown>>({
     setData(newData);
     setOriginalData(newData);
     setError(null);
-    setIsDirty(false);
     pendingSaveDataRef.current = null;
 
     // Clear auto-save timer

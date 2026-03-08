@@ -114,7 +114,6 @@ export async function POST(request: NextRequest) {
         adminUserId: adminUser.id,
         onProgress: (processed, total) => {
           // Progress tracking (could be sent via websocket in real implementation)
-          console.log(`Import progress: ${processed}/${total}`);
         },
       }
     );

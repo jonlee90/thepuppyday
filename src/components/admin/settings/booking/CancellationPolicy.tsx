@@ -15,23 +15,39 @@ import { useState, useEffect, useMemo } from 'react';
 import { Calendar, Save, AlertCircle, AlertTriangle, Clock, Ban } from 'lucide-react';
 import type { BookingSettings } from '@/types/settings';
 
-export function CancellationPolicy() {
+interface CancellationPolicyProps {
+  initialSettings?: BookingSettings;
+  onSettingsUpdated?: (settings: BookingSettings) => void;
+}
+
+export function CancellationPolicy({ initialSettings, onSettingsUpdated }: CancellationPolicyProps) {
   // State for cancellation cutoff
-  const [cancellationCutoffHours, setCancellationCutoffHours] = useState<number>(24);
+  const [cancellationCutoffHours, setCancellationCutoffHours] = useState<number>(
+    initialSettings?.cancellation_cutoff_hours ?? 24
+  );
 
   // Original value for unsaved changes tracking
-  const [originalCutoffHours, setOriginalCutoffHours] = useState<number>(24);
+  const [originalCutoffHours, setOriginalCutoffHours] = useState<number>(
+    initialSettings?.cancellation_cutoff_hours ?? 24
+  );
+
+  // Track the full settings object for merging on save
+  const [currentSettings, setCurrentSettings] = useState<BookingSettings | null>(
+    initialSettings ?? null
+  );
 
   // UI state
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{
     type: 'success' | 'error';
     text: string;
   } | null>(null);
 
-  // Fetch current settings
+  // Fetch current settings only if no initialSettings provided
   useEffect(() => {
+    if (initialSettings) return;
+
     const fetchSettings = async () => {
       setIsLoading(true);
       try {
@@ -43,6 +59,7 @@ export function CancellationPolicy() {
           const settings = result.data as BookingSettings;
           setCancellationCutoffHours(settings.cancellation_cutoff_hours);
           setOriginalCutoffHours(settings.cancellation_cutoff_hours);
+          setCurrentSettings(settings);
         }
       } catch (error) {
         console.error('Error fetching booking settings:', error);
@@ -56,7 +73,14 @@ export function CancellationPolicy() {
     };
 
     fetchSettings();
-  }, []);
+  }, [initialSettings]);
+
+  // Sync with parent when initialSettings changes
+  useEffect(() => {
+    if (initialSettings) {
+      setCurrentSettings(initialSettings);
+    }
+  }, [initialSettings]);
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = useMemo(() => {
@@ -104,16 +128,9 @@ export function CancellationPolicy() {
     setSaveMessage(null);
 
     try {
-      // Fetch current settings to preserve other fields
-      const currentResponse = await fetch('/api/admin/settings/booking');
-      if (!currentResponse.ok) throw new Error('Failed to fetch current settings');
-
-      const currentResult = await currentResponse.json();
-      const currentSettings = currentResult.data as BookingSettings;
-
-      // Update only the cancellation cutoff field
+      // Merge changed fields with current settings (no pre-fetch needed)
       const updatedSettings: BookingSettings = {
-        ...currentSettings,
+        ...(currentSettings as BookingSettings),
         cancellation_cutoff_hours: cancellationCutoffHours,
       };
 
@@ -130,16 +147,14 @@ export function CancellationPolicy() {
         throw new Error(errorData.error || 'Failed to save settings');
       }
 
-      // Refetch settings to confirm what was actually saved
-      const refreshResponse = await fetch('/api/admin/settings/booking');
-      if (refreshResponse.ok) {
-        const refreshResult = await refreshResponse.json();
-        if (refreshResult.data) {
-          const settings = refreshResult.data as BookingSettings;
-          setCancellationCutoffHours(settings.cancellation_cutoff_hours);
-          setOriginalCutoffHours(settings.cancellation_cutoff_hours);
-        }
-      }
+      // Use PUT response as new state (no post-fetch needed)
+      const result = await response.json();
+      const savedSettings = result.data as BookingSettings;
+
+      setCancellationCutoffHours(savedSettings.cancellation_cutoff_hours);
+      setOriginalCutoffHours(savedSettings.cancellation_cutoff_hours);
+      setCurrentSettings(savedSettings);
+      onSettingsUpdated?.(savedSettings);
 
       setSaveMessage({
         type: 'success',

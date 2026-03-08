@@ -15,20 +15,15 @@ import { validateImageFile } from '@/lib/utils/validation';
  */
 export async function POST(request: NextRequest) {
   try {
-    console.log('[Upload] Starting image upload process');
-
     // Use regular client for auth check
     const supabase = await createServerSupabaseClient();
     await requireAdmin(supabase);
-    console.log('[Upload] Admin authentication successful');
 
     // Use service role client for storage operations (bypasses RLS)
     const serviceSupabase = createServiceRoleClient();
-    console.log('[Upload] Service role client created');
 
     const formData = await request.formData();
     const files = formData.getAll('files') as File[];
-    console.log(`[Upload] Received ${files.length} files`);
 
     if (!files || files.length === 0) {
       return NextResponse.json(
@@ -72,8 +67,6 @@ export async function POST(request: NextRequest) {
     // Process each file
     for (const file of files) {
       try {
-        console.log(`[Upload] Processing file: ${file.name}, size: ${file.size}, type: ${file.type}`);
-
         // Generate UUID for file name
         const fileExt = file.name.split('.').pop();
         const fileName = `${crypto.randomUUID()}.${fileExt}`;
@@ -82,10 +75,8 @@ export async function POST(request: NextRequest) {
         // Convert File to ArrayBuffer then to Uint8Array for Supabase
         const arrayBuffer = await file.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
-        console.log(`[Upload] File converted to Uint8Array, length: ${uint8Array.length}`);
 
         // Upload to Supabase Storage (using service role)
-        console.log(`[Upload] Uploading to bucket 'gallery-images' with path: ${filePath}`);
         const { data: uploadData, error: uploadError } = await (serviceSupabase as any)
           .storage
           .from('gallery-images')
@@ -103,8 +94,6 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        console.log(`[Upload] Upload successful for ${file.name}`);
-
         // Get public URL
         const { data: urlData } = (serviceSupabase as any)
           .storage
@@ -120,10 +109,7 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        console.log(`[Upload] Got public URL: ${urlData.publicUrl}`);
-
         // Create gallery image entry
-        console.log('[Upload] Creating database entry');
         const { data: galleryImage, error: galleryError } = (await (serviceSupabase as any)
           .from('gallery_images')
           .insert({
@@ -159,7 +145,6 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        console.log(`[Upload] Successfully created gallery entry with ID: ${galleryImage.id}`);
         uploadedImages.push(galleryImage);
       } catch (fileError) {
         console.error('[Upload] Error processing file:', fileError);
@@ -169,9 +154,6 @@ export async function POST(request: NextRequest) {
         });
       }
     }
-
-    // Return results
-    console.log(`[Upload] Upload process complete. Success: ${uploadedImages.length}, Failed: ${uploadErrors.length}`);
 
     if (uploadedImages.length === 0 && uploadErrors.length > 0) {
       console.error('[Upload] All uploads failed:', uploadErrors);

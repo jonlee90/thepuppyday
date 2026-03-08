@@ -55,7 +55,6 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerSupabaseClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
-    console.log('[Import Preview] Admin user:', adminUser.email);
 
     // Parse request body
     const body = await request.json();
@@ -72,7 +71,6 @@ export async function POST(request: NextRequest) {
 
     const { dateFrom, dateTo, calendarId } = validationResult.data;
 
-    console.log('[Import Preview] Date range:', { dateFrom, dateTo, calendarId });
 
     // Get active calendar connection
     const connection = await getActiveConnection(supabase, adminUser.id);
@@ -84,7 +82,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Import Preview] Using connection:', connection.id);
 
     // Create Google Calendar client
     const calendarClient = createGoogleCalendarClient(
@@ -94,14 +91,12 @@ export async function POST(request: NextRequest) {
     );
 
     // Fetch events from Google Calendar
-    console.log('[Import Preview] Fetching events from Google Calendar...');
     const googleEvents = await calendarClient.listEvents({
       timeMin: new Date(dateFrom).toISOString(),
       timeMax: new Date(dateTo).toISOString(),
       maxResults: MAX_PREVIEW_EVENTS,
     });
 
-    console.log(`[Import Preview] Fetched ${googleEvents.length} events`);
 
     // Check if any events are already imported
     const googleEventIds = googleEvents.map(e => e.id).filter(Boolean) as string[];
@@ -114,7 +109,6 @@ export async function POST(request: NextRequest) {
       existingMappings?.map(m => m.google_event_id) || []
     );
 
-    console.log(`[Import Preview] ${alreadyImportedIds.size} events already imported`);
 
     // Process each event
     const previewEvents: ImportPreviewEvent[] = [];
@@ -127,7 +121,6 @@ export async function POST(request: NextRequest) {
 
       // Skip already imported events
       if (alreadyImportedIds.has(googleEvent.id)) {
-        console.log(`[Import Preview] Skipping already imported event: ${googleEvent.id}`);
         continue;
       }
 
@@ -169,10 +162,6 @@ export async function POST(request: NextRequest) {
           importable,
         });
 
-        console.log(
-          `[Import Preview] Processed event ${googleEvent.id}: ` +
-          `valid=${validation.valid}, duplicate=${!!duplicateMatch}, importable=${importable}`
-        );
       } catch (error) {
         console.error(`[Import Preview] Error processing event ${googleEvent.id}:`, error);
 
@@ -212,7 +201,6 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    console.log('[Import Preview] Preview generated:', response.summary);
 
     return NextResponse.json(response);
   } catch (error) {
