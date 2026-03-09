@@ -33,6 +33,7 @@ export function PhotoUploadSection({
         <PhotoUpload
           label="Before Photo"
           required={false}
+          variant="before"
           value={beforePhotoUrl}
           onChange={onBeforePhotoChange}
           onUpload={onUpload}
@@ -42,6 +43,7 @@ export function PhotoUploadSection({
         <PhotoUpload
           label="After Photo"
           required={true}
+          variant="after"
           value={afterPhotoUrl}
           onChange={onAfterPhotoChange}
           onUpload={onUpload}

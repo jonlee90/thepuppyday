@@ -79,9 +79,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { formState, isDraft } = body as {
+    const { formState, isDraft, dontSend } = body as {
       formState: ReportCardFormState;
       isDraft: boolean;
+      dontSend?: boolean;
     };
 
     // Validate form state
@@ -121,6 +122,8 @@ export async function POST(request: NextRequest) {
           groomer_notes: sanitizedNotes,
           before_photo_url: formState.before_photo_url || null,
           after_photo_url: formState.after_photo_url || null,
+          is_draft: isDraft,
+          dont_send: dontSend ?? false,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingReportCard.id)
@@ -142,6 +145,8 @@ export async function POST(request: NextRequest) {
           groomer_notes: sanitizedNotes,
           before_photo_url: formState.before_photo_url || null,
           after_photo_url: formState.after_photo_url || null,
+          is_draft: isDraft,
+          dont_send: dontSend ?? false,
         })
         .select()
         .single();

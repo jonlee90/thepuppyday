@@ -23,6 +23,7 @@ import {
   Megaphone,
   Clock,
   Bell,
+  UserCog,
 } from 'lucide-react';
 import { NavPopover } from './NavPopover';
 
@@ -65,6 +66,12 @@ const navItems: NavItem[] = [
     icon: Users,
   },
   {
+    label: 'Staff',
+    href: '/admin/staff',
+    icon: UserCog,
+    ownerOnly: true,
+  },
+  {
     label: 'Campaigns',
     href: '/admin/marketing/campaigns',
     icon: Megaphone,
@@ -98,24 +105,6 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Services',
-    href: '/admin/services',
-    icon: Scissors,
-    ownerOnly: true,
-  },
-  {
-    label: 'Add-ons',
-    href: '/admin/addons',
-    icon: Plus,
-    ownerOnly: true,
-  },
-  {
-    label: 'Gallery',
-    href: '/admin/gallery',
-    icon: Images,
-    ownerOnly: true,
-  },
-  {
     label: 'Settings',
     icon: Settings,
     ownerOnly: true,
@@ -124,6 +113,21 @@ const navItems: NavItem[] = [
         label: 'Overview',
         href: '/admin/settings',
         icon: LayoutDashboard,
+      },
+      {
+        label: 'Services',
+        href: '/admin/settings/services',
+        icon: Scissors,
+      },
+      {
+        label: 'Add-ons',
+        href: '/admin/settings/addons',
+        icon: Plus,
+      },
+      {
+        label: 'Gallery',
+        href: '/admin/settings/gallery',
+        icon: Images,
       },
       {
         label: 'Site Content',
@@ -148,11 +152,6 @@ const navItems: NavItem[] = [
       {
         label: 'Loyalty Program',
         href: '/admin/settings/loyalty',
-        icon: Settings,
-      },
-      {
-        label: 'Staff',
-        href: '/admin/settings/staff',
         icon: Settings,
       },
     ],

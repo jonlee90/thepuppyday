@@ -8,6 +8,7 @@
 import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, Download, X, AlertCircle } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import type { CSVValidationResponse } from '@/types/admin-appointments';
 
 interface FileUploadStepProps {
@@ -207,12 +208,9 @@ export function FileUploadStep({
       {/* Continue Button */}
       {selectedFile && (
         <div className="flex justify-end pt-4">
-          <button
-            onClick={handleValidate}
-            className="btn bg-[#434E54] text-white hover:bg-[#363F44] font-medium px-8"
-          >
+          <AdminButton onClick={handleValidate} className="font-medium px-8">
             Validate & Continue
-          </button>
+          </AdminButton>
         </div>
       )}
     </div>

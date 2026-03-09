@@ -1,6 +1,7 @@
 /**
  * StatusTransitionButton Component
  * Renders context-aware action buttons for appointment status transitions
+ * Uses AdminButton for consistent styling and visible loading spinners
  */
 
 'use client';
@@ -8,7 +9,7 @@
 import { useState } from 'react';
 import { AlertTriangle, Send } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import type { AppointmentStatus } from '@/types/database';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import type { StatusTransition } from '@/lib/admin/appointment-status';
 import { CANCELLATION_REASONS } from '@/lib/admin/appointment-status';
 
@@ -83,23 +84,16 @@ export function StatusTransitionButton({
     }
   };
 
-  const getButtonClass = () => {
-    if (transition.isDestructive) {
-      return 'btn btn-error text-white hover:bg-red-600';
-    }
-    return 'btn bg-[#434E54] text-white hover:bg-[#363F44]';
-  };
-
   return (
     <>
-      <button
+      <AdminButton
+        variant={transition.isDestructive ? 'danger' : 'primary'}
         onClick={handleClick}
-        disabled={disabled || loading}
-        className={getButtonClass()}
+        disabled={disabled}
+        isLoading={loading}
       >
-        {loading && <span className="loading loading-spinner loading-sm" />}
         {transition.label}
-      </button>
+      </AdminButton>
 
       {/* Confirmation Modal */}
       {showConfirmation && (
@@ -187,21 +181,21 @@ export function StatusTransitionButton({
             )}
 
             <div className="modal-action">
-              <button
+              <AdminButton
+                variant="ghost"
                 onClick={() => setShowConfirmation(false)}
                 disabled={loading}
-                className="btn btn-ghost text-[#434E54]"
               >
                 Cancel
-              </button>
-              <button
+              </AdminButton>
+              <AdminButton
+                variant={transition.isDestructive ? 'danger' : 'primary'}
                 onClick={handleStatusUpdate}
-                disabled={loading || (transition.to === 'cancelled' && !cancellationReason)}
-                className={getButtonClass()}
+                disabled={transition.to === 'cancelled' && !cancellationReason}
+                isLoading={loading}
               >
-                {loading && <span className="loading loading-spinner loading-sm" />}
                 Confirm
-              </button>
+              </AdminButton>
             </div>
           </div>
           <form method="dialog" className="modal-backdrop">

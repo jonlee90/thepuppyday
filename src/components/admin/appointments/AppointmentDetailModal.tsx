@@ -1,6 +1,11 @@
 /**
  * AppointmentDetailModal Component
  * Redesigned with clean, space-efficient, dog-themed UI
+ * - Sticky footer for edit mode save/cancel
+ * - App-level toast notifications
+ * - Groomer assignment confirmation
+ * - Parallelized fetches
+ * - AdminButton for consistent styling
  */
 
 'use client';
@@ -24,13 +29,14 @@ import {
   Save,
   XCircle,
   PawPrint,
-  MapPin,
 } from 'lucide-react';
 import { getAllowedTransitions, isTerminalStatus, isAppointmentInPast } from '@/lib/admin/appointment-status';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StatusTransitionButton } from './StatusTransitionButton';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+import { toast } from '@/hooks/use-toast';
 import type { Appointment, CustomerFlag, Service, Addon, Pet, ServicePrice } from '@/types/database';
-import type { User } from '@/types/database';
+import type { User as UserType } from '@/types/database';
 
 interface EditFormState {
   scheduled_date: string;
@@ -49,10 +55,10 @@ interface AppointmentDetailModalProps {
 }
 
 interface AppointmentDetail extends Appointment {
-  customer?: User | null;
+  customer?: UserType | null;
   pet?: Pet | null;
   service?: (Service & { prices?: ServicePrice[] }) | null;
-  groomer?: User | null;
+  groomer?: UserType | null;
   addons?: Array<{
     id: string;
     appointment_id: string;
@@ -61,11 +67,6 @@ interface AppointmentDetail extends Appointment {
     addon: Addon | null;
   }>;
   customer_flags?: CustomerFlag[];
-}
-
-interface ToastNotification {
-  type: 'success' | 'error';
-  message: string;
 }
 
 export function AppointmentDetailModal({
@@ -77,14 +78,17 @@ export function AppointmentDetailModal({
   const [appointment, setAppointment] = useState<AppointmentDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [toast, setToast] = useState<ToastNotification | null>(null);
   const [editingNotes, setEditingNotes] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
+  const [savingNotes, setSavingNotes] = useState(false);
   const [reportCard, setReportCard] = useState<any>(null);
   const [loadingReportCard, setLoadingReportCard] = useState(false);
-  const [groomers, setGroomers] = useState<User[]>([]);
+  const [groomers, setGroomers] = useState<UserType[]>([]);
   const [loadingGroomers, setLoadingGroomers] = useState(false);
   const [assigningGroomer, setAssigningGroomer] = useState(false);
+
+  // Groomer assignment confirmation state
+  const [pendingGroomerId, setPendingGroomerId] = useState<string | null>(null);
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
@@ -101,19 +105,24 @@ export function AppointmentDetailModal({
   const [addons, setAddons] = useState<Addon[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
 
-  // Fetch appointment details and groomers
+  // Fetch appointment details, groomers, and report card in parallel
   useEffect(() => {
     if (appointmentId && isOpen) {
-      fetchAppointmentDetails();
-      fetchGroomers();
+      setLoading(true);
+      setError('');
+
+      Promise.all([
+        fetchAppointmentDetails(),
+        fetchGroomers(),
+        fetchReportCard(),
+      ]).finally(() => {
+        setLoading(false);
+      });
     }
   }, [appointmentId, isOpen]);
 
   const fetchAppointmentDetails = async () => {
     if (!appointmentId) return;
-
-    setLoading(true);
-    setError('');
 
     try {
       const response = await fetch(`/api/admin/appointments/${appointmentId}`);
@@ -125,15 +134,8 @@ export function AppointmentDetailModal({
 
       setAppointment(result.data);
       setAdminNotes(result.data.admin_notes || '');
-
-      // Fetch report card if appointment is completed
-      if (result.data.status === 'completed') {
-        fetchReportCard();
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -143,13 +145,12 @@ export function AppointmentDetailModal({
     setLoadingReportCard(true);
 
     try {
-      const response = await fetch(`/api/admin/appointments/${appointmentId}/report-card`);
+      const response = await fetch(`/api/admin/report-cards?appointment_id=${appointmentId}`);
 
       if (response.ok) {
         const result = await response.json();
-        setReportCard(result.data);
-      } else if (response.status === 404) {
-        // No report card exists yet
+        setReportCard(result.reportCard);
+      } else {
         setReportCard(null);
       }
     } catch (err) {
@@ -181,50 +182,53 @@ export function AppointmentDetailModal({
     }
   };
 
-  const handleGroomerAssignment = async (groomerId: string | null) => {
+  const handleGroomerSelectChange = (value: string) => {
+    const newGroomerId = value || null;
+    const currentGroomerId = appointment?.groomer_id || null;
+
+    if (newGroomerId === currentGroomerId) {
+      setPendingGroomerId(null);
+    } else {
+      setPendingGroomerId(newGroomerId);
+    }
+  };
+
+  const handleGroomerAssignConfirm = async () => {
     if (!appointmentId) return;
 
     setAssigningGroomer(true);
-    setError(''); // Clear previous errors
 
     try {
       const response = await fetch(`/api/admin/appointments/${appointmentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ groomer_id: groomerId }),
+        body: JSON.stringify({ groomer_id: pendingGroomerId }),
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        // Show success feedback
-        setToast({
-          type: 'success',
-          message: groomerId
+        toast.success(
+          pendingGroomerId
             ? 'Groomer assigned successfully'
             : 'Groomer unassigned successfully'
-        });
-
-        // Refresh appointment details
+        );
+        setPendingGroomerId(null);
         fetchAppointmentDetails();
-        if (onUpdate) {
-          onUpdate();
-        }
+        if (onUpdate) onUpdate();
       } else {
-        // Show error feedback
-        setToast({
-          type: 'error',
-          message: result.error || 'Failed to assign groomer'
-        });
+        toast.error(result.error || 'Failed to assign groomer');
       }
     } catch (err) {
-      setToast({
-        type: 'error',
-        message: 'An error occurred while assigning groomer'
-      });
+      console.error('[AppointmentDetailModal] groomer assignment error:', err);
+      toast.error('An error occurred while assigning groomer');
     } finally {
       setAssigningGroomer(false);
     }
+  };
+
+  const handleGroomerAssignCancel = () => {
+    setPendingGroomerId(null);
   };
 
   const handleStatusUpdateSuccess = (toStatus?: string) => {
@@ -302,7 +306,7 @@ export function AppointmentDetailModal({
   };
 
   const handleSaveEdit = async () => {
-    if (!appointmentId || !appointment || saving) return; // Prevent multiple saves
+    if (!appointmentId || !appointment || saving) return;
 
     // Client-side validation
     const errors: string[] = [];
@@ -329,7 +333,7 @@ export function AppointmentDetailModal({
     }
 
     setSaving(true);
-    setError(''); // Clear previous errors
+    setError('');
 
     try {
       // Combine date and time into scheduled_at
@@ -358,7 +362,8 @@ export function AppointmentDetailModal({
         throw new Error(result.error || 'Failed to update appointment');
       }
 
-      // Success - exit edit mode and refresh
+      // Success
+      toast.success('Appointment updated');
       setIsEditing(false);
       setAdminNotes(editForm.admin_notes);
       fetchAppointmentDetails();
@@ -366,6 +371,7 @@ export function AppointmentDetailModal({
         onUpdate();
       }
     } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update appointment');
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setSaving(false);
@@ -381,11 +387,37 @@ export function AppointmentDetailModal({
     }));
   };
 
+  const handleSaveAdminNotes = async () => {
+    if (!appointmentId) return;
+
+    setSavingNotes(true);
+    try {
+      const response = await fetch(`/api/admin/appointments/${appointmentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_notes: adminNotes }),
+      });
+      if (response.ok) {
+        toast.success('Notes saved');
+        setEditingNotes(false);
+        fetchAppointmentDetails();
+      } else {
+        toast.error('Failed to save notes');
+      }
+    } catch (err) {
+      console.error('Error saving admin notes:', err);
+      toast.error('Failed to save notes');
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
   const handleClose = () => {
     setAppointment(null);
     setError('');
     setEditingNotes(false);
     setIsEditing(false);
+    setPendingGroomerId(null);
     onClose();
   };
 
@@ -403,6 +435,11 @@ export function AppointmentDetailModal({
   )?.price || 0;
   const addonsTotal = appointment?.addons?.reduce((sum: number, a: any) => sum + a.price, 0) || 0;
   const total = basePrice + addonsTotal;
+
+  // Determine the current groomer select value (pending or current)
+  const groomerSelectValue = pendingGroomerId !== null
+    ? pendingGroomerId
+    : (appointment?.groomer_id || '');
 
   return (
     <dialog className="modal modal-open" role="dialog" aria-modal="true" aria-labelledby="appointment-modal-title">
@@ -446,40 +483,19 @@ export function AppointmentDetailModal({
             {/* Header Actions */}
             <div className="flex items-center gap-2">
               {appointment && !isEditing && (
-                <button
+                <AdminButton
+                  variant="ghost"
+                  size="sm"
                   onClick={handleStartEdit}
-                  className="btn btn-sm btn-ghost text-[#434E54] hover:bg-[#EAE0D5]"
                   aria-label="Edit appointment details"
                 >
                   <Edit2 className="w-4 h-4" />
-                </button>
+                </AdminButton>
               )}
-              {isEditing && (
-                <div className="flex gap-1">
-                  <button
-                    onClick={handleSaveEdit}
-                    disabled={saving}
-                    className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none"
-                  >
-                    {saving ? (
-                      <span className="loading loading-spinner loading-xs" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                  </button>
-                  <button
-                    onClick={handleCancelEdit}
-                    disabled={saving}
-                    className="btn btn-sm btn-ghost text-[#6B7280]"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-              {/* Circular close button with bigger size */}
+              {/* Circular close button */}
               <button
                 onClick={handleClose}
-                className="w-9 h-9 rounded-full bg-[#EAE0D5] hover:bg-[#434E54] text-[#434E54] hover:text-white flex items-center justify-center transition-all duration-200 shadow-sm"
+                className="w-9 h-9 rounded-full bg-[#EAE0D5] hover:bg-[#434E54] text-[#434E54] hover:text-white flex items-center justify-center transition-all duration-200 shadow-sm cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
@@ -501,22 +517,6 @@ export function AppointmentDetailModal({
             </div>
           ) : appointment ? (
             <>
-              {/* Toast Notification */}
-              {toast && (
-                <div className={`alert ${toast.type === 'success' ? 'alert-success' : 'alert-error'} rounded-lg`}>
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-sm">{toast.message}</span>
-                    <button
-                      onClick={() => setToast(null)}
-                      className="btn btn-xs btn-ghost btn-circle"
-                      aria-label="Dismiss notification"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {/* Customer Flags Alert */}
               {appointment.customer_flags && appointment.customer_flags.length > 0 && (
                 <div className="bg-[#FFF3CD] border-l-4 border-[#FFB347] rounded-lg p-3">
@@ -534,6 +534,35 @@ export function AppointmentDetailModal({
                   </div>
                 </div>
               )}
+
+              {/* Hero Summary - Pet + Customer + Date/Time */}
+              <div className="py-2">
+                <div className="flex items-center gap-3 mb-1">
+                  <PawPrint className="w-5 h-5 text-[#434E54]" />
+                  <h2 className="text-xl font-bold text-[#434E54]">
+                    {appointment.pet?.name}
+                  </h2>
+                  <span className="text-sm text-[#6B7280]">
+                    ({appointment.customer
+                      ? `${appointment.customer.first_name} ${appointment.customer.last_name}`
+                      : 'Unknown'})
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-[#6B7280] ml-8">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    {format(new Date(appointment.scheduled_at), 'MMM d, yyyy')}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    {format(new Date(appointment.scheduled_at), 'h:mm a')} ({appointment.duration_minutes}m)
+                  </span>
+                  <span className="flex items-center gap-1 capitalize">
+                    <Scissors className="w-3.5 h-3.5" />
+                    {appointment.service?.name}
+                  </span>
+                </div>
+              </div>
 
               {/* Quick Info Grid - Compact 3-column */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -648,7 +677,7 @@ export function AppointmentDetailModal({
                 </div>
               </div>
 
-              {/* Groomer Assignment - Compact */}
+              {/* Groomer Assignment - With Confirmation */}
               {!isTerminalStatus(appointment.status) && (
                 <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
                   <div className="flex items-center gap-2 mb-2">
@@ -656,8 +685,8 @@ export function AppointmentDetailModal({
                     <h4 className="text-sm font-semibold text-[#434E54]">Assign Groomer</h4>
                   </div>
                   <select
-                    value={appointment.groomer_id || ''}
-                    onChange={(e) => handleGroomerAssignment(e.target.value || null)}
+                    value={groomerSelectValue}
+                    onChange={(e) => handleGroomerSelectChange(e.target.value)}
                     disabled={assigningGroomer || loadingGroomers}
                     aria-label="Assign groomer to appointment"
                     className="select select-sm select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54] w-full text-sm"
@@ -670,10 +699,24 @@ export function AppointmentDetailModal({
                       </option>
                     ))}
                   </select>
-                  {assigningGroomer && (
-                    <div className="text-xs text-[#6B7280] mt-1 flex items-center gap-1">
-                      <span className="loading loading-spinner loading-xs" />
-                      Updating...
+                  {/* Confirmation buttons when pending change */}
+                  {pendingGroomerId !== null && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <AdminButton
+                        size="xs"
+                        isLoading={assigningGroomer}
+                        onClick={handleGroomerAssignConfirm}
+                      >
+                        Assign
+                      </AdminButton>
+                      <AdminButton
+                        variant="ghost"
+                        size="xs"
+                        onClick={handleGroomerAssignCancel}
+                        disabled={assigningGroomer}
+                      >
+                        Cancel
+                      </AdminButton>
                     </div>
                   )}
                 </div>
@@ -701,13 +744,23 @@ export function AppointmentDetailModal({
                       </div>
                       <div>
                         <label className="text-xs text-[#9CA3AF] mb-1 block">Time *</label>
-                        <input
-                          type="time"
+                        <select
                           value={editForm.scheduled_time}
                           onChange={(e) => setEditForm((prev) => ({ ...prev, scheduled_time: e.target.value }))}
                           required
-                          className="input input-sm input-bordered w-full bg-white border-[#E5E5E5] focus:border-[#434E54]"
-                        />
+                          className="select select-sm select-bordered w-full bg-white border-[#E5E5E5] focus:border-[#434E54]"
+                        >
+                          <option value="" disabled>Select time</option>
+                          {Array.from({ length: 24 }, (_, h) =>
+                            [0, 30].map((m) => {
+                              const value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                              const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                              const ampm = h < 12 ? 'AM' : 'PM';
+                              const label = `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+                              return <option key={value} value={value}>{label}</option>;
+                            })
+                          )}
+                        </select>
                       </div>
                     </div>
 
@@ -783,7 +836,7 @@ export function AppointmentDetailModal({
                   {appointment.notes && (
                     <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
                       <div className="text-xs text-[#9CA3AF] mb-1">Special Requests</div>
-                      <div className="text-sm text-[#434E54] italic">"{appointment.notes}"</div>
+                      <div className="text-sm text-[#434E54] italic">&quot;{appointment.notes}&quot;</div>
                     </div>
                   )}
 
@@ -805,19 +858,20 @@ export function AppointmentDetailModal({
                   )}
 
                   {/* Admin Notes - Inline Edit */}
-                  <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                  <div className="bg-[#FFFBF7] rounded-lg p-3 border border-[#EAE0D5]">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-[#434E54]" />
                         <h4 className="text-sm font-semibold text-[#434E54]">Admin Notes</h4>
                       </div>
-                      <button
+                      <AdminButton
+                        variant="ghost"
+                        size="xs"
                         onClick={() => setEditingNotes(!editingNotes)}
-                        className="btn btn-xs btn-ghost text-[#434E54]"
                         aria-label={editingNotes ? 'Cancel' : 'Edit notes'}
                       >
                         <Edit2 className="w-3 h-3" />
-                      </button>
+                      </AdminButton>
                     </div>
                     {editingNotes ? (
                       <div className="space-y-2">
@@ -828,27 +882,14 @@ export function AppointmentDetailModal({
                           rows={2}
                           placeholder="Internal notes (not visible to customers)..."
                         />
-                        <button
-                          onClick={async () => {
-                            try {
-                              const response = await fetch(`/api/admin/appointments/${appointmentId}`, {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ admin_notes: adminNotes }),
-                              });
-                              if (response.ok) {
-                                setEditingNotes(false);
-                                fetchAppointmentDetails();
-                              }
-                            } catch (err) {
-                              console.error('Error saving admin notes:', err);
-                            }
-                          }}
-                          className="btn btn-xs bg-[#434E54] text-white hover:bg-[#363F44] border-none"
+                        <AdminButton
+                          size="xs"
+                          isLoading={savingNotes}
+                          onClick={handleSaveAdminNotes}
                         >
                           <Save className="w-3 h-3" />
                           Save
-                        </button>
+                        </AdminButton>
                       </div>
                     ) : (
                       <div className="text-sm text-[#6B7280] bg-[#EAE0D5]/30 p-2 rounded min-h-[40px]">
@@ -859,7 +900,7 @@ export function AppointmentDetailModal({
                 </>
               )}
 
-              {/* Pricing - Compact */}
+              {/* Pricing - Compact with highlighted total */}
               <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="w-4 h-4 text-[#434E54]" />
@@ -880,7 +921,7 @@ export function AppointmentDetailModal({
                       </div>
                       {appointment.addons.map((addonItem: any) => (
                         <div key={addonItem.id} className="flex justify-between text-xs pl-2">
-                          <span className="text-[#6B7280]">• {addonItem.addon?.name || 'Add-on'}</span>
+                          <span className="text-[#6B7280]">&bull; {addonItem.addon?.name || 'Add-on'}</span>
                           <span className="text-[#434E54] font-medium">${(addonItem.price || 0).toFixed(2)}</span>
                         </div>
                       ))}
@@ -889,17 +930,17 @@ export function AppointmentDetailModal({
                     <div className="text-[10px] text-[#9CA3AF] italic pl-2">No extras added</div>
                   )}
 
-                  {/* Total */}
-                  <div className="flex justify-between items-center pt-2 border-t border-[#434E54]">
+                  {/* Total - highlighted */}
+                  <div className="flex justify-between items-center pt-2 mt-1 border-t border-[#434E54] bg-[#FFFBF7] -mx-3 px-3 pb-1 rounded-b-lg">
                     <span className="text-sm font-semibold text-[#434E54]">Total</span>
                     <span className="text-lg font-bold text-[#434E54]">${total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Report Card - Compact */}
+              {/* Report Card - Compact (cream-tinted) */}
               {appointment.status === 'completed' && (
-                <div className="bg-white rounded-lg p-3 border border-[#E5E5E5]">
+                <div className="bg-[#FFFBF7] rounded-lg p-3 border border-[#EAE0D5]">
                   <div className="flex items-center gap-2 mb-2">
                     <Camera className="w-4 h-4 text-[#434E54]" />
                     <h4 className="text-sm font-semibold text-[#434E54]">Grooming Report Card</h4>
@@ -922,40 +963,37 @@ export function AppointmentDetailModal({
                         )}
                       </div>
                       <div className="flex gap-2">
-                        <a
-                          href={`/admin/appointments/${appointmentId}/report-card`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn btn-xs bg-[#434E54] text-white hover:bg-[#363F44] border-none"
+                        <AdminButton
+                          size="xs"
+                          onClick={() => window.open(`/admin/appointments/${appointmentId}/report-card`, '_blank')}
                         >
                           <Edit2 className="w-3 h-3" />
                           Edit
-                        </a>
+                        </AdminButton>
                         {reportCard.uuid && (
-                          <a
-                            href={`/report-cards/${reportCard.uuid}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-xs btn-outline text-[#434E54] border-[#434E54] hover:bg-[#434E54] hover:text-white"
+                          <AdminButton
+                            variant="secondary"
+                            size="xs"
+                            onClick={() => window.open(`/report-cards/${reportCard.uuid}`, '_blank')}
                           >
                             <ExternalLink className="w-3 h-3" />
                             View
-                          </a>
+                          </AdminButton>
                         )}
                       </div>
                     </div>
                   ) : (
                     <div className="text-center py-3">
                       <p className="text-xs text-[#6B7280] mb-2">
-                        Share photos and details from today's spa session!
+                        Share photos and details from today&apos;s spa session!
                       </p>
-                      <a
-                        href={`/admin/appointments/${appointmentId}/report-card`}
-                        className="btn btn-xs bg-[#434E54] text-white hover:bg-[#363F44] border-none"
+                      <AdminButton
+                        size="xs"
+                        onClick={() => window.open(`/admin/appointments/${appointmentId}/report-card`, '_blank')}
                       >
                         <Camera className="w-3 h-3" />
                         Create Report Card
-                      </a>
+                      </AdminButton>
                     </div>
                   )}
                 </div>
@@ -976,6 +1014,28 @@ export function AppointmentDetailModal({
             </>
           ) : null}
         </div>
+
+        {/* Footer - Edit Mode: Save/Cancel */}
+        {appointment && isEditing && (
+          <div className="sticky bottom-0 bg-white border-t border-[#E5E5E5] px-5 py-4">
+            <div className="flex items-center justify-end gap-3">
+              <AdminButton
+                variant="ghost"
+                onClick={handleCancelEdit}
+                disabled={saving}
+              >
+                Cancel
+              </AdminButton>
+              <AdminButton
+                isLoading={saving}
+                onClick={handleSaveEdit}
+              >
+                <Save className="w-4 h-4" />
+                Save Changes
+              </AdminButton>
+            </div>
+          </div>
+        )}
 
         {/* Footer - Status Transition Actions */}
         {appointment && !isEditing && allowedTransitions.length > 0 && (

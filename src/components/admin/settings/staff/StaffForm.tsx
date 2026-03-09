@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, AlertTriangle, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import type { StaffFormProps, StaffFormData } from '@/types/staff';
 import type { User } from '@/types/database';
 
@@ -81,7 +82,6 @@ export function StaffForm({ staffId, isOpen, onClose, onSuccess }: StaffFormProp
   });
 
   const watchActive = watch('active');
-  const watchPhone = watch('phone');
 
   // Load existing staff in edit mode
   useEffect(() => {
@@ -95,15 +95,11 @@ export function StaffForm({ staffId, isOpen, onClose, onSuccess }: StaffFormProp
     }
   }, [staffId, isOpen, isEditMode]);
 
-  // Auto-format phone number
-  useEffect(() => {
-    if (watchPhone) {
-      const formatted = formatPhoneNumber(watchPhone);
-      if (formatted !== watchPhone) {
-        setValue('phone', formatted, { shouldValidate: true });
-      }
-    }
-  }, [watchPhone, setValue]);
+  // Phone formatting handler (moved from effect to event handler)
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setValue('phone', formatted, { shouldValidate: true });
+  };
 
   // Load staff data
   const loadStaffData = async () => {
@@ -203,16 +199,8 @@ export function StaffForm({ staffId, isOpen, onClose, onSuccess }: StaffFormProp
     }
   };
 
-  // Toast helpers (implement using your toast system)
-  const showSuccessToast = (message: string) => {
-    // TODO: Integrate with your toast system
-    console.log('Success:', message);
-  };
-
-  const showErrorToast = (message: string) => {
-    // TODO: Integrate with your toast system
-    console.error('Error:', message);
-  };
+  const showSuccessToast = (message: string) => toast.success(message);
+  const showErrorToast = (message: string) => toast.error(message);
 
   if (!isOpen) return null;
 
@@ -322,7 +310,7 @@ export function StaffForm({ staffId, isOpen, onClose, onSuccess }: StaffFormProp
                 </label>
                 <input
                   type="tel"
-                  {...register('phone')}
+                  {...register('phone', { onChange: handlePhoneChange })}
                   className="input input-bordered bg-white border-[#E5E5E5] focus:border-[#434E54]"
                   placeholder="(123) 456-7890"
                   maxLength={14}

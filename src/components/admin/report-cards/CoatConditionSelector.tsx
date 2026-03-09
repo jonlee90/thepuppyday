@@ -43,7 +43,7 @@ export function CoatConditionSelector({ value, onChange }: CoatConditionSelector
               onClick={() => onChange(option.value)}
               className={`
                 flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all
-                min-h-[100px] min-w-[44px]
+                min-h-[72px] min-w-[44px]
                 ${
                   isSelected
                     ? 'border-[#434E54] bg-[#F8EEE5] shadow-md'
@@ -51,7 +51,7 @@ export function CoatConditionSelector({ value, onChange }: CoatConditionSelector
                 }
               `}
             >
-              <Icon className={`w-8 h-8 mb-2 ${isSelected ? option.color : 'text-gray-400'}`} />
+              <Icon className={`w-6 h-6 mb-1.5 ${isSelected ? option.color : 'text-gray-400'}`} />
               <span className={`text-sm font-medium ${isSelected ? 'text-[#434E54]' : 'text-gray-600'}`}>
                 {option.label}
               </span>

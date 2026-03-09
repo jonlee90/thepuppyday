@@ -21,9 +21,10 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/customers': 'Customers',
   '/admin/waitlist': 'Waitlist',
   '/admin/analytics': 'Analytics',
-  '/admin/services': 'Services',
-  '/admin/addons': 'Add-ons',
-  '/admin/gallery': 'Gallery',
+  '/admin/staff': 'Staff',
+  '/admin/settings/services': 'Services',
+  '/admin/settings/addons': 'Add-ons',
+  '/admin/settings/gallery': 'Gallery',
   '/admin/marketing/campaigns': 'Campaigns',
   '/admin/notifications': 'Notifications',
   '/admin/notifications/dashboard': 'Notifications',
@@ -36,7 +37,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/settings/booking': 'Booking Settings',
   '/admin/settings/business-hours': 'Business Hours',
   '/admin/settings/loyalty': 'Loyalty Program',
-  '/admin/settings/staff': 'Staff',
   '/admin/settings/calendar': 'Calendar',
 };
 

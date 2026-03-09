@@ -5,6 +5,5 @@ export { DashboardTimeline } from './DashboardTimeline';
 export { ProductivityWidget } from './ProductivityWidget';
 export { WaitlistWidget } from './WaitlistWidget';
 export { PendingActionsWidget } from './PendingActionsWidget';
-export { QuickAccess } from './QuickAccess';
 export { WalkInButton } from './WalkInButton';
 export { CalendarSyncWidget } from './CalendarSyncWidget';

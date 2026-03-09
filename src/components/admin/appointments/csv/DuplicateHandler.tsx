@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { AlertTriangle, ChevronLeft, ChevronRight, Calendar, Clock, User, Dog } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import type { DuplicateMatch } from '@/types/admin-appointments';
 
 interface DuplicateHandlerProps {
@@ -252,15 +253,12 @@ export function DuplicateHandler({ duplicates, onResolve, onBack }: DuplicateHan
 
       {/* Actions */}
       <div className="flex items-center justify-between gap-4 pt-4">
-        <button onClick={onBack} className="btn btn-ghost text-[#434E54] hover:bg-[#EAE0D5] font-medium">
+        <AdminButton variant="ghost" onClick={onBack} className="font-medium">
           Back
-        </button>
-        <button
-          onClick={handleContinue}
-          className="btn bg-[#434E54] text-white hover:bg-[#363F44] font-medium px-8"
-        >
+        </AdminButton>
+        <AdminButton onClick={handleContinue} className="font-medium px-8">
           Continue with {strategy === 'skip' ? 'Skip' : 'Overwrite'} Strategy
-        </button>
+        </AdminButton>
       </div>
     </div>
   );

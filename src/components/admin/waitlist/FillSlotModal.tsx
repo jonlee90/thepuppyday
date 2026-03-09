@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { SlotSummary } from './SlotSummary';
 import { MatchingWaitlistList } from './MatchingWaitlistList';
 import type { WaitlistEntry } from '@/types/database';
@@ -128,9 +129,9 @@ export function FillSlotModal({
 
         {/* Footer */}
         <div className="modal-action">
-          <button onClick={onClose} className="btn btn-ghost">
+          <AdminButton variant="ghost" onClick={onClose}>
             Cancel
-          </button>
+          </AdminButton>
         </div>
       </div>
       <div className="modal-backdrop" onClick={onClose} />

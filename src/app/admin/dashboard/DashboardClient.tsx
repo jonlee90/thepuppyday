@@ -14,7 +14,6 @@ import { DashboardTimeline } from '@/components/admin/dashboard/DashboardTimelin
 import { ProductivityWidget } from '@/components/admin/dashboard/ProductivityWidget';
 import { WaitlistWidget } from '@/components/admin/dashboard/WaitlistWidget';
 import { PendingActionsWidget } from '@/components/admin/dashboard/PendingActionsWidget';
-import { QuickAccess } from '@/components/admin/dashboard/QuickAccess';
 import { BookingModal } from '@/components/booking/BookingModal';
 
 export function DashboardClient() {
@@ -77,7 +76,7 @@ export function DashboardClient() {
         </div>
 
         {/* Sidebar widgets */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
           <ProductivityWidget
             appointments={appointments}
             revenueData={revenue}
@@ -87,8 +86,6 @@ export function DashboardClient() {
         </div>
       </div>
 
-      {/* Quick Access pills */}
-      <QuickAccess />
 
       {/* Booking Modals */}
       <BookingModal

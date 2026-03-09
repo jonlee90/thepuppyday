@@ -33,7 +33,7 @@ export function AssessmentSection({
         Assessment
       </h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <MoodSelector value={mood} onChange={onMoodChange} />
         <CoatConditionSelector value={coatCondition} onChange={onCoatConditionChange} />
         <BehaviorSelector value={behavior} onChange={onBehaviorChange} />

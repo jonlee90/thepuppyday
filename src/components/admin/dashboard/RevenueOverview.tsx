@@ -174,7 +174,7 @@ export function RevenueOverview({ revenueData, loading, error, onRetry }: Revenu
 
   return (
     <div
-      className="grid grid-cols-1 md:grid-cols-3 gap-6"
+      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
       aria-live="polite"
       aria-label="Revenue overview"
     >
@@ -184,7 +184,7 @@ export function RevenueOverview({ revenueData, loading, error, onRetry }: Revenu
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: 'easeOut', delay: index * 0.1 }}
-          className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-all hover:scale-[1.02]"
+          className={`${index == 2 ? 'hidden md:block' : '' } bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-all hover:scale-[1.02]`}
         >
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-[#434E54]/60">{card.label}</p>

@@ -2,7 +2,7 @@
 
 /**
  * SubmitActions Component
- * Save draft and submit buttons with validation feedback
+ * Sticky bottom bar with save draft and submit buttons
  */
 
 import { Save, Send, Clock } from 'lucide-react';
@@ -27,6 +27,7 @@ export function SubmitActions({
   // Validate for submission
   const validation = validateReportCard(formState, false);
   const canSubmit = validation.valid && !isSaving;
+  const errorCount = Object.keys(validation.errors).length;
 
   // Format last saved time
   const formatLastSaved = (date: Date | null): string => {
@@ -37,85 +38,78 @@ export function SubmitActions({
     const minutes = Math.floor(seconds / 60);
 
     if (seconds < 60) return 'Saved just now';
-    if (minutes === 1) return 'Saved 1 minute ago';
-    if (minutes < 60) return `Saved ${minutes} minutes ago`;
+    if (minutes === 1) return 'Saved 1 min ago';
+    if (minutes < 60) return `Saved ${minutes} min ago`;
 
     const hours = Math.floor(minutes / 60);
-    if (hours === 1) return 'Saved 1 hour ago';
-    return `Saved ${hours} hours ago`;
+    if (hours === 1) return 'Saved 1 hr ago';
+    return `Saved ${hours} hrs ago`;
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md">
-      {/* Save Status */}
-      <div className="flex items-center gap-2 mb-6">
-        {isSaving ? (
-          <>
-            <Clock className="w-4 h-4 text-blue-600 animate-pulse" />
-            <span className="text-sm text-blue-600 font-medium">Saving...</span>
-          </>
-        ) : lastSaved ? (
-          <>
-            <Clock className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">{formatLastSaved(lastSaved)}</span>
-          </>
-        ) : null}
-      </div>
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E5E5] shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+      <div className="max-w-5xl mx-auto px-4 py-3">
+        {/* Status + Buttons Row */}
+        <div className="flex items-center gap-3">
+          {/* Save Status - compact */}
+          <div className="hidden sm:flex items-center gap-1.5 text-sm min-w-0 flex-shrink-0">
+            {isSaving ? (
+              <>
+                <Clock className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+                <span className="text-blue-600 font-medium">Saving...</span>
+              </>
+            ) : lastSaved ? (
+              <>
+                <Clock className="w-3.5 h-3.5 text-gray-400" />
+                <span className="text-gray-500 truncate">{formatLastSaved(lastSaved)}</span>
+              </>
+            ) : null}
+          </div>
 
-      {/* Validation Errors */}
-      {!validation.valid && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <h3 className="text-sm font-semibold text-red-800 mb-2">
-            Please fix the following issues:
-          </h3>
-          <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
-            {Object.entries(validation.errors).map(([field, error]) => (
-              <li key={field}>{error}</li>
-            ))}
-          </ul>
+          {/* Validation error count */}
+          {!validation.valid && (
+            <span className="hidden sm:inline text-xs text-red-600 font-medium flex-shrink-0">
+              {errorCount} issue{errorCount > 1 ? 's' : ''} remaining
+            </span>
+          )}
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Action Buttons */}
+          <button
+            type="button"
+            onClick={onSaveDraft}
+            disabled={isSaving}
+            className="
+              flex items-center justify-center gap-2 px-5 py-2.5
+              bg-white text-[#434E54] font-medium rounded-lg border-2 border-[#434E54]
+              hover:bg-[#F8EEE5] transition-colors
+              disabled:opacity-50 disabled:cursor-not-allowed
+              min-h-[44px] text-sm
+            "
+          >
+            <Save className="w-4 h-4" />
+            Save Draft
+          </button>
+
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={!canSubmit}
+            className="
+              flex items-center justify-center gap-2 px-5 py-2.5
+              bg-[#434E54] text-white font-medium rounded-lg
+              hover:bg-[#363F44] transition-colors
+              disabled:opacity-50 disabled:cursor-not-allowed
+              min-h-[44px] text-sm
+            "
+          >
+            <Send className="w-4 h-4" />
+            Submit
+          </button>
         </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Save Draft Button */}
-        <button
-          type="button"
-          onClick={onSaveDraft}
-          disabled={isSaving}
-          className="
-            flex-1 flex items-center justify-center gap-2 px-6 py-3
-            bg-white text-[#434E54] font-medium rounded-lg border-2 border-[#434E54]
-            hover:bg-[#F8EEE5] transition-colors
-            disabled:opacity-50 disabled:cursor-not-allowed
-            min-h-[50px]
-          "
-        >
-          <Save className="w-5 h-5" />
-          Save Draft
-        </button>
-
-        {/* Submit Button */}
-        <button
-          type="button"
-          onClick={onSubmit}
-          disabled={!canSubmit}
-          className="
-            flex-1 flex items-center justify-center gap-2 px-6 py-3
-            bg-[#434E54] text-white font-medium rounded-lg
-            hover:bg-[#363F44] transition-colors
-            disabled:opacity-50 disabled:cursor-not-allowed
-            min-h-[50px]
-          "
-        >
-          <Send className="w-5 h-5" />
-          Submit Report Card
-        </button>
       </div>
-
-      <p className="text-xs text-gray-500 mt-4 text-center">
-        Report cards can be edited within 24 hours of submission.
-      </p>
     </div>
   );
 }

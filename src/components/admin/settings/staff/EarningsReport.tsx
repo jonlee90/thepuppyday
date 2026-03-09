@@ -212,34 +212,24 @@ export function EarningsReport() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-[#434E54]">Earnings Report</h2>
-          <p className="text-sm text-[#6B7280] mt-1">
-            View groomer performance and commission data
-          </p>
-        </div>
-
-        {/* Export Buttons */}
-        <div className="flex gap-2">
-          <button
-            onClick={handleExportCSV}
-            disabled={!reportData || loading}
-            className="btn btn-outline btn-sm"
-          >
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
-          <button
-            onClick={handleExportPDF}
-            disabled={!reportData || loading}
-            className="btn btn-outline btn-sm"
-          >
-            <FileText className="w-4 h-4" />
-            Export PDF
-          </button>
-        </div>
+      {/* Export Toolbar */}
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={handleExportCSV}
+          disabled={!reportData || loading}
+          className="btn btn-outline btn-sm"
+        >
+          <Download className="w-4 h-4" />
+          Export CSV
+        </button>
+        <button
+          onClick={handleExportPDF}
+          disabled={!reportData || loading}
+          className="btn btn-outline btn-sm"
+        >
+          <FileText className="w-4 h-4" />
+          Export PDF
+        </button>
       </div>
 
       {/* Filters Card */}
@@ -272,7 +262,7 @@ export function EarningsReport() {
                 type="date"
                 value={filters.start_date}
                 onChange={(e) => {
-                  setFilters({ ...filters, start_date: e.target.value });
+                  setFilters(prev => ({ ...prev, start_date: e.target.value }));
                   setDatePreset('custom');
                 }}
                 className="input input-bordered bg-white border-[#E5E5E5] focus:border-[#434E54]"
@@ -288,7 +278,7 @@ export function EarningsReport() {
                 type="date"
                 value={filters.end_date}
                 onChange={(e) => {
-                  setFilters({ ...filters, end_date: e.target.value });
+                  setFilters(prev => ({ ...prev, end_date: e.target.value }));
                   setDatePreset('custom');
                 }}
                 className="input input-bordered bg-white border-[#E5E5E5] focus:border-[#434E54]"
@@ -302,7 +292,7 @@ export function EarningsReport() {
               </label>
               <select
                 value={filters.groomer_id}
-                onChange={(e) => setFilters({ ...filters, groomer_id: e.target.value })}
+                onChange={(e) => setFilters(prev => ({ ...prev, groomer_id: e.target.value }))}
                 className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54]"
               >
                 <option value="all">All Groomers</option>
@@ -326,7 +316,7 @@ export function EarningsReport() {
                   type="radio"
                   value="day"
                   checked={filters.group_by === 'day'}
-                  onChange={(e) => setFilters({ ...filters, group_by: e.target.value as any })}
+                  onChange={(e) => setFilters(prev => ({ ...prev, group_by: e.target.value as any }))}
                   className="radio radio-primary radio-sm"
                 />
                 <span className="label-text">Day</span>
@@ -336,7 +326,7 @@ export function EarningsReport() {
                   type="radio"
                   value="week"
                   checked={filters.group_by === 'week'}
-                  onChange={(e) => setFilters({ ...filters, group_by: e.target.value as any })}
+                  onChange={(e) => setFilters(prev => ({ ...prev, group_by: e.target.value as any }))}
                   className="radio radio-primary radio-sm"
                 />
                 <span className="label-text">Week</span>
@@ -346,7 +336,7 @@ export function EarningsReport() {
                   type="radio"
                   value="month"
                   checked={filters.group_by === 'month'}
-                  onChange={(e) => setFilters({ ...filters, group_by: e.target.value as any })}
+                  onChange={(e) => setFilters(prev => ({ ...prev, group_by: e.target.value as any }))}
                   className="radio radio-primary radio-sm"
                 />
                 <span className="label-text">Month</span>
@@ -422,7 +412,7 @@ export function EarningsReport() {
           </div>
 
           {/* Per-Groomer Breakdown */}
-          {filters.groomer_id === 'all' && reportData.by_groomer.length > 0 && (
+          {filters.groomer_id === 'all' && reportData.by_groomer.length > 0 ? (
             <div className="card bg-white shadow-sm border border-[#434E54]/10">
               <div className="card-body p-6">
                 <h3 className="text-lg font-semibold text-[#434E54] mb-4">
@@ -462,7 +452,7 @@ export function EarningsReport() {
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
         </>
       )}
     </div>

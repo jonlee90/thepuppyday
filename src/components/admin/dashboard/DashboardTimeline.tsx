@@ -399,6 +399,12 @@ export function DashboardTimeline({
     setSelectedAppointmentId(null);
   };
 
+  // When the modal reports an update (status change, edit, groomer assignment),
+  // propagate to the parent so the dashboard refetches fresh data.
+  const handleModalUpdate = useCallback(() => {
+    onStatusUpdate?.(selectedAppointmentId ?? '', 'confirmed' as AppointmentStatus);
+  }, [onStatusUpdate, selectedAppointmentId]);
+
   // -------------------------------------------------------------------------
   // Layout computation: position each appointment in the timeline
   // -------------------------------------------------------------------------
@@ -565,7 +571,7 @@ export function DashboardTimeline({
           appointmentId={selectedAppointmentId}
           isOpen={isModalOpen}
           onClose={handleModalClose}
-          onUpdate={handleModalClose}
+          onUpdate={handleModalUpdate}
         />
       )}
     </>

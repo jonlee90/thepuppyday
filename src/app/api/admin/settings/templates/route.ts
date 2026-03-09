@@ -30,7 +30,7 @@ export async function GET() {
       .from('settings')
       .select('*')
       .eq('key', 'templates')
-      .single()) as { data: Setting | null; error: Error | null };
+      .maybeSingle()) as { data: Setting | null; error: Error | null };
 
     if (error) {
       console.error('[Templates API] Error fetching templates:', error);

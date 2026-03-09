@@ -3,25 +3,40 @@
 /**
  * PhotoUpload Component
  * Single photo upload with drag-drop, preview, and compression
- * Tablet-optimized with large touch targets
+ * Tablet-optimized with large touch targets and camera capture
  */
 
 import { useState, useRef, DragEvent } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2 } from 'lucide-react';
 import { compressImage, createPreviewUrl, revokePreviewUrl, validateImageForReportCard } from '@/lib/utils/image-compression';
 
 interface PhotoUploadProps {
   label: string;
   required?: boolean;
+  variant?: 'before' | 'after';
   value: string;
   onChange: (url: string) => void;
   onUpload: (file: File) => Promise<string>;
   className?: string;
 }
 
+const VARIANT_CONFIG = {
+  before: {
+    emoji: '🐕',
+    title: 'Before grooming',
+    subtitle: 'Capture the starting look',
+  },
+  after: {
+    emoji: '✨',
+    title: 'Show off your handiwork!',
+    subtitle: 'The fresh & clean result',
+  },
+};
+
 export function PhotoUpload({
   label,
   required = false,
+  variant,
   value,
   onChange,
   onUpload,
@@ -32,6 +47,8 @@ export function PhotoUpload({
   const [error, setError] = useState<string>('');
   const [previewUrl, setPreviewUrl] = useState<string>(value);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const config = variant ? VARIANT_CONFIG[variant] : null;
 
   const handleFileSelect = async (file: File | null) => {
     if (!file) return;
@@ -60,9 +77,6 @@ export function PhotoUpload({
 
       // Update form state
       onChange(uploadedUrl);
-
-      // Clean up preview URL (optional, as we'll use the uploaded URL)
-      // We keep it for immediate visual feedback
     } catch (err) {
       console.error('Upload error:', err);
       setError(err instanceof Error ? err.message : 'Upload failed');
@@ -140,6 +154,19 @@ export function PhotoUpload({
               <Loader2 className="w-12 h-12 text-[#434E54] mb-3 animate-spin" />
               <p className="text-[#434E54] font-medium">Uploading...</p>
             </>
+          ) : config ? (
+            <>
+              <span className="text-4xl mb-2">{config.emoji}</span>
+              <p className="text-[#434E54] font-medium mb-1">
+                {config.title}
+              </p>
+              <p className="text-sm text-gray-500">
+                {config.subtitle}
+              </p>
+              <p className="text-xs text-gray-400 mt-2">
+                Tap to take photo or browse
+              </p>
+            </>
           ) : (
             <>
               <Upload
@@ -159,6 +186,7 @@ export function PhotoUpload({
             ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/jpg,image/png,image/webp"
+            capture="environment"
             onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
             className="hidden"
             disabled={isUploading}

@@ -103,6 +103,11 @@ export function PendingActionsWidget({
     );
   }
 
+  // Hide the section entirely when there's nothing to show
+  if (!loading && !error && localPending.length === 0) {
+    return null;
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
       {/* Header */}

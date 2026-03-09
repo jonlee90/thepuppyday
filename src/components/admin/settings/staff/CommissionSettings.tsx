@@ -5,6 +5,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, DollarSign, Percent, AlertCircle, Calculator, X } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import type { CommissionSettingsData, CommissionPreviewCalculation } from '@/types/staff';
 import type { Service, StaffCommission } from '@/types/database';
 
@@ -209,14 +210,8 @@ export function CommissionSettings({ staffId, staffName }: CommissionSettingsPro
     return watchOverrides?.find((o) => o.service_id === serviceId);
   };
 
-  // Toast helpers
-  const showSuccessToast = (message: string) => {
-    console.log('Success:', message);
-  };
-
-  const showErrorToast = (message: string) => {
-    console.error('Error:', message);
-  };
+  const showSuccessToast = (message: string) => toast.success(message);
+  const showErrorToast = (message: string) => toast.error(message);
 
   if (loading) {
     return (

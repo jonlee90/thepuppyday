@@ -5,7 +5,7 @@
  */
 
 import { notFound } from 'next/navigation';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { ReportCardForm } from '@/components/admin/report-cards/ReportCardForm';
 
 interface PageProps {
@@ -16,10 +16,15 @@ interface PageProps {
 
 export default async function ReportCardPage({ params }: PageProps) {
   const { id: appointmentId } = await params;
-  const supabase = await createServerSupabaseClient();
 
-  // Fetch appointment with related data
-  // Auth is guaranteed by middleware + AdminLayout
+  // Auth check with session client (guaranteed by middleware + AdminLayout)
+  const authSupabase = await createServerSupabaseClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+  if (!user) notFound();
+
+  // Data query with service role client to bypass RLS
+  const supabase = createServiceRoleClient();
+
   const { data: appointment, error: appointmentError } = await (supabase as any)
     .from('appointments')
     .select(`

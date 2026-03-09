@@ -61,12 +61,15 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           sizeClasses[size],
           className
         )}
-        disabled={disabled || isLoading}
+        disabled={disabled}
+        aria-busy={isLoading || undefined}
+        aria-disabled={isLoading || disabled || undefined}
         {...props}
+        onClick={isLoading ? undefined : props.onClick}
       >
         {isLoading ? (
           <>
-            <span className="loading loading-spinner loading-sm !text-white" />
+            <span className="loading loading-spinner loading-sm !opacity-100 !text-white" />
             {loadingText || children}
           </>
         ) : (

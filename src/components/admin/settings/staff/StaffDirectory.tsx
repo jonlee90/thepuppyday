@@ -1,17 +1,20 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Grid3x3, List, Plus, Star, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { StaffMemberWithStats, StaffDirectoryFilters, StaffViewMode } from '@/types/staff';
 import { StaffForm } from './StaffForm';
 
+const EMPTY_STAFF: StaffMemberWithStats[] = [];
+
 interface StaffDirectoryProps {
   initialStaff?: StaffMemberWithStats[];
+  onStaffCountChange?: (count: number) => void;
 }
 
-export function StaffDirectory({ initialStaff = [] }: StaffDirectoryProps) {
+export function StaffDirectory({ initialStaff = EMPTY_STAFF, onStaffCountChange }: StaffDirectoryProps) {
   const router = useRouter();
 
   // State
@@ -52,6 +55,7 @@ export function StaffDirectory({ initialStaff = [] }: StaffDirectoryProps) {
 
       if (response.ok) {
         setStaff(result.data);
+        onStaffCountChange?.(result.data.length);
       }
     } catch (error) {
       console.error('Failed to fetch staff:', error);
@@ -77,9 +81,9 @@ export function StaffDirectory({ initialStaff = [] }: StaffDirectoryProps) {
   }, [staff, filters.search]);
 
   // Handlers
-  const handleStaffClick = (staffId: string) => {
+  const handleStaffClick = useCallback((staffId: string) => {
     router.push(`/admin/settings/staff/${staffId}`);
-  };
+  }, [router]);
 
   const handleCreateStaff = () => {
     setShowStaffForm(true);
@@ -87,26 +91,9 @@ export function StaffDirectory({ initialStaff = [] }: StaffDirectoryProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-[#434E54]">Staff Directory</h2>
-          <p className="text-sm text-[#6B7280] mt-1">
-            Manage your team members and their settings
-          </p>
-        </div>
-        <button
-          onClick={handleCreateStaff}
-          className="btn btn-primary bg-[#434E54] hover:bg-[#363F44] text-white border-none"
-        >
-          <Plus className="w-4 h-4" />
-          Add Staff Member
-        </button>
-      </div>
-
       {/* Filters Bar */}
       <div className="bg-white rounded-xl shadow-sm p-4 space-y-4">
-        {/* Search + View Toggle */}
+        {/* Search + View Toggle + Add Button */}
         <div className="flex items-center gap-4">
           {/* Search Input */}
           <div className="flex-1 relative">
@@ -124,6 +111,7 @@ export function StaffDirectory({ initialStaff = [] }: StaffDirectoryProps) {
           <div className="join">
             <button
               onClick={() => setViewMode('grid')}
+              aria-label="Grid view"
               className={`btn join-item ${
                 viewMode === 'grid'
                   ? 'btn-active bg-[#434E54] text-white'
@@ -134,6 +122,7 @@ export function StaffDirectory({ initialStaff = [] }: StaffDirectoryProps) {
             </button>
             <button
               onClick={() => setViewMode('list')}
+              aria-label="List view"
               className={`btn join-item ${
                 viewMode === 'list'
                   ? 'btn-active bg-[#434E54] text-white'
@@ -143,6 +132,15 @@ export function StaffDirectory({ initialStaff = [] }: StaffDirectoryProps) {
               <List className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Add Staff Button */}
+          <button
+            onClick={handleCreateStaff}
+            className="btn btn-primary bg-[#434E54] hover:bg-[#363F44] text-white border-none"
+          >
+            <Plus className="w-4 h-4" />
+            Add Staff Member
+          </button>
         </div>
 
         {/* Filter Dropdowns */}
@@ -154,7 +152,7 @@ export function StaffDirectory({ initialStaff = [] }: StaffDirectoryProps) {
             </label>
             <select
               value={filters.role}
-              onChange={(e) => setFilters({ ...filters, role: e.target.value as any })}
+              onChange={(e) => setFilters(prev => ({ ...prev, role: e.target.value as any }))}
               className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54]"
             >
               <option value="all">All Roles</option>
@@ -170,7 +168,7 @@ export function StaffDirectory({ initialStaff = [] }: StaffDirectoryProps) {
             </label>
             <select
               value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value as any })}
+              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value as any }))}
               className="select select-bordered bg-white border-[#E5E5E5] focus:border-[#434E54]"
             >
               <option value="all">All Status</option>
@@ -192,9 +190,9 @@ export function StaffDirectory({ initialStaff = [] }: StaffDirectoryProps) {
       ) : filteredStaff.length === 0 ? (
         <StaffEmptyState hasSearch={!!filters.search} onClearSearch={() => setSearchInput('')} />
       ) : viewMode === 'grid' ? (
-        <StaffGridView staff={filteredStaff} onStaffClick={handleStaffClick} />
+        <StaffGridView staff={filteredStaff} onStaffClick={handleStaffClick} statusFilter={filters.status} />
       ) : (
-        <StaffListView staff={filteredStaff} onStaffClick={handleStaffClick} />
+        <StaffListView staff={filteredStaff} onStaffClick={handleStaffClick} statusFilter={filters.status} />
       )}
 
       {/* Staff Form Modal */}
@@ -216,12 +214,14 @@ export function StaffDirectory({ initialStaff = [] }: StaffDirectoryProps) {
 // Grid View Component
 // ============================================
 
-function StaffGridView({
+const StaffGridView = memo(function StaffGridView({
   staff,
-  onStaffClick
+  onStaffClick,
+  statusFilter,
 }: {
   staff: StaffMemberWithStats[];
   onStaffClick: (id: string) => void;
+  statusFilter: string;
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -235,6 +235,9 @@ function StaffGridView({
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.2 }}
             onClick={() => onStaffClick(member.id)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onStaffClick(member.id); }}
+            tabIndex={0}
+            role="button"
             className="card bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-[#434E54]/10"
           >
             <div className="card-body p-6">
@@ -261,7 +264,7 @@ function StaffGridView({
               {/* Badges */}
               <div className="flex items-center gap-2 mb-4">
                 <RoleBadge role={member.role} />
-                <StatusBadge active={true} />
+                <StatusBadge active={statusFilter !== 'inactive'} />
               </div>
 
               {/* Stats */}
@@ -286,31 +289,33 @@ function StaffGridView({
               </div>
 
               {/* Upcoming Appointments */}
-              {member.upcoming_appointments > 0 && (
+              {member.upcoming_appointments > 0 ? (
                 <div className="alert alert-info bg-[#74B9FF]/10 border-[#74B9FF]/20 mt-3">
                   <span className="text-xs text-[#434E54]">
                     {member.upcoming_appointments} upcoming appointment{member.upcoming_appointments !== 1 ? 's' : ''}
                   </span>
                 </div>
-              )}
+              ) : null}
             </div>
           </motion.div>
         ))}
       </AnimatePresence>
     </div>
   );
-}
+});
 
 // ============================================
 // List View Component
 // ============================================
 
-function StaffListView({
+const StaffListView = memo(function StaffListView({
   staff,
-  onStaffClick
+  onStaffClick,
+  statusFilter,
 }: {
   staff: StaffMemberWithStats[];
   onStaffClick: (id: string) => void;
+  statusFilter: string;
 }) {
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -331,6 +336,9 @@ function StaffListView({
               <tr
                 key={member.id}
                 onClick={() => onStaffClick(member.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onStaffClick(member.id); }}
+                tabIndex={0}
+                role="button"
                 className="hover:bg-[#F8EEE5]/50 cursor-pointer transition-colors"
               >
                 <td>
@@ -359,7 +367,7 @@ function StaffListView({
                   <RoleBadge role={member.role} />
                 </td>
                 <td>
-                  <StatusBadge active={true} />
+                  <StatusBadge active={statusFilter !== 'inactive'} />
                 </td>
                 <td className="text-center">
                   <span className="font-medium text-[#434E54]">{member.appointment_count}</span>
@@ -381,7 +389,7 @@ function StaffListView({
       </div>
     </div>
   );
-}
+});
 
 // ============================================
 // Badge Components

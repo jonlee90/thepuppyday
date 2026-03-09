@@ -49,11 +49,13 @@ export function useReportCardForm({
 
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasLoadedRef = useRef(false);
+  const isLoadingRef = useRef(false);
 
   // Load existing report card or draft from localStorage
   useEffect(() => {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
+    isLoadingRef.current = true;
 
     const loadData = async () => {
       try {
@@ -100,7 +102,9 @@ export function useReportCardForm({
       }
     };
 
-    loadData();
+    loadData().finally(() => {
+      isLoadingRef.current = false;
+    });
   }, [appointmentId]);
 
   // Auto-save to localStorage
@@ -118,7 +122,7 @@ export function useReportCardForm({
 
   // Auto-save to server (debounced)
   useEffect(() => {
-    if (!hasLoadedRef.current) return;
+    if (!hasLoadedRef.current || isLoadingRef.current) return;
 
     // Clear existing timer
     if (autoSaveTimerRef.current) {
@@ -151,6 +155,7 @@ export function useReportCardForm({
         body: JSON.stringify({
           formState,
           isDraft: true,
+          dontSend,
         }),
       });
 
@@ -186,6 +191,7 @@ export function useReportCardForm({
         body: JSON.stringify({
           formState,
           isDraft,
+          dontSend,
         }),
       });
 

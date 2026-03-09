@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Download } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import type { CSVValidationResponse, ValidatedCSVRow } from '@/types/admin-appointments';
 
 interface ValidationPreviewProps {
@@ -231,16 +232,13 @@ export function ValidationPreview({ results, onContinue, onBack }: ValidationPre
 
       {/* Actions */}
       <div className="flex items-center justify-between gap-4 pt-4">
-        <button onClick={onBack} className="btn btn-ghost text-[#434E54] hover:bg-[#EAE0D5] font-medium">
+        <AdminButton variant="ghost" onClick={onBack} className="font-medium">
           Upload Different File
-        </button>
+        </AdminButton>
         {canContinue && (
-          <button
-            onClick={onContinue}
-            className="btn bg-[#434E54] text-white hover:bg-[#363F44] font-medium px-8"
-          >
+          <AdminButton onClick={onContinue} className="font-medium px-8">
             {hasErrors ? 'Continue with Valid Rows' : 'Continue to Import'}
-          </button>
+          </AdminButton>
         )}
       </div>
     </div>

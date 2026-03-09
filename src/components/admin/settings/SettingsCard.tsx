@@ -13,6 +13,9 @@ import {
   Calendar,
   Gift,
   Users,
+  Scissors,
+  Plus,
+  Clock,
   ChevronRight,
   AlertCircle,
   CheckCircle2,
@@ -25,12 +28,15 @@ interface SettingsCardProps {
   section: SettingsSectionMetadata;
 }
 
-const iconMap = {
+const iconMap: Record<string, React.ElementType> = {
   FileText,
   Image,
   Calendar,
   Gift,
   Users,
+  Scissors,
+  Plus,
+  Clock,
 };
 
 const statusConfig = {
