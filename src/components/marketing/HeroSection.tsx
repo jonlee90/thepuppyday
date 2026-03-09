@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { Phone, Star } from 'lucide-react';
 import { HeroBookingButton } from '@/components/booking';
 import { OptimizedImage } from '@/components/common/OptimizedImage';
-import { MarketingCTA } from '@/components/marketing/marketing-cta';
+import { MarketingCTA } from '@/components/marketing/MarketingCTA';
 import type { HeroContent } from '@/types/settings';
 
 interface HeroSectionProps {

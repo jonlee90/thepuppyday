@@ -9,7 +9,9 @@ import { motion } from 'framer-motion';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { useBookingModal } from '@/hooks/useBookingModal';
 import { summarizeBusinessHours } from '@/lib/utils/business-hours';
-import { MarketingCTA } from '@/components/marketing/marketing-cta';
+import { MarketingCTA } from '@/components/marketing/MarketingCTA';
+import { SectionHeader } from '@/components/common/SectionHeader';
+import { IconBox } from '@/components/ui/IconBox';
 
 interface ContactSectionProps {
   phone: string;
@@ -33,22 +35,10 @@ export function ContactSection({
     <section id="contact" className="py-20 md:py-28 bg-[#EAE0D5]">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          {/* Section Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-[#434E54] mb-4">
-              Get In Touch
-            </h2>
-            <div className="h-1 w-24 bg-gradient-to-r from-[#434E54] to-[#434E54]/30 rounded-full mx-auto mb-6"></div>
-            <p className="text-lg text-[#6B7280] max-w-2xl mx-auto leading-relaxed">
-              Have questions or ready to book? We're here to help make your pet's grooming experience wonderful.
-            </p>
-          </motion.div>
+          <SectionHeader
+            title="Get In Touch"
+            subtitle="Have questions or ready to book? We're here to help make your pet's grooming experience wonderful."
+          />
 
           {/* Single Contact Card */}
           <motion.div
@@ -63,9 +53,9 @@ export function ContactSection({
             <div className="space-y-8">
               {/* Phone */}
               <div className="flex items-start gap-5 group">
-                <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-[#EAE0D5] to-[#DCD2C7] rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
+                <IconBox hoverScale className="shadow-sm">
                   <Phone className="w-6 h-6 text-[#434E54]" strokeWidth={2} />
-                </div>
+                </IconBox>
                 <div className="flex-1">
                   <div className="font-semibold text-[#434E54] mb-2 text-sm uppercase tracking-wide">Phone</div>
                   <a
@@ -79,9 +69,9 @@ export function ContactSection({
 
               {/* Email */}
               <div className="flex items-start gap-5 group">
-                <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-[#EAE0D5] to-[#DCD2C7] rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
+                <IconBox hoverScale className="shadow-sm">
                   <Mail className="w-6 h-6 text-[#434E54]" strokeWidth={2} />
-                </div>
+                </IconBox>
                 <div className="flex-1">
                   <div className="font-semibold text-[#434E54] mb-2 text-sm uppercase tracking-wide">Email</div>
                   <a
@@ -95,9 +85,9 @@ export function ContactSection({
 
               {/* Address */}
               <div className="flex items-start gap-5 group">
-                <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-[#EAE0D5] to-[#DCD2C7] rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
+                <IconBox hoverScale className="shadow-sm">
                   <MapPin className="w-6 h-6 text-[#434E54]" strokeWidth={2} />
-                </div>
+                </IconBox>
                 <div className="flex-1">
                   <div className="font-semibold text-[#434E54] mb-2 text-sm uppercase tracking-wide">Location</div>
                   <a
@@ -124,9 +114,9 @@ export function ContactSection({
 
               {/* Business Hours */}
               <div className="flex items-start gap-5 group pt-4 border-t border-gray-200">
-                <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-[#EAE0D5] to-[#DCD2C7] rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
+                <IconBox hoverScale className="shadow-sm">
                   <Clock className="w-6 h-6 text-[#434E54]" strokeWidth={2} />
-                </div>
+                </IconBox>
                 <div className="flex-1">
                   <div className="font-semibold text-[#434E54] mb-3 text-sm uppercase tracking-wide">Hours</div>
                   {hoursSummary.map((line, i) => (

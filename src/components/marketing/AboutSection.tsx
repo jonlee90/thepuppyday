@@ -5,10 +5,11 @@
 
 'use client';
 
-import { motion, useInView, useSpring, useTransform } from 'framer-motion';
-import { useRef, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { MapPin, Sparkles, Heart, Clock } from 'lucide-react';
 import { OptimizedImage } from '@/components/common/OptimizedImage';
+import { SectionHeader } from '@/components/common/SectionHeader';
+import { IconBox } from '@/components/ui/IconBox';
 
 interface AboutSectionProps {
   title: string;
@@ -38,23 +39,11 @@ const highlights = [
 
 export function AboutSection({ title, description }: AboutSectionProps) {
   return (
-    <section id="about" className="relative py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#EAE0D5] overflow-hidden">
+    <section id="about" className="relative py-20 md:py-28 overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
 
-          {/* Section Header - matches other sections (Gallery, Transformations, etc.) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-[#434E54] mb-4">
-              {title}
-            </h2>
-            <div className="h-1 w-24 bg-gradient-to-r from-[#434E54] to-[#434E54]/30 rounded-full mx-auto mb-6"></div>
-          </motion.div>
+          <SectionHeader title={title} />
 
           {/* Main content: Photo left (55%), Text right (45%) */}
           <div className="grid grid-cols-1 lg:grid-cols-[55%_1fr] gap-10 lg:gap-14 items-center mb-16 lg:mb-20">
@@ -122,9 +111,9 @@ export function AboutSection({ title, description }: AboutSectionProps) {
                       transition={{ duration: 0.4, delay: 0.2 + i * 0.1 }}
                       className="flex items-center gap-3"
                     >
-                      <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-[#EAE0D5] to-[#DCD2C7] rounded-lg flex items-center justify-center">
+                      <IconBox size="sm" rounded="lg">
                         <Icon className="w-4.5 h-4.5 text-[#434E54]" strokeWidth={2} />
-                      </div>
+                      </IconBox>
                       <span className="text-[#434E54] font-medium text-[15px]">
                         {item.text}
                       </span>

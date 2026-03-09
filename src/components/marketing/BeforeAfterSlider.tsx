@@ -6,9 +6,9 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Sparkles, MoveHorizontal } from 'lucide-react';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
 
 interface BeforeAfterSliderProps {
   beforeImage: string;
@@ -66,7 +66,7 @@ export function BeforeAfterSlider({
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('touchmove', handleTouchMove);
+      document.addEventListener('touchmove', handleTouchMove, { passive: true });
       document.addEventListener('touchend', handleMouseUp);
 
       return () => {
@@ -89,15 +89,13 @@ export function BeforeAfterSlider({
       >
         {/* Before Image (full width) */}
         <div className="absolute inset-0">
-          <Image
+          <OptimizedImage
             src={beforeImage}
             alt={`${altText} - Before`}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 50vw"
-            loading="lazy"
-            placeholder="blur"
-            blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+            enableBlur={true}
           />
           {/* "BEFORE" Label - Clean & Elegant */}
           <motion.div
@@ -116,15 +114,13 @@ export function BeforeAfterSlider({
             clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
           }}
         >
-          <Image
+          <OptimizedImage
             src={afterImage}
             alt={`${altText} - After`}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 50vw"
-            loading="lazy"
-            placeholder="blur"
-            blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+            enableBlur={true}
           />
           {/* "AFTER" Label - Clean & Elegant with Sparkle */}
           <motion.div

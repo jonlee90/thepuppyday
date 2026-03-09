@@ -3,8 +3,8 @@
  * Task 0168: Updated to use dynamic business info from database
  */
 
-import { Header } from '@/components/marketing/header';
-import { Footer } from '@/components/marketing/footer';
+import { Header } from '@/components/marketing/Header';
+import { Footer } from '@/components/marketing/Footer';
 import { BookingModalProvider } from '@/components/booking';
 import { StickyBookingButton } from '@/components/marketing/StickyBookingButton';
 import { getBusinessInfo } from '@/lib/site-content';

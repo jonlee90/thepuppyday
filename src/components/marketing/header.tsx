@@ -5,11 +5,11 @@
  * Features smooth scrolling to sections, active state highlighting, and mobile responsive design
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AnnouncementBars } from '@/components/marketing/announcement-bars';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
+import { AddressBar, HoursBar } from '@/components/marketing/AnnouncementBars';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface HeaderProps {
@@ -20,33 +20,70 @@ export function Header({ hoursText }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
   const { user, isAuthenticated } = useAuthStore();
+
+  const SCROLL_THRESHOLD = 10;
+
+  const updateHeader = useCallback(() => {
+    const currentScrollY = window.scrollY;
+    const delta = currentScrollY - lastScrollY.current;
+
+    setIsScrolled(currentScrollY > 20);
+
+    // Only toggle visibility if scroll exceeds threshold
+    if (Math.abs(delta) >= SCROLL_THRESHOLD) {
+      if (delta > 0 && currentScrollY > 160) {
+        // Scrolling down & past the header area — hide
+        setIsHeaderVisible(false);
+        // Close mobile menu when hiding header
+        setMobileMenuOpen(false);
+      } else if (delta < 0) {
+        // Scrolling up — show
+        setIsHeaderVisible(true);
+      }
+      lastScrollY.current = currentScrollY;
+    }
+
+    // Always at top — show
+    if (currentScrollY <= 0) {
+      setIsHeaderVisible(true);
+      lastScrollY.current = 0;
+    }
+
+    // Determine active section based on scroll position
+    const sections = ['services', 'gallery', 'testimonials', 'about', 'contact'];
+    const scrollPosition = currentScrollY + 100;
+
+    for (const section of sections) {
+      const element = document.getElementById(section);
+      if (element) {
+        const offsetTop = element.offsetTop;
+        const offsetBottom = offsetTop + element.offsetHeight;
+
+        if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
+          setActiveSection(section);
+          break;
+        }
+      }
+    }
+
+    ticking.current = false;
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-
-      // Determine active section based on scroll position
-      const sections = ['services', 'gallery', 'testimonials', 'about', 'contact'];
-      const scrollPosition = window.scrollY + 100;
-
-      for (const section of sections) {
-        const element = document.getElementById(section);
-        if (element) {
-          const offsetTop = element.offsetTop;
-          const offsetBottom = offsetTop + element.offsetHeight;
-
-          if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
-            setActiveSection(section);
-            break;
-          }
-        }
+      if (!ticking.current) {
+        requestAnimationFrame(updateHeader);
+        ticking.current = true;
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [updateHeader]);
 
   const navLinks = [
     { label: 'Services', href: '#services' },
@@ -86,14 +123,15 @@ export function Header({ hoursText }: HeaderProps) {
   };
 
   return (
-    <header>
-      <AnnouncementBars hoursText={hoursText} />
+    <header
+      className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out will-change-transform"
+      style={{
+        transform: isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)',
+      }}
+    >
+      <AddressBar />
       <div
-        className={`fixed top-[44px] left-0 right-0 z-40 transition-all duration-300 ${
-          isScrolled
-            ? 'bg-white shadow-md backdrop-blur-sm'
-            : 'bg-white/95 shadow-sm'
-        }`}
+        className={`transition-all duration-300 bg-white shadow-md backdrop-blur-sm`}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
@@ -108,12 +146,14 @@ export function Header({ hoursText }: HeaderProps) {
               }}
             >
               <div className="relative w-10 h-10 sm:w-12 sm:h-12 transition-transform duration-200 group-hover:scale-105">
-                <Image
+                <OptimizedImage
                   src="/images/puppy_day_logo_dog_only_transparent.png"
                   alt="Puppy Day Logo"
                   fill
                   className="object-contain"
-                  priority
+                  priority={true}
+                  enableBlur={false}
+                  sizes="(max-width: 640px) 40px, 48px"
                 />
               </div>
               <span className="text-xl sm:text-2xl font-semibold text-[#434E54] tracking-tight">
@@ -246,6 +286,7 @@ export function Header({ hoursText }: HeaderProps) {
           </AnimatePresence>
         </div>
       </div>
+      <HoursBar hoursText={hoursText} />
     </header>
   );
 }

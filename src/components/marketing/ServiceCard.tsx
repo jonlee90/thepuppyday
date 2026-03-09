@@ -11,6 +11,8 @@ import { useBookingModalStore } from '@/hooks/useBookingModal';
 import { Scissors, Sparkles, Check, ChevronDown } from 'lucide-react';
 import type { Service } from '@/types/database';
 import type { LucideIcon } from 'lucide-react';
+import { IconBox } from '@/components/ui/IconBox';
+import { MarketingCTA } from '@/components/marketing/MarketingCTA';
 
 interface ServiceCardProps {
   service: Service | 'add-ons-info'; // Can be a Service object or special add-ons identifier
@@ -164,9 +166,9 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false, addons }
         <div className="flex-shrink-0">
           {/* Service Icon */}
           <div className="flex justify-center mb-6">
-            <div className={`w-20 h-20 bg-gradient-to-br ${data.gradient} rounded-2xl flex items-center justify-center shadow-md`}>
+            <IconBox size="lg" rounded="2xl" gradient={data.gradient} shadow>
               <Icon className={`w-10 h-10 ${serviceType === 'premium' ? 'text-white' : 'text-[#434E54]'}`} strokeWidth={2} />
-            </div>
+            </IconBox>
           </div>
 
           {/* Service Name */}
@@ -275,19 +277,16 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false, addons }
 
         {/* CTA Button - Fixed at bottom */}
         <div className="flex-shrink-0 mt-auto">
-          <button
-            className={`w-full px-6 py-4 text-base font-semibold rounded-xl shadow-md transition-all duration-200 cursor-pointer ${
-              isFeatured
-                ? 'bg-[#434E54] text-white hover:bg-[#363F44] hover:shadow-lg'
-                : 'bg-gradient-to-r from-[#434E54] to-[#5A6670] text-white hover:shadow-lg'
-            }`}
+          <MarketingCTA
+            fullWidth
             onClick={(e) => {
               e.stopPropagation();
               openModal({ mode: 'customer', preSelectedServiceId: serviceId, initialStep: 1 });
             }}
+            className={!isFeatured ? 'bg-gradient-to-r from-[#434E54] to-[#5A6670]' : undefined}
           >
             Book This Service
-          </button>
+          </MarketingCTA>
         </div>
       </div>
     </motion.div>

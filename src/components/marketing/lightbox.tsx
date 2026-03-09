@@ -5,8 +5,9 @@
  */
 
 import { useEffect } from 'react';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
 import type { GalleryImage } from '@/types/database';
 
 interface LightboxProps {
@@ -80,17 +81,7 @@ export function Lightbox({
             className="absolute top-4 right-4 btn btn-circle btn-ghost text-white hover:bg-white/10 z-10"
             aria-label="Close lightbox"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
+            <X className="w-6 h-6" />
           </button>
 
           {/* Previous Button */}
@@ -103,17 +94,7 @@ export function Lightbox({
               className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#F8EEE5] text-[#434E54] hover:bg-white shadow-xl hover:scale-110 transition-all duration-200 flex items-center justify-center cursor-pointer z-10"
               aria-label="Previous image"
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path d="M15 19l-7-7 7-7"></path>
-              </svg>
+              <ChevronLeft className="w-6 h-6" />
             </button>
           )}
 
@@ -127,17 +108,7 @@ export function Lightbox({
               className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#F8EEE5] text-[#434E54] hover:bg-white shadow-xl hover:scale-110 transition-all duration-200 flex items-center justify-center cursor-pointer z-10"
               aria-label="Next image"
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path d="M9 5l7 7-7 7"></path>
-              </svg>
+              <ChevronRight className="w-6 h-6" />
             </button>
           )}
 
@@ -152,13 +123,14 @@ export function Lightbox({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative w-full h-full max-w-6xl max-h-[90vh]">
-              <Image
+              <OptimizedImage
                 src={currentImage.image_url}
                 alt={currentImage.caption || `Gallery image ${currentIndex + 1}`}
                 fill
                 className="object-contain"
                 sizes="100vw"
-                priority
+                priority={true}
+                enableBlur={false}
               />
             </div>
           </motion.div>

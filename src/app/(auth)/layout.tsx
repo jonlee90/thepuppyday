@@ -12,7 +12,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Footer } from '@/components/marketing/footer';
+import { Footer } from '@/components/marketing/Footer';
 import { getBusinessInfo } from '@/lib/site-content';
 
 export default function AuthLayout({

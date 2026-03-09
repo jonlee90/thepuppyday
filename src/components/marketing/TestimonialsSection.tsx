@@ -7,9 +7,12 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Star, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { OptimizedImage } from '@/components/common/OptimizedImage';
-import { Lightbox } from '@/components/marketing/lightbox';
+import { Lightbox } from '@/components/marketing/Lightbox';
+import { SectionHeader } from '@/components/common/SectionHeader';
+import { StarRating } from '@/components/common/StarRating';
+import { useLightbox } from '@/hooks/useLightbox';
 
 // Lightbox-compatible image shape (matches GalleryImage from @/types/database)
 interface LightboxImage {
@@ -122,21 +125,6 @@ const allLightboxImages: LightboxImage[] = reviews.flatMap((review) =>
   }))
 );
 
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <div className="flex gap-0.5">
-      {Array.from({ length: 5 }, (_, i) => (
-        <Star
-          key={i}
-          className={`w-4 h-4 ${
-            i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
-
 function ReviewCard({
   review,
   index,
@@ -227,13 +215,7 @@ function ReviewCard({
 }
 
 export function TestimonialsSection() {
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const openLightbox = (index: number) => {
-    setCurrentImageIndex(index);
-    setLightboxOpen(true);
-  };
+  const { isOpen, currentIndex, open, close, next, previous } = useLightbox(allLightboxImages.length);
 
   // Calculate the starting lightbox index for each review's images
   const lightboxStartIndices: number[] = [];
@@ -243,26 +225,13 @@ export function TestimonialsSection() {
     counter += review.images.length;
   }
 
-
   return (
-    <section id="testimonials" className="relative py-20 md:py-28 bg-[#FFFBF7]">
+    <section id="testimonials" className="relative py-20 md:py-28">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-4xl md:text-5xl font-bold text-[#434E54] mb-4">
-            What Our Customers Say
-          </h2>
-          <div className="h-1 w-24 bg-gradient-to-r from-[#434E54] to-[#434E54]/30 rounded-full mx-auto mb-6"></div>
-          <p className="text-lg text-[#6B7280] max-w-2xl mx-auto leading-relaxed">
-            Real reviews from happy pet parents on Yelp
-          </p>
-        </motion.div>
+        <SectionHeader
+          title="What Our Customers Say"
+          subtitle="Real reviews from happy pet parents on Yelp"
+        />
 
         {/* 6 reviews: 1 col mobile → 2 col tablet → 3 col desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -271,7 +240,7 @@ export function TestimonialsSection() {
               key={review.id}
               review={review}
               index={i}
-              onImageClick={openLightbox}
+              onImageClick={open}
               lightboxStartIndex={lightboxStartIndices[i]}
             />
           ))}
@@ -300,11 +269,11 @@ export function TestimonialsSection() {
       {/* Lightbox */}
       <Lightbox
         images={allLightboxImages as Parameters<typeof Lightbox>[0]['images']}
-        currentIndex={currentImageIndex}
-        isOpen={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-        onNext={() => setCurrentImageIndex((prev) => (prev + 1) % allLightboxImages.length)}
-        onPrevious={() => setCurrentImageIndex((prev) => (prev - 1 + allLightboxImages.length) % allLightboxImages.length)}
+        currentIndex={currentIndex}
+        isOpen={isOpen}
+        onClose={close}
+        onNext={next}
+        onPrevious={previous}
       />
     </section>
   );

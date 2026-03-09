@@ -15,12 +15,11 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay, A11y } from 'swiper/modules';
-import type { Swiper as SwiperType } from 'swiper';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -41,7 +40,6 @@ interface PromoBannerCarouselProps {
 }
 
 export function PromoBannerCarousel({ banners }: PromoBannerCarouselProps) {
-  const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const impressionTracked = useRef<Set<string>>(new Set());
 
@@ -56,7 +54,7 @@ export function PromoBannerCarousel({ banners }: PromoBannerCarouselProps) {
   }
 
   // Track impression when banner becomes visible
-  const trackImpression = async (bannerId: string) => {
+  const trackImpression = useCallback(async (bannerId: string) => {
     // Only track once per banner per session
     if (impressionTracked.current.has(bannerId)) {
       return;
@@ -72,7 +70,7 @@ export function PromoBannerCarousel({ banners }: PromoBannerCarouselProps) {
     } catch (error) {
       console.error('Failed to track impression:', error);
     }
-  };
+  }, []);
 
   // Track impression on mount and slide change
   useEffect(() => {
@@ -101,12 +99,13 @@ export function PromoBannerCarousel({ banners }: PromoBannerCarouselProps) {
             }`}
             onClick={() => handleBannerClick(banner)}
           >
-            <Image
+            <OptimizedImage
               src={banner.image_url}
               alt={banner.alt_text || 'Promotional banner'}
               fill
               className="object-cover"
-              priority
+              priority={true}
+              enableBlur={false}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
             />
           </div>
@@ -139,7 +138,6 @@ export function PromoBannerCarousel({ banners }: PromoBannerCarouselProps) {
               prevEl: '.banner-prev',
               nextEl: '.banner-next',
             }}
-            onSwiper={setSwiperInstance}
             onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
             className="rounded-xl overflow-hidden shadow-md"
           >
@@ -151,13 +149,13 @@ export function PromoBannerCarousel({ banners }: PromoBannerCarouselProps) {
                   }`}
                   onClick={() => handleBannerClick(banner)}
                 >
-                  <Image
+                  <OptimizedImage
                     src={banner.image_url}
                     alt={banner.alt_text || 'Promotional banner'}
                     fill
                     className="object-cover"
                     priority={banner.display_order === 0}
-                    loading={banner.display_order === 0 ? 'eager' : 'lazy'}
+                    enableBlur={false}
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
                   />
                 </div>

@@ -7,22 +7,22 @@
 import { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getSiteContent } from '@/lib/site-content';
-import { HeroSection } from '@/components/marketing/hero-section';
-import { PromoBannerCarousel } from '@/components/marketing/PromoBannerCarousel';
-import { ServiceGrid } from '@/components/marketing/service-grid';
-import { BeforeAfterCarousel } from '@/components/marketing/before-after-carousel';
-import { GalleryGrid } from '@/components/marketing/gallery-grid';
-import { AboutSection } from '@/components/marketing/about-section';
-import { TestimonialsSection } from '@/components/marketing/testimonials-section';
-import { ContactSection } from '@/components/marketing/contact-section';
+import {
+  HeroSection,
+  PromoBannerCarousel,
+  ServiceSection,
+  BeforeAfterSection,
+  GallerySection,
+  AboutSection,
+  TestimonialsSection,
+  ContactSection,
+} from '@/components/marketing';
 import type {
   Service,
   PromoBanner as PromoBannerType,
   BeforeAfterPair,
   GalleryImage,
-  SiteContent,
 } from '@/types/database';
-import GroomingToolDecoration from '@/components/marketing/grooming-tool-decoration';
 
 // Dynamic SEO Metadata - fetches from database
 export async function generateMetadata(): Promise<Metadata> {
@@ -139,7 +139,7 @@ export default async function MarketingPage() {
   const data = await getMarketingData();
 
   return (
-    <div className="bg-[#FFFBF7]">
+    <div className="grooming-pattern-bg">
       {/* Promotional Banner Carousel */}
       <PromoBannerCarousel banners={data.banners} />
 
@@ -148,50 +148,15 @@ export default async function MarketingPage() {
 
       {/* Before/After Transformations Section */}
       {data.beforeAfterPairs.length > 0 && (
-        <section className="relative py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#F8EEE5]">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Section Header with decorative underline */}
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-[#434E54] mb-4">
-                Amazing Transformations
-              </h2>
-              <div className="h-1 w-24 bg-gradient-to-r from-[#434E54] to-[#434E54]/30 rounded-full mx-auto mb-6"></div>
-              <p className="text-lg text-[#6B7280] max-w-2xl mx-auto leading-relaxed">
-                See the incredible before and after results of our professional grooming services
-              </p>
-            </div>
-
-            <BeforeAfterCarousel pairs={data.beforeAfterPairs} />
-          </div>
-        </section>
+        <BeforeAfterSection pairs={data.beforeAfterPairs} />
       )}
 
       {/* Services Section */}
-      <section id="services" className="relative py-20 md:py-28 bg-[#F8EEE5]">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <ServiceGrid services={data.services} addons={data.addons} />
-          <GroomingToolDecoration/>
-        </div>
-      </section>
+      <ServiceSection services={data.services} addons={data.addons} />
 
       {/* Gallery Section */}
       {data.galleryImages.length > 0 && (
-        <section id="gallery" className="relative py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#FFFBF7]">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Section Header with decorative underline */}
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-[#434E54] mb-4">
-                Happy Pups Gallery
-              </h2>
-              <div className="h-1 w-24 bg-gradient-to-r from-[#434E54] to-[#434E54]/30 rounded-full mx-auto mb-6"></div>
-              <p className="text-lg text-[#6B7280] max-w-2xl mx-auto leading-relaxed">
-                Check out some of our recent grooming clients looking absolutely fabulous
-              </p>
-            </div>
-
-            <GalleryGrid images={data.galleryImages} />
-          </div>
-        </section>
+        <GallerySection images={data.galleryImages} />
       )}
 
 

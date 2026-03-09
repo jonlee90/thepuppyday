@@ -4,10 +4,10 @@
  * Gallery grid component for displaying pet photos - Clean & Elegant Professional style
  */
 
-import { useState } from 'react';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Lightbox } from './lightbox';
+import { OptimizedImage } from '@/components/common/OptimizedImage';
+import { Lightbox } from './Lightbox';
+import { useLightbox } from '@/hooks/useLightbox';
 import type { GalleryImage } from '@/types/database';
 
 interface GalleryGridProps {
@@ -15,25 +15,7 @@ interface GalleryGridProps {
 }
 
 export function GalleryGrid({ images }: GalleryGridProps) {
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const openLightbox = (index: number) => {
-    setCurrentImageIndex(index);
-    setLightboxOpen(true);
-  };
-
-  const closeLightbox = () => {
-    setLightboxOpen(false);
-  };
-
-  const goToNext = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const goToPrevious = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+  const { isOpen, currentIndex, open, close, next, previous } = useLightbox(images.length);
 
   if (images.length === 0) {
     return (
@@ -55,17 +37,15 @@ export function GalleryGrid({ images }: GalleryGridProps) {
             viewport={{ once: true }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
             className="relative aspect-square cursor-pointer overflow-hidden rounded-xl shadow-md hover:shadow-lg bg-white group transition-all duration-200 hover:-translate-y-1"
-            onClick={() => openLightbox(index)}
+            onClick={() => open(index)}
           >
-            <Image
+            <OptimizedImage
               src={image.image_url}
               alt={image.caption || `Gallery image ${index + 1}`}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              loading="lazy"
-              placeholder="blur"
-              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+              enableBlur={true}
             />
 
             {/* Overlay on hover - Clean Design */}
@@ -113,11 +93,11 @@ export function GalleryGrid({ images }: GalleryGridProps) {
       {/* Lightbox */}
       <Lightbox
         images={images}
-        currentIndex={currentImageIndex}
-        isOpen={lightboxOpen}
-        onClose={closeLightbox}
-        onNext={goToNext}
-        onPrevious={goToPrevious}
+        currentIndex={currentIndex}
+        isOpen={isOpen}
+        onClose={close}
+        onNext={next}
+        onPrevious={previous}
       />
     </>
   );
