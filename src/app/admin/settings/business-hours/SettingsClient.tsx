@@ -6,7 +6,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, Save, AlertCircle, FileText, Mail, MessageSquare, Settings } from 'lucide-react';
+import { Clock, Save, FileText, Mail, MessageSquare, Settings } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ReportCardSettings } from '@/components/admin/settings/ReportCardSettings';
 import { WaitlistSettings } from '@/components/admin/settings/WaitlistSettings';
@@ -61,10 +61,6 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
     initialBusinessHours || defaultBusinessHours
   );
   const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<{
-    type: 'success' | 'error';
-    text: string;
-  } | null>(null);
 
   const handleDayToggle = (day: keyof BusinessHours) => {
     setBusinessHours((prev) => ({
@@ -92,8 +88,6 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
 
   const handleSave = async () => {
     setIsSaving(true);
-    setSaveMessage(null);
-
     try {
       const response = await fetch('/api/admin/settings/business-hours', {
         method: 'PUT',
@@ -108,22 +102,9 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
       }
 
       toast.success('Business hours saved');
-      setSaveMessage({
-        type: 'success',
-        text: 'Business hours saved successfully!',
-      });
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSaveMessage(null);
-      }, 3000);
     } catch (error) {
       console.error('[Settings] Error saving:', error);
       toast.error('Failed to save business hours');
-      setSaveMessage({
-        type: 'error',
-        text: 'Failed to save settings. Please try again.',
-      });
     } finally {
       setIsSaving(false);
     }
@@ -248,7 +229,7 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
                             onChange={(e) =>
                               handleTimeChange(key, 'open', e.target.value)
                             }
-                            className="input input-bordered bg-white border-[#434E54]/20 focus:border-[#434E54] focus:outline-none h-10 w-[160px] min-w-[160px] text-sm [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                            className="bg-white border border-[#434E54]/20 focus:border-[#434E54] focus:outline-none h-10 px-3 rounded-lg text-sm [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                           />
                         </div>
                         <span className="text-[#6B7280] hidden sm:inline">-</span>
@@ -266,7 +247,7 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
                             onChange={(e) =>
                               handleTimeChange(key, 'close', e.target.value)
                             }
-                            className="input input-bordered bg-white border-[#434E54]/20 focus:border-[#434E54] focus:outline-none h-10 w-[160px] min-w-[160px] text-sm [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                            className="bg-white border border-[#434E54]/20 focus:border-[#434E54] focus:outline-none h-10 px-3 rounded-lg text-sm [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                           />
                         </div>
                       </div>
@@ -298,19 +279,6 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
                 )}
               </button>
 
-              {/* Save Message */}
-              {saveMessage && (
-                <div
-                  className={`flex items-center gap-2 ${
-                    saveMessage.type === 'success'
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}
-                >
-                  <AlertCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">{saveMessage.text}</span>
-                </div>
-              )}
             </div>
           </div>
         )}

@@ -100,7 +100,7 @@ export function Lightbox({
                 e.stopPropagation();
                 onPrevious();
               }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 btn btn-circle btn-primary shadow-xl hover:scale-110 transition-transform z-10"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#F8EEE5] text-[#434E54] hover:bg-white shadow-xl hover:scale-110 transition-all duration-200 flex items-center justify-center cursor-pointer z-10"
               aria-label="Previous image"
             >
               <svg
@@ -124,7 +124,7 @@ export function Lightbox({
                 e.stopPropagation();
                 onNext();
               }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 btn btn-circle btn-primary shadow-xl hover:scale-110 transition-transform z-10"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#F8EEE5] text-[#434E54] hover:bg-white shadow-xl hover:scale-110 transition-all duration-200 flex items-center justify-center cursor-pointer z-10"
               aria-label="Next image"
             >
               <svg

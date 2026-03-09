@@ -196,7 +196,7 @@ function ReviewCard({
         {needsTruncation && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-[#434E54]/60 hover:text-[#434E54] ml-1 font-medium transition-colors"
+            className="text-[#434E54]/60 hover:text-[#434E54] ml-1 font-medium transition-colors cursor-pointer"
           >
             {expanded ? 'Show less' : 'Read more'}
           </button>
@@ -209,7 +209,7 @@ function ReviewCard({
           <button
             key={img.src}
             onClick={() => onImageClick(lightboxStartIndex + imgIndex)}
-            className="relative w-20 h-20 rounded-xl overflow-hidden hover:ring-2 hover:ring-[#434E54]/30 transition-all flex-shrink-0"
+            className="relative w-20 h-20 rounded-xl overflow-hidden hover:ring-2 hover:ring-[#434E54]/30 transition-all flex-shrink-0 cursor-pointer"
           >
             <OptimizedImage
               src={img.src}
@@ -245,7 +245,7 @@ export function TestimonialsSection() {
 
 
   return (
-    <section id="testimonials" className="relative py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#FFFBF7]">
+    <section id="testimonials" className="relative py-20 md:py-28 bg-[#FFFBF7]">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div

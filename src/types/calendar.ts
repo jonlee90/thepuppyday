@@ -98,6 +98,12 @@ export interface CalendarConnection {
   is_active: boolean;
   last_sync_at: string | null; // ISO timestamp
 
+  // Auto-sync pause tracking
+  auto_sync_paused: boolean;
+  paused_at: string | null;
+  pause_reason: string | null;
+  consecutive_failures: number;
+
   // Timestamps
   created_at: string;
   updated_at: string;
@@ -222,6 +228,10 @@ export interface CalendarConnectionStatus {
     calendar_id: string;
     last_sync_at: string | null;
     is_active: boolean;
+    auto_sync_paused?: boolean;
+    paused_at?: string | null;
+    pause_reason?: string | null;
+    consecutive_failures?: number;
   };
   sync_stats?: {
     total_synced: number;

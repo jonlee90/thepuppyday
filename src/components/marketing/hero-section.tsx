@@ -5,11 +5,11 @@
  * Lobby photo as background with gradient overlay, content pinned bottom-left
  */
 
-import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Phone, MapPin, Star } from 'lucide-react';
+import { Phone, Star } from 'lucide-react';
 import { HeroBookingButton } from '@/components/booking';
 import { OptimizedImage } from '@/components/common/OptimizedImage';
+import { MarketingCTA } from '@/components/marketing/marketing-cta';
 import type { HeroContent } from '@/types/settings';
 
 interface HeroSectionProps {
@@ -98,37 +98,31 @@ export function HeroSection({ heroContent }: HeroSectionProps) {
 
                   // Anchor link — smooth scroll
                   if (button.url.startsWith('#')) {
-                    const sectionId = button.url.slice(1);
                     return (
-                      <button
+                      <MarketingCTA
                         key={index}
-                        onClick={() => {
-                          document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                        className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-xl
-                          transition-all duration-200 hover:-translate-y-1 cursor-pointer
-                          bg-[#F8EEE5] text-[#434E54] hover:bg-white shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)]
-                         "
+                        as="scroll"
+                        href={button.url}
+                        variant="light"
                       >
                         {button.text}
-                      </button>
+                      </MarketingCTA>
                     );
                   }
 
                   // Regular link
                   return (
-                    <Link
+                    <MarketingCTA
                       key={index}
+                      as="link"
                       href={button.url}
-                      className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-xl
-                        transition-all duration-200 hover:-translate-y-1
-                        bg-[#F8EEE5] text-[#434E54] hover:bg-white shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)]"
+                      variant="light"
                     >
                       {button.text.toLowerCase().includes('call') && (
                         <Phone className="w-5 h-5" strokeWidth={2} />
                       )}
                       {button.text}
-                    </Link>
+                    </MarketingCTA>
                   );
                 })}
               </div>

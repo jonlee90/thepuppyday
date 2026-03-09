@@ -255,7 +255,7 @@ export function ServiceAccountConnect({
       <button
         onClick={handleConnect}
         disabled={isConnecting || !credentials.trim() || !calendarId.trim()}
-        className="btn btn-primary w-full gap-2"
+        className="btn btn-primary bg-[#434E54] hover:bg-[#363F44] border-none text-white w-full gap-2"
       >
         {isConnecting ? (
           <>

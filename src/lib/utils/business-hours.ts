@@ -92,3 +92,41 @@ function capitalize(str: string): string {
 export function getCurrentDayName(): string {
   return new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 }
+
+/**
+ * Summarize business hours into display lines for the marketing site.
+ * Groups consecutive days with the same open/close times.
+ * Returns e.g. [{ days: "Monday - Saturday", hours: "9:00 AM - 5:00 PM" }, { days: "Sunday", hours: "Closed" }]
+ */
+export function summarizeBusinessHours(
+  businessHours: BusinessHours
+): { days: string; hours: string }[] {
+  const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const dayLabels: Record<string, string> = {
+    monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday',
+    thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday',
+  };
+
+  const groups: { startDay: string; endDay: string; hours: string }[] = [];
+
+  for (const day of dayOrder) {
+    const dh = businessHours[day];
+    const hours = dh?.is_open
+      ? `${formatTime(dh.open)} - ${formatTime(dh.close)}`
+      : 'Closed';
+
+    const lastGroup = groups[groups.length - 1];
+    if (lastGroup && lastGroup.hours === hours) {
+      lastGroup.endDay = day;
+    } else {
+      groups.push({ startDay: day, endDay: day, hours });
+    }
+  }
+
+  return groups.map((g) => ({
+    days: g.startDay === g.endDay
+      ? dayLabels[g.startDay]
+      : `${dayLabels[g.startDay]} - ${dayLabels[g.endDay]}`,
+    hours: g.hours,
+  }));
+}

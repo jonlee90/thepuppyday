@@ -8,10 +8,14 @@
 
 import { MapPin, Clock } from 'lucide-react';
 
-export function AnnouncementBars() {
+interface AnnouncementBarsProps {
+  hoursText?: string;
+}
+
+export function AnnouncementBars({ hoursText }: AnnouncementBarsProps) {
   const address = '14936 Leffingwell Rd, La Mirada, CA 90638';
   const googleMapsUrl = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
-  const hours = 'Monday - Saturday 9:00AM - 5:00PM';
+  const hours = hoursText || 'Monday - Saturday 9:00AM - 5:00PM';
 
   return (
     <>

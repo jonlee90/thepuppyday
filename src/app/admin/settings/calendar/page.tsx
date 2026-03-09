@@ -68,6 +68,10 @@ async function getConnectionStatus(
         calendar_id: connection.calendar_id,
         last_sync_at: connection.last_sync_at,
         is_active: connection.is_active,
+        auto_sync_paused: connection.auto_sync_paused,
+        paused_at: connection.paused_at,
+        pause_reason: connection.pause_reason,
+        consecutive_failures: connection.consecutive_failures,
       },
       sync_stats: {
         total_synced: totalSyncedResult.count || 0,
@@ -148,7 +152,7 @@ async function getAvailableCalendars(
     return response.data.items.map((cal) => ({
       id: cal.id || '',
       summary: cal.summary || 'Unnamed Calendar',
-      description: cal.description,
+      description: cal.description || undefined,
       timeZone: cal.timeZone || 'America/Los_Angeles',
       primary: cal.primary || false,
     }));

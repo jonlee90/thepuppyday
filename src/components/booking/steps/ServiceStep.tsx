@@ -38,7 +38,7 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
         </div>
 
         {/* Editorial Grid Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-8 lg:gap-10">
           {[1, 2].map((i) => (
             <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
               {/* Image skeleton - 3:2 aspect */}
@@ -131,7 +131,7 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
   return (
     <div className="space-y-6">
       {/* Editorial Grid - Optimized for modal width */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-8 lg:gap-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-8 lg:gap-10">
         {bookableServices.map((service) => (
           <ServiceCard
             key={service.id}

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { X, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, Trash2, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import type { GalleryImage, Breed } from '@/types/database';
 
@@ -36,7 +36,7 @@ export function GalleryImageEditModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string>('');
-  const [successMessage, setSuccessMessage] = useState<string>('');
+
 
   // Form state
   const [petName, setPetName] = useState('');
@@ -99,7 +99,6 @@ export function GalleryImageEditModal({
 
     setIsSaving(true);
     setError('');
-    setSuccessMessage('');
 
     try {
       // Parse tags from comma-separated input
@@ -127,13 +126,8 @@ export function GalleryImageEditModal({
       }
 
       toast.success('Image updated');
-      setSuccessMessage('Image updated successfully!');
-
-      // Wait a moment to show success message
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 1000);
+      onSuccess();
+      onClose();
     } catch (err) {
       console.error('[GalleryImageEditModal] save error:', err);
       toast.error('Failed to update image');
@@ -175,7 +169,6 @@ export function GalleryImageEditModal({
   const handleClose = () => {
     setImage(null);
     setError('');
-    setSuccessMessage('');
     setShowDeleteConfirm(false);
     onClose();
   };
@@ -317,13 +310,6 @@ export function GalleryImageEditModal({
                   </label>
                 </div>
 
-                {/* Success Message */}
-                {successMessage && (
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <p className="text-sm text-green-800">{successMessage}</p>
-                  </div>
-                )}
 
                 {/* Error Message */}
                 {error && (

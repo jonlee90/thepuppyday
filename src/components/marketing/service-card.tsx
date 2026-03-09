@@ -222,76 +222,72 @@ export function ServiceCard({ service, onLearnMore, isFeatured = false, addons }
             </div>
           ))}
 
-          {/* What's Included - Collapsible */}
-          <div className="mt-6">
-            <button
-              onClick={() => setIsIncludedExpanded(!isIncludedExpanded)}
-              className="w-full flex items-center justify-between font-bold text-[#434E54] text-sm mb-4 hover:text-[#363F44] transition-colors duration-200"
-            >
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                <span>What&apos;s Included</span>
-              </div>
-              <motion.div
-                animate={{ rotate: isIncludedExpanded ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
+          {/* What's Included - Collapsible (Basic/Premium only) */}
+          {serviceType !== 'addons' && (
+            <div className="mt-6">
+              <button
+                onClick={() => setIsIncludedExpanded(!isIncludedExpanded)}
+                className="w-full flex items-center justify-between font-bold text-[#434E54] text-sm mb-4 hover:text-[#363F44] transition-colors duration-200 cursor-pointer"
               >
-                <ChevronDown className="w-4 h-4" />
-              </motion.div>
-            </button>
-
-            <AnimatePresence>
-              {isIncludedExpanded && (
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  <span>What&apos;s Included</span>
+                </div>
                 <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                  className="overflow-hidden"
+                  animate={{ rotate: isIncludedExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <div className="space-y-3">
-                    {data.features.map((feature, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className="flex items-start gap-3"
-                      >
-                        <div className="w-5 h-5 rounded-full bg-[#434E54] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                        </div>
-                        <span className="text-[#6B7280] text-sm leading-relaxed">{feature}</span>
-                      </motion.div>
-                    ))}
-                  </div>
+                  <ChevronDown className="w-4 h-4" />
                 </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+              </button>
+
+              <AnimatePresence>
+                {isIncludedExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <div className="space-y-3">
+                      {data.features.map((feature, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="flex items-start gap-3"
+                        >
+                          <div className="w-5 h-5 rounded-full bg-[#434E54] flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                          </div>
+                          <span className="text-[#6B7280] text-sm leading-relaxed">{feature}</span>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
 
         {/* CTA Button - Fixed at bottom */}
         <div className="flex-shrink-0 mt-auto">
-          {isAddOnsInfoCard ? (
-            <div className="w-full px-6 py-4 text-base font-semibold rounded-xl bg-[#EAE0D5] text-[#434E54] text-center border border-[#434E54]/20">
-              Available during booking
-            </div>
-          ) : (
-            <button
-              className={`w-full px-6 py-4 text-base font-semibold rounded-xl shadow-md transition-all duration-200 ${
-                isFeatured
-                  ? 'bg-[#434E54] text-white hover:bg-[#363F44] hover:shadow-lg'
-                  : 'bg-gradient-to-r from-[#434E54] to-[#5A6670] text-white hover:shadow-lg'
-              }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                openModal({ mode: 'customer', preSelectedServiceId: serviceId, initialStep: 1 });
-              }}
-            >
-              Book This Service
-            </button>
-          )}
+          <button
+            className={`w-full px-6 py-4 text-base font-semibold rounded-xl shadow-md transition-all duration-200 cursor-pointer ${
+              isFeatured
+                ? 'bg-[#434E54] text-white hover:bg-[#363F44] hover:shadow-lg'
+                : 'bg-gradient-to-r from-[#434E54] to-[#5A6670] text-white hover:shadow-lg'
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              openModal({ mode: 'customer', preSelectedServiceId: serviceId, initialStep: 1 });
+            }}
+          >
+            Book This Service
+          </button>
         </div>
       </div>
     </motion.div>

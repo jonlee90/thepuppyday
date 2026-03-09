@@ -18,7 +18,8 @@ import {
   saveConnection,
   type ServiceAccountCredentials,
 } from '@/lib/calendar/serviceAccount';
-import type { CalendarSyncSettings, CalendarConnectionStatus } from '@/types/calendar';
+import { google } from 'googleapis';
+import type { CalendarSyncSettings, CalendarConnectionStatus, GoogleCalendarInfo } from '@/types/calendar';
 
 /**
  * Disconnect Google Calendar
@@ -280,6 +281,10 @@ export async function refreshConnectionStatus(): Promise<{
         calendar_id: connection.calendar_id,
         last_sync_at: connection.last_sync_at,
         is_active: connection.is_active,
+        auto_sync_paused: connection.auto_sync_paused,
+        paused_at: connection.paused_at,
+        pause_reason: connection.pause_reason,
+        consecutive_failures: connection.consecutive_failures,
       },
       sync_stats: {
         total_synced: totalSyncedResult.count || 0,
@@ -340,9 +345,6 @@ export async function resumeAutoSync(connectionId: string): Promise<{
 }> {
   try {
     const supabase = await createServerSupabaseClient();
-    await requireAdmin(supabase);
-
-    // Validate connection belongs to admin
     const { user: adminUser } = await requireAdmin(supabase);
     const connection = await getActiveConnection(supabase, adminUser.id);
 
@@ -362,6 +364,52 @@ export async function resumeAutoSync(connectionId: string): Promise<{
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to resume auto-sync',
+    };
+  }
+}
+
+/**
+ * Refresh Available Calendars
+ * Fetches the list of writable calendars from Google Calendar API
+ */
+export async function refreshCalendars(): Promise<{
+  success: boolean;
+  calendars?: GoogleCalendarInfo[];
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { user: adminUser } = await requireAdmin(supabase);
+
+    const connection = await getActiveConnection(supabase, adminUser.id);
+    if (!connection) {
+      return { success: false, error: 'No active calendar connection found' };
+    }
+
+    const accessToken = await getValidAccessToken(supabase, connection.id);
+
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({ access_token: accessToken });
+
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+    const response = await calendar.calendarList.list({
+      minAccessRole: 'writer',
+    });
+
+    const calendars: GoogleCalendarInfo[] = (response.data.items || []).map((cal) => ({
+      id: cal.id || '',
+      summary: cal.summary || 'Unnamed Calendar',
+      description: cal.description || undefined,
+      timeZone: cal.timeZone || 'America/Los_Angeles',
+      primary: cal.primary || false,
+    }));
+
+    return { success: true, calendars };
+  } catch (error) {
+    console.error('[Actions] Failed to refresh calendars:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to refresh calendars',
     };
   }
 }

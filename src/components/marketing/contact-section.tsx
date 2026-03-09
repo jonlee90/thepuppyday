@@ -8,22 +8,29 @@
 import { motion } from 'framer-motion';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { useBookingModal } from '@/hooks/useBookingModal';
+import { summarizeBusinessHours } from '@/lib/utils/business-hours';
+import { MarketingCTA } from '@/components/marketing/marketing-cta';
 
 interface ContactSectionProps {
   phone: string;
   email: string;
   address: string;
+  businessHours?: Record<string, { open: string; close: string; is_open: boolean }>;
 }
 
 export function ContactSection({
   phone,
   email,
   address,
+  businessHours,
 }: ContactSectionProps) {
   const { open: openBookingModal } = useBookingModal();
+  const hoursSummary = businessHours
+    ? summarizeBusinessHours(businessHours)
+    : [{ days: 'Monday - Saturday', hours: '9:00 AM - 5:00 PM' }, { days: 'Sunday', hours: 'Closed' }];
 
   return (
-    <section id="contact" className="py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#EAE0D5]">
+    <section id="contact" className="py-20 md:py-28 bg-[#EAE0D5]">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Section Header */}
@@ -122,23 +129,26 @@ export function ContactSection({
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-[#434E54] mb-3 text-sm uppercase tracking-wide">Hours</div>
-                  <div className="text-lg text-[#6B7280] font-medium">
-                    Monday - Saturday: 9:00 AM - 5:00 PM
-                  </div>
-                  <div className="text-base text-[#9CA3AF] mt-1">
-                    Sunday: Closed
-                  </div>
+                  {hoursSummary.map((line, i) => (
+                    <div
+                      key={line.days}
+                      className={i === 0 ? 'text-lg text-[#6B7280] font-medium' : 'text-base text-[#9CA3AF] mt-1'}
+                    >
+                      {line.days}: {line.hours}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
             {/* CTA Button */}
-            <button
+            <MarketingCTA
               onClick={() => openBookingModal({ mode: 'customer' })}
-              className="mt-12 block w-full text-center px-8 py-4 text-lg font-semibold text-white bg-[#434E54] rounded-xl shadow-md hover:bg-[#363F44] hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
+              fullWidth
+              className="mt-12"
             >
               Book Appointment Now
-            </button>
+            </MarketingCTA>
           </motion.div>
         </div>
       </div>

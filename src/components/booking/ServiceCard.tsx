@@ -49,7 +49,7 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
               src={service.image_url}
               alt={service.name}
               fill
-              className="object-contain scale-105"
+              className="object-cover scale-105"
               sizes="(max-width: 768px) 100vw, 50vw"
               priority
             />
@@ -84,7 +84,7 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
           </div>
         )}
 
-        {/* Duration Badge - Top Left */}
+        {/* Duration Badge - Top Left 
         <div className="absolute top-4 left-4">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
@@ -106,6 +106,7 @@ export function ServiceCard({ service, isSelected, onSelect }: ServiceCardProps)
             </span>
           </motion.div>
         </div>
+*/}
 
         {/* Selected Check - Top Right */}
         <AnimatePresence>

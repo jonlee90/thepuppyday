@@ -50,7 +50,7 @@ export interface DashboardData {
   refetch: () => void;
 }
 
-const POLL_INTERVAL_MS = 30_000; // 30 seconds
+const POLL_INTERVAL_MS = 300_000; // 2 minutes
 
 export function useDashboardData(): DashboardData {
   const [revenue, setRevenue] = useState<RevenueData | null>(null);
@@ -77,14 +77,18 @@ export function useDashboardData(): DashboardData {
   const isFetchingRef = useRef(false);
   // Track whether polling is logically active (for visibility change handler)
   const isPollingRef = useRef(false);
+  // Track whether initial fetch has completed (skip loading flicker on background refetches)
+  const hasLoadedRef = useRef(false);
 
   const fetchAll = useCallback(async () => {
     if (isFetchingRef.current) return; // Skip if already fetching
     isFetchingRef.current = true;
 
     try {
-    // Set loading true for all endpoints at the start of a fetch cycle
-    setLoading({ revenue: true, appointments: true, pending: true });
+    // Only show loading skeletons on initial fetch, not background refetches
+    if (!hasLoadedRef.current) {
+      setLoading({ revenue: true, appointments: true, pending: true });
+    }
 
     const [revenueResult, appointmentsResult, pendingResult] = await Promise.allSettled([
       fetch('/api/admin/dashboard/revenue-overview').then(async (res) => {
@@ -132,6 +136,7 @@ export function useDashboardData(): DashboardData {
     setLoading((prev) => ({ ...prev, pending: false }));
     } finally {
       isFetchingRef.current = false;
+      hasLoadedRef.current = true;
     }
   }, []);
 

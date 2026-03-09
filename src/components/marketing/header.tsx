@@ -10,11 +10,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnnouncementBars } from '@/components/marketing/announcement-bars';
+import { useAuthStore } from '@/stores/auth-store';
 
-export function Header() {
+interface HeaderProps {
+  hoursText?: string;
+}
+
+export function Header({ hoursText }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
+  const { user, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -81,7 +87,7 @@ export function Header() {
 
   return (
     <header>
-      <AnnouncementBars />
+      <AnnouncementBars hoursText={hoursText} />
       <div
         className={`fixed top-[44px] left-0 right-0 z-40 transition-all duration-300 ${
           isScrolled
@@ -145,17 +151,26 @@ export function Header() {
 
             {/* Desktop CTA Button */}
             <div className="hidden lg:block">
-              <Link
-                href="/login"
-                className="px-6 py-2.5 text-sm font-semibold text-white bg-[#434E54] rounded-lg hover:bg-[#363F44] transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                Sign In
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  href={(user as any)?.role === 'admin' ? '/admin' : '/dashboard'}
+                  className="px-6 py-2.5 text-sm font-semibold text-white bg-[#434E54] rounded-lg hover:bg-[#363F44] transition-all duration-200 shadow-sm hover:shadow-md"
+                >
+                  My Account
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="px-6 py-2.5 text-sm font-semibold text-white bg-[#434E54] rounded-lg hover:bg-[#363F44] transition-all duration-200 shadow-sm hover:shadow-md"
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
             <button
-              className="lg:hidden p-2 rounded-lg text-[#434E54] hover:bg-[#F8EEE5] transition-colors duration-200"
+              className="lg:hidden p-2 rounded-lg text-[#434E54] hover:bg-[#F8EEE5] transition-colors duration-200 cursor-pointer"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
@@ -206,13 +221,24 @@ export function Header() {
                       </a>
                     );
                   })}
-                  <div className="pt-4 px-4">
-                    <button
-                      onClick={handleBookNowClick}
-                      className="w-full px-6 py-3 text-sm font-semibold text-white bg-[#434E54] rounded-lg hover:bg-[#363F44] transition-all duration-200 shadow-sm"
-                    >
-                      Book Now
-                    </button>
+                  <div className="pt-4 px-4 space-y-2">
+                    {isAuthenticated ? (
+                      <Link
+                        href={(user as any)?.role === 'admin' ? '/admin' : '/dashboard'}
+                        className="block w-full px-6 py-3 text-sm font-semibold text-white bg-[#434E54] rounded-lg hover:bg-[#363F44] transition-all duration-200 shadow-sm text-center"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        My Account
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/login"
+                        className="block w-full px-6 py-3 text-sm font-semibold text-white bg-[#434E54] rounded-lg hover:bg-[#363F44] transition-all duration-200 shadow-sm text-center"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Sign In
+                      </Link>
+                    )}
                   </div>
                 </nav>
               </motion.div>

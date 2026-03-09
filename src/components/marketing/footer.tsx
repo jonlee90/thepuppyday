@@ -5,12 +5,14 @@
 
 import Link from 'next/link';
 import type { BusinessInfo } from '@/types/settings';
+import { summarizeBusinessHours } from '@/lib/utils/business-hours';
 
 interface FooterProps {
   businessInfo: BusinessInfo;
+  businessHours?: Record<string, { open: string; close: string; is_open: boolean }>;
 }
 
-export function Footer({ businessInfo }: FooterProps) {
+export function Footer({ businessInfo, businessHours }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -82,7 +84,10 @@ export function Footer({ businessInfo }: FooterProps) {
                 {businessInfo.city}, {businessInfo.state} {businessInfo.zip}
               </li>
               <li className="pt-2">
-                <span className="font-semibold text-[#434E54]">Hours:</span> Mon-Sat, 9:00 AM - 5:00 PM
+                <span className="font-semibold text-[#434E54]">Hours:</span>{' '}
+                {businessHours
+                  ? summarizeBusinessHours(businessHours).map((line) => `${line.days}: ${line.hours}`).join(' | ')
+                  : 'Mon-Sat, 9:00 AM - 5:00 PM'}
               </li>
             </ul>
           </div>
