@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import type { NotificationTypeStats } from '@/types/notifications-dashboard';
 
@@ -8,15 +9,15 @@ interface TypeBreakdownProps {
 }
 
 // Simple mini sparkline component
+function getSparklineColor(percentage: number): string {
+  if (percentage >= 95) return '#6BCB77';
+  if (percentage >= 90) return '#FFB347';
+  return '#EF4444';
+}
+
 function MiniSparkline({ successRate }: { successRate: number }) {
-  // Create a simple visual indicator based on success rate
   const percentage = Math.round(successRate);
-  const color =
-    percentage >= 95
-      ? '#6BCB77'
-      : percentage >= 90
-      ? '#FFB347'
-      : '#EF4444';
+  const color = getSparklineColor(percentage);
 
   return (
     <div className="flex items-center gap-1">
@@ -44,7 +45,7 @@ function formatNotificationType(type: string): string {
     .join(' ');
 }
 
-export function TypeBreakdown({ data }: TypeBreakdownProps) {
+export const TypeBreakdown = memo(function TypeBreakdown({ data }: TypeBreakdownProps) {
   return (
     <div className="bg-white p-6 rounded-xl shadow-md">
       <div className="mb-6">
@@ -130,4 +131,4 @@ export function TypeBreakdown({ data }: TypeBreakdownProps) {
       </div>
     </div>
   );
-}
+});

@@ -174,23 +174,6 @@ export function SegmentBuilder({ criteria, onCriteriaChange }: SegmentBuilderPro
           />
         </div>
 
-        {/* Has Membership */}
-        <div className="form-control">
-          <label className="label cursor-pointer justify-start gap-3">
-            <input
-              type="checkbox"
-              className="checkbox checkbox-primary"
-              checked={criteria.has_membership || false}
-              onChange={(e) =>
-                updateCriteria({
-                  has_membership: e.target.checked ? true : undefined,
-                })
-              }
-            />
-            <span className="label-text font-medium">Has Active Membership</span>
-          </label>
-        </div>
-
         {/* Loyalty Eligible */}
         <div className="form-control">
           <label className="label cursor-pointer justify-start gap-3">

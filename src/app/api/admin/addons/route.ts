@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { Addon } from '@/types/database';
 import {
@@ -101,8 +101,11 @@ export async function POST(request: NextRequest) {
     // Security: Sanitize upsell prompt
     const sanitizedPrompt = upsell_prompt ? sanitizeText(upsell_prompt) : null;
 
+    // Use service role client to bypass RLS for writes
+    const serviceClient = createServiceRoleClient();
+
     // Get the next display_order
-    const { data: existingAddons } = (await (supabase as any)
+    const { data: existingAddons } = (await (serviceClient as any)
       .from('addons')
       .select('display_order')
       .order('display_order', { ascending: false })
@@ -115,7 +118,7 @@ export async function POST(request: NextRequest) {
       : 1;
 
     // Create add-on with sanitized values
-    const { data: addon, error: addonError } = (await (supabase as any)
+    const { data: addon, error: addonError } = (await (serviceClient as any)
       .from('addons')
       .insert({
         name: nameValidation.sanitized,

@@ -10,6 +10,7 @@ import { POST } from '@/app/api/admin/notifications/templates/[id]/rollback/rout
 // Mock modules
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
 }));
 
 vi.mock('@/lib/admin/auth', () => ({
@@ -20,7 +21,7 @@ vi.mock('@/lib/utils/validation', () => ({
   isValidUUID: vi.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
 }));
 
-const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+const { createServerSupabaseClient, createServiceRoleClient } = await import('@/lib/supabase/server');
 const { requireAdmin } = await import('@/lib/admin/auth');
 
 describe('POST /api/admin/notifications/templates/[id]/rollback', () => {
@@ -50,6 +51,7 @@ describe('POST /api/admin/notifications/templates/[id]/rollback', () => {
     };
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabase);
     vi.mocked(requireAdmin).mockResolvedValue({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       user: { id: 'admin-1', role: 'admin' } as any,
@@ -145,7 +147,7 @@ describe('POST /api/admin/notifications/templates/[id]/rollback', () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.error).toContain('reason');
+      expect(data.error).toContain('Reason');
     });
 
     it('should reject invalid version number', async () => {

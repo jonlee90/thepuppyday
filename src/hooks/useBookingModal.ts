@@ -11,6 +11,7 @@ export interface BookingModalOptions {
   mode: BookingModalMode;
   preSelectedServiceId?: string;
   preSelectedCustomerId?: string;
+  initialStep?: number;
   onSuccess?: (appointmentId: string) => void;
 }
 
@@ -19,6 +20,7 @@ interface BookingModalState {
   mode: BookingModalMode;
   preSelectedServiceId: string | null;
   preSelectedCustomerId: string | null;
+  initialStep: number;
   onSuccessCallback: ((appointmentId: string) => void) | null;
   canClose: boolean; // False during submission
 }
@@ -38,6 +40,7 @@ export const useBookingModalStore = create<BookingModalStore>((set, get) => ({
   mode: 'customer',
   preSelectedServiceId: null,
   preSelectedCustomerId: null,
+  initialStep: 0,
   onSuccessCallback: null,
   canClose: true,
 
@@ -48,6 +51,7 @@ export const useBookingModalStore = create<BookingModalStore>((set, get) => ({
       mode: options.mode,
       preSelectedServiceId: options.preSelectedServiceId || null,
       preSelectedCustomerId: options.preSelectedCustomerId || null,
+      initialStep: options.initialStep ?? 0,
       onSuccessCallback: options.onSuccess || null,
       canClose: true,
     });

@@ -134,53 +134,7 @@ export function DateTimeStep() {
 
   return (
     <div className="space-y-4">
-      {/* Subtitle */}
-      <p className="text-[#434E54]/70 leading-relaxed max-w-2xl">Pick a time that works for you and your pet</p>
 
-      {/* Selected datetime banner - compact */}
-      {selectedDate && selectedTimeSlot && (
-        <div className="bg-[#434E54]/5 border border-[#434E54]/20 rounded-xl p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <svg
-                className="w-5 h-5 text-[#434E54]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              <div>
-                <p className="text-[15px] font-medium text-[#434E54]">
-                  {(() => {
-                    // Parse YYYY-MM-DD as local date (not UTC)
-                    const [year, month, day] = selectedDate.split('-').map(Number);
-                    const date = new Date(year, month - 1, day);
-                    return date.toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    });
-                  })()} at {formatTimeDisplay(selectedTimeSlot)}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={clearDateTime}
-              className="text-[#434E54] text-xs font-medium py-1 px-2 rounded-lg
-                       hover:bg-[#434E54]/5 transition-colors duration-200"
-            >
-              Change
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Calendar and time slots */}
       <div className="grid md:grid-cols-2 gap-6">
@@ -224,6 +178,51 @@ export function DateTimeStep() {
               onJoinWaitlist={handleJoinWaitlist}
               loading={slotsLoading}
             />
+          )}
+
+               {/* Selected datetime banner - compact */}
+          {selectedDate && selectedTimeSlot && (
+            <div className="bg-[#434E54]/5 border border-[#434E54]/20 rounded-xl p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5 text-[#434E54]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <div>
+                    <p className="text-[15px] font-medium text-[#434E54]">
+                      {(() => {
+                        // Parse YYYY-MM-DD as local date (not UTC)
+                        const [year, month, day] = selectedDate.split('-').map(Number);
+                        const date = new Date(year, month - 1, day);
+                        return date.toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        });
+                      })()} at {formatTimeDisplay(selectedTimeSlot)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={clearDateTime}
+                  className="text-[#434E54] text-xs font-medium py-1 px-2 rounded-lg
+                          hover:bg-[#434E54]/5 transition-colors duration-200"
+                >
+                  Change
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>

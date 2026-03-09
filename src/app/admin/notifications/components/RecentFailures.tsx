@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Mail, MessageSquare, AlertCircle, ExternalLink, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { RecentFailure, FailureReason } from '@/types/notifications-dashboard';
@@ -24,7 +24,7 @@ function truncateMessage(message: string, maxLength: number = 80): string {
   return message.slice(0, maxLength) + '...';
 }
 
-export function RecentFailures({ failures, failureReasons }: RecentFailuresProps) {
+export const RecentFailures = memo(function RecentFailures({ failures, failureReasons }: RecentFailuresProps) {
   const [showReasons, setShowReasons] = useState(false);
 
   return (
@@ -181,4 +181,4 @@ export function RecentFailures({ failures, failureReasons }: RecentFailuresProps
       )}
     </div>
   );
-}
+});

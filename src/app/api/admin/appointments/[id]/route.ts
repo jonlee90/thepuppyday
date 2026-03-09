@@ -85,9 +85,6 @@ export async function GET(
         };
       });
 
-      console.log(`[ADDONS TEST] Appointment ${id} has ${addonsWithDetails.length} add-ons:`,
-        addonsWithDetails.map(a => ({ name: a.addon?.name, price: a.price })));
-
       // Get customer flags
       const customerFlags = customer
         ? store
@@ -138,14 +135,6 @@ export async function GET(
         { status: 404 }
       );
     }
-
-    // DEBUG: Log what Supabase returned for addons
-    console.log(`[ADDONS DEBUG] Appointment ${id} Supabase response:`, {
-      hasAddons: !!data.addons,
-      addonsType: Array.isArray(data.addons) ? 'array' : typeof data.addons,
-      addonsLength: data.addons?.length,
-      addons: JSON.stringify(data.addons)
-    });
 
     // Get customer flags
     const { data: customerFlags } = await (supabase as AppSupabaseClient)

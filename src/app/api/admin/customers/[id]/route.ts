@@ -31,8 +31,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Use service role client for data queries to bypass RLS
     const supabase = createServiceRoleClient();
 
-    // Fetch customer
-    const { data: customer, error: customerError } = await (supabase as any)
+    // Fetch customer first (required for 404 check)
+    const { data: customer, error: customerError } = await supabase
       .from('users')
       .select('*')
       .eq('id', customerId)
@@ -42,63 +42,41 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    // Fetch pets with breed information
-    const { data: pets, error: petsError } = await (supabase as any)
-      .from('pets')
-      .select('*, breed:breeds(*)')
-      .eq('owner_id', customerId)
-      .eq('is_active', true);
+    // Fetch related data in parallel
+    const [
+      { data: pets, error: petsError },
+      { data: flags, error: flagsError },
+      { data: loyaltyPoints, error: loyaltyError },
+      { data: loyaltyTransactions, error: transactionsError },
+    ] = await Promise.all([
+      supabase
+        .from('pets')
+        .select('*, breed:breeds(*)')
+        .eq('owner_id', customerId)
+        .eq('is_active', true),
+      supabase
+        .from('customer_flags')
+        .select('*, created_by_user:users!customer_flags_created_by_fkey(first_name, last_name)')
+        .eq('customer_id', customerId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('customer_loyalty')
+        .select('*')
+        .eq('customer_id', customerId)
+        .single(),
+      supabase
+        .from('loyalty_punches')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false })
+        .limit(5),
+    ]);
 
-    if (petsError) {
-      console.error('[Customer API] Error fetching pets:', petsError);
-    }
-
-    // Fetch customer flags
-    const { data: flags, error: flagsError } = await (supabase as any)
-      .from('customer_flags')
-      .select('*, created_by_user:users!customer_flags_created_by_fkey(first_name, last_name)')
-      .eq('customer_id', customerId)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-
-    if (flagsError) {
-      console.error('[Customer API] Error fetching flags:', flagsError);
-    }
-
-    // Fetch loyalty points
-    const { data: loyaltyPoints, error: loyaltyError } = await (supabase as any)
-      .from('customer_loyalty')
-      .select('*')
-      .eq('customer_id', customerId)
-      .single();
-
-    if (loyaltyError && loyaltyError.code !== 'PGRST116') {
-      console.error('[Customer API] Error fetching loyalty points:', loyaltyError);
-    }
-
-    // Fetch recent loyalty transactions
-    const { data: loyaltyTransactions, error: transactionsError } = await (supabase as any)
-      .from('loyalty_punches')
-      .select('*')
-      .eq('customer_id', customerId)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (transactionsError) {
-      console.error('[Customer API] Error fetching loyalty transactions:', transactionsError);
-    }
-
-    // Fetch active membership
-    const { data: membership, error: membershipError } = await (supabase as any)
-      .from('customer_memberships')
-      .select('*, membership:memberships(*)')
-      .eq('customer_id', customerId)
-      .eq('status', 'active')
-      .single();
-
-    if (membershipError && membershipError.code !== 'PGRST116') {
-      console.error('[Customer API] Error fetching membership:', membershipError);
-    }
+    if (petsError) console.error('[Customer API] Error fetching pets:', petsError);
+    if (flagsError) console.error('[Customer API] Error fetching flags:', flagsError);
+    if (loyaltyError && loyaltyError.code !== 'PGRST116') console.error('[Customer API] Error fetching loyalty points:', loyaltyError);
+    if (transactionsError) console.error('[Customer API] Error fetching loyalty transactions:', transactionsError);
 
     // Build detailed customer object
     const customerDetail = {
@@ -107,7 +85,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       flags: flags || [],
       loyalty_points: loyaltyPoints || null,
       loyalty_transactions: loyaltyTransactions || [],
-      active_membership: membership || null,
     };
 
     return NextResponse.json({ data: customerDetail });
@@ -175,7 +152,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
 
       // Security: Check for duplicate email (excluding current user)
-      const { data: existingUser, error: checkError } = await (supabase as any)
+      const { data: existingUser, error: checkError } = await supabase
         .from('users')
         .select('id')
         .eq('email', trimmedEmail)
@@ -215,7 +192,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     // Update customer
-    const { data: customer, error: updateError } = await (supabase as any)
+    const { data: customer, error: updateError } = await supabase
       .from('users')
       .update(updateData)
       .eq('id', customerId)

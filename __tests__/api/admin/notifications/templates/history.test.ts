@@ -10,6 +10,7 @@ import { GET } from '@/app/api/admin/notifications/templates/[id]/history/route'
 // Mock modules
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
 }));
 
 vi.mock('@/lib/admin/auth', () => ({
@@ -20,7 +21,7 @@ vi.mock('@/lib/utils/validation', () => ({
   isValidUUID: vi.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
 }));
 
-const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+const { createServerSupabaseClient, createServiceRoleClient } = await import('@/lib/supabase/server');
 const { requireAdmin } = await import('@/lib/admin/auth');
 
 describe('GET /api/admin/notifications/templates/[id]/history', () => {
@@ -28,20 +29,31 @@ describe('GET /api/admin/notifications/templates/[id]/history', () => {
   let mockSupabase: any;
   const validUuid = '123e4567-e89b-12d3-a456-426614174000';
 
+  // Helper: create a flat chainable mock that resolves on .single() or .order()
+  function makeChain(singleData: unknown, orderData: unknown = []) {
+    const chain: any = {};
+    chain.select = vi.fn().mockReturnValue(chain);
+    chain.eq = vi.fn().mockReturnValue(chain);
+    chain.order = vi.fn().mockResolvedValue({ data: orderData, error: null });
+    chain.single = vi.fn().mockResolvedValue({ data: singleData, error: null });
+    return chain;
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // Default: template exists, history is empty
     mockSupabase = {
-      from: vi.fn(() => ({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            order: vi.fn(() => Promise.resolve({ data: [], error: null })),
-          })),
-        })),
-      })),
+      from: vi.fn((table: string) => {
+        if (table === 'notification_templates') {
+          return makeChain({ id: validUuid });
+        }
+        return makeChain(null, []);
+      }),
     };
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabase);
     vi.mocked(requireAdmin).mockResolvedValue({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       user: { id: 'admin-1', role: 'admin' } as any,
@@ -120,12 +132,11 @@ describe('GET /api/admin/notifications/templates/[id]/history', () => {
         },
       ];
 
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            order: vi.fn(() => Promise.resolve({ data: mockHistory, error: null })),
-          })),
-        })),
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'notification_templates') {
+          return makeChain({ id: validUuid });
+        }
+        return makeChain(null, mockHistory);
       });
 
       const request = new NextRequest(`http://localhost/api/admin/notifications/templates/${validUuid}/history`);
@@ -140,6 +151,7 @@ describe('GET /api/admin/notifications/templates/[id]/history', () => {
     });
 
     it('should include user information for each version', async () => {
+      // Route uses entry.user (Supabase join alias), and formats to changed_by_email / changed_by_name
       const mockHistory = [
         {
           id: 'history-1',
@@ -149,7 +161,7 @@ describe('GET /api/admin/notifications/templates/[id]/history', () => {
           changed_by: 'admin-1',
           change_reason: 'Initial version',
           created_at: '2024-01-01T00:00:00Z',
-          changed_by_user: {
+          user: {
             email: 'admin@example.com',
             first_name: 'Admin',
             last_name: 'User',
@@ -157,12 +169,11 @@ describe('GET /api/admin/notifications/templates/[id]/history', () => {
         },
       ];
 
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            order: vi.fn(() => Promise.resolve({ data: mockHistory, error: null })),
-          })),
-        })),
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'notification_templates') {
+          return makeChain({ id: validUuid });
+        }
+        return makeChain(null, mockHistory);
       });
 
       const request = new NextRequest(`http://localhost/api/admin/notifications/templates/${validUuid}/history`);
@@ -170,19 +181,12 @@ describe('GET /api/admin/notifications/templates/[id]/history', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.history[0].changed_by_user).toBeDefined();
-      expect(data.history[0].changed_by_user.email).toBe('admin@example.com');
-      expect(data.history[0].changed_by_user.first_name).toBe('Admin');
+      expect(data.history[0].changed_by_email).toBe('admin@example.com');
+      expect(data.history[0].changed_by_name).toBe('Admin User');
     });
 
     it('should return empty array when no history exists', async () => {
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            order: vi.fn(() => Promise.resolve({ data: [], error: null })),
-          })),
-        })),
-      });
+      // Default from mock already handles this (template exists, history is empty)
 
       const request = new NextRequest(`http://localhost/api/admin/notifications/templates/${validUuid}/history`);
       const response = await GET(request, { params: Promise.resolve({ id: validUuid }) });
@@ -216,12 +220,11 @@ describe('GET /api/admin/notifications/templates/[id]/history', () => {
         },
       ];
 
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            order: vi.fn(() => Promise.resolve({ data: mockHistory, error: null })),
-          })),
-        })),
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'notification_templates') {
+          return makeChain({ id: validUuid });
+        }
+        return makeChain(null, mockHistory);
       });
 
       const request = new NextRequest(`http://localhost/api/admin/notifications/templates/${validUuid}/history`);
@@ -236,15 +239,18 @@ describe('GET /api/admin/notifications/templates/[id]/history', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors', async () => {
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            order: vi.fn(() => Promise.resolve({
-              data: null,
-              error: { message: 'Database connection failed' },
-            })),
-          })),
-        })),
+      // Template exists, but history query fails
+      const errorChain: any = {};
+      errorChain.select = vi.fn().mockReturnValue(errorChain);
+      errorChain.eq = vi.fn().mockReturnValue(errorChain);
+      errorChain.order = vi.fn().mockResolvedValue({ data: null, error: { message: 'Database connection failed' } });
+      errorChain.single = vi.fn().mockResolvedValue({ data: { id: validUuid }, error: null });
+
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'notification_templates') {
+          return makeChain({ id: validUuid });
+        }
+        return errorChain;
       });
 
       const request = new NextRequest(`http://localhost/api/admin/notifications/templates/${validUuid}/history`);

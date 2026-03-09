@@ -3,7 +3,7 @@
 > **Module**: Booking Widget Components
 > **Location**: `src/components/booking/`
 > **Status**: Completed (Phase 3, Updated Phase 10, Refactored)
-> **Last Updated**: 2026-03-06
+> **Last Updated**: 2026-03-07
 
 ## Overview
 
@@ -191,6 +191,8 @@ interface PriceSummaryProps {
 ### ServiceStep (`steps/ServiceStep.tsx`)
 
 **Purpose**: Display service cards with size-based pricing.
+
+**Performance**: The `bookableServices` filter (excludes "Add-Ons" service) is wrapped in `useMemo` keyed on `services` to prevent unnecessary re-renders and stabilize downstream dependencies.
 
 **Service Card Props** (`ServiceCard.tsx`):
 ```typescript
@@ -515,5 +517,5 @@ The following components were removed during prior refactors:
 
 ---
 
-**Last Updated**: 2026-03-06 by Claude Code
-**Changes**: Documented DetailsStep consolidation (replaces CustomerStep/PetStep), accurate renderStep() from source, PriceSummary sidebar, corrected ServiceCard props, expanded BookingStore state fields
+**Last Updated**: 2026-03-07 by Claude Code
+**Changes**: Documented useMemo optimization on ServiceStep bookableServices filter.

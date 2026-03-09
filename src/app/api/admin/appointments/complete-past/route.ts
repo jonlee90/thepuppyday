@@ -3,12 +3,13 @@
  * POST /api/admin/appointments/complete-past
  */
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function POST() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify user is authenticated and is an admin
     const {
@@ -33,7 +34,7 @@ export async function POST() {
     // Update all appointments where:
     // 1. scheduled_at is today or earlier
     // 2. status is NOT already completed, cancelled, or no_show
-    const { data, error } = await supabase
+    const { data, error } = await serviceClient
       .from('appointments')
       .update({ status: 'completed' })
       .lte('scheduled_at', new Date().toISOString())

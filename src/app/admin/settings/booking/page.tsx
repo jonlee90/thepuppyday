@@ -1,22 +1,58 @@
 /**
  * Booking Settings Page
  * Tasks 0180-0191: Complete booking configuration management
+ *
+ * Server component that fetches booking settings once and passes
+ * them to the client wrapper, eliminating duplicate API requests.
  */
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import { AdvanceBookingWindow } from '@/components/admin/settings/booking/AdvanceBookingWindow';
-import { CancellationPolicy } from '@/components/admin/settings/booking/CancellationPolicy';
-import { BufferTimeSettings } from '@/components/admin/settings/booking/BufferTimeSettings';
-import { BusinessHoursEditor } from '@/components/admin/settings/booking/BusinessHoursEditor';
-import { BlockedDatesSection } from '@/components/admin/settings/booking/BlockedDatesSection';
-import { RecurringBlockedDays } from '@/components/admin/settings/booking/RecurringBlockedDays';
+import { BookingSettingsClient } from '@/components/admin/settings/booking/BookingSettingsClient';
+import { BookingSettingsSchema } from '@/types/settings';
+import type { BookingSettings } from '@/types/settings';
+
+const DEFAULT_BOOKING_SETTINGS: BookingSettings = {
+  min_advance_hours: 2,
+  max_advance_days: 90,
+  cancellation_cutoff_hours: 24,
+  buffer_minutes: 15,
+  blocked_dates: [],
+  recurring_blocked_days: [0],
+};
 
 export default async function BookingSettingsPage() {
   const supabase = await createServerSupabaseClient();
   await requireAdmin(supabase);
+
+  // Fetch booking settings server-side (single query instead of 4-7 client fetches)
+  let settings: BookingSettings = DEFAULT_BOOKING_SETTINGS;
+
+  try {
+    const serviceClient = createServiceRoleClient();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: settingRecord, error } = (await (serviceClient as any)
+      .from('settings')
+      .select('value')
+      .eq('key', 'booking_settings')
+      .single()) as {
+      data: { value: unknown } | null;
+      error: Error | null;
+    };
+
+    if (!error && settingRecord) {
+      const parseResult = BookingSettingsSchema.safeParse(settingRecord.value);
+      if (parseResult.success) {
+        settings = parseResult.data;
+      }
+    }
+  } catch (error) {
+    console.error('[BookingSettingsPage] Error fetching settings:', error);
+    // Fall through to use defaults
+  }
 
   return (
     <div className="min-h-screen bg-[#F8EEE5] p-6">
@@ -39,44 +75,8 @@ export default async function BookingSettingsPage() {
         </p>
       </div>
 
-      {/* Settings Sections */}
-      <div className="space-y-6">
-        {/* Booking Hours */}
-        <section>
-          <h2 className="text-xl font-semibold text-[#434E54] mb-4">Booking Hours</h2>
-          <BusinessHoursEditor />
-        </section>
-
-        {/* Booking Window */}
-        <section>
-          <h2 className="text-xl font-semibold text-[#434E54] mb-4">Booking Window</h2>
-          <AdvanceBookingWindow />
-        </section>
-
-        {/* Cancellation Policy */}
-        <section>
-          <h2 className="text-xl font-semibold text-[#434E54] mb-4">Cancellation Policy</h2>
-          <CancellationPolicy />
-        </section>
-
-        {/* Appointment Buffer */}
-        <section>
-          <h2 className="text-xl font-semibold text-[#434E54] mb-4">Appointment Buffer</h2>
-          <BufferTimeSettings />
-        </section>
-
-        {/* Recurring Blocked Days */}
-        <section>
-          <h2 className="text-xl font-semibold text-[#434E54] mb-4">Recurring Blocked Days</h2>
-          <RecurringBlockedDays />
-        </section>
-
-        {/* Blocked Dates */}
-        <section>
-          <h2 className="text-xl font-semibold text-[#434E54] mb-4">Blocked Dates</h2>
-          <BlockedDatesSection />
-        </section>
-      </div>
+      {/* Settings Sections - client component distributes settings */}
+      <BookingSettingsClient initialSettings={settings} />
     </div>
   );
 }

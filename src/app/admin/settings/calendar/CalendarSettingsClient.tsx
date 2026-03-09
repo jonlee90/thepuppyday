@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CalendarConnectionCard } from '@/components/admin/calendar/CalendarConnectionCard';
 import { CalendarSelector } from '@/components/admin/calendar/CalendarSelector';
 import { SyncSettingsForm } from '@/components/admin/calendar/SyncSettingsForm';
@@ -20,6 +20,7 @@ import {
   updateSyncSettings,
   updateSelectedCalendar,
   refreshConnectionStatus,
+  refreshCalendars as refreshCalendarsAction,
   getQuotaStatus as getQuotaStatusAction,
   resumeAutoSync as resumeAutoSyncAction,
 } from './actions';
@@ -63,86 +64,19 @@ export function CalendarSettingsClient({
   } | null>(null);
   const [showErrorRecovery, setShowErrorRecovery] = useState(false);
 
-  // Fetch quota status when connected
-  useEffect(() => {
-    if (connectionStatus.connected) {
-      fetchQuotaStatus();
-
-      // Refresh quota every 5 minutes
-      const interval = setInterval(fetchQuotaStatus, 5 * 60 * 1000);
-      return () => clearInterval(interval);
-    }
-  }, [connectionStatus.connected]);
-
-  // Show OAuth success/error toasts
-  useEffect(() => {
-    if (oauthSuccess) {
-      toast.success('Calendar Connected', {
-        description: 'Google Calendar connected successfully!',
-        duration: 5000,
-      });
-
-      // Refresh data after successful connection
-      handleRefreshStatus();
-    } else if (oauthError) {
-      const errorMessages: Record<string, string> = {
-        access_denied: 'Permission denied. Calendar integration requires calendar access.',
-        invalid_token: 'Invalid or expired token. Please try connecting again.',
-        calendar_not_found: 'Selected calendar was not found or deleted.',
-        network_error: 'Connection failed due to network issues.',
-      };
-
-      toast.error('Connection Failed', {
-        description: errorMessages[oauthError] || 'Failed to connect. Please try again.',
-        duration: 8000,
-      });
-    }
-  }, [oauthSuccess, oauthError]);
-
-  const fetchQuotaStatus = async () => {
+  const fetchQuotaStatus = useCallback(async () => {
     try {
-      // FIXED: Critical #1 - Using Server Action instead of fetch for CSRF protection
       const result = await getQuotaStatusAction();
-
       if (result.success && result.data) {
         setQuotaData(result.data);
       }
     } catch (error) {
       console.error('[CalendarSettings] Failed to fetch quota status:', error);
     }
-  };
+  }, []);
 
-  const handleResumeAutoSync = async () => {
-    if (!connectionStatus.connection?.id) return;
-
+  const handleRefreshStatus = useCallback(async () => {
     try {
-      // FIXED: Critical #1 - Using Server Action instead of fetch for CSRF protection
-      const result = await resumeAutoSyncAction(connectionStatus.connection.id);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to resume auto-sync');
-      }
-
-      toast({
-        title: 'Auto-Sync Resumed',
-        description: 'Auto-sync has been successfully resumed',
-      });
-
-      // Refresh connection status
-      await handleRefreshStatus();
-    } catch (error) {
-      console.error('[CalendarSettings] Failed to resume auto-sync:', error);
-      toast({
-        title: 'Resume Failed',
-        description: error instanceof Error ? error.message : 'Failed to resume auto-sync',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleRefreshStatus = async () => {
-    try {
-      // Use Server Action for CSRF protection
       const result = await refreshConnectionStatus();
 
       if (!result.success) {
@@ -158,21 +92,34 @@ export function CalendarSettingsClient({
       }
     } catch (error) {
       console.error('Failed to refresh status:', error);
-      toast({
-        title: 'Refresh Failed',
-        description: 'Failed to refresh connection status',
-        variant: 'destructive',
-      });
+      toast.error('Failed to refresh connection status');
     }
-  };
+  }, []);
 
-  const handleConnect = async (
+  const handleResumeAutoSync = useCallback(async () => {
+    if (!connectionStatus.connection?.id) return;
+
+    try {
+      const result = await resumeAutoSyncAction(connectionStatus.connection.id);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to resume auto-sync');
+      }
+
+      toast.success('Auto-sync resumed');
+      await handleRefreshStatus();
+    } catch (error) {
+      console.error('[CalendarSettings] Failed to resume auto-sync:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to resume auto-sync');
+    }
+  }, [connectionStatus.connection?.id, handleRefreshStatus]);
+
+  const handleConnect = useCallback(async (
     credentials: string,
     calendarId: string
   ): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     try {
-      // Use Server Action for CSRF protection
       const result = await connectServiceAccount(credentials, calendarId);
 
       if (!result.success) {
@@ -182,12 +129,7 @@ export function CalendarSettingsClient({
         };
       }
 
-      toast({
-        title: 'Calendar Connected',
-        description: 'Google Calendar connected successfully!',
-      });
-
-      // Refresh connection status
+      toast.success('Google Calendar connected');
       await handleRefreshStatus();
 
       return { success: true };
@@ -200,22 +142,18 @@ export function CalendarSettingsClient({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [handleRefreshStatus]);
 
-  const handleDisconnect = async () => {
+  const handleDisconnect = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Use Server Action for CSRF protection
       const result = await disconnectCalendar();
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to disconnect');
       }
 
-      toast({
-        title: 'Disconnected',
-        description: 'Google Calendar has been disconnected',
-      });
+      toast.success('Google Calendar disconnected');
 
       // Reset state
       setConnectionStatus({ connected: false });
@@ -224,19 +162,44 @@ export function CalendarSettingsClient({
       setSelectedCalendarId('');
     } catch (error) {
       console.error('Failed to disconnect:', error);
-      toast({
-        title: 'Disconnect Failed',
-        description: error instanceof Error ? error.message : 'Failed to disconnect calendar. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error(error instanceof Error ? error.message : 'Failed to disconnect calendar');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleSelectCalendar = async (calendarId: string) => {
+  // Fetch quota status when connected
+  useEffect(() => {
+    if (connectionStatus.connected) {
+      fetchQuotaStatus();
+
+      // Refresh quota every 5 minutes
+      const interval = setInterval(fetchQuotaStatus, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [connectionStatus.connected, fetchQuotaStatus]);
+
+  // Show OAuth success/error toasts
+  useEffect(() => {
+    if (oauthSuccess) {
+      toast.success('Google Calendar connected successfully!');
+      handleRefreshStatus();
+    } else if (oauthError) {
+      const errorMessages: Record<string, string> = {
+        access_denied: 'Permission denied. Calendar integration requires calendar access.',
+        invalid_token: 'Invalid or expired token. Please try connecting again.',
+        calendar_not_found: 'Selected calendar was not found or deleted.',
+        network_error: 'Connection failed due to network issues.',
+      };
+
+      toast.error(errorMessages[oauthError] || 'Failed to connect. Please try again.');
+    }
+    // Only run on mount — oauthSuccess/oauthError come from URL params
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSelectCalendar = useCallback(async (calendarId: string) => {
     try {
-      // Use Server Action for CSRF protection
       const result = await updateSelectedCalendar(calendarId);
 
       if (!result.success) {
@@ -244,44 +207,35 @@ export function CalendarSettingsClient({
       }
 
       setSelectedCalendarId(calendarId);
-
-      // Update connection status
-      if (connectionStatus.connection) {
-        setConnectionStatus({
-          ...connectionStatus,
-          connection: {
-            ...connectionStatus.connection,
-            calendar_id: calendarId,
-          },
-        });
-      }
+      setConnectionStatus(prev => ({
+        ...prev,
+        connection: prev.connection
+          ? { ...prev.connection, calendar_id: calendarId }
+          : prev.connection,
+      }));
     } catch (error) {
       console.error('Failed to select calendar:', error);
       throw error; // Re-throw to be handled by CalendarSelector
     }
-  };
+  }, []);
 
-  const handleRefreshCalendars = async () => {
+  const handleRefreshCalendars = useCallback(async () => {
     try {
-      // Use Server Action for CSRF protection
-      const result = await refreshConnectionStatus();
+      const result = await refreshCalendarsAction();
 
-      if (!result.success || !result.connectionStatus?.connection) {
-        throw new Error('Failed to refresh calendars');
+      if (!result.success || !result.calendars) {
+        throw new Error(result.error || 'Failed to refresh calendars');
       }
 
-      // Fetch calendars would need to be done server-side
-      // For now, trigger a full page refresh to reload calendars
-      window.location.reload();
+      setCalendars(result.calendars);
     } catch (error) {
       console.error('Failed to refresh calendars:', error);
       throw error; // Re-throw to be handled by CalendarSelector
     }
-  };
+  }, []);
 
   const handleSaveSyncSettings = async (settings: CalendarSyncSettings) => {
     try {
-      // Use Server Action for CSRF protection
       const result = await updateSyncSettings(settings);
 
       if (!result.success) {

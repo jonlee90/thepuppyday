@@ -5,10 +5,10 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { format } from 'date-fns';
-import { Search, Calendar, ChevronLeft, ChevronRight, X, RefreshCw } from 'lucide-react';
-import { getStatusBadgeColor, getStatusLabel } from '@/lib/admin/appointment-status';
+import { Search, Calendar, X, RefreshCw } from 'lucide-react';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import type { AppointmentStatus } from '@/types/database';
 import { getTodayInBusinessTimezone } from '@/lib/utils/timezone';
 import { SyncStatusBadge } from '@/components/admin/calendar/SyncStatusBadge';
@@ -64,10 +64,18 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
   const [datePreset, setDatePreset] = useState<string>('');
   const [showCustomDate, setShowCustomDate] = useState(false);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [sortBy, setSortBy] = useState<'scheduled_at' | 'customer' | 'status' | 'status_priority'>('status_priority');
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [sortBy, setSortBy] = useState<'scheduled_at' | 'customer' | 'status' | 'status_priority' | 'date_priority'>('date_priority');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Refs for IntersectionObserver — avoid recreating observer on every loading state change
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
+  const loadingMoreRef = useRef(false);
+
+  // Track which appointment IDs we've already fetched sync status for
+  const fetchedSyncIdsRef = useRef<Set<string>>(new Set());
 
   // Calendar sync state
   const [calendarConnected, setCalendarConnected] = useState(false);
@@ -104,9 +112,18 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
   }, []);
 
 
+  // Derive hasMore — avoids extra setState call
+  const hasMore = appointments.length < totalCount;
+
   // Fetch appointments
   const fetchAppointments = useCallback(async () => {
-    setLoading(true);
+    if (page === 1) {
+      setLoading(true);
+      loadingRef.current = true;
+    } else {
+      setLoadingMore(true);
+      loadingMoreRef.current = true;
+    }
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -135,14 +152,24 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
       const result = await response.json();
 
       if (response.ok) {
-        setAppointments(result.data || []);
-        setTotalPages(result.pagination?.totalPages || 1);
+        const newData = result.data || [];
+        if (page === 1) {
+          setAppointments(newData);
+          // Reset sync status tracking when appointment list is replaced
+          fetchedSyncIdsRef.current.clear();
+          setSyncStatusMap({});
+        } else {
+          setAppointments(curr => [...curr, ...newData]);
+        }
         setTotalCount(result.pagination?.total || 0);
       }
     } catch (error) {
       console.error('[AppointmentListView] Error fetching appointments:', error);
     } finally {
       setLoading(false);
+      loadingRef.current = false;
+      setLoadingMore(false);
+      loadingMoreRef.current = false;
     }
   }, [page, debouncedSearch, filters, sortBy, sortOrder]);
 
@@ -163,7 +190,7 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
 
       if (response.ok) {
         const data = await response.json();
-        setSyncStatusMap(data.syncStatus || {});
+        setSyncStatusMap((prev) => ({ ...prev, ...(data.syncStatus || {}) }));
       }
     } catch (error) {
       // Ignore abort errors
@@ -176,18 +203,40 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
     }
   }, [calendarConnected]);
 
-  // Fetch sync status when appointments change
+  // Fetch sync status when appointments change — only for IDs not already fetched
   useEffect(() => {
     if (!calendarConnected || appointments.length === 0) {
       return;
     }
 
     const abortController = new AbortController();
-    const appointmentIds = appointments.map((apt) => apt.id);
-    fetchSyncStatus(appointmentIds, abortController.signal);
+    const newIds = appointments
+      .map((apt) => apt.id)
+      .filter((id) => !fetchedSyncIdsRef.current.has(id));
+    if (newIds.length > 0) {
+      // Mark as fetched immediately to prevent duplicate requests
+      newIds.forEach((id) => fetchedSyncIdsRef.current.add(id));
+      fetchSyncStatus(newIds, abortController.signal);
+    }
 
     return () => abortController.abort();
   }, [appointments, calendarConnected, fetchSyncStatus]);
+
+  // IntersectionObserver for infinite scroll — re-observes when sentinel mounts/unmounts
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingRef.current && !loadingMoreRef.current) {
+          setPage(p => p + 1);
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore]);
 
   // Handle date preset change
   const handleDatePresetChange = (preset: string) => {
@@ -272,7 +321,7 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
     setPage(1);
   };
 
-  // Handle sort
+  // Handle sort — switches away from date_priority to a column sort
   const handleSort = (column: typeof sortBy) => {
     if (sortBy === column) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -529,9 +578,7 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
                   onClick={() => onRowClick(apt.id)}
                 >
                   <td>
-                    <span className={`badge ${getStatusBadgeColor(apt.status)}`}>
-                      {getStatusLabel(apt.status)}
-                    </span>
+                    <StatusBadge status={apt.status} size="sm" />
                   </td>
                   <td>
                     <div className="font-medium text-[#434E54]">
@@ -604,32 +651,18 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
         </table>
       </div>
 
-      {/* Pagination */}
-      {!loading && totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6">
-          <div className="text-sm text-[#6B7280]">
-            Page {page} of {totalPages}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] disabled:bg-gray-300"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] disabled:bg-gray-300"
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Infinite scroll sentinel — only mounted when more rows exist */}
+      {hasMore && <div ref={sentinelRef} />}
+
+      {/* Load-more status */}
+      <div className="py-4 text-center">
+        {loadingMore && (
+          <span className="loading loading-spinner loading-md text-[#434E54]" />
+        )}
+        {!hasMore && appointments.length > 0 && !loading && (
+          <p className="text-sm text-[#6B7280]">All {totalCount} appointments loaded</p>
+        )}
+      </div>
 
       {/* Sync History Popover */}
       {syncHistoryAppointmentId && (

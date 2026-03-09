@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 
 /**
@@ -43,11 +43,12 @@ export async function GET(request: NextRequest) {
 
     // Production implementation - require admin auth
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Fetch all completed appointments with service details
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: appointments, error: apptError } = await (supabase as any)
+    const { data: appointments, error: apptError } = await (serviceClient as any)
       .from('appointments')
       .select(
         `

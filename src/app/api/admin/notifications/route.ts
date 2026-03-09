@@ -4,19 +4,21 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type {
   NotificationWithCustomer,
-  NotificationFilters,
   NotificationStats,
 } from '@/types/notifications';
-import type { NotificationLog, User } from '@/types/database';
+import type { NotificationLogRow } from '@/lib/notifications/database-types';
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
     await requireAdmin(supabase);
+
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -40,9 +42,8 @@ export async function GET(request: NextRequest) {
       // Get all notifications
       let notifications = store.select('notifications_log', {
         order: { column: 'created_at', ascending: false },
-      }) as unknown as NotificationLog[];
+      }) as unknown as NotificationLogRow[];
 
-      console.log('[Notifications API] Total notifications:', notifications.length);
 
       // Apply filters
       if (channel) {
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
 
       if (campaignId) {
         notifications = notifications.filter(
-          (n) => (n as any).campaign_id === campaignId
+          (n) => n.campaign_id === campaignId
         );
       }
 
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
         const searchLower = search.toLowerCase();
         notifications = notifications.filter((n) => {
           const customer = n.customer_id
-            ? (store.selectById('users', n.customer_id) as User | null)
+            ? (store.selectById('users', n.customer_id) as { first_name: string; last_name: string; email?: string; phone?: string } | null)
             : null;
 
           const customerName = customer
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest) {
       const enrichedNotifications: NotificationWithCustomer[] = paginatedNotifications.map(
         (n) => {
           const customer = n.customer_id
-            ? (store.selectById('users', n.customer_id) as User | null)
+            ? (store.selectById('users', n.customer_id) as { first_name: string; last_name: string; email?: string; phone?: string } | null)
             : null;
 
           return {
@@ -141,7 +142,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build paginated query
-    let query = (supabase as any)
+    let query = (serviceClient as any)
       .from('notifications_log')
       .select(
         `
@@ -154,7 +155,7 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1);
 
     // Build stats query in parallel
-    const statsQuery = (supabase as any)
+    const statsQuery = (serviceClient as any)
       .from('notifications_log')
       .select('*');
 
@@ -246,7 +247,7 @@ export async function GET(request: NextRequest) {
 /**
  * Calculate notification statistics
  */
-function calculateStats(notifications: NotificationLog[]): NotificationStats {
+function calculateStats(notifications: NotificationLogRow[]): NotificationStats {
   const totalSent = notifications.length;
   const totalDelivered = notifications.filter((n) => n.delivered_at).length;
   const totalClicked = notifications.filter((n) => n.clicked_at).length;
@@ -261,9 +262,8 @@ function calculateStats(notifications: NotificationLog[]): NotificationStats {
       ? Math.round((totalClicked / totalDelivered) * 100 * 100) / 100
       : 0;
 
-  // Calculate total cost (for SMS, assuming cost_cents field exists)
   const totalCostCents = notifications.reduce((sum, n) => {
-    return sum + ((n as any).cost_cents || 0);
+    return sum + (n.cost_cents || 0);
   }, 0);
   const totalCostDollars = Math.round(totalCostCents) / 100;
 

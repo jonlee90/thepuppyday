@@ -132,7 +132,6 @@ export async function POST(request: Request) {
     // Step 1: Delete existing event from Google Calendar
     if (existingMapping) {
       try {
-        console.log(`[Resync API] Deleting existing event ${existingMapping.google_event_id}`);
         await client.deleteEvent(existingMapping.google_event_id);
       } catch (error) {
         // Log warning but continue - event might already be deleted
@@ -192,7 +191,6 @@ export async function POST(request: Request) {
       duration_ms: Date.now() - startTime,
     });
 
-    console.log(`[Resync API] Successfully resynced appointment ${appointmentId} (event: ${createdEvent.id})`);
 
     return NextResponse.json({
       success: true,

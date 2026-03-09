@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import {
@@ -30,13 +30,14 @@ export async function GET(
   const params = await context.params;
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const bannerId = params.id;
 
     // Fetch banner from database
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: banner, error } = (await (supabase as any)
+    const { data: banner, error } = (await (serviceClient as any)
       .from('promo_banners')
       .select('*')
       .eq('id', bannerId)
@@ -85,13 +86,14 @@ export async function PUT(
   const params = await context.params;
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
 
     const bannerId = params.id;
 
     // Fetch existing banner for audit log
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingBanner, error: fetchError } = (await (supabase as any)
+    const { data: existingBanner, error: fetchError } = (await (serviceClient as any)
       .from('promo_banners')
       .select('*')
       .eq('id', bannerId)
@@ -165,7 +167,7 @@ export async function PUT(
 
     // Update banner in database
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: updatedBanner, error: updateError } = (await (supabase as any)
+    const { data: updatedBanner, error: updateError } = (await (serviceClient as any)
       .from('promo_banners')
       .update(updateObject)
       .eq('id', bannerId)
@@ -255,13 +257,14 @@ export async function DELETE(
   const params = await context.params;
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
 
     const bannerId = params.id;
 
     // Fetch existing banner to check analytics
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingBanner, error: fetchError } = (await (supabase as any)
+    const { data: existingBanner, error: fetchError } = (await (serviceClient as any)
       .from('promo_banners')
       .select('*')
       .eq('id', bannerId)
@@ -283,7 +286,7 @@ export async function DELETE(
     if (hasAnalytics) {
       // Soft-delete: Set is_active to false to preserve analytics
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await (serviceClient as any)
         .from('promo_banners')
         .update({
           is_active: false,
@@ -299,7 +302,7 @@ export async function DELETE(
     } else {
       // Hard-delete: Permanently remove record
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: deleteError } = await (supabase as any)
+      const { error: deleteError } = await (serviceClient as any)
         .from('promo_banners')
         .delete()
         .eq('id', bannerId);

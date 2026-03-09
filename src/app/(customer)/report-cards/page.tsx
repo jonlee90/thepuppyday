@@ -5,9 +5,9 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { DashboardSkeleton } from '@/components/ui/skeletons';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { BookAppointmentButton } from '@/components/customer/BookAppointmentButton';
+import { createServerSupabaseClient, getCurrentUser } from '@/lib/supabase/server';
 
 // Fetch report cards with appointment and pet info
 async function getReportCards(userId: string) {
@@ -30,23 +30,6 @@ async function getReportCards(userId: string) {
   return reportCards || [];
 }
 
-// Get user info from session
-async function getUserInfo() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.user) {
-    return null;
-  }
-
-  const { data: userData } = await (supabase as any)
-    .from('users')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
-
-  return userData;
-}
 
 // Format date for display
 function formatDate(dateString: string) {
@@ -67,7 +50,7 @@ const ratingEmojis: Record<number, string> = {
 };
 
 export default async function ReportCardsPage() {
-  const userData = await getUserInfo();
+  const userData = await getCurrentUser();
 
   if (!userData) {
     return null;
@@ -88,15 +71,18 @@ export default async function ReportCardsPage() {
 
         {reportCards.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm border border-[#434E54]/10 overflow-hidden">
-            <EmptyState
-              icon="file"
-              title="No Report Cards Yet"
-              description="Report cards will appear here after your pet's grooming appointments!"
-              action={{
-                label: 'Book Appointment',
-                href: '/book',
-              }}
-            />
+            <div className="flex flex-col items-center justify-center text-center py-12 px-6">
+              <div className="w-20 h-20 rounded-full bg-[#EAE0D5] flex items-center justify-center text-[#434E54]/60 mb-6">
+                <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-[#434E54] mb-2">No Report Cards Yet</h3>
+              <p className="text-base text-[#434E54]/70 max-w-sm mb-6">{"Report cards will appear here after your pet's grooming appointments!"}</p>
+              <BookAppointmentButton className="px-6 py-3 font-semibold rounded-lg transition-colors bg-[#434E54] text-white hover:bg-[#363F44]">
+                Book Appointment
+              </BookAppointmentButton>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

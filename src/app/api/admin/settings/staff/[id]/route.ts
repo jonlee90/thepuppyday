@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { User, Appointment, StaffCommission } from '@/types/database';
 
@@ -26,10 +26,10 @@ export async function GET(
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const { id: staffId } = await params;
-    console.log('[Staff Detail API] GET - Staff ID:', staffId);
 
     // In mock mode, query from mock store
     if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
@@ -40,7 +40,6 @@ export async function GET(
       const profile = store.selectById('users', staffId) as User | null;
 
       if (!profile) {
-        console.log('[Staff Detail API] Staff not found:', staffId);
         return NextResponse.json(
           { error: 'Staff member not found' },
           { status: 404 }
@@ -49,7 +48,6 @@ export async function GET(
 
       // Verify user is staff
       if (profile.role !== 'admin' && profile.role !== 'groomer') {
-        console.log('[Staff Detail API] User is not staff:', staffId);
         return NextResponse.json(
           { error: 'User is not a staff member' },
           { status: 400 }
@@ -122,26 +120,19 @@ export async function GET(
         commission_settings,
       };
 
-      console.log('[Staff Detail API] Returning staff detail:', {
-        id: staffId,
-        completed_appointments,
-        upcoming_appointments,
-        avg_rating: avg_rating ? Math.round(avg_rating * 10) / 10 : null,
-      });
 
       return NextResponse.json({ data: response });
     }
 
     // Production Supabase query
     // Get staff profile
-    const { data: profile, error: profileError } = await (supabase as any)
+    const { data: profile, error: profileError } = await (serviceClient as any)
       .from('users')
       .select('*')
       .eq('id', staffId)
       .single();
 
     if (profileError || !profile) {
-      console.log('[Staff Detail API] Staff not found:', staffId);
       return NextResponse.json(
         { error: 'Staff member not found' },
         { status: 404 }
@@ -150,7 +141,6 @@ export async function GET(
 
     // Verify user is staff
     if (profile.role !== 'admin' && profile.role !== 'groomer') {
-      console.log('[Staff Detail API] User is not staff:', staffId);
       return NextResponse.json(
         { error: 'User is not a staff member' },
         { status: 400 }
@@ -158,7 +148,7 @@ export async function GET(
     }
 
     // Count completed appointments
-    const { count: completedCount } = await (supabase as any)
+    const { count: completedCount } = await (serviceClient as any)
       .from('appointments')
       .select('*', { count: 'exact', head: true })
       .eq('groomer_id', staffId)
@@ -169,7 +159,7 @@ export async function GET(
     const sevenDaysFromNow = new Date(now);
     sevenDaysFromNow.setDate(now.getDate() + 7);
 
-    const { count: upcomingCount } = await (supabase as any)
+    const { count: upcomingCount } = await (serviceClient as any)
       .from('appointments')
       .select('*', { count: 'exact', head: true })
       .eq('groomer_id', staffId)
@@ -178,12 +168,12 @@ export async function GET(
       .lte('scheduled_at', sevenDaysFromNow.toISOString());
 
     // Get average rating
-    const { data: reportCards } = await (supabase as any)
+    const { data: reportCards } = await (serviceClient as any)
       .from('report_cards')
       .select('rating, appointment_id')
       .not('rating', 'is', null);
 
-    const { data: staffAppointments } = await (supabase as any)
+    const { data: staffAppointments } = await (serviceClient as any)
       .from('appointments')
       .select('id')
       .eq('groomer_id', staffId);
@@ -201,7 +191,7 @@ export async function GET(
       : null;
 
     // Get recent appointments (last 10)
-    const { data: recentAppointments } = await (supabase as any)
+    const { data: recentAppointments } = await (serviceClient as any)
       .from('appointments')
       .select(`
         *,
@@ -214,7 +204,7 @@ export async function GET(
       .limit(10);
 
     // Get commission settings
-    const { data: commissionData } = await (supabase as any)
+    const { data: commissionData } = await (serviceClient as any)
       .from('staff_commissions')
       .select('*')
       .eq('groomer_id', staffId)
@@ -231,12 +221,6 @@ export async function GET(
       commission_settings: commissionData || null,
     };
 
-    console.log('[Staff Detail API] Returning staff detail:', {
-      id: staffId,
-      completed_appointments: completedCount || 0,
-      upcoming_appointments: upcomingCount || 0,
-      avg_rating: avg_rating ? Math.round(avg_rating * 10) / 10 : null,
-    });
 
     return NextResponse.json({ data: response });
   } catch (error) {

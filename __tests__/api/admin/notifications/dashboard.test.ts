@@ -9,8 +9,9 @@ import { NextRequest } from 'next/server';
 import type { NotificationLogRow } from '@/lib/notifications/database-types';
 
 // Mock functions must be declared with vi.hoisted to avoid hoisting issues
-const { mockCreateServerSupabaseClient, mockRequireAdmin, mockGetMockStore } = vi.hoisted(() => ({
+const { mockCreateServerSupabaseClient, mockCreateServiceRoleClient, mockRequireAdmin, mockGetMockStore } = vi.hoisted(() => ({
   mockCreateServerSupabaseClient: vi.fn(),
+  mockCreateServiceRoleClient: vi.fn(),
   mockRequireAdmin: vi.fn(),
   mockGetMockStore: vi.fn(),
 }));
@@ -18,6 +19,7 @@ const { mockCreateServerSupabaseClient, mockRequireAdmin, mockGetMockStore } = v
 // Mock dependencies
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: mockCreateServerSupabaseClient,
+  createServiceRoleClient: mockCreateServiceRoleClient,
 }));
 
 vi.mock('@/lib/admin/auth', () => ({
@@ -253,8 +255,9 @@ describe('Admin Notifications Dashboard API', () => {
       select: vi.fn().mockReturnValue(sampleNotifications),
     });
 
-    // Mock Supabase client
+    // Mock Supabase clients
     mockCreateServerSupabaseClient.mockResolvedValue(mockSupabase);
+    mockCreateServiceRoleClient.mockReturnValue(mockSupabase);
   });
 
   describe('Authentication', () => {

@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Manual Retention Trigger] Starting manual job at:', new Date().toISOString());
 
     // Create Supabase client for authentication
     const authSupabase = await createServerSupabaseClient();
@@ -80,7 +79,6 @@ export async function POST(request: NextRequest) {
       throw new Error(`Failed to query pets: ${queryError.message}`);
     }
 
-    console.log('[Manual Retention Trigger] Found active pets:', pets?.length || 0);
 
     let processed = 0;
     let sent = 0;
@@ -110,7 +108,6 @@ export async function POST(request: NextRequest) {
           const marketingOptOut = preferences.marketing_opt_out === true;
 
           if (marketingOptOut) {
-            console.log(`[Manual Retention Trigger] Skipping pet ${pet.id}: Owner opted out of marketing`);
             skipped++;
             continue;
           }
@@ -137,7 +134,6 @@ export async function POST(request: NextRequest) {
 
           // Skip if no previous appointments
           if (!lastAppt) {
-            console.log(`[Manual Retention Trigger] Skipping pet ${pet.id}: No previous appointments`);
             skipped++;
             continue;
           }
@@ -149,7 +145,6 @@ export async function POST(request: NextRequest) {
           const isOverdue = now.getTime() - lastApptDate.getTime() > groomingFrequencyMs;
 
           if (!isOverdue) {
-            console.log(`[Manual Retention Trigger] Skipping pet ${pet.id}: Not overdue (${weeksSinceLastAppt} weeks since last appt)`);
             skipped++;
             continue;
           }
@@ -171,7 +166,6 @@ export async function POST(request: NextRequest) {
           }
 
           if (recentReminder) {
-            console.log(`[Manual Retention Trigger] Skipping pet ${pet.id}: Reminder sent recently`);
             skipped++;
             continue;
           }
@@ -202,7 +196,6 @@ export async function POST(request: NextRequest) {
 
             if (emailResult.success) {
               emailSent = true;
-              console.log(`[Manual Retention Trigger] ✅ Sent email reminder for pet ${pet.id}`);
             } else {
               console.error(`[Manual Retention Trigger] ❌ Failed to send email for pet ${pet.id}:`, emailResult.error);
             }
@@ -222,7 +215,6 @@ export async function POST(request: NextRequest) {
 
             if (smsResult.success) {
               smsSent = true;
-              console.log(`[Manual Retention Trigger] ✅ Sent SMS reminder for pet ${pet.id}`);
             } else {
               console.error(`[Manual Retention Trigger] ❌ Failed to send SMS for pet ${pet.id}:`, smsResult.error);
             }
@@ -249,7 +241,6 @@ export async function POST(request: NextRequest) {
       duration_ms: duration,
     };
 
-    console.log('[Manual Retention Trigger] Job completed. Stats:', stats);
 
     return NextResponse.json({
       success: true,

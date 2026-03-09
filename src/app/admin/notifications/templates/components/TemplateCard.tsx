@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { NotificationTemplate } from '@/types/template';
 import { Mail, MessageSquare, Edit, Send, Power } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -11,7 +12,7 @@ interface TemplateCardProps {
   onToggleActive: (templateId: string, currentStatus: boolean) => void;
 }
 
-export function TemplateCard({ template, onTest, onToggleActive }: TemplateCardProps) {
+export const TemplateCard = memo(function TemplateCard({ template, onTest, onToggleActive }: TemplateCardProps) {
   const router = useRouter();
 
   const handleEdit = () => {
@@ -97,4 +98,4 @@ export function TemplateCard({ template, onTest, onToggleActive }: TemplateCardP
       </div>
     </motion.div>
   );
-}
+});

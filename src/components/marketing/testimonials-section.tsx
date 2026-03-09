@@ -40,61 +40,73 @@ interface YelpReview {
 const reviews: YelpReview[] = [
   {
     id: 'review-1',
-    reviewerName: 'Andrew U.',
-    reviewerInitial: 'A',
+    reviewerName: 'Bora S.',
+    reviewerInitial: 'B',
     rating: 5,
-    date: 'Jan 2025',
-    text: 'Absolutely love The Puppy Day! They always take such great care of our pup and he comes back looking amazing every time. The staff is friendly and truly cares about the dogs.',
-    yelpUrl: 'https://www.yelp.com/biz/puppy-day-la-mirada?hrid=SN9TCG1lEH8kHJJJPv_9DA',
-    images: [{ src: '/images/reviews-dog/review-1.jpg', alt: 'Groomed dog from Andrew U. review' }],
+    date: 'August 17, 2025',
+    text: 'This place is super clean, the dog shampoo smells great, and the grooming was done perfectly. Highly recommend!',
+    yelpUrl: 'https://www.yelp.com/biz/puppy-day-la-mirada',
+    images: [{ src: '/images/reviews-dog/review-1.jpg', alt: 'Groomed dog from Bora S. review' }],
   },
   {
     id: 'review-2',
-    reviewerName: 'Maria L.',
-    reviewerInitial: 'M',
+    reviewerName: 'Andrew U.',
+    reviewerInitial: 'A',
     rating: 5,
-    date: 'Feb 2025',
-    text: 'Best grooming experience in La Mirada! My dog was nervous at first but the groomers were so patient and gentle. The results speak for themselves — just look at how adorable he looks!',
+    date: 'September 3, 2025',
+    text: '12/10 service. The owner here really goes out of his way to make you and your pup feel welcomed. I will be coming here from now on for all my grooming needs.',
     yelpUrl: 'https://www.yelp.com/biz/puppy-day-la-mirada',
-    images: [{ src: '/images/reviews-dog/review-2.jpg', alt: 'Groomed dog from Maria L. review' }],
+    images: [{ src: '/images/reviews-dog/review-2.jpg', alt: 'Groomed dog from Andrew U. review' }],
   },
   {
     id: 'review-3',
-    reviewerName: 'Jessica T.',
-    reviewerInitial: 'J',
+    reviewerName: 'Kayde C.',
+    reviewerInitial: 'K',
     rating: 5,
-    date: 'Mar 2025',
-    text: 'We bring both our dogs here and they always come out looking like little celebrities. The attention to detail is incredible and the prices are very fair for the quality of work.',
+    date: 'October 13, 2025',
+    text: "We seriously love Puppy Day Spa. They have been so good with takin my dogs same day when I call, they take their time, are attentive to al the dogs needs and the place is always clean. They truly treat our dogs like their own. I'm very thankful they moved in so close to us! The shampoo they use always smells great and I love that they have a play area for the pups to play. I would recommend them over and over again.",
     yelpUrl: 'https://www.yelp.com/biz/puppy-day-la-mirada',
     images: [
-      { src: '/images/reviews-dog/review-3.jpg', alt: 'First groomed dog from Jessica T. review' },
-      { src: '/images/reviews-dog/review-3-1.jpg', alt: 'Second groomed dog from Jessica T. review' },
+      { src: '/images/reviews-dog/review-3.jpg', alt: 'First groomed dog from Kayde C. review' },
+      { src: '/images/reviews-dog/review-3-1.jpg', alt: 'Second groomed dog from Kayde C. review' },
     ],
   },
   {
     id: 'review-4',
-    reviewerName: 'David K.',
+    reviewerName: 'Deborah A.',
     reviewerInitial: 'D',
     rating: 5,
-    date: 'Apr 2025',
-    text: 'Found this gem through a friend and now I won\'t go anywhere else. They really know how to handle different breeds and coat types. My poodle mix has never looked better!',
+    date: 'September 24, 2025',
+    text: 'Very nice service! They took really good care of my pup! He looked so handsome after. They are very good at answering requests!',
     yelpUrl: 'https://www.yelp.com/biz/puppy-day-la-mirada',
     images: [
-      { src: '/images/reviews-dog/review-4-1.jpg', alt: 'First groomed dog from David K. review' },
-      { src: '/images/reviews-dog/review-4-2.jpg', alt: 'Second groomed dog from David K. review' },
+      { src: '/images/reviews-dog/review-4-1.jpg', alt: 'First groomed dog from Deborah A. review' },
+      { src: '/images/reviews-dog/review-4-2.jpg', alt: 'Second groomed dog from Deborah A. review' },
     ],
   },
   {
     id: 'review-5',
-    reviewerName: 'Sarah P.',
-    reviewerInitial: 'S',
+    reviewerName: 'Wendy A.',
+    reviewerInitial: 'W',
     rating: 5,
-    date: 'May 2025',
-    text: 'The Puppy Day is hands down the best groomer we\'ve ever been to. They treat every dog like their own and the facility is always clean and welcoming. Highly recommend to all pet parents!',
+    date: 'November 25, 2025',
+    text: 'First time bringing my fur babies here. I have a Senior Yorkie &. Shih-Poo. Owner "Jay" was super nice & showed me around the shop, to see where they would be while they awaited their turn. Was able to book an appointment for both my dogs quick. I asked for short haircut, & that\'s what he did. Thank you!. Thus far, very good experience. Will definitely be bringing my fur babies back again.',
     yelpUrl: 'https://www.yelp.com/biz/puppy-day-la-mirada',
     images: [
-      { src: '/images/reviews-dog/review-5-1.jpg', alt: 'First groomed dog from Sarah P. review' },
-      { src: '/images/reviews-dog/review-5-2.jpg', alt: 'Second groomed dog from Sarah P. review' },
+      { src: '/images/reviews-dog/review-5-1.jpg', alt: 'First groomed dog from Wendy A. review' },
+      { src: '/images/reviews-dog/review-5-2.jpg', alt: 'Second groomed dog from Wendy A. review' },
+    ],
+  },
+  {
+    id: 'review-6',
+    reviewerName: 'Yvonne R.',
+    reviewerInitial: 'Y',
+    rating: 5,
+    date: 'September 12, 2025',
+    text: "Loved how clean this place was. I have two dogs that require monthly maintenance as they model for different companies and always need to be camera ready. I had a very specific request on their hair cuts and they did a fabulous job! My smallest pup is very anxious and takes time for him to warm up to groomers. They were very sweet and took their time with him. When I picked him up, he was all smiles and wanting to roam around Luna, my Cavapoo is typically my wiggle monster. They informed me that she did really good and almost fell asleep during her hair cut lol . I believe them because she got real comfy on their couch and wanted to go back to their play area! Will be coming back and recommend to anyone looking to try a new place. Prices are reasonable too.",
+    yelpUrl: 'https://www.yelp.com/biz/puppy-day-la-mirada',
+    images: [
+      { src: '/images/reviews-dog/review-6.jpg', alt: 'First groomed dog from Yvonne R. review' }
     ],
   },
 ];
@@ -184,7 +196,7 @@ function ReviewCard({
         {needsTruncation && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-[#434E54]/60 hover:text-[#434E54] ml-1 font-medium transition-colors"
+            className="text-[#434E54]/60 hover:text-[#434E54] ml-1 font-medium transition-colors cursor-pointer"
           >
             {expanded ? 'Show less' : 'Read more'}
           </button>
@@ -197,7 +209,7 @@ function ReviewCard({
           <button
             key={img.src}
             onClick={() => onImageClick(lightboxStartIndex + imgIndex)}
-            className="relative w-20 h-20 rounded-xl overflow-hidden hover:ring-2 hover:ring-[#434E54]/30 transition-all flex-shrink-0"
+            className="relative w-20 h-20 rounded-xl overflow-hidden hover:ring-2 hover:ring-[#434E54]/30 transition-all flex-shrink-0 cursor-pointer"
           >
             <OptimizedImage
               src={img.src}
@@ -231,12 +243,9 @@ export function TestimonialsSection() {
     counter += review.images.length;
   }
 
-  // Top 3 and bottom 2 reviews
-  const topRow = reviews.slice(0, 3);
-  const bottomRow = reviews.slice(3);
 
   return (
-    <section className="relative py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#FFFBF7]">
+    <section id="testimonials" className="relative py-20 md:py-28 bg-[#FFFBF7]">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -255,28 +264,15 @@ export function TestimonialsSection() {
           </p>
         </motion.div>
 
-        {/* Top row: 3 cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-          {topRow.map((review, i) => (
+        {/* 6 reviews: 1 col mobile → 2 col tablet → 3 col desktop */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {reviews.map((review, i) => (
             <ReviewCard
               key={review.id}
               review={review}
               index={i}
               onImageClick={openLightbox}
               lightboxStartIndex={lightboxStartIndices[i]}
-            />
-          ))}
-        </div>
-
-        {/* Bottom row: 2 cards centered */}
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-          {bottomRow.map((review, i) => (
-            <ReviewCard
-              key={review.id}
-              review={review}
-              index={i + 3}
-              onImageClick={openLightbox}
-              lightboxStartIndex={lightboxStartIndices[i + 3]}
             />
           ))}
         </div>

@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import {
   HeroContentSchema,
@@ -35,11 +35,12 @@ const SectionSchema = z.enum(['hero', 'seo', 'business_info']);
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Fetch all site content sections
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: siteContent, error } = (await (supabase as any)
+    const { data: siteContent, error } = (await (serviceClient as any)
       .from('site_content')
       .select('*')
       .in('section', ['hero', 'seo', 'business_info'])) as {
@@ -85,6 +86,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
 
     const body = await request.json();
@@ -157,7 +159,7 @@ export async function PUT(request: NextRequest) {
 
     // Check if section already exists and get old value for audit log
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existing } = (await (supabase as any)
+    const { data: existing } = (await (serviceClient as any)
       .from('site_content')
       .select('id, content')
       .eq('section', validSection)
@@ -173,7 +175,7 @@ export async function PUT(request: NextRequest) {
     if (existing) {
       // Update existing section
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error: updateError } = (await (supabase as any)
+      const { data, error: updateError } = (await (serviceClient as any)
         .from('site_content')
         .update({
           content: validatedContent,
@@ -199,7 +201,7 @@ export async function PUT(request: NextRequest) {
     } else {
       // Insert new section
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error: insertError } = (await (supabase as any)
+      const { data, error: insertError } = (await (serviceClient as any)
         .from('site_content')
         .insert({
           section: validSection,

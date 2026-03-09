@@ -6,7 +6,7 @@
  * Tasks 0063-0067: Modular components for filters, stats, table, detail modal, and bulk actions
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { NotificationStats } from '@/components/admin/notifications/NotificationStats';
 import { NotificationFilters } from '@/components/admin/notifications/NotificationFilters';
 import { NotificationTable } from '@/components/admin/notifications/NotificationTable';
@@ -38,13 +38,7 @@ export default function NotificationCenterPage() {
     useState<NotificationWithCustomer | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  // Fetch notifications whenever page or filters change
-  useEffect(() => {
-    fetchNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filters]);
-
-  async function fetchNotifications() {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -87,7 +81,12 @@ export default function NotificationCenterPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, filters]);
+
+  // Fetch notifications whenever page or filters change
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   function handleFilterChange(newFilters: FilterValues) {
     setFilters(newFilters);

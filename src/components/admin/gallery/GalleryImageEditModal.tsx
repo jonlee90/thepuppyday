@@ -6,7 +6,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { X, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, Trash2, AlertCircle } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import type { GalleryImage, Breed } from '@/types/database';
 
 interface GalleryImageEditModalProps {
@@ -35,7 +36,7 @@ export function GalleryImageEditModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string>('');
-  const [successMessage, setSuccessMessage] = useState<string>('');
+
 
   // Form state
   const [petName, setPetName] = useState('');
@@ -98,7 +99,6 @@ export function GalleryImageEditModal({
 
     setIsSaving(true);
     setError('');
-    setSuccessMessage('');
 
     try {
       // Parse tags from comma-separated input
@@ -125,15 +125,12 @@ export function GalleryImageEditModal({
         throw new Error(data.error || 'Failed to update image');
       }
 
-      setSuccessMessage('Image updated successfully!');
-
-      // Wait a moment to show success message
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 1000);
+      toast.success('Image updated');
+      onSuccess();
+      onClose();
     } catch (err) {
-      console.error('Error saving image:', err);
+      console.error('[GalleryImageEditModal] save error:', err);
+      toast.error('Failed to update image');
       setError(err instanceof Error ? err.message : 'Failed to save changes');
     } finally {
       setIsSaving(false);
@@ -156,10 +153,12 @@ export function GalleryImageEditModal({
         throw new Error(data.error || 'Failed to delete image');
       }
 
+      toast.success('Image deleted');
       onDelete();
       onClose();
     } catch (err) {
-      console.error('Error deleting image:', err);
+      console.error('[GalleryImageEditModal] delete error:', err);
+      toast.error('Failed to delete image');
       setError(err instanceof Error ? err.message : 'Failed to delete image');
       setShowDeleteConfirm(false);
     } finally {
@@ -170,7 +169,6 @@ export function GalleryImageEditModal({
   const handleClose = () => {
     setImage(null);
     setError('');
-    setSuccessMessage('');
     setShowDeleteConfirm(false);
     onClose();
   };
@@ -312,13 +310,6 @@ export function GalleryImageEditModal({
                   </label>
                 </div>
 
-                {/* Success Message */}
-                {successMessage && (
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <p className="text-sm text-green-800">{successMessage}</p>
-                  </div>
-                )}
 
                 {/* Error Message */}
                 {error && (

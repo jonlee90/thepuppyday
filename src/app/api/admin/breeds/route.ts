@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { Breed } from '@/types/database';
 
@@ -15,9 +15,10 @@ import type { Breed } from '@/types/database';
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
-    const { data: breeds, error } = (await (supabase as any)
+    const { data: breeds, error } = (await (serviceClient as any)
       .from('breeds')
       .select('*')
       .order('name', { ascending: true })) as {

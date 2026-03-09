@@ -7,7 +7,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Wifi, WifiOff } from 'lucide-react';
 import { useDashboardData } from '@/hooks/admin/use-dashboard-data';
 import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { RevenueOverview } from '@/components/admin/dashboard/RevenueOverview';
@@ -41,36 +40,12 @@ export function DashboardClient() {
 
   return (
     <div className="space-y-6 p-6">
-      {/* Connection Status Banners */}
-      {!isConnected && isPolling && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center gap-3"
-        >
-          <WifiOff className="w-5 h-5 text-yellow-600 flex-shrink-0" aria-hidden="true" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-yellow-800">
-              Connection lost — using fallback polling
-            </p>
-            <p className="text-xs text-yellow-600 mt-1">
-              Data will refresh every 30 seconds
-            </p>
-          </div>
-        </div>
-      )}
-
-      {isConnected && process.env.NEXT_PUBLIC_USE_MOCKS !== 'true' && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
-          <Wifi className="w-4 h-4 text-green-600" aria-hidden="true" />
-          <p className="text-sm text-green-800" aria-live="polite">Real-time updates active</p>
-        </div>
-      )}
-
       {/* Header */}
       <DashboardHeader
         onNewBooking={() => setAdminBookingOpen(true)}
         onWalkIn={() => setWalkInOpen(true)}
+        isConnected={isConnected}
+        isPolling={isPolling}
       />
 
       {/* Revenue Overview */}
@@ -79,6 +54,14 @@ export function DashboardClient() {
         loading={loading.revenue}
         error={errors.revenue}
         onRetry={refetch}
+      />
+
+      {/* Needs Attention — full width, below revenue */}
+      <PendingActionsWidget
+        pending={pendingAppointments}
+        loading={loading.pending}
+        error={errors.pending}
+        onStatusUpdate={handleStatusUpdate}
       />
 
       {/* Main Content Grid: Timeline (3 cols) + Sidebar (2 cols) */}
@@ -101,12 +84,6 @@ export function DashboardClient() {
             loading={loading.appointments}
           />
           <WaitlistWidget />
-          <PendingActionsWidget
-            pending={pendingAppointments}
-            loading={loading.pending}
-            error={errors.pending}
-            onStatusUpdate={handleStatusUpdate}
-          />
         </div>
       </div>
 

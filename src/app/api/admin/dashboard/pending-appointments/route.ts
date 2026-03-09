@@ -3,19 +3,20 @@
  * Returns all pending appointments (not limited to today)
  */
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access
     await requireAdmin(supabase);
 
     // Fetch all pending appointments with joined data
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (serviceClient as any)
       .from('appointments')
       .select(`
         *,

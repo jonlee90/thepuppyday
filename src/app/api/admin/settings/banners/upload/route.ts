@@ -82,7 +82,6 @@ async function ensureBucketExists(supabase: any): Promise<{ success: boolean; er
     const bucketExists = buckets?.some((bucket: any) => bucket.name === BUCKET_NAME);
 
     if (!bucketExists) {
-      console.log('[Banner Image Upload] Creating banner-images bucket');
       const { error: createError } = await supabase.storage.createBucket(BUCKET_NAME, {
         public: true,
         fileSizeLimit: MAX_FILE_SIZE,
@@ -94,7 +93,6 @@ async function ensureBucketExists(supabase: any): Promise<{ success: boolean; er
         return { success: false, error: 'Failed to create storage bucket' };
       }
 
-      console.log('[Banner Image Upload] Bucket created successfully');
     }
 
     return { success: true };
@@ -121,16 +119,13 @@ async function ensureBucketExists(supabase: any): Promise<{ success: boolean; er
  */
 export async function POST(request: NextRequest) {
   try {
-    console.log('[Banner Image Upload] Starting upload process');
 
     // Use regular client for auth check
     const supabase = await createServerSupabaseClient();
     await requireAdmin(supabase);
-    console.log('[Banner Image Upload] Admin authentication successful');
 
     // Use service role client for storage operations (bypasses RLS)
     const serviceSupabase = createServiceRoleClient();
-    console.log('[Banner Image Upload] Service role client created');
 
     // Get file from form data
     const formData = await request.formData();
@@ -140,29 +135,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    console.log(
-      `[Banner Image Upload] Received file: ${file.name}, size: ${file.size}, type: ${file.type}`
-    );
 
     // Validate file
     const validation = await validateBannerImage(file);
     if (!validation.valid) {
-      console.log('[Banner Image Upload] Validation failed:', validation.error);
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    console.log(
-      `[Banner Image Upload] Validation passed. Dimensions: ${validation.width}x${validation.height}`
-    );
 
     // Check if dimensions match recommended size
     const isRecommendedSize =
       validation.width === RECOMMENDED_WIDTH && validation.height === RECOMMENDED_HEIGHT;
 
     if (!isRecommendedSize) {
-      console.log(
-        `[Banner Image Upload] Image dimensions (${validation.width}x${validation.height}) differ from recommended (${RECOMMENDED_WIDTH}x${RECOMMENDED_HEIGHT})`
-      );
     }
 
     // Ensure bucket exists
@@ -179,7 +164,6 @@ export async function POST(request: NextRequest) {
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = fileName;
 
-    console.log(`[Banner Image Upload] Uploading to bucket '${BUCKET_NAME}' with path: ${filePath}`);
 
     // Convert File to ArrayBuffer then to Uint8Array for Supabase
     const arrayBuffer = await file.arrayBuffer();
@@ -202,7 +186,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Banner Image Upload] Upload successful: ${uploadData.path}`);
 
     // Get public URL
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -215,7 +198,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to get public URL' }, { status: 500 });
     }
 
-    console.log(`[Banner Image Upload] Got public URL: ${urlData.publicUrl}`);
 
     // Return success response
     return NextResponse.json(

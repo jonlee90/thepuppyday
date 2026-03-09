@@ -6,7 +6,7 @@
  */
 
 import { NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import {
@@ -30,13 +30,14 @@ const DEFAULT_EARNING_RULES: LoyaltyEarningRules = {
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access
     await requireAdmin(supabase);
 
     // Fetch earning rules from settings table
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingRecord, error: settingsError } = (await (supabase as any)
+    const { data: settingRecord, error: settingsError } = (await (serviceClient as any)
       .from('settings')
       .select('value, updated_at')
       .eq('key', 'loyalty_earning_rules')
@@ -47,7 +48,6 @@ export async function GET() {
 
     // If not found, return defaults
     if (settingsError?.message === 'No rows found' || !settingRecord?.value) {
-      console.log('[Earning Rules API] No settings found, returning defaults');
       return NextResponse.json({
         data: DEFAULT_EARNING_RULES,
         last_updated: null,
@@ -94,6 +94,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access and get admin user
     const { user: admin } = await requireAdmin(supabase);
@@ -148,7 +149,7 @@ export async function PUT(request: Request) {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: services, error: servicesError } = (await (supabase as any)
+      const { data: services, error: servicesError } = (await (serviceClient as any)
         .from('services')
         .select('id')
         .in('id', qualifying_services)) as {
@@ -188,7 +189,7 @@ export async function PUT(request: Request) {
     // Calculate affected customers (informational)
     // Count customers with upcoming appointments matching new rules
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count: affectedCustomers, error: countError } = (await (supabase as any)
+    const { count: affectedCustomers, error: countError } = (await (serviceClient as any)
       .from('appointments')
       .select('customer_id', { count: 'exact', head: true })
       .in('status', ['pending', 'confirmed'])
@@ -206,7 +207,7 @@ export async function PUT(request: Request) {
 
     // Fetch existing settings for audit log
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: oldSettingRecord } = (await (supabase as any)
+    const { data: oldSettingRecord } = (await (serviceClient as any)
       .from('settings')
       .select('value')
       .eq('key', 'loyalty_earning_rules')
@@ -223,7 +224,7 @@ export async function PUT(request: Request) {
 
     // Upsert earning rules (settings.key has UNIQUE constraint)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: upsertError } = (await (supabase as any)
+    const { error: upsertError } = (await (serviceClient as any)
       .from('settings')
       .upsert(
         {
@@ -252,11 +253,6 @@ export async function PUT(request: Request) {
       newEarningRules
     ));
 
-    console.log(
-      `[Earning Rules API] Earning rules updated by admin ${admin.id}:`,
-      `qualifying_services=${qualifying_services.length > 0 ? qualifying_services.join(',') : 'all'}, `,
-      `minimum_spend=${minimum_spend}, first_visit_bonus=${first_visit_bonus}`
-    );
 
     // Build descriptive message
     let message = 'Loyalty earning rules updated successfully. ';

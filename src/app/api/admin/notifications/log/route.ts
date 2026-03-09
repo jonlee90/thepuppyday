@@ -5,8 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
+import { escapeLikePattern } from '@/lib/utils/validation';
 
 interface NotificationLogListItem {
   id: string;
@@ -49,6 +50,9 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
     await requireAdmin(supabase);
+
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -120,7 +124,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build count query for total
-    let countQuery = (supabase as any)
+    let countQuery = (serviceClient as any)
       .from('notifications_log')
       .select('*', { count: 'exact', head: true });
 
@@ -144,7 +148,7 @@ export async function GET(request: NextRequest) {
       countQuery = countQuery.lte('created_at', endDate);
     }
     if (search) {
-      countQuery = countQuery.ilike('recipient', `%${search}%`);
+      countQuery = countQuery.ilike('recipient', `%${escapeLikePattern(search)}%`);
     }
 
     // Execute count query
@@ -158,7 +162,7 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit);
 
     // Build data query with LEFT JOIN to users table
-    let dataQuery = (supabase as any)
+    let dataQuery = (serviceClient as any)
       .from('notifications_log')
       .select(`
         id,
@@ -198,7 +202,7 @@ export async function GET(request: NextRequest) {
       dataQuery = dataQuery.lte('created_at', endDate);
     }
     if (search) {
-      dataQuery = dataQuery.ilike('recipient', `%${search}%`);
+      dataQuery = dataQuery.ilike('recipient', `%${escapeLikePattern(search)}%`);
     }
 
     // Order by created_at descending (most recent first)

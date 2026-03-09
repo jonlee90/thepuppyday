@@ -50,7 +50,7 @@ export interface DashboardData {
   refetch: () => void;
 }
 
-const POLL_INTERVAL_MS = 30_000; // 30 seconds
+const POLL_INTERVAL_MS = 300_000; // 2 minutes
 
 export function useDashboardData(): DashboardData {
   const [revenue, setRevenue] = useState<RevenueData | null>(null);
@@ -73,10 +73,22 @@ export function useDashboardData(): DashboardData {
 
   // Use a ref to avoid stale-closure issues in the polling/realtime callbacks
   const fetchAllRef = useRef<() => void>(() => {});
+  // Guard to prevent concurrent fetches from overlapping triggers
+  const isFetchingRef = useRef(false);
+  // Track whether polling is logically active (for visibility change handler)
+  const isPollingRef = useRef(false);
+  // Track whether initial fetch has completed (skip loading flicker on background refetches)
+  const hasLoadedRef = useRef(false);
 
   const fetchAll = useCallback(async () => {
-    // Set loading true for all endpoints at the start of a fetch cycle
-    setLoading({ revenue: true, appointments: true, pending: true });
+    if (isFetchingRef.current) return; // Skip if already fetching
+    isFetchingRef.current = true;
+
+    try {
+    // Only show loading skeletons on initial fetch, not background refetches
+    if (!hasLoadedRef.current) {
+      setLoading({ revenue: true, appointments: true, pending: true });
+    }
 
     const [revenueResult, appointmentsResult, pendingResult] = await Promise.allSettled([
       fetch('/api/admin/dashboard/revenue-overview').then(async (res) => {
@@ -122,6 +134,10 @@ export function useDashboardData(): DashboardData {
       setErrors((prev) => ({ ...prev, pending: true }));
     }
     setLoading((prev) => ({ ...prev, pending: false }));
+    } finally {
+      isFetchingRef.current = false;
+      hasLoadedRef.current = true;
+    }
   }, []);
 
   // Keep ref in sync so intervals/subscriptions always call the latest version
@@ -139,6 +155,7 @@ export function useDashboardData(): DashboardData {
     const startPolling = () => {
       if (pollTimer) return; // already polling
       setIsPolling(true);
+      isPollingRef.current = true;
       pollTimer = setInterval(() => {
         // Respect tab visibility — skip fetch when hidden, it will resume on show
         if (!document.hidden) {
@@ -153,12 +170,27 @@ export function useDashboardData(): DashboardData {
         pollTimer = null;
       }
       setIsPolling(false);
+      isPollingRef.current = false;
     };
 
     // Visibility change handler: resume fetching immediately when tab becomes visible
+    // and reset the polling timer to prevent overlap with the next scheduled poll
     const handleVisibilityChange = () => {
       if (!document.hidden) {
+        // Reset polling interval to prevent overlap with the immediate fetch
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
         fetchAllRef.current();
+        // Restart polling if it was active
+        if (isPollingRef.current) {
+          pollTimer = setInterval(() => {
+            if (!document.hidden) {
+              fetchAllRef.current();
+            }
+          }, POLL_INTERVAL_MS);
+        }
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -230,8 +262,6 @@ export function useDashboardData(): DashboardData {
         realtimeClient.removeChannel(channel);
       }
     };
-    // fetchAll is stable due to useCallback with no deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const refetch = useCallback(() => {

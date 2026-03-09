@@ -11,6 +11,7 @@ import { POST as retentionTrigger } from '@/app/api/admin/notifications/jobs/ret
 // Mock modules
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
 }));
 
 vi.mock('@/lib/admin/auth', () => ({
@@ -21,7 +22,7 @@ vi.mock('@/lib/notifications', () => ({
   getNotificationService: vi.fn(),
 }));
 
-const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+const { createServerSupabaseClient, createServiceRoleClient } = await import('@/lib/supabase/server');
 const { requireAdmin } = await import('@/lib/admin/auth');
 const { getNotificationService } = await import('@/lib/notifications');
 
@@ -56,6 +57,7 @@ describe('Manual Job Trigger Endpoints', () => {
     };
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabase);
     vi.mocked(requireAdmin).mockResolvedValue({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       user: { id: 'admin-1', role: 'admin' } as any,
@@ -175,16 +177,29 @@ describe('Manual Job Trigger Endpoints', () => {
           },
         ];
 
-        mockSupabase.from.mockReturnValue({
-          select: vi.fn(() => ({
-            gte: vi.fn(() => ({
-              lte: vi.fn(() => ({
-                in: vi.fn(() => ({
-                  order: vi.fn(() => Promise.resolve({ data: mockAppointments, error: null })),
+        // Flat chainable mock for notifications_log (no existing reminder)
+        const logChain: any = {};
+        logChain.select = vi.fn().mockReturnValue(logChain);
+        logChain.eq = vi.fn().mockReturnValue(logChain);
+        logChain.gte = vi.fn().mockReturnValue(logChain);
+        logChain.limit = vi.fn().mockReturnValue(logChain);
+        logChain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+
+        mockSupabase.from.mockImplementation((table: string) => {
+          if (table === 'notifications_log') {
+            return logChain;
+          }
+          return {
+            select: vi.fn(() => ({
+              gte: vi.fn(() => ({
+                lte: vi.fn(() => ({
+                  in: vi.fn(() => ({
+                    order: vi.fn(() => Promise.resolve({ data: mockAppointments, error: null })),
+                  })),
                 })),
               })),
             })),
-          })),
+          };
         });
 
         const request = new NextRequest('http://localhost/api/admin/notifications/jobs/reminders/trigger', {
@@ -372,22 +387,14 @@ describe('Manual Job Trigger Endpoints', () => {
               })),
             };
           }
-          // For notifications_log
-          return {
-            select: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  eq: vi.fn(() => ({
-                    gte: vi.fn(() => ({
-                      limit: vi.fn(() => ({
-                        maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
-                      })),
-                    })),
-                  })),
-                })),
-              })),
-            })),
-          };
+          // For notifications_log: .eq(type).eq(customer_id).gte(created_at).limit().maybeSingle()
+          const logChain: any = {};
+          logChain.select = vi.fn().mockReturnValue(logChain);
+          logChain.eq = vi.fn().mockReturnValue(logChain);
+          logChain.gte = vi.fn().mockReturnValue(logChain);
+          logChain.limit = vi.fn().mockReturnValue(logChain);
+          logChain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+          return logChain;
         });
 
         const request = new NextRequest('http://localhost/api/admin/notifications/jobs/retention/trigger', {

@@ -10,13 +10,14 @@ import { GET, POST } from '@/app/api/cron/notifications/reminders/route';
 // Mock modules
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
 }));
 
 vi.mock('@/lib/notifications', () => ({
   getNotificationService: vi.fn(),
 }));
 
-const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+const { createServerSupabaseClient, createServiceRoleClient } = await import('@/lib/supabase/server');
 const { getNotificationService } = await import('@/lib/notifications');
 
 describe('Appointment Reminders Cron Job', () => {
@@ -63,6 +64,7 @@ describe('Appointment Reminders Cron Job', () => {
     };
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabase);
     vi.mocked(getNotificationService).mockReturnValue(mockNotificationService);
   });
 
@@ -179,17 +181,31 @@ describe('Appointment Reminders Cron Job', () => {
         },
       ];
 
-      // Mock appointment query
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn(() => ({
-          gte: vi.fn(() => ({
-            lte: vi.fn(() => ({
-              in: vi.fn(() => ({
-                order: vi.fn(() => Promise.resolve({ data: mockAppointments, error: null })),
+      // Create a chainable mock for notifications_log (checks if reminder was already sent)
+      const notificationsLogChain: any = {};
+      notificationsLogChain.select = vi.fn().mockReturnValue(notificationsLogChain);
+      notificationsLogChain.eq = vi.fn().mockReturnValue(notificationsLogChain);
+      notificationsLogChain.gte = vi.fn().mockReturnValue(notificationsLogChain);
+      notificationsLogChain.limit = vi.fn().mockReturnValue(notificationsLogChain);
+      notificationsLogChain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+
+      // Mock from() to return appropriate chain per table
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'notifications_log') {
+          return notificationsLogChain;
+        }
+        // appointments table
+        return {
+          select: vi.fn(() => ({
+            gte: vi.fn(() => ({
+              lte: vi.fn(() => ({
+                in: vi.fn(() => ({
+                  order: vi.fn(() => Promise.resolve({ data: mockAppointments, error: null })),
+                })),
               })),
             })),
           })),
-        })),
+        };
       });
 
       const request = new NextRequest('http://localhost/api/cron/notifications/reminders');

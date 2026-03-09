@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { NotificationLogRow } from '@/lib/notifications/database-types';
 
@@ -98,6 +98,9 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerSupabaseClient();
     await requireAdmin(supabase);
 
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
+
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
     const period = searchParams.get('period') || '30d';
@@ -108,8 +111,6 @@ export async function GET(request: NextRequest) {
     const currentPeriod = calculatePeriodDates(period, customStartDate, customEndDate);
     const previousPeriod = calculatePreviousPeriod(currentPeriod);
 
-    console.log('[Dashboard API] Current period:', currentPeriod);
-    console.log('[Dashboard API] Previous period:', previousPeriod);
 
     // In mock mode, query from mock store
     if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
@@ -150,13 +151,13 @@ export async function GET(request: NextRequest) {
       { data: currentData, error: currentError },
       { data: previousData, error: previousError },
     ] = await Promise.all([
-      (supabase as any)
+      (serviceClient as any)
         .from('notifications_log')
         .select('*')
         .eq('is_test', false)
         .gte('created_at', currentPeriod.start)
         .lte('created_at', currentPeriod.end),
-      (supabase as any)
+      (serviceClient as any)
         .from('notifications_log')
         .select('*')
         .eq('is_test', false)
@@ -487,8 +488,8 @@ function calculateFailureReasons(notifications: NotificationLogRow[]): FailureRe
   return Object.entries(reasonGroups)
     .map(([reason, count]): FailureReason => ({
       reason,
-      count: count as number,
-      percentage: Math.round((count as number / total) * 100 * 100) / 100,
+      count,
+      percentage: Math.round((count / total) * 100 * 100) / 100,
     }))
     .sort((a, b) => b.count - a.count); // Sort by count descending
 }

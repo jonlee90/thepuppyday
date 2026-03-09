@@ -4,6 +4,18 @@
  */
 
 /**
+ * Escapes special characters in user input before use in SQL LIKE / ilike patterns.
+ * Prevents %, _, and \ from being interpreted as wildcards.
+ * Usage: `.ilike('column', `%${escapeLikePattern(userInput)}%`)`
+ */
+export function escapeLikePattern(input: string): string {
+  return input
+    .replace(/\\/g, '\\\\')
+    .replace(/%/g, '\\%')
+    .replace(/_/g, '\\_');
+}
+
+/**
  * Validates UUID format (RFC 4122 compliant)
  * Security: Prevents SQL injection via malformed IDs
  */

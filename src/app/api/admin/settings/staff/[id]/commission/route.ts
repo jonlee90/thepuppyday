@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import type { StaffCommission, ServiceOverride } from '@/types/database';
@@ -43,20 +43,19 @@ export async function GET(
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const { id: staffId } = await params;
-    console.log('[Commission API] GET - Staff ID:', staffId);
 
     // Verify staff exists
-    const { data: staffUser, error: staffError } = await (supabase as any)
+    const { data: staffUser, error: staffError } = await (serviceClient as any)
       .from('users')
       .select('id, role')
       .eq('id', staffId)
       .single();
 
     if (staffError || !staffUser) {
-      console.log('[Commission API] Staff not found:', staffId);
       return NextResponse.json(
         { error: 'Staff member not found' },
         { status: 404 }
@@ -81,7 +80,6 @@ export async function GET(
         service_overrides: null,
       };
 
-      console.log('[Commission API] Returning commission settings for:', staffId);
 
       return NextResponse.json({
         data: commission_settings || defaultSettings,
@@ -89,7 +87,7 @@ export async function GET(
     }
 
     // Production Supabase query
-    const { data: commissionData, error: commissionError } = await (supabase as any)
+    const { data: commissionData, error: commissionError } = await (serviceClient as any)
       .from('staff_commissions')
       .select('*')
       .eq('groomer_id', staffId)
@@ -104,7 +102,6 @@ export async function GET(
         service_overrides: null,
       };
 
-      console.log('[Commission API] No commission settings found, returning default');
 
       return NextResponse.json({
         data: defaultSettings,
@@ -119,7 +116,6 @@ export async function GET(
       );
     }
 
-    console.log('[Commission API] Returning commission settings for:', staffId);
 
     return NextResponse.json({
       data: commissionData,
@@ -144,17 +140,16 @@ export async function PUT(
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
     const { id: staffId } = await params;
-    console.log('[Commission API] PUT - Staff ID:', staffId, 'Admin:', adminUser.email);
 
     // Parse and validate request body
     const body = await request.json();
     const validation = commissionSettingsSchema.safeParse(body);
 
     if (!validation.success) {
-      console.log('[Commission API] Validation failed:', validation.error.errors);
       return NextResponse.json(
         { error: 'Validation failed', details: validation.error.errors },
         { status: 400 }
@@ -164,14 +159,13 @@ export async function PUT(
     const { rate_type, rate, include_addons, service_overrides } = validation.data;
 
     // Verify staff exists
-    const { data: staffUser, error: staffError } = await (supabase as any)
+    const { data: staffUser, error: staffError } = await (serviceClient as any)
       .from('users')
       .select('id, role')
       .eq('id', staffId)
       .single();
 
     if (staffError || !staffUser) {
-      console.log('[Commission API] Staff not found:', staffId);
       return NextResponse.json(
         { error: 'Staff member not found' },
         { status: 404 }
@@ -182,7 +176,7 @@ export async function PUT(
     if (service_overrides && service_overrides.length > 0) {
       // Verify all service IDs exist
       const serviceIds = service_overrides.map((so) => so.service_id);
-      const { data: services, error: servicesError } = await (supabase as any)
+      const { data: services, error: servicesError } = await (serviceClient as any)
         .from('services')
         .select('id')
         .in('id', serviceIds);
@@ -199,7 +193,6 @@ export async function PUT(
       const invalidServiceIds = serviceIds.filter((id) => !validServiceIds.has(id));
 
       if (invalidServiceIds.length > 0) {
-        console.log('[Commission API] Invalid service IDs:', invalidServiceIds);
         return NextResponse.json(
           { error: `Invalid service IDs: ${invalidServiceIds.join(', ')}` },
           { status: 400 }
@@ -231,7 +224,6 @@ export async function PUT(
         };
 
         store.update('staff_commissions', existingCommission.id, updatedCommission);
-        console.log('[Commission API] Updated commission settings:', existingCommission.id);
       } else {
         // Insert new
         updatedCommission = {
@@ -246,7 +238,6 @@ export async function PUT(
         };
 
         store.insert('staff_commissions', updatedCommission);
-        console.log('[Commission API] Created commission settings:', updatedCommission.id);
       }
 
       // Log audit entry (non-blocking)
@@ -263,7 +254,7 @@ export async function PUT(
     }
 
     // Production Supabase upsert
-    const { data: updatedCommission, error: upsertError } = await (supabase as any)
+    const { data: updatedCommission, error: upsertError } = await (serviceClient as any)
       .from('staff_commissions')
       .upsert(
         {
@@ -289,10 +280,9 @@ export async function PUT(
       );
     }
 
-    console.log('[Commission API] Updated commission settings for:', staffId);
 
     // Log audit entry (get old value first)
-    const { data: oldCommission } = await (supabase as any)
+    const { data: oldCommission } = await (serviceClient as any)
       .from('staff_commissions')
       .select('*')
       .eq('groomer_id', staffId)

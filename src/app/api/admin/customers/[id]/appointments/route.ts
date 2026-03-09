@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const supabase = createServiceRoleClient();
 
     // Fetch all appointments for this customer
-    const { data: appointments, error: appointmentsError } = await (supabase as any)
+    const { data: appointments, error: appointmentsError } = await supabase
       .from('appointments')
       .select('*')
       .eq('customer_id', customerId)
@@ -43,26 +43,26 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Fetch pets
     const petIds = [...new Set((appointments || []).map((a: any) => a.pet_id))];
-    const { data: pets } = await (supabase as any)
+    const { data: pets } = await supabase
       .from('pets')
       .select('*')
       .in('id', petIds.length > 0 ? petIds : ['']);
 
     // Fetch services
     const serviceIds = [...new Set((appointments || []).map((a: any) => a.service_id))];
-    const { data: services } = await (supabase as any)
+    const { data: services } = await supabase
       .from('services')
       .select('*')
       .in('id', serviceIds.length > 0 ? serviceIds : ['']);
 
     // Fetch addons
-    const { data: appointmentAddons } = await (supabase as any)
+    const { data: appointmentAddons } = await supabase
       .from('appointment_addons')
       .select('*, addon:addons(*)')
       .in('appointment_id', appointmentIds.length > 0 ? appointmentIds : ['']);
 
     // Fetch report cards
-    const { data: reportCards } = await (supabase as any)
+    const { data: reportCards } = await supabase
       .from('report_cards')
       .select('*')
       .in('appointment_id', appointmentIds.length > 0 ? appointmentIds : ['']);

@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from '@/hooks/use-toast';
 import type { ReportCardFormState, HealthObservation, ReportCardMood, CoatCondition, BehaviorRating } from '@/types/report-card';
 
 interface UseReportCardFormOptions {
@@ -204,6 +205,7 @@ export function useReportCardForm({
       if (!isDraft) {
         const localKey = `${LOCAL_STORAGE_KEY_PREFIX}${appointmentId}`;
         localStorage.removeItem(localKey);
+        toast.success('Report card submitted');
       }
 
       onSuccess?.();
@@ -211,6 +213,9 @@ export function useReportCardForm({
     } catch (error) {
       console.error('Submit error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Submission failed';
+      if (!isDraft) {
+        toast.error('Failed to submit report card');
+      }
       setSaveStatus((prev) => ({
         ...prev,
         isSaving: false,

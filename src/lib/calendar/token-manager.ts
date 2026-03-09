@@ -98,6 +98,10 @@ export async function retrieveTokens(
       throw new Error('Calendar connection not found');
     }
 
+    if (!data.access_token || !data.refresh_token) {
+      throw new Error('Calendar connection has missing tokens — please reconnect Google Calendar');
+    }
+
     // Decrypt tokens
     const accessToken = decryptToken(data.access_token);
     const refreshToken = decryptToken(data.refresh_token);
@@ -155,7 +159,8 @@ export async function getValidAccessToken(
       // Check for specific errors that require disconnection
       if (
         error.message.includes('invalid or revoked') ||
-        error.message.includes('invalid_grant')
+        error.message.includes('invalid_grant') ||
+        error.message.includes('missing tokens')
       ) {
         // Token is permanently invalid - mark connection as inactive
         await disconnectOnTokenError(supabase, connectionId);

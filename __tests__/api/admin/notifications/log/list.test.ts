@@ -6,11 +6,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GET } from '@/app/api/admin/notifications/log/route';
 import { NextRequest } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 
 // Mock dependencies
-vi.mock('@/lib/supabase/server');
+vi.mock('@/lib/supabase/server', () => ({
+  createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
+}));
 vi.mock('@/lib/admin/auth');
 
 describe('Admin Notification Log List API', () => {
@@ -26,6 +29,7 @@ describe('Admin Notification Log List API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabaseClient as any);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabaseClient as any);
     vi.mocked(requireAdmin).mockResolvedValue(mockAdmin);
   });
 

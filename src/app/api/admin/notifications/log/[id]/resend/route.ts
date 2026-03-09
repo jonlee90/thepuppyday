@@ -5,17 +5,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { isValidUUID } from '@/lib/utils/validation';
 import { getNotificationService } from '@/lib/notifications';
-import type { NotificationChannel } from '@/types/database';
 
 interface NotificationLogRow {
   id: string;
   customer_id: string | null;
   type: string;
-  channel: NotificationChannel;
+  channel: 'email' | 'sms';
   recipient: string;
   status: 'pending' | 'sent' | 'failed';
   template_data: Record<string, unknown> | null;
@@ -42,8 +41,11 @@ export async function POST(
       );
     }
 
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
+
     // Load original notification log entry
-    const { data: originalLog, error: fetchError } = (await (supabase as any)
+    const { data: originalLog, error: fetchError } = (await (serviceClient as any)
       .from('notifications_log')
       .select('id, customer_id, type, channel, recipient, status, template_data')
       .eq('id', id)
@@ -70,7 +72,7 @@ export async function POST(
     }
 
     // Get notification service
-    const notificationService = getNotificationService(supabase as any);
+    const notificationService = getNotificationService(serviceClient as any);
 
     // Resend notification using the original parameters
     const result = await notificationService.send({

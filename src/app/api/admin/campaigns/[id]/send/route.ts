@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import {
   getAudienceFromSegment,
@@ -27,13 +27,14 @@ interface RouteContext {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
 
     const { id } = await context.params;
 
     // Get campaign details
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: campaign, error: campaignError } = await (supabase as any)
+    const { data: campaign, error: campaignError } = await (serviceClient as any)
       .from('marketing_campaigns')
       .select('*')
       .eq('id', id)
@@ -48,10 +49,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Validate and update campaign status atomically to prevent race conditions
     // Only update if status is 'draft' or 'scheduled'
-    console.log(`[Campaign Send API] Starting send for campaign: ${campaign.name}`);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: updatedCampaign, error: updateError } = await (supabase as any)
+    const { data: updatedCampaign, error: updateError } = await (serviceClient as any)
       .from('marketing_campaigns')
       .update({ status: 'sending', updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -74,11 +74,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const audience = await getAudienceFromSegment(supabase, campaign.segment_criteria);
 
     if (audience.length === 0) {
-      console.log('[Campaign Send API] No audience members found for segment criteria');
 
       // Update campaign back to draft
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
+      await (serviceClient as any)
         .from('marketing_campaigns')
         .update({ status: 'draft' })
         .eq('id', id);
@@ -89,7 +88,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    console.log(`[Campaign Send API] Found ${audience.length} audience members`);
 
     // Determine A/B test config
     const abTestEnabled = campaign.ab_test_config?.enabled || false;
@@ -109,7 +107,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
       // Update campaign back to draft
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
+      await (serviceClient as any)
         .from('marketing_campaigns')
         .update({ status: 'draft' })
         .eq('id', id);
@@ -133,7 +131,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
         // Update campaign status to 'sent' and set sent_at timestamp
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any)
+        await (serviceClient as any)
           .from('marketing_campaigns')
           .update({
             status: 'sent',
@@ -141,12 +139,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
           })
           .eq('id', id);
 
-        console.log(`[Campaign Send API] Campaign sent successfully. Sent: ${sendResult.sent_count}, Skipped: ${sendResult.skipped_count}`);
       } catch (sendError) {
         console.error('[Campaign Send API] Error sending campaign notifications:', sendError);
         // Update campaign status to reflect failure
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any)
+        await (serviceClient as any)
           .from('marketing_campaigns')
           .update({ status: 'draft' })
           .eq('id', id);

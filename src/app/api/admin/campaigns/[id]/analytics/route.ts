@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import {
   getCampaignPerformance,
@@ -26,13 +26,14 @@ interface RouteContext {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
 
     const { id } = await context.params;
 
     // Get campaign to check if it exists and has A/B test
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: campaign, error: campaignError } = await (supabase as any)
+    const { data: campaign, error: campaignError } = await (serviceClient as any)
       .from('marketing_campaigns')
       .select('id, name, ab_test_config')
       .eq('id', id)
@@ -45,7 +46,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       );
     }
 
-    console.log(`[Campaign Analytics API] Getting analytics for campaign: ${campaign.name}`);
 
     // Get overall performance metrics
     const performance = await getCampaignPerformance(supabase, id);

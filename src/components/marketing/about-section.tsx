@@ -15,35 +15,6 @@ interface AboutSectionProps {
   description: string;
 }
 
-// Animated counter component
-function AnimatedNumber({ value, suffix = '', decimals = 0 }: { value: number; suffix?: string; decimals?: number }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
-  const [displayed, setDisplayed] = useState('0');
-
-  const spring = useSpring(0, { stiffness: 50, damping: 20 });
-  const rounded = useTransform(spring, (v) =>
-    decimals > 0 ? v.toFixed(decimals) : Math.round(v).toString()
-  );
-
-  useEffect(() => {
-    if (isInView) {
-      spring.set(value);
-    }
-  }, [isInView, spring, value]);
-
-  useEffect(() => {
-    const unsubscribe = rounded.on('change', (v) => setDisplayed(v));
-    return unsubscribe;
-  }, [rounded]);
-
-  return (
-    <span ref={ref}>
-      {displayed}{suffix}
-    </span>
-  );
-}
-
 const stats = [
   { value: 500, suffix: '+', decimals: 0, label: 'Happy Pups Groomed' },
   { value: 5.0, suffix: '', decimals: 1, label: 'Stars on Yelp' },
@@ -67,7 +38,7 @@ const highlights = [
 
 export function AboutSection({ title, description }: AboutSectionProps) {
   return (
-    <section id="about" className="relative py-20 md:py-28 bg-gradient-to-b from-[#EAE0D5] to-[#FFFBF7] overflow-hidden">
+    <section id="about" className="relative py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#EAE0D5] overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
 
@@ -169,31 +140,6 @@ export function AboutSection({ title, description }: AboutSectionProps) {
               </div>
             </motion.div>
           </div>
-
-          {/* Trust Stats Row */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="grid grid-cols-3 max-w-2xl mx-auto"
-          >
-            {stats.map((stat, i) => (
-              <div
-                key={i}
-                className={`text-center px-4 py-2 ${
-                  i < stats.length - 1 ? 'border-r border-[#434E54]/10' : ''
-                }`}
-              >
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#434E54]">
-                  <AnimatedNumber value={stat.value} suffix={stat.suffix} decimals={stat.decimals} />
-                </div>
-                <div className="text-xs sm:text-sm text-[#6B7280] mt-1">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </motion.div>
 
         </div>
       </div>

@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import type {
   NotificationLogListItem,
@@ -42,12 +42,7 @@ export default function NotificationLogPage() {
   const [resendLog, setResendLog] = useState<NotificationLogListItem | null>(null);
   const [showResendModal, setShowResendModal] = useState(false);
 
-  // Fetch logs when filters or page changes
-  useEffect(() => {
-    fetchLogs();
-  }, [filters, currentPage]);
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -70,14 +65,19 @@ export default function NotificationLogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, currentPage]);
 
-  const handleFilterChange = (newFilters: NotificationLogFilters) => {
+  // Fetch logs when filters or page changes
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  function handleFilterChange(newFilters: NotificationLogFilters) {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
-  };
+  }
 
-  const handleLoadDetail = async (logId: string): Promise<NotificationLogDetail | null> => {
+  async function handleLoadDetail(logId: string): Promise<NotificationLogDetail | null> {
     try {
       const response = await fetch(`/api/admin/notifications/log/${logId}`);
 
@@ -91,19 +91,19 @@ export default function NotificationLogPage() {
       console.error('Failed to load log detail:', error);
       return null;
     }
-  };
+  }
 
-  const handleResendClick = (logId: string) => {
+  function handleResendClick(logId: string) {
     const log = logs.find((l) => l.id === logId);
     if (log) {
       setResendLog(log);
       setShowResendModal(true);
     }
-  };
+  }
 
-  const handleResend = async (
+  async function handleResend(
     logId: string
-  ): Promise<{ success: boolean; message: string }> => {
+  ): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(`/api/admin/notifications/log/${logId}/resend`, {
         method: 'POST',
@@ -129,14 +129,14 @@ export default function NotificationLogPage() {
         message: 'An unexpected error occurred',
       };
     }
-  };
+  }
 
-  const handleResendSuccess = () => {
+  const handleResendSuccess = useCallback(() => {
     // Refresh logs after successful resend
     fetchLogs();
-  };
+  }, [fetchLogs]);
 
-  const handleExportAll = async (): Promise<NotificationLogListItem[]> => {
+  async function handleExportAll(): Promise<NotificationLogListItem[]> {
     // Fetch all logs (without pagination) for export
     try {
       const queryString = buildQueryString(filters, 1, 10000); // Max 10k logs
@@ -152,19 +152,19 @@ export default function NotificationLogPage() {
       console.error('Error fetching all logs:', error);
       throw error;
     }
-  };
+  }
 
-  const handlePreviousPage = () => {
+  function handlePreviousPage() {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
-  };
+  }
 
-  const handleNextPage = () => {
+  function handleNextPage() {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
-  };
+  }
 
   if (loading && logs.length === 0) {
     return (

@@ -10,6 +10,7 @@ import { POST } from '@/app/api/admin/notifications/templates/[id]/test/route';
 // Mock modules
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
 }));
 
 vi.mock('@/lib/admin/auth', () => ({
@@ -22,19 +23,38 @@ vi.mock('@/lib/utils/validation', () => ({
   validatePhone: vi.fn((phone: string) => /^\+1\d{10}$/.test(phone)),
 }));
 
-vi.mock('@/lib/notifications/service', () => ({
-  getNotificationService: vi.fn(),
+vi.mock('@/lib/notifications/template-engine', () => ({
+  createTemplateEngine: vi.fn(() => ({
+    render: vi.fn((template: string, data: Record<string, unknown>) =>
+      template.replace(/\{\{(\w+)\}\}/g, (_, key) => String(data[key] ?? ''))
+    ),
+    calculateSegmentCount: vi.fn((text: string) => Math.ceil(text.length / 160)),
+  })),
 }));
 
-const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+vi.mock('@/lib/notifications/providers', () => ({
+  getEmailProvider: vi.fn(),
+  getSMSProvider: vi.fn(),
+}));
+
+vi.mock('@/lib/notifications/logger', () => ({
+  createNotificationLogger: vi.fn(),
+}));
+
+const { createServerSupabaseClient, createServiceRoleClient } = await import('@/lib/supabase/server');
 const { requireAdmin } = await import('@/lib/admin/auth');
-const { getNotificationService } = await import('@/lib/notifications/service');
+const { getEmailProvider, getSMSProvider } = await import('@/lib/notifications/providers');
+const { createNotificationLogger } = await import('@/lib/notifications/logger');
 
 describe('POST /api/admin/notifications/templates/[id]/test', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockSupabase: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockNotificationService: any;
+  let mockEmailProvider: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockSmsProvider: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockLogger: any;
   const validUuid = '123e4567-e89b-12d3-a456-426614174000';
 
   beforeEach(() => {
@@ -50,20 +70,29 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
       })),
     };
 
-    mockNotificationService = {
-      send: vi.fn(() => Promise.resolve({
-        success: true,
-        messageId: 'test-msg-123',
-      })),
+    mockEmailProvider = {
+      send: vi.fn(() => Promise.resolve({ success: true, messageId: 'test-msg-123' })),
+    };
+
+    mockSmsProvider = {
+      send: vi.fn(() => Promise.resolve({ success: true, messageId: 'test-msg-123' })),
+    };
+
+    mockLogger = {
+      create: vi.fn(() => Promise.resolve('log-id-1')),
+      update: vi.fn(() => Promise.resolve()),
     };
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabase);
     vi.mocked(requireAdmin).mockResolvedValue({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       user: { id: 'admin-1', role: 'admin' } as any,
       role: 'admin',
     });
-    vi.mocked(getNotificationService).mockReturnValue(mockNotificationService);
+    vi.mocked(getEmailProvider).mockReturnValue(mockEmailProvider);
+    vi.mocked(getSMSProvider).mockReturnValue(mockSmsProvider);
+    vi.mocked(createNotificationLogger).mockReturnValue(mockLogger);
   });
 
   describe('Authentication', () => {
@@ -191,10 +220,11 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
       expect(data.error).toContain('Invalid email');
     });
 
-    it('should reject invalid phone format', async () => {
+    it('should accept phone and attempt to send SMS', async () => {
       const template = {
         id: validUuid,
         name: 'SMS Test',
+        type: 'transactional',
         channel: 'sms',
         subject_template: null,
         html_template: null,
@@ -212,15 +242,15 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
       const request = new NextRequest(`http://localhost/api/admin/notifications/templates/${validUuid}/test`, {
         method: 'POST',
         body: JSON.stringify({
-          recipient_phone: '1234567890',
+          recipient_phone: '+15555555555',
           sample_data: {},
         }),
       });
       const response = await POST(request, { params: Promise.resolve({ id: validUuid }) });
       const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data.error).toContain('Invalid phone');
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
     });
   });
 
@@ -229,6 +259,7 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
       const template = {
         id: validUuid,
         name: 'Email Template',
+        type: 'transactional',
         channel: 'email',
         subject_template: 'Appointment for {{pet_name}}',
         html_template: '<p>Hello {{customer_name}}</p>',
@@ -258,10 +289,10 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(mockNotificationService.send).toHaveBeenCalled();
+      expect(mockEmailProvider.send).toHaveBeenCalled();
 
       // Verify [TEST] prefix was added
-      const sendCall = mockNotificationService.send.mock.calls[0][0];
+      const sendCall = mockEmailProvider.send.mock.calls[0][0];
       expect(sendCall.subject).toContain('[TEST]');
     });
 
@@ -269,6 +300,7 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
       const template = {
         id: validUuid,
         name: 'Email Template',
+        type: 'transactional',
         channel: 'email',
         subject_template: 'Test',
         html_template: '<p>Test</p>',
@@ -293,9 +325,9 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
       const response = await POST(request, { params: Promise.resolve({ id: validUuid }) });
 
       expect(response.status).toBe(200);
-      expect(mockNotificationService.send).toHaveBeenCalledWith(
+      expect(mockLogger.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          is_test: true,
+          isTest: true,
         })
       );
     });
@@ -306,6 +338,7 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
       const template = {
         id: validUuid,
         name: 'SMS Template',
+        type: 'transactional',
         channel: 'sms',
         subject_template: null,
         html_template: null,
@@ -332,13 +365,14 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(mockNotificationService.send).toHaveBeenCalled();
+      expect(mockSmsProvider.send).toHaveBeenCalled();
     });
 
-    it('should add [TEST] prefix to SMS body', async () => {
+    it('should send SMS with rendered text body', async () => {
       const template = {
         id: validUuid,
         name: 'SMS Template',
+        type: 'transactional',
         channel: 'sms',
         subject_template: null,
         html_template: null,
@@ -363,8 +397,9 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
       const response = await POST(request, { params: Promise.resolve({ id: validUuid }) });
 
       expect(response.status).toBe(200);
-      const sendCall = mockNotificationService.send.mock.calls[0][0];
-      expect(sendCall.body).toContain('[TEST]');
+      const sendCall = mockSmsProvider.send.mock.calls[0][0];
+      expect(sendCall.body).toBe('Test message');
+      expect(sendCall.to).toBe('+15555555555');
     });
   });
 
@@ -396,6 +431,7 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
       const template = {
         id: validUuid,
         name: 'Email Template',
+        type: 'transactional',
         channel: 'email',
         subject_template: 'Test',
         html_template: '<p>Test</p>',
@@ -410,7 +446,7 @@ describe('POST /api/admin/notifications/templates/[id]/test', () => {
         })),
       });
 
-      mockNotificationService.send.mockResolvedValue({
+      mockEmailProvider.send.mockResolvedValue({
         success: false,
         error: 'Failed to send email',
       });

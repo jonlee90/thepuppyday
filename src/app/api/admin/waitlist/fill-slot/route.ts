@@ -5,7 +5,7 @@
  * Creates slot offer and sends SMS notifications to selected waitlist customers.
  */
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -77,6 +77,7 @@ const fillSlotSchema = z.object({
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Check admin authorization
     const admin = await requireAdmin(supabase);

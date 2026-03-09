@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Search, XCircle } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import type { Addon, Breed } from '@/types/database';
 
 interface AddOnFormProps {
@@ -173,12 +174,13 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
         throw new Error(data.error || 'Failed to save add-on');
       }
 
+      toast.success(addon ? 'Add-on updated' : 'Add-on created');
       setIsDirty(false);
       onSuccess();
       onClose();
     } catch (error) {
-      console.error('Error saving add-on:', error);
-      alert(error instanceof Error ? error.message : 'Failed to save add-on');
+      console.error('[AddOnForm] save error:', error);
+      toast.error(addon ? 'Failed to update add-on' : 'Failed to create add-on');
     } finally {
       setIsSubmitting(false);
     }

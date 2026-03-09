@@ -10,13 +10,14 @@ import { GET, POST } from '@/app/api/cron/notifications/retry/route';
 // Mock modules
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
 }));
 
 vi.mock('@/lib/notifications', () => ({
   getNotificationService: vi.fn(),
 }));
 
-const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+const { createServerSupabaseClient, createServiceRoleClient } = await import('@/lib/supabase/server');
 const { getNotificationService } = await import('@/lib/notifications');
 
 describe('Retry Processing Cron Job', () => {
@@ -42,6 +43,7 @@ describe('Retry Processing Cron Job', () => {
     };
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabase);
     vi.mocked(getNotificationService).mockReturnValue(mockNotificationService);
   });
 

@@ -1,19 +1,25 @@
 /**
  * Auth layout - Clean & elegant professional layout for login/register pages
  * Uses marketing footer for consistency
+ *
+ * NOTE: AuthLayout is intentionally synchronous (no async/await at the layout level).
+ * Moving data fetching into AuthFooter prevents Next.js from wrapping the entire
+ * layout content in an internal streaming Suspense boundary, which caused a
+ * hydration mismatch between the server's <Suspense> placeholder and the client's
+ * <div className="w-full max-w-md"> wrapper.
  */
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Footer } from '@/components/marketing/footer';
 import { getBusinessInfo } from '@/lib/site-content';
 
-export default async function AuthLayout({
+export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const businessInfo = await getBusinessInfo();
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header matching marketing style */}
@@ -57,8 +63,15 @@ export default async function AuthLayout({
         </div>
       </main>
 
-      {/* Marketing footer for consistency */}
-      <Footer businessInfo={businessInfo} />
+      {/* Footer fetches its own data in a sub-component to keep layout synchronous */}
+      <Suspense fallback={<div className="bg-[#EAE0D5] h-16" />}>
+        <AuthFooter />
+      </Suspense>
     </div>
   );
+}
+
+async function AuthFooter() {
+  const businessInfo = await getBusinessInfo();
+  return <Footer businessInfo={businessInfo} />;
 }

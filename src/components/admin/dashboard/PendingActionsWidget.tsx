@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, PawPrint } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { formatTime } from '@/lib/utils';
+import { format, formatDistanceToNow } from 'date-fns';
 import type { Tables } from '@/types/supabase';
 
 type Appointment = Tables<'appointments'> & {
@@ -82,10 +83,17 @@ export function PendingActionsWidget({
         </div>
         <div className="divide-y divide-[#EAE0D5]">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="py-3 flex items-center justify-between gap-3">
-              <div className="flex flex-col gap-1.5 flex-1">
-                <div className="h-4 w-32 bg-[#EAE0D5] animate-pulse rounded" />
-                <div className="h-3 w-24 bg-[#EAE0D5] animate-pulse rounded" />
+            <div key={i} className="py-3 flex items-center justify-between gap-4">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1">
+                <div className="flex flex-col gap-1">
+                  <div className="h-4 w-32 bg-[#EAE0D5] animate-pulse rounded" />
+                  <div className="h-3 w-24 bg-[#EAE0D5] animate-pulse rounded" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="h-3 w-20 bg-[#EAE0D5] animate-pulse rounded" />
+                  <div className="h-3 w-16 bg-[#EAE0D5] animate-pulse rounded" />
+                </div>
+                <div className="h-3 w-24 bg-[#EAE0D5] animate-pulse rounded mt-1" />
               </div>
               <div className="h-7 w-16 bg-[#EAE0D5] animate-pulse rounded" />
             </div>
@@ -140,25 +148,41 @@ export function PendingActionsWidget({
             const timeStr = formatTime(new Date(appt.scheduled_at));
             const isConfirming = confirmingId === appt.id;
 
+            const scheduledDate = new Date(appt.scheduled_at);
+            const apptDate = format(scheduledDate, 'EEE, MMM d');
+            const createdAgo = appt.created_at
+              ? formatDistanceToNow(new Date(appt.created_at), { addSuffix: true })
+              : null;
+
             return (
               <motion.li
                 key={appt.id}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, ease: 'easeOut', delay: index * 0.06 }}
-                className="py-3 flex items-center justify-between gap-3"
+                className="py-3 flex items-center justify-between gap-4"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-[#434E54] truncate">{customerName}</p>
-                  <p className="text-xs text-[#434E54]/60 truncate">
-                    {[petName, serviceName].filter(Boolean).join(' \u00b7 ')}
-                  </p>
-                  <p className="text-xs text-[#434E54]/50">{timeStr}</p>
+                <div className="min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-0.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[#434E54] truncate">{customerName}</p>
+                    <p className="text-xs text-[#434E54]/60 truncate">
+                      {[petName, serviceName].filter(Boolean).join(' \u00b7 ')}
+                    </p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-[#434E54]/80">{apptDate}</p>
+                    <p className="text-xs text-[#434E54]/50">{timeStr}</p>
+                  </div>
+                  <div className="min-w-0">
+                    {createdAgo ? (
+                      <p className="text-xs text-[#434E54]/40">Booked {createdAgo}</p>
+                    ) : null}
+                  </div>
                 </div>
                 <button
                   onClick={() => handleConfirm(appt.id)}
                   disabled={isConfirming}
-                  className="btn btn-xs bg-[#434E54] hover:bg-[#363F44] text-white border-none flex-shrink-0 disabled:opacity-60"
+                  className="btn btn-sm bg-[#434E54] hover:bg-[#363F44] text-white border-none flex-shrink-0 disabled:opacity-60 min-w-[88px]"
                   aria-label={`Confirm appointment for ${customerName}`}
                 >
                   {isConfirming ? (

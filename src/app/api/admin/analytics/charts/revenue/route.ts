@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { config } from '@/lib/config';
 
@@ -59,15 +59,13 @@ export async function GET(request: NextRequest) {
 
         const services = Math.floor(Math.random() * 15000) + 10000;
         const addons = Math.floor(Math.random() * 3000) + 1000;
-        const memberships = Math.floor(Math.random() * 2000) + 500;
-        const total = services + addons + memberships;
+        const total = services + addons;
         const appointments = Math.floor(Math.random() * 50) + 30;
 
         mockData.push({
           period: formatPeriod(date, periodFormat),
           services,
           addons,
-          memberships,
           avgBookingValue: Math.floor(total / appointments),
         });
       }
@@ -77,11 +75,12 @@ export async function GET(request: NextRequest) {
 
     // Production implementation - require admin auth
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Fetch all completed appointments with basic data
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: appointments, error: apptError } = await (supabase as any)
+    const { data: appointments, error: apptError } = await (serviceClient as any)
       .from('appointments')
       .select('id, scheduled_at, total_price, service_id')
       .gte('scheduled_at', startDate.toISOString())
@@ -99,7 +98,7 @@ export async function GET(request: NextRequest) {
 
     if (serviceIds.length > 0) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: services } = await (supabase as any)
+      const { data: services } = await (serviceClient as any)
         .from('services')
         .select('id, base_price')
         .in('id', serviceIds);
@@ -116,7 +115,7 @@ export async function GET(request: NextRequest) {
 
     if (appointmentIds.length > 0) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: appointmentAddons } = await (supabase as any)
+      const { data: appointmentAddons } = await (serviceClient as any)
         .from('appointment_addons')
         .select('appointment_id, price')
         .in('appointment_id', appointmentIds);
@@ -133,7 +132,6 @@ export async function GET(request: NextRequest) {
       {
         services: number;
         addons: number;
-        memberships: number;
         totalRevenue: number;
         appointmentCount: number;
       }
@@ -147,7 +145,6 @@ export async function GET(request: NextRequest) {
         periodData[period] = {
           services: 0,
           addons: 0,
-          memberships: 0,
           totalRevenue: 0,
           appointmentCount: 0,
         };
@@ -161,12 +158,6 @@ export async function GET(request: NextRequest) {
       const addonRevenue = addonsMap[apt.id] || 0;
       periodData[period].addons += addonRevenue;
 
-      // Membership revenue (total - services - addons, assuming remainder is membership)
-      const membershipRevenue = (apt.total_price || 0) - servicePrice - addonRevenue;
-      if (membershipRevenue > 0) {
-        periodData[period].memberships += membershipRevenue;
-      }
-
       periodData[period].totalRevenue += apt.total_price || 0;
       periodData[period].appointmentCount += 1;
     });
@@ -176,7 +167,6 @@ export async function GET(request: NextRequest) {
       period,
       services: Math.round(data.services),
       addons: Math.round(data.addons),
-      memberships: Math.round(data.memberships),
       avgBookingValue:
         data.appointmentCount > 0 ? Math.round(data.totalRevenue / data.appointmentCount) : 0,
     }));

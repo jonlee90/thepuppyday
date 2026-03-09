@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { NotificationSettingsRow } from '@/lib/notifications/database-types';
 
@@ -49,6 +49,9 @@ export async function PUT(
     await requireAdmin(supabase);
     const { notification_type } = await params;
 
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
+
     // Validate notification_type is not empty
     if (!notification_type || notification_type.trim() === '') {
       return NextResponse.json(
@@ -68,7 +71,7 @@ export async function PUT(
     } = body;
 
     // Check if notification_type exists
-    const { data: existingSettings, error: fetchError } = (await (supabase as any)
+    const { data: existingSettings, error: fetchError } = (await (serviceClient as any)
       .from('notification_settings')
       .select('notification_type')
       .eq('notification_type', notification_type)
@@ -169,7 +172,7 @@ export async function PUT(
     }
 
     // Update the settings
-    const { data: settings, error: updateError } = (await (supabase as any)
+    const { data: settings, error: updateError } = (await (serviceClient as any)
       .from('notification_settings')
       .update(updateData)
       .eq('notification_type', notification_type)

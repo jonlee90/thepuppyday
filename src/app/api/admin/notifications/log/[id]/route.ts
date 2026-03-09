@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { isValidUUID } from '@/lib/utils/validation';
 
@@ -51,8 +51,11 @@ export async function GET(
       );
     }
 
+    // Data queries use service role client to bypass RLS
+    const serviceClient = createServiceRoleClient();
+
     // Fetch log entry with LEFT JOIN to users table
-    const { data: log, error } = await (supabase as any)
+    const { data: log, error } = await (serviceClient as any)
       .from('notifications_log')
       .select(`
         id,

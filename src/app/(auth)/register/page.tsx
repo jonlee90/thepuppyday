@@ -45,6 +45,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (result.requiresEmailConfirmation) {
+      router.push('/login?message=confirm-email');
+      return;
+    }
+
     router.push('/dashboard');
   };
 
@@ -101,7 +106,7 @@ export default function RegisterPage() {
           />
 
           <Input
-            label="Phone (optional)"
+            label="Phone"
             type="tel"
             placeholder="+1 (555) 123-4567"
             error={errors.phone?.message}

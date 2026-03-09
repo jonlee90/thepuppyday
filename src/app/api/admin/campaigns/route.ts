@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { MarketingCampaign, CreateCampaignInput, CampaignStatus } from '@/types/marketing';
 
@@ -16,6 +16,7 @@ import type { MarketingCampaign, CreateCampaignInput, CampaignStatus } from '@/t
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
 
     // Parse query parameters
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Production Supabase query
-    let query = (supabase as any)
+    let query = (serviceClient as any)
       .from('marketing_campaigns')
       .select(
         `
@@ -126,6 +127,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
 
     // Parse request body
@@ -187,7 +189,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Production Supabase insert
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (serviceClient as any)
       .from('marketing_campaigns')
       .insert({
         name: body.name,

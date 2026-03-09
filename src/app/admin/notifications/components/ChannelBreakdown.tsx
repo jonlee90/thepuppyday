@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Mail, MessageSquare } from 'lucide-react';
 import type { NotificationsByChannel } from '@/types/notifications-dashboard';
 
@@ -7,7 +8,7 @@ interface ChannelBreakdownProps {
   data: NotificationsByChannel;
 }
 
-export function ChannelBreakdown({ data }: ChannelBreakdownProps) {
+export const ChannelBreakdown = memo(function ChannelBreakdown({ data }: ChannelBreakdownProps) {
   const channels = [
     {
       name: 'Email',
@@ -100,4 +101,4 @@ export function ChannelBreakdown({ data }: ChannelBreakdownProps) {
       </div>
     </div>
   );
-}
+});

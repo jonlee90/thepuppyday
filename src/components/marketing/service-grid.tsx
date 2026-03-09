@@ -8,9 +8,10 @@ import type { Service } from '@/types/database';
 
 interface ServiceGridProps {
   services: Service[];
+  addons: Array<{ id: string; name: string; price: number }>;
 }
 
-export function ServiceGrid({ services }: ServiceGridProps) {
+export function ServiceGrid({ services, addons }: ServiceGridProps) {
   // Filter to show only Basic and Premium services (not database add-ons)
   const groomingServices = services.filter((service) => {
     const name = service.name.toLowerCase();
@@ -59,6 +60,7 @@ export function ServiceGrid({ services }: ServiceGridProps) {
             key={service === 'add-ons-info' ? 'add-ons-info' : service.id}
             service={service}
             isFeatured={index === featuredIndex}
+            addons={service === 'add-ons-info' ? addons : undefined}
           />
         ))}
       </div>

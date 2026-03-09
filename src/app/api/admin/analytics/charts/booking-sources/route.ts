@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { config } from '@/lib/config';
 
@@ -62,13 +62,14 @@ export async function GET(request: NextRequest) {
 
     // Production - require admin auth
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // The appointments table does not have a 'source' column.
     // Infer source from status: walk-ins start as 'in_progress' (checked_in),
     // while online/admin bookings start as 'pending' or 'confirmed'.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: appointments, error: apptError } = await (supabase as any)
+    const { data: appointments, error: apptError } = await (serviceClient as any)
       .from('appointments')
       .select('status, scheduled_at, booking_reference')
       .gte('scheduled_at', startDate.toISOString())

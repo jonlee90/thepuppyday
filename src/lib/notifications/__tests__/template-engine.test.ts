@@ -251,8 +251,8 @@ describe('HandlebarsTemplateEngine', () => {
 
       const count = engine.calculateCharacterCount(template, variables);
 
-      // 30 + ", your pet " (12) + 20 + " is ready!" (10) = 72
-      expect(count).toBe(72);
+      // 30 + ", your pet " (11) + 20 + " is ready!" (10) = 71
+      expect(count).toBe(71);
     });
 
     it('should shorten URLs in character count', () => {

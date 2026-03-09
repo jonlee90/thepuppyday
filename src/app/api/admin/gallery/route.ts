@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { GalleryImage, Breed } from '@/types/database';
 import {
@@ -27,13 +27,14 @@ interface GalleryImageWithBreed extends GalleryImage {
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get('filter') || 'all';
 
     // Build query
-    let query = (supabase as any)
+    let query = (serviceClient as any)
       .from('gallery_images')
       .select('*')
       .order('display_order', { ascending: true });
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all breeds for lookup
-    const { data: breeds, error: breedsError } = (await (supabase as any)
+    const { data: breeds, error: breedsError } = (await (serviceClient as any)
       .from('breeds')
       .select('id, name')) as {
       data: Breed[] | null;
@@ -100,6 +101,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const body = await request.json();
@@ -161,7 +163,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the next display_order
-    const { data: existingImages } = (await (supabase as any)
+    const { data: existingImages } = (await (serviceClient as any)
       .from('gallery_images')
       .select('display_order')
       .order('display_order', { ascending: false })
@@ -174,7 +176,7 @@ export async function POST(request: NextRequest) {
       : 1;
 
     // Create gallery image
-    const { data: galleryImage, error: galleryError } = (await (supabase as any)
+    const { data: galleryImage, error: galleryError } = (await (serviceClient as any)
       .from('gallery_images')
       .insert({
         image_url,

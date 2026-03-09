@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import type { CustomerFlag, CustomerFlagType, CustomerFlagColor } from '@/types/database';
 import { getFlagLabel } from './CustomerFlagBadge';
 
@@ -87,9 +88,12 @@ export function CustomerFlagForm({
         throw new Error(result.error || `Failed to ${isEditing ? 'update' : 'create'} flag`);
       }
 
+      toast.success('Flag saved');
       onSuccess();
       handleClose();
     } catch (err) {
+      console.error('[CustomerFlagForm] save error:', err);
+      toast.error('Failed to save flag');
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);

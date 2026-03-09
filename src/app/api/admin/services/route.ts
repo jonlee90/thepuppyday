@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { Service, ServicePrice, PetSize } from '@/types/database';
 import {
@@ -27,10 +27,11 @@ interface ServiceWithPrices extends Service {
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Fetch all services ordered by display_order
-    const { data: services, error: servicesError } = (await (supabase as any)
+    const { data: services, error: servicesError } = (await (serviceClient as any)
       .from('services')
       .select('*')
       .order('display_order', { ascending: true })) as {
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all service prices
-    const { data: allPrices, error: pricesError } = (await (supabase as any)
+    const { data: allPrices, error: pricesError } = (await (serviceClient as any)
       .from('service_prices')
       .select('*')) as {
       data: ServicePrice[] | null;
@@ -79,6 +80,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const body = await request.json();
@@ -146,7 +148,7 @@ export async function POST(request: NextRequest) {
     const sizes: PetSize[] = ['small', 'medium', 'large', 'xlarge'];
 
     // Get the next display_order
-    const { data: existingServices } = (await (supabase as any)
+    const { data: existingServices } = (await (serviceClient as any)
       .from('services')
       .select('display_order')
       .order('display_order', { ascending: false })
@@ -160,7 +162,7 @@ export async function POST(request: NextRequest) {
 
     // Security: Use sanitized values for insert
     // Create service
-    const { data: service, error: serviceError } = (await (supabase as any)
+    const { data: service, error: serviceError } = (await (serviceClient as any)
       .from('services')
       .insert({
         name: nameValidation.sanitized,
@@ -189,20 +191,32 @@ export async function POST(request: NextRequest) {
       price: prices[size],
     }));
 
-    const { data: createdPrices, error: pricesError } = (await (supabase as any)
-      .from('service_prices')
-      .insert(pricesToInsert)
-      .select()) as {
-      data: ServicePrice[] | null;
-      error: Error | null;
-    };
+    let createdPrices: ServicePrice[] | null = null;
+    try {
+      const { data: pricesData, error: pricesError } = (await (serviceClient as any)
+        .from('service_prices')
+        .insert(pricesToInsert)
+        .select()) as {
+        data: ServicePrice[] | null;
+        error: Error | null;
+      };
 
-    if (pricesError) {
-      // Rollback: delete the service
-      // Note: This is a manual rollback and has a race condition window.
-      // For production, consider implementing as a PostgreSQL stored procedure.
-      await (supabase as any).from('services').delete().eq('id', service.id);
-      throw pricesError;
+      if (pricesError) {
+        throw pricesError;
+      }
+
+      createdPrices = pricesData;
+    } catch (priceInsertError) {
+      // Rollback: delete the service since prices failed to create.
+      // Note: This application-level rollback has a small race condition window.
+      // For true atomicity, use a PostgreSQL stored procedure (RPC).
+      console.error('[Admin API] Price insertion failed, rolling back service:', service.id, priceInsertError);
+      try {
+        await (serviceClient as any).from('services').delete().eq('id', service.id);
+      } catch (rollbackError) {
+        console.error('[Admin API] Rollback failed - manual cleanup may be needed for service:', service.id, rollbackError);
+      }
+      throw priceInsertError;
     }
 
     const serviceWithPrices: ServiceWithPrices = {

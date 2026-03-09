@@ -16,16 +16,32 @@ try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const resendModule = require('../../resend/provider');
   ResendProvider = resendModule.ResendProvider;
-} catch {
-  // Production provider not available
+} catch (error: unknown) {
+  if (
+    error instanceof Error &&
+    'code' in error &&
+    (error as NodeJS.ErrnoException).code === 'MODULE_NOT_FOUND'
+  ) {
+    console.debug('[Provider Factory] Resend provider module not found, skipping');
+  } else {
+    console.error('[Provider Factory] Failed to load Resend provider:', error);
+  }
 }
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const twilioModule = require('../../twilio/provider');
   TwilioProvider = twilioModule.TwilioProvider;
-} catch {
-  // Production provider not available
+} catch (error: unknown) {
+  if (
+    error instanceof Error &&
+    'code' in error &&
+    (error as NodeJS.ErrnoException).code === 'MODULE_NOT_FOUND'
+  ) {
+    console.debug('[Provider Factory] Twilio provider module not found, skipping');
+  } else {
+    console.error('[Provider Factory] Failed to load Twilio provider:', error);
+  }
 }
 
 // ============================================================================

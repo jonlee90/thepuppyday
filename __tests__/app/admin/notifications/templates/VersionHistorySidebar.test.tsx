@@ -204,7 +204,7 @@ describe('VersionHistorySidebar', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Confirm Rollback')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /confirm rollback/i })).toBeInTheDocument();
     });
   });
 
@@ -213,8 +213,6 @@ describe('VersionHistorySidebar', () => {
       ok: true,
       json: async () => ({ versions: mockVersions }),
     });
-
-    const alertSpy = vi.spyOn(global, 'alert').mockImplementation(() => {});
 
     render(
       <VersionHistorySidebar
@@ -227,23 +225,20 @@ describe('VersionHistorySidebar', () => {
     const button = screen.getByRole('button', { name: /version history/i });
     fireEvent.click(button);
 
-    await waitFor(async () => {
+    // Open the rollback modal
+    await waitFor(() => {
       const rollbackButtons = screen.getAllByRole('button', {
         name: /rollback to this version/i,
       });
       fireEvent.click(rollbackButtons[0]);
-
-      // Wait for modal
-      await new Promise((resolve) => setTimeout(resolve, 100));
     });
 
+    // The confirm button should be disabled when no reason is entered
     await waitFor(() => {
       const confirmButtons = screen.getAllByRole('button', { name: /confirm rollback/i });
-      fireEvent.click(confirmButtons[0]);
+      // Button is disabled when reason is empty — enforce the validation via disabled state
+      expect(confirmButtons[0]).toBeDisabled();
     });
-
-    expect(alertSpy).toHaveBeenCalledWith('Please provide a reason for the rollback');
-    alertSpy.mockRestore();
   });
 
   it('performs rollback successfully', async () => {
@@ -366,7 +361,8 @@ describe('VersionHistorySidebar', () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(screen.getByText(/Fields changed:/i)).toBeInTheDocument();
+      const changedFields = screen.getAllByText(/Fields changed:/i);
+      expect(changedFields.length).toBeGreaterThan(0);
     });
   });
 });

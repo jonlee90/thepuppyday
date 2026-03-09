@@ -2,7 +2,7 @@
  * Hook for booking creation logic
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
 import { getMockStore } from '@/mocks/supabase/store';
@@ -29,8 +29,30 @@ export function useBooking() {
     totalPrice,
     guestInfo,
     selectedGroomerId,
+    setSelectedGroomerId,
     setBookingResult,
   } = useBookingStore();
+
+  // Auto-apply default groomer for all booking modes when none is selected
+  useEffect(() => {
+    if (selectedGroomerId !== null) return;
+
+    const applyDefaultGroomer = async () => {
+      try {
+        const response = await fetch('/api/admin/settings/default-groomer');
+        if (!response.ok) return;
+
+        const result = await response.json();
+        if (result.data?.groomer_id) {
+          setSelectedGroomerId(result.data.groomer_id);
+        }
+      } catch {
+        // Silently fail — default groomer is optional
+      }
+    };
+
+    applyDefaultGroomer();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createBooking = useCallback(async (): Promise<BookingResult> => {
     console.log('[useBooking] Starting booking creation, useMocks:', config.useMocks);

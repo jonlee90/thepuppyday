@@ -39,8 +39,10 @@ describe('SmsCharacterCounter', () => {
     // But wait - let me check actual length
     // Original: "Hello {{customer_name}}, your appointment is at {{appointment_time}}" = 72 chars
     // After replacement: "Hello " + 50 + ", your appointment is at " + 20 = 6 + 50 + 28 + 20 = 104
-    // Actually let's be more lenient and just check it has characters
-    expect(screen.getByText(/\d+ characters/)).toBeInTheDocument();
+    // Multiple elements may match /\d+ characters/ (count display + helper text)
+    // Use getAllByText and verify at least one matches
+    const charElements = screen.getAllByText(/\d+ characters/);
+    expect(charElements.length).toBeGreaterThan(0);
   });
 
   it('shows ok status for content under 160 characters', () => {

@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { Service, ServicePrice, PetSize } from '@/types/database';
 import {
@@ -32,6 +32,7 @@ export async function GET(
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
     const { id } = await params;
 
@@ -40,28 +41,25 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid service ID format' }, { status: 400 });
     }
 
-    // Fetch service
-    const { data: service, error: serviceError } = (await (supabase as any)
-      .from('services')
-      .select('*')
-      .eq('id', id)
-      .single()) as {
-      data: Service | null;
-      error: Error | null;
-    };
+    // Fetch service and prices in parallel
+    const [serviceResult, pricesResult] = await Promise.all([
+      (serviceClient as any)
+        .from('services')
+        .select('*')
+        .eq('id', id)
+        .single() as Promise<{ data: Service | null; error: Error | null }>,
+      (serviceClient as any)
+        .from('service_prices')
+        .select('*')
+        .eq('service_id', id) as Promise<{ data: ServicePrice[] | null; error: Error | null }>,
+    ]);
+
+    const { data: service, error: serviceError } = serviceResult;
+    const { data: prices, error: pricesError } = pricesResult;
 
     if (serviceError || !service) {
       return NextResponse.json({ error: 'Service not found' }, { status: 404 });
     }
-
-    // Fetch prices
-    const { data: prices, error: pricesError } = (await (supabase as any)
-      .from('service_prices')
-      .select('*')
-      .eq('service_id', id)) as {
-      data: ServicePrice[] | null;
-      error: Error | null;
-    };
 
     if (pricesError) {
       throw pricesError;
@@ -91,6 +89,7 @@ export async function PATCH(
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
     const { id } = await params;
 
@@ -169,8 +168,7 @@ export async function PATCH(
     }
 
     // Update service
-    console.log('[Admin API] Updating service:', id, 'with data:', serviceUpdate);
-    const { data: service, error: serviceError } = (await (supabase as any)
+    const { data: service, error: serviceError } = (await (serviceClient as any)
       .from('services')
       .update(serviceUpdate)
       .eq('id', id)
@@ -179,8 +177,6 @@ export async function PATCH(
       data: Service | null;
       error: Error | null;
     };
-
-    console.log('[Admin API] Update result:', { service, serviceError });
 
     if (serviceError || !service) {
       console.error('[Admin API] Service update failed:', serviceError);
@@ -215,7 +211,7 @@ export async function PATCH(
 
       // Update each price individually
       for (const size of sizes) {
-        const { error: priceError } = await (supabase as any)
+        const { error: priceError } = await (serviceClient as any)
           .from('service_prices')
           .update({ price: prices[size] })
           .eq('service_id', id)
@@ -228,7 +224,7 @@ export async function PATCH(
     }
 
     // Fetch updated prices
-    const { data: updatedPrices, error: pricesError } = (await (supabase as any)
+    const { data: updatedPrices, error: pricesError } = (await (serviceClient as any)
       .from('service_prices')
       .select('*')
       .eq('service_id', id)) as {
@@ -264,6 +260,7 @@ export async function DELETE(
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
     const { id } = await params;
 
@@ -273,7 +270,7 @@ export async function DELETE(
     }
 
     // Security: Check for existing appointments before deletion
-    const { data: appointments, error: apptError } = (await (supabase as any)
+    const { data: appointments, error: apptError } = (await (serviceClient as any)
       .from('appointments')
       .select('id')
       .eq('service_id', id)
@@ -297,7 +294,7 @@ export async function DELETE(
     }
 
     // Delete service prices first
-    const { error: pricesError } = await (supabase as any)
+    const { error: pricesError } = await (serviceClient as any)
       .from('service_prices')
       .delete()
       .eq('service_id', id);
@@ -307,7 +304,7 @@ export async function DELETE(
     }
 
     // Delete service
-    const { error: serviceError } = await (supabase as any)
+    const { error: serviceError } = await (serviceClient as any)
       .from('services')
       .delete()
       .eq('id', id);

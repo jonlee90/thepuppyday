@@ -7,7 +7,8 @@
  * @param value - Raw input value
  * @returns Formatted phone number string
  */
-export function formatPhoneNumber(value: string): string {
+export function formatPhoneNumber(value: string | null | undefined): string {
+  if (!value) return '';
   // Remove all non-digit characters
   const digits = value.replace(/\D/g, '');
 
@@ -26,6 +27,7 @@ export function formatPhoneNumber(value: string): string {
  * @param value - Formatted phone number
  * @returns Unformatted phone number (digits only)
  */
-export function unformatPhoneNumber(value: string): string {
+export function unformatPhoneNumber(value: string | null | undefined): string {
+  if (!value) return '';
   return value.replace(/\D/g, '');
 }

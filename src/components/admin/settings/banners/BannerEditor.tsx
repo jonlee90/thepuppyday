@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Upload, AlertCircle } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PromoBanner } from '@/types/database';
 import { cn } from '@/lib/utils';
@@ -98,7 +99,7 @@ export function BannerEditor({ bannerId, isOpen, onClose, onSuccess }: BannerEdi
       });
     } catch (err) {
       console.error('Error fetching banner:', err);
-      alert('Failed to load banner. Please try again.');
+      toast.error('Failed to load banner');
       onClose();
     } finally {
       setIsLoading(false);
@@ -184,12 +185,13 @@ export function BannerEditor({ bannerId, isOpen, onClose, onSuccess }: BannerEdi
         throw new Error(data.error || 'Failed to save banner');
       }
 
+      toast.success('Banner saved');
       setHasUnsavedChanges(false);
       onSuccess();
       onClose();
     } catch (err) {
-      console.error('Error saving banner:', err);
-      alert(err instanceof Error ? err.message : 'Failed to save banner. Please try again.');
+      console.error('[BannerEditor] save error:', err);
+      toast.error('Failed to save banner');
     } finally {
       setIsSaving(false);
     }

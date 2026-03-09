@@ -10,6 +10,7 @@ import { GET } from '@/app/api/admin/notifications/templates/[id]/route';
 // Mock modules
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
 }));
 
 vi.mock('@/lib/admin/auth', () => ({
@@ -20,7 +21,7 @@ vi.mock('@/lib/utils/validation', () => ({
   isValidUUID: vi.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
 }));
 
-const { createServerSupabaseClient } = await import('@/lib/supabase/server');
+const { createServerSupabaseClient, createServiceRoleClient } = await import('@/lib/supabase/server');
 const { requireAdmin } = await import('@/lib/admin/auth');
 
 describe('GET /api/admin/notifications/templates/[id]', () => {
@@ -41,6 +42,7 @@ describe('GET /api/admin/notifications/templates/[id]', () => {
     };
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabase);
     vi.mocked(requireAdmin).mockResolvedValue({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       user: { id: 'admin-1', role: 'admin' } as any,
@@ -207,7 +209,7 @@ describe('GET /api/admin/notifications/templates/[id]', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle database errors', async () => {
+    it('should return 404 when database returns an error', async () => {
       mockSupabase.from.mockReturnValue({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
@@ -224,8 +226,8 @@ describe('GET /api/admin/notifications/templates/[id]', () => {
       const response = await GET(request, { params: Promise.resolve({ id: validUuid }) });
       const data = await response.json();
 
-      expect(response.status).toBe(500);
-      expect(data.error).toBe('Failed to fetch template');
+      expect(response.status).toBe(404);
+      expect(data.error).toBe('Template not found');
     });
 
     it('should handle unexpected errors', async () => {

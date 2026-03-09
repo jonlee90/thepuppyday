@@ -4,7 +4,7 @@
 > **Status**: Core Complete
 > **Base Path**: `/api/`
 > **Framework**: Next.js 14+ App Router API Routes
-> **Last Updated**: 2026-03-06
+> **Last Updated**: 2026-03-07
 
 ## Overview
 
@@ -84,7 +84,7 @@ src/app/api/
 | `/api/services` | GET | Fetch active services with pricing |
 | `/api/addons` | GET | Fetch active add-on services |
 | `/api/breeds` | GET | Fetch breed list |
-| `/api/availability` | GET | Check appointment availability by date/service |
+| `/api/availability` | GET | Check appointment availability by date/service (uses service role client to bypass RLS) |
 | `/api/appointments` | POST | Create new appointment (customer booking) |
 | `/api/pets` | GET, POST | List/create pets (authenticated) |
 | `/api/waitlist` | POST | Add to waitlist for full slots |
@@ -102,7 +102,7 @@ src/app/api/
 
 | Route | Methods | Purpose |
 |-------|---------|---------|
-| `/api/customer/appointments/[id]` | DELETE | Cancel appointment |
+| `/api/customer/appointments/[id]` | PUT, DELETE | Reschedule or cancel appointment |
 | `/api/customer/preferences/notifications` | GET, PUT | Notification preferences |
 
 ### Webhook Endpoints
@@ -320,6 +320,19 @@ Admin/groomer role required via `requireAdmin()` from `src/lib/admin/auth.ts`.
 For admin routes querying customer data:
 1. Authenticate with `createServerSupabaseClient()` + `requireAdmin()`
 2. Query data with `createServiceRoleClient()` to bypass RLS
+
+**Variable Naming**: Two patterns exist (both valid):
+- **Pattern A**: `authSupabase` (session) / `supabase` (service role) — used in `appointments/[id]`, `customers/[id]`, `report-cards`
+- **Pattern B**: `supabase` (session) / `serviceClient` (service role) — used in `services/[id]`, `waitlist/[id]/book`, `complete-past`
+
+**CRITICAL**: Never mix variable names across patterns. All DB queries must use the service role client, not the session client.
+
+**Performance**: Parallelize independent queries with `Promise.all()`. Applied in:
+- `customers/[id]` GET — pets, flags, loyalty, transactions fetched in parallel
+- `services/[id]` GET — service + prices fetched in parallel
+- `waitlist/[id]/book` POST — pet size + day's appointments fetched in parallel
+
+**Security**: All admin endpoints MUST call `requireAdmin()`. The `waitlist/[id]/book` route was missing this check and was fixed.
 
 ---
 

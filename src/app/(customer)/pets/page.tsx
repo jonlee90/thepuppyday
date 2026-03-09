@@ -7,7 +7,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PetCardSkeletonGrid } from '@/components/ui/skeletons';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getCurrentUser } from '@/lib/supabase/server';
 
 // Fetch pets
 async function getPets(userId: string) {
@@ -22,23 +22,6 @@ async function getPets(userId: string) {
   return pets || [];
 }
 
-// Get user info from session
-async function getUserInfo() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.user) {
-    return null;
-  }
-
-  const { data: userData } = await (supabase as any)
-    .from('users')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
-
-  return userData;
-}
 
 // Size to label mapping
 const sizeLabels: Record<string, string> = {
@@ -49,7 +32,7 @@ const sizeLabels: Record<string, string> = {
 };
 
 export default async function PetsPage() {
-  const userData = await getUserInfo();
+  const userData = await getCurrentUser();
 
   if (!userData) {
     return null;
@@ -138,15 +121,15 @@ function PetCard({ pet }: { pet: any }) {
       <div className="p-4">
         <h3 className="font-bold text-lg text-[#434E54] mb-1">{pet.name}</h3>
         <p className="text-sm text-[#434E54]/60 mb-2">
-          {pet.breed_name || 'Breed not specified'}
+          {pet.breed_custom || 'Breed not specified'}
         </p>
         <div className="flex items-center gap-3 text-xs text-[#434E54]/50">
-          {pet.weight_lbs && (
+          {pet.weight && (
             <span className="flex items-center gap-1">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
               </svg>
-              {pet.weight_lbs} lbs
+              {pet.weight} lbs
             </span>
           )}
           {pet.size && (

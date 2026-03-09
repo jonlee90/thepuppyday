@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { ReportCard } from '@/types/database';
 
@@ -108,11 +108,12 @@ export async function GET(request: NextRequest) {
 
     // Production implementation - require admin auth
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Fetch report cards within date range
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: reportCards, error } = (await (supabase as any)
+    const { data: reportCards, error } = (await (serviceClient as any)
       .from('report_cards')
       .select('*')
       .gte('created_at', startDate.toISOString())

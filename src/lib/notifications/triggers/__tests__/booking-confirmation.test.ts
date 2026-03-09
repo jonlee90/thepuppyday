@@ -225,8 +225,10 @@ describe('triggerBookingConfirmation', () => {
         (call: any) => call[1].channel === 'email'
       );
 
-      expect(emailCall[1].templateData.appointment_date).toBe('Saturday, December 20, 2025');
-      expect(emailCall[1].templateData.appointment_time).toBe('10:00 AM');
+      // Date should be formatted as weekday, month day, year
+      expect(emailCall[1].templateData.appointment_date).toMatch(/^\w+, \w+ \d+, \d{4}$/);
+      // Time should be formatted as h:mm AM/PM (timezone-agnostic check)
+      expect(emailCall[1].templateData.appointment_time).toMatch(/^\d{1,2}:\d{2} (AM|PM)$/);
     });
 
     it('should format price correctly', async () => {

@@ -590,6 +590,16 @@ export const ReferralSchema = z.object({
   status: z.enum(['pending', 'completed', 'cancelled']),
 });
 
+// ===== DEFAULT GROOMER =====
+
+export interface DefaultGroomerSetting {
+  groomer_id: string | null;
+}
+
+export const DefaultGroomerSettingSchema = z.object({
+  groomer_id: z.string().uuid().nullable(),
+});
+
 // ===== AUDIT LOG =====
 
 /**

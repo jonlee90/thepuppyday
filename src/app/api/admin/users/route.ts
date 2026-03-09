@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import type { User } from '@/types/database';
 
@@ -26,13 +26,14 @@ interface UserResponse {
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role');
 
     // Build query
-    let query = (supabase as any).from('users').select('*');
+    let query = (serviceClient as any).from('users').select('*');
 
     // Filter by role if specified
     if (role) {

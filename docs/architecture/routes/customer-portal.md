@@ -4,7 +4,7 @@
 > **Status**: Completed (Phase 4)
 > **Base Path**: `(customer)/`
 > **Authentication**: Required (customer, admin, or groomer role)
-> **Last Updated**: 2026-03-06
+> **Last Updated**: 2026-03-07
 
 ## Overview
 
@@ -33,8 +33,6 @@ src/app/(customer)/
 │   └── page.tsx            # User profile (/profile)
 ├── loyalty/
 │   └── page.tsx            # Loyalty program (/loyalty)
-├── membership/
-│   └── page.tsx            # Membership status (/membership)
 └── report-cards/
     └── page.tsx            # Report cards list (/report-cards)
 ```
@@ -89,12 +87,16 @@ Client component (`'use client'`) that uses the `useAuth` hook for user data.
 
 Welcome message, upcoming appointments, recent report cards, loyalty points, quick actions.
 
+**QuickActions** (`src/components/customer/dashboard/QuickActions.tsx`): Quick action grid with Book Appointment, Add Pet, View Report Cards, Loyalty Rewards. Uses `useMemo` for derived `quickActions` array and `useCallback` for the booking modal handler to prevent unnecessary re-renders.
+
 ### 2. Appointments (`/appointments`)
 **File**: `src/app/(customer)/appointments/page.tsx`
 
 List of all appointments (upcoming and past) with status filters and sort options.
 
-**Appointment Detail** (`/appointments/[id]`): Full details, service info, addons, cancel/rebook actions.
+**Appointment Detail** (`/appointments/[id]`): Full details, service info, addons, cancel/reschedule/rebook actions. The page passes `serviceDuration`, `petName`, and `serviceName` props to the client component.
+
+**Rescheduling**: The `RescheduleModal` (`src/components/customer/appointments/RescheduleModal.tsx`) provides an in-page rescheduling flow using `CalendarPicker` + `TimeSlotGrid` to select a new date/time. Triggered via the Reschedule button on the appointment detail page (replaces the previous redirect to `/book?reschedule={id}`).
 
 ### 3. Pets (`/pets`)
 **File**: `src/app/(customer)/pets/page.tsx`
@@ -118,12 +120,7 @@ Server component that fetches user data from the `users` table.
 
 Points balance, transaction history, rewards catalog (Phase 7).
 
-### 6. Membership (`/membership`)
-**File**: `src/app/(customer)/membership/page.tsx`
-
-Current membership status, benefits, billing (Phase 7).
-
-### 7. Report Cards (`/report-cards`)
+### 6. Report Cards (`/report-cards`)
 **File**: `src/app/(customer)/report-cards/page.tsx`
 
 Grid of all grooming report cards for the customer's pets with before/after photos.
@@ -144,7 +141,7 @@ The customer portal uses only two custom API routes:
 
 | Route | Methods | Purpose |
 |-------|---------|---------|
-| `/api/customer/appointments/[id]` | DELETE | Cancel an appointment |
+| `/api/customer/appointments/[id]` | PUT, DELETE | Reschedule or cancel an appointment |
 | `/api/customer/preferences/notifications` | GET, PUT | Get/update notification preferences |
 
 **Public report card route**:

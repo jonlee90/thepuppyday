@@ -6,12 +6,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { POST } from '@/app/api/admin/notifications/log/[id]/resend/route';
 import { NextRequest } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { getNotificationService } from '@/lib/notifications';
 
 // Mock dependencies
-vi.mock('@/lib/supabase/server');
+vi.mock('@/lib/supabase/server', () => ({
+  createServerSupabaseClient: vi.fn(),
+  createServiceRoleClient: vi.fn(),
+}));
 vi.mock('@/lib/admin/auth');
 vi.mock('@/lib/notifications');
 
@@ -32,6 +35,7 @@ describe('Admin Notification Resend API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabaseClient as any);
+    vi.mocked(createServiceRoleClient).mockReturnValue(mockSupabaseClient as any);
     vi.mocked(requireAdmin).mockResolvedValue(mockAdmin);
     vi.mocked(getNotificationService).mockReturnValue(mockNotificationService as any);
   });

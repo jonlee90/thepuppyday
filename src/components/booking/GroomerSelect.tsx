@@ -31,6 +31,27 @@ export function GroomerSelect({ value, onChange, className = '' }: GroomerSelect
     fetchGroomers();
   }, []);
 
+  // Fetch and apply default groomer when no groomer is selected
+  useEffect(() => {
+    if (value !== null) return;
+
+    const applyDefaultGroomer = async () => {
+      try {
+        const response = await fetch('/api/admin/settings/default-groomer');
+        if (!response.ok) return;
+
+        const result = await response.json();
+        if (result.data?.groomer_id) {
+          onChange(result.data.groomer_id);
+        }
+      } catch {
+        // Silently fail — default groomer is optional
+      }
+    };
+
+    applyDefaultGroomer();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fetchGroomers = async () => {
     try {
       setIsLoading(true);

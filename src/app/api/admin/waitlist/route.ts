@@ -5,7 +5,7 @@
  * Fetches waitlist entries with filtering, sorting, and pagination.
  */
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { NextResponse } from 'next/server';
 import type { WaitlistStatus, TimePreference } from '@/types/database';
@@ -47,6 +47,7 @@ interface WaitlistQueryParams {
 export async function GET(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Check admin authorization
     const admin = await requireAdmin(supabase);
@@ -71,7 +72,7 @@ export async function GET(request: Request) {
     };
 
     // Build query
-    let query = (supabase as any)
+    let query = (serviceClient as any)
       .from('waitlist')
       .select(
         `

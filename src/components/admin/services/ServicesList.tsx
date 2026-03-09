@@ -25,6 +25,7 @@ import {
   Plus,
   ImageIcon,
 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import { ServiceForm } from './ServiceForm';
 import type { Service, ServicePrice, PetSize } from '@/types/database';
 
@@ -223,7 +224,7 @@ export function ServicesList({ initialServices = [] }: ServicesListProps) {
       setServices(data.services || []);
     } catch (error) {
       console.error('Error fetching services:', error);
-      alert('Failed to load services');
+      toast.error('Failed to load services');
     } finally {
       setIsLoading(false);
     }
@@ -253,8 +254,10 @@ export function ServicesList({ initialServices = [] }: ServicesListProps) {
           })
         )
       );
+      toast.success('Services reordered');
     } catch (error) {
-      console.error('Error updating display order:', error);
+      console.error('[ServicesList] reorder error:', error);
+      toast.error('Failed to reorder services');
       // Revert on error
       fetchServices();
     }
@@ -276,9 +279,10 @@ export function ServicesList({ initialServices = [] }: ServicesListProps) {
       setServices((prev) =>
         prev.map((s) => (s.id === id ? { ...s, is_active: isActive } : s))
       );
+      toast.success(`Service ${isActive ? 'activated' : 'deactivated'}`);
     } catch (error) {
-      console.error('Error toggling service status:', error);
-      alert('Failed to update service status');
+      console.error('[ServicesList] toggle error:', error);
+      toast.error('Failed to update service');
     }
   };
 

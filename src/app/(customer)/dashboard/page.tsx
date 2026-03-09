@@ -1,35 +1,29 @@
 /**
  * Customer Dashboard Page
- * Shows upcoming appointments, loyalty status, quick actions, and membership info
+ * Redesigned for clarity and warmth — next appointment hero, pets grid, stats, quick actions
  */
 
-import { UpcomingAppointments, QuickActions, MembershipStatus } from '@/components/customer/dashboard';
-import { LoyaltyPunchCard } from '@/components/customer/loyalty';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import Link from 'next/link';
+import { NextAppointmentCard, UpcomingAppointments, DashboardStatsBar } from '@/components/customer/dashboard';
+import { BookAppointmentButton } from '@/components/customer/BookAppointmentButton';
+import { createServerSupabaseClient, getCurrentUser } from '@/lib/supabase/server';
 import type { AppointmentStatus } from '@/types/database';
 
-// Fetch dashboard data - parallelized for better performance
+// Fetch dashboard data — parallelized for performance
 async function getDashboardData(userId: string) {
   const supabase = await createServerSupabaseClient();
 
   try {
-    // Run all queries in parallel for better performance
-    const [
-      petsResult,
-      appointmentsResult,
-      loyaltyDataResult,
-      loyaltySettingsResult,
-      loyaltyPunchesResult,
-      membershipResult,
-    ] = await Promise.all([
-      // Get user's pets with breed info
+    const [petsResult, appointmentsResult, completedCountResult, userResult] = await Promise.all([
+      // Pets with breed info
       (supabase as any)
         .from('pets')
         .select('*, breeds(name)')
         .eq('owner_id', userId)
         .eq('is_active', true),
 
-      // Get upcoming appointments
+      // Upcoming appointments (next 5)
       (supabase as any)
         .from('appointments')
         .select('*, services(name), pets(name, photo_url)')
@@ -38,117 +32,49 @@ async function getDashboardData(userId: string) {
         .order('scheduled_at', { ascending: true })
         .limit(5),
 
-      // Get loyalty data (may not exist yet)
+      // Total completed visits count
       (supabase as any)
-        .from('customer_loyalty')
-        .select('*')
+        .from('appointments')
+        .select('id', { count: 'exact', head: true })
         .eq('customer_id', userId)
-        .single(),
+        .eq('status', 'completed'),
 
-      // Get loyalty settings
+      // User record for member since date
       (supabase as any)
-        .from('loyalty_settings')
-        .select('*')
-        .single(),
-
-      // Get loyalty punches - join through customer_loyalty to filter by customer_id
-      (supabase as any)
-        .from('loyalty_punches')
-        .select('*, customer_loyalty!inner(customer_id)')
-        .eq('customer_loyalty.customer_id', userId)
-        .order('created_at', { ascending: true }),
-
-      // Get membership
-      (supabase as any)
-        .from('customer_memberships')
-        .select('*, memberships(*)')
-        .eq('customer_id', userId)
-        .eq('status', 'active')
+        .from('users')
+        .select('created_at')
+        .eq('id', userId)
         .single(),
     ]);
 
-    // Log errors (but don't crash - return empty data)
-    if (petsResult.error) {
-      console.error('[Dashboard] Error fetching pets:', petsResult.error);
-    }
-    if (appointmentsResult.error) {
-      console.error('[Dashboard] Error fetching appointments:', appointmentsResult.error);
-    }
-    if (loyaltyDataResult.error && loyaltyDataResult.error.code !== 'PGRST116') {
-      console.error('[Dashboard] Error fetching loyalty data:', loyaltyDataResult.error);
-    }
-    if (loyaltySettingsResult.error && loyaltySettingsResult.error.code !== 'PGRST116') {
-      console.error('[Dashboard] Error fetching loyalty settings:', loyaltySettingsResult.error);
-    }
-    if (loyaltyPunchesResult.error && loyaltyPunchesResult.error.code !== 'PGRST116') {
-      console.error('[Dashboard] Error fetching loyalty punches:', loyaltyPunchesResult.error);
-    }
-    if (membershipResult.error && membershipResult.error.code !== 'PGRST116') {
-      console.error('[Dashboard] Error fetching membership:', membershipResult.error);
-    }
+    if (petsResult.error) console.error('[Dashboard] Error fetching pets:', petsResult.error);
+    if (appointmentsResult.error) console.error('[Dashboard] Error fetching appointments:', appointmentsResult.error);
+
+    const appointments = appointmentsResult.data || [];
 
     return {
       pets: petsResult.data || [],
-      appointments: appointmentsResult.data || [],
-      loyalty: loyaltyDataResult.data || null,
-      loyaltySettings: loyaltySettingsResult.data || null,
-      loyaltyPunches: loyaltyPunchesResult.data || [],
-      membership: membershipResult.data || null,
+      appointments,
+      nextAppointment: appointments[0] || null,
+      upcomingRest: appointments.slice(1),
+      totalVisits: completedCountResult.count || 0,
+      memberSince: userResult.data?.created_at || new Date().toISOString(),
     };
   } catch (error) {
-    console.error('[Dashboard] Unexpected error fetching dashboard data:', error);
-    // Return empty data instead of crashing
+    console.error('[Dashboard] Unexpected error:', error);
     return {
       pets: [],
       appointments: [],
-      loyalty: null,
-      loyaltySettings: null,
-      loyaltyPunches: [],
-      membership: null,
+      nextAppointment: null,
+      upcomingRest: [],
+      totalVisits: 0,
+      memberSince: new Date().toISOString(),
     };
   }
 }
 
-// Get user info from session
-async function getUserInfo() {
-  try {
-    const supabase = await createServerSupabaseClient();
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError) {
-      console.error('[Dashboard] Error getting session:', sessionError);
-      return null;
-    }
-
-    if (!session?.user) {
-      console.log('[Dashboard] No active session found');
-      return null;
-    }
-
-    console.log('[Dashboard] Session found for user:', session.user.id);
-
-    const { data: userData, error: userError } = await (supabase as any)
-      .from('users')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
-
-    if (userError) {
-      console.error('[Dashboard] Error fetching user data:', userError);
-      return null;
-    }
-
-    console.log('[Dashboard] User data fetched successfully');
-    return userData;
-  } catch (error) {
-    console.error('[Dashboard] Unexpected error in getUserInfo:', error);
-    return null;
-  }
-}
-
-// Transform appointments for the widget
-function transformAppointments(appointments: any[]) {
-  return appointments.map((apt) => ({
+function transformAppointment(apt: any) {
+  return {
     id: apt.id,
     petName: apt.pets?.name || 'Unknown Pet',
     petPhotoUrl: apt.pets?.photo_url,
@@ -156,32 +82,75 @@ function transformAppointments(appointments: any[]) {
     scheduledAt: apt.scheduled_at,
     status: apt.status as AppointmentStatus,
     totalPrice: apt.total_price || 0,
-  }));
+  };
 }
 
-// Transform loyalty punches
-function transformPunches(punches: any[]) {
-  return punches.map((punch) => ({
-    punchNumber: punch.punch_number,
-    date: punch.created_at,
-    serviceName: punch.service_name,
-  }));
+function transformAppointments(appointments: any[]) {
+  return appointments.map(transformAppointment);
+}
+
+// Pets grid — inline component (server-rendered)
+function PetsGrid({ pets }: { pets: any[] }) {
+  if (pets.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-[#434E54]/10 flex items-center justify-between">
+        <h3 className="font-bold text-[#434E54]">Your Pets</h3>
+        <Link href="/pets" className="text-sm text-[#434E54]/60 hover:text-[#434E54] transition-colors">
+          View All
+        </Link>
+      </div>
+      <div className="p-4 grid grid-cols-2 gap-3">
+        {pets.map((pet: any) => (
+          <Link
+            key={pet.id}
+            href={`/pets/${pet.id}`}
+            className="flex items-center gap-3 p-3 rounded-xl bg-[#F8EEE5]/50 hover:bg-[#EAE0D5]/50 transition-all hover:shadow-sm group"
+          >
+            {/* Photo */}
+            <div className="w-14 h-14 rounded-full bg-[#EAE0D5] flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
+              {pet.photo_url ? (
+                <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
+              ) : (
+                <svg className="w-7 h-7 text-[#434E54]/40" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 13.5c-2.33 0-7 1.17-7 3.5v1.5h14V17c0-2.33-4.67-3.5-7-3.5zm-3.5-5C7.12 8.5 6 9.62 6 11s1.12 2.5 2.5 2.5S11 12.38 11 11s-1.12-2.5-2.5-2.5zm7 0C14.12 8.5 13 9.62 13 11s1.12 2.5 2.5 2.5S18 12.38 18 11s-1.12-2.5-2.5-2.5zm-3.5-5C10.67 3.5 9.5 4.67 9.5 6S10.67 8.5 12 8.5s2.5-1.17 2.5-2.5S13.33 3.5 12 3.5z" />
+                </svg>
+              )}
+            </div>
+            {/* Info */}
+            <div className="min-w-0">
+              <p className="font-semibold text-sm text-[#434E54] truncate">{pet.name}</p>
+              <p className="text-xs text-[#434E54]/60 truncate">{pet.breeds?.name || pet.breed_custom || 'Mixed breed'}</p>
+            </div>
+          </Link>
+        ))}
+        {/* Add pet card */}
+        <Link
+          href="/pets/new"
+          className="flex items-center gap-3 p-3 rounded-xl border-2 border-dashed border-[#434E54]/20 hover:border-[#434E54]/40 text-[#434E54]/50 hover:text-[#434E54]/70 transition-all"
+        >
+          <div className="w-14 h-14 rounded-full bg-[#434E54]/5 flex items-center justify-center flex-shrink-0">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium">Add Pet</p>
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 export default async function CustomerDashboard() {
-  const userData = await getUserInfo();
+  const userData = await getCurrentUser();
 
   if (!userData) {
-    // Show error message instead of null
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-[#434E54] mb-2">
-            Unable to load dashboard
-          </h2>
-          <p className="text-[#434E54]/60">
-            Please try refreshing the page or logging in again.
-          </p>
+          <h2 className="text-xl font-semibold text-[#434E54] mb-2">Unable to load dashboard</h2>
+          <p className="text-[#434E54]/60">Please try refreshing the page or logging in again.</p>
           <a
             href="/login"
             className="mt-4 inline-block px-6 py-2 bg-[#434E54] text-white rounded-lg hover:bg-[#363F44] transition-colors"
@@ -196,114 +165,44 @@ export default async function CustomerDashboard() {
   const data = await getDashboardData(userData.id);
   const firstName = userData.first_name || 'there';
 
-  // Calculate loyalty info
-  const threshold = data.loyalty?.threshold_override || data.loyaltySettings?.default_threshold || 9;
-  const currentPunches = data.loyalty?.current_punches || 0;
-  const freeWashesAvailable = (data.loyalty?.free_washes_earned || 0) - (data.loyalty?.free_washes_redeemed || 0);
-  const isCloseToGoal = threshold - currentPunches <= 2;
-
-  // Transform membership data if exists
-  const membershipData = data.membership ? {
-    planName: data.membership.memberships?.name || 'Membership',
-    status: data.membership.status as 'active' | 'paused' | 'cancelled' | 'expired',
-    currentPeriodEnd: data.membership.current_period_end,
-    groomsRemaining: data.membership.grooms_remaining || 0,
-    groomsPerPeriod: data.membership.memberships?.grooms_per_period || 4,
-    monthlyPrice: data.membership.memberships?.price || 0,
-    benefits: [
-      { label: 'Discounted grooming', included: true },
-      { label: 'Priority booking', included: true },
-      { label: 'Free nail trims', included: true },
-      { label: 'Members-only promotions', included: true },
-    ],
-  } : null;
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Welcome header */}
-      <div className="mb-6">
+      <div>
         <h1 className="text-2xl font-bold text-[#434E54]">
-          Welcome back, {firstName}!
+          Welcome back, {firstName}! 👋
         </h1>
-        <p className="text-[#434E54]/60 mt-1">
+        <p className="text-[#434E54]/60 mt-1 text-sm">
           Here&apos;s what&apos;s happening with your furry friends.
         </p>
       </div>
 
-      {/* Main grid layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column - Main content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Upcoming appointments */}
+      {/* Stats strip */}
+      <DashboardStatsBar
+        totalVisits={data.totalVisits}
+        petCount={data.pets.length}
+        memberSince={data.memberSince}
+      />
+
+      {/* Hero: Next appointment */}
+      <NextAppointmentCard
+        appointment={data.nextAppointment ? transformAppointment(data.nextAppointment) : null}
+      />
+
+      {/* Two-column grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Left: Pets */}
+        <PetsGrid pets={data.pets} />
+
+        {/* Right: Additional upcoming appointments */}
+        {data.upcomingRest.length > 0 && (
           <UpcomingAppointments
-            appointments={transformAppointments(data.appointments)}
+            appointments={transformAppointments(data.upcomingRest)}
             maxItems={3}
           />
-
-          {/* Quick actions */}
-          <QuickActions />
-        </div>
-
-        {/* Right column - Sidebar widgets */}
-        <div className="space-y-6">
-          {/* Loyalty punch card */}
-          <LoyaltyPunchCard
-            currentPunches={currentPunches}
-            threshold={threshold}
-            freeWashesAvailable={freeWashesAvailable}
-            isCloseToGoal={isCloseToGoal}
-            punches={transformPunches(data.loyaltyPunches)}
-            compact
-          />
-
-          {/* Membership status */}
-          <MembershipStatus membership={membershipData} />
-        </div>
+        )}
       </div>
 
-      {/* Pet quick stats (if they have pets) */}
-      {data.pets.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-[#434E54]/10 overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#434E54]/10 flex items-center justify-between">
-              <h3 className="font-bold text-[#434E54]">Your Pets</h3>
-              <a
-                href="/pets"
-                className="text-sm text-[#434E54]/70 hover:text-[#434E54] transition-colors"
-              >
-                View All
-              </a>
-            </div>
-            <div className="p-4">
-              <div className="flex flex-wrap gap-3">
-                {data.pets.slice(0, 4).map((pet: any) => (
-                  <a
-                    key={pet.id}
-                    href={`/pets/${pet.id}`}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-[#EAE0D5]/30 hover:bg-[#EAE0D5]/50 transition-colors min-w-[140px]"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[#EAE0D5] flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {pet.photo_url ? (
-                        <img
-                          src={pet.photo_url}
-                          alt={pet.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <svg className="w-5 h-5 text-[#434E54]/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5c-1.5 0-3 .5-4 1.5l-2 2c-.5.5-1 1.5-1 2.5v5c0 1 .5 2 1.5 2.5l1.5 1 1-2h6l1 2 1.5-1c1-.5 1.5-1.5 1.5-2.5v-5c0-1-.5-2-1-2.5l-2-2c-1-1-2.5-1.5-4-1.5z" />
-                        </svg>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm text-[#434E54]">{pet.name}</p>
-                      <p className="text-xs text-[#434E54]/60">{pet.breeds?.name || pet.breed_custom || 'Pet'}</p>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
     </div>
   );
 }

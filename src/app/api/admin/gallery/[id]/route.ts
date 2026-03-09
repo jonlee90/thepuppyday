@@ -26,6 +26,7 @@ export async function GET(
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
     const { id } = await params;
 
@@ -35,7 +36,7 @@ export async function GET(
     }
 
     // Fetch gallery image
-    const { data: image, error: imageError } = (await (supabase as any)
+    const { data: image, error: imageError } = (await (serviceClient as any)
       .from('gallery_images')
       .select('*')
       .eq('id', id)
@@ -51,7 +52,7 @@ export async function GET(
     // Fetch breed name if breed is set
     let breed_name = null;
     if (image.breed) {
-      const { data: breed, error: breedError } = (await (supabase as any)
+      const { data: breed, error: breedError } = (await (serviceClient as any)
         .from('breeds')
         .select('name')
         .eq('id', image.breed)
@@ -89,6 +90,7 @@ export async function PATCH(
 ) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
     const { id } = await params;
 
@@ -132,7 +134,7 @@ export async function PATCH(
           );
         }
 
-        const { data: breed, error: breedError } = (await (supabase as any)
+        const { data: breed, error: breedError } = (await (serviceClient as any)
           .from('breeds')
           .select('id')
           .eq('id', breed_id)
@@ -184,7 +186,7 @@ export async function PATCH(
     }
 
     // Update gallery image
-    const { data: updatedImage, error: updateError } = (await (supabase as any)
+    const { data: updatedImage, error: updateError } = (await (serviceClient as any)
       .from('gallery_images')
       .update(imageUpdate)
       .eq('id', id)
@@ -221,6 +223,7 @@ export async function DELETE(
   try {
     // Use regular client for auth check
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
     const { id } = await params;
 
@@ -280,7 +283,6 @@ export async function DELETE(
           console.error('[Delete] Storage deletion failed:', storageError);
           // Continue anyway - database entry is already deleted
         } else {
-          console.log(`[Delete] Successfully deleted ${fileName} from storage`);
         }
       }
     } catch (urlError) {

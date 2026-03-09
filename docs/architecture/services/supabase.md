@@ -4,7 +4,7 @@
 > **Location**: `src/lib/supabase/`
 > **Status**: Completed
 > **Provider**: Supabase (PostgreSQL + Auth + Storage + Realtime)
-> **Last Updated**: 2026-03-06
+> **Last Updated**: 2026-03-07
 
 ## Overview
 
@@ -175,19 +175,23 @@ export function createServiceRoleClient(): SupabaseClient | MockSupabaseClient {
 1. Authenticate with `createServerSupabaseClient()` + `requireAdmin()`
 2. Query data with `createServiceRoleClient()` to bypass RLS
 
+Two variable naming patterns exist in the codebase (both are valid):
+- **Pattern A**: `authSupabase` (session) / `supabase` (service role)
+- **Pattern B**: `supabase` (session) / `serviceClient` (service role)
+
 ```typescript
-// Example: Admin API route
+// Example: Admin API route (Pattern A — preferred for new routes)
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
-import { requireAdmin } from '@/lib/auth/require-admin';
+import { requireAdmin } from '@/lib/admin/auth';
 
 export async function GET(request: NextRequest) {
   // Step 1: Authenticate the admin
-  const supabase = await createServerSupabaseClient();
-  await requireAdmin(supabase);
+  const authSupabase = await createServerSupabaseClient();
+  await requireAdmin(authSupabase);
 
   // Step 2: Query with service role to bypass RLS
-  const serviceClient = createServiceRoleClient();
-  const { data } = await serviceClient
+  const supabase = createServiceRoleClient();
+  const { data } = await supabase
     .from('appointments')
     .select('*, customer:users(*)');
 
@@ -538,5 +542,5 @@ return data;
 
 ---
 
-**Last Updated**: 2026-03-06 by Claude Code
-**Changes**: Documented createServiceRoleClient(), documented createClient alias and getClient(), fixed all paths to relative, documented mock-aware cookie forwarding, added admin API + RLS pattern example, documented mock client capabilities, accurate to source code.
+**Last Updated**: 2026-03-07 by Claude Code
+**Changes**: Updated two-client pattern example to show both variable naming conventions (Pattern A/B), fixed import path for requireAdmin, marked Pattern A as preferred for new routes.

@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import {
@@ -29,6 +29,7 @@ import type { PromoBanner } from '@/types/database';
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     // Get status filter from query params
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch all banners from database
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: banners, error } = (await (supabase as any)
+    const { data: banners, error } = (await (serviceClient as any)
       .from('promo_banners')
       .select('*')
       .order('display_order', { ascending: true })) as {
@@ -96,6 +97,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     const { user } = await requireAdmin(supabase);
 
     // Parse and validate request body
@@ -128,7 +130,7 @@ export async function POST(request: NextRequest) {
 
     // Get the maximum display_order to auto-assign next value
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: maxOrderData } = (await (supabase as any)
+    const { data: maxOrderData } = (await (serviceClient as any)
       .from('promo_banners')
       .select('display_order')
       .order('display_order', { ascending: false })
@@ -141,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     // Create the banner
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: newBanner, error: insertError } = (await (supabase as any)
+    const { data: newBanner, error: insertError } = (await (serviceClient as any)
       .from('promo_banners')
       .insert({
         image_url: bannerData.image_url,

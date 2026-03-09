@@ -3,10 +3,24 @@
  * Task 0048: Admin analytics overview
  */
 
+import { Suspense } from 'react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import AnalyticsDashboard from '@/components/admin/analytics/AnalyticsDashboard';
 import { BarChart3 } from 'lucide-react';
+
+function AnalyticsSkeleton() {
+  return (
+    <div className="animate-pulse space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 bg-base-200 rounded-xl" />
+        ))}
+      </div>
+      <div className="h-64 bg-base-200 rounded-xl" />
+    </div>
+  );
+}
 
 export const metadata = {
   title: 'Analytics Dashboard | The Puppy Day',
@@ -37,7 +51,9 @@ export default async function AnalyticsPage() {
         </div>
 
         {/* Analytics Dashboard */}
-        <AnalyticsDashboard />
+        <Suspense fallback={<AnalyticsSkeleton />}>
+          <AnalyticsDashboard />
+        </Suspense>
       </div>
     </div>
   );

@@ -18,13 +18,11 @@ export async function GET() {
     const supabase = await createServerSupabaseClient();
     const { user: adminUser } = await requireAdmin(supabase);
 
-    console.log('[Calendar List] Admin user:', adminUser.email);
 
     // Get active calendar connection
     const connection = await getActiveConnection(supabase, adminUser.id);
 
     if (!connection) {
-      console.log('[Calendar List] No active connection for admin:', adminUser.id);
       return NextResponse.json(
         {
           error: 'No calendar connection found',
@@ -34,7 +32,6 @@ export async function GET() {
       );
     }
 
-    console.log('[Calendar List] Fetching calendars for connection:', connection.id);
 
     // Get valid access token (auto-refreshes if expired)
     let accessToken: string;
@@ -118,7 +115,6 @@ export async function GET() {
       return a.summary.localeCompare(b.summary);
     });
 
-    console.log('[Calendar List] Found', calendars.length, 'calendars');
 
     return NextResponse.json({
       calendars,

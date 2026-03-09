@@ -15,15 +15,29 @@ import { useState, useEffect, useMemo } from 'react';
 import { Clock, Save, AlertCircle, AlertTriangle, Calendar } from 'lucide-react';
 import type { BookingSettings } from '@/types/settings';
 
-export function BufferTimeSettings() {
+interface BufferTimeSettingsProps {
+  initialSettings?: BookingSettings;
+  onSettingsUpdated?: (settings: BookingSettings) => void;
+}
+
+export function BufferTimeSettings({ initialSettings, onSettingsUpdated }: BufferTimeSettingsProps) {
   // State for buffer time
-  const [bufferMinutes, setBufferMinutes] = useState<number>(15);
+  const [bufferMinutes, setBufferMinutes] = useState<number>(
+    initialSettings?.buffer_minutes ?? 15
+  );
 
   // Original value for unsaved changes tracking
-  const [originalBufferMinutes, setOriginalBufferMinutes] = useState<number>(15);
+  const [originalBufferMinutes, setOriginalBufferMinutes] = useState<number>(
+    initialSettings?.buffer_minutes ?? 15
+  );
+
+  // Track the full settings object for merging on save
+  const [currentSettings, setCurrentSettings] = useState<BookingSettings | null>(
+    initialSettings ?? null
+  );
 
   // UI state
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{
     type: 'success' | 'error';
@@ -31,8 +45,10 @@ export function BufferTimeSettings() {
   } | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Fetch current settings
+  // Fetch current settings only if no initialSettings provided
   useEffect(() => {
+    if (initialSettings) return;
+
     const fetchSettings = async () => {
       setIsLoading(true);
       try {
@@ -44,6 +60,7 @@ export function BufferTimeSettings() {
           const settings = result.data as BookingSettings;
           setBufferMinutes(settings.buffer_minutes);
           setOriginalBufferMinutes(settings.buffer_minutes);
+          setCurrentSettings(settings);
         }
       } catch (error) {
         console.error('Error fetching booking settings:', error);
@@ -57,7 +74,14 @@ export function BufferTimeSettings() {
     };
 
     fetchSettings();
-  }, []);
+  }, [initialSettings]);
+
+  // Sync with parent when initialSettings changes
+  useEffect(() => {
+    if (initialSettings) {
+      setCurrentSettings(initialSettings);
+    }
+  }, [initialSettings]);
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = useMemo(() => {
@@ -136,16 +160,9 @@ export function BufferTimeSettings() {
     setSaveMessage(null);
 
     try {
-      // Fetch current settings to preserve other fields
-      const currentResponse = await fetch('/api/admin/settings/booking');
-      if (!currentResponse.ok) throw new Error('Failed to fetch current settings');
-
-      const currentResult = await currentResponse.json();
-      const currentSettings = currentResult.data as BookingSettings;
-
-      // Update only the buffer_minutes field
+      // Merge changed fields with current settings (no pre-fetch needed)
       const updatedSettings: BookingSettings = {
-        ...currentSettings,
+        ...(currentSettings as BookingSettings),
         buffer_minutes: bufferMinutes,
       };
 
@@ -162,16 +179,14 @@ export function BufferTimeSettings() {
         throw new Error(errorData.error || 'Failed to save settings');
       }
 
-      // Refetch settings to confirm what was actually saved
-      const refreshResponse = await fetch('/api/admin/settings/booking');
-      if (refreshResponse.ok) {
-        const refreshResult = await refreshResponse.json();
-        if (refreshResult.data) {
-          const settings = refreshResult.data as BookingSettings;
-          setBufferMinutes(settings.buffer_minutes);
-          setOriginalBufferMinutes(settings.buffer_minutes);
-        }
-      }
+      // Use PUT response as new state (no post-fetch needed)
+      const result = await response.json();
+      const savedSettings = result.data as BookingSettings;
+
+      setBufferMinutes(savedSettings.buffer_minutes);
+      setOriginalBufferMinutes(savedSettings.buffer_minutes);
+      setCurrentSettings(savedSettings);
+      onSettingsUpdated?.(savedSettings);
 
       setSaveMessage({
         type: 'success',

@@ -88,7 +88,7 @@ async function getMarketingData() {
   const supabase = await createServerSupabaseClient();
 
   // Fetch site content and other marketing data in parallel
-  const [siteContent, servicesRes, bannersRes, beforeAfterRes, galleryRes, settingsRes] =
+  const [siteContent, servicesRes, bannersRes, beforeAfterRes, galleryRes, settingsRes, addonsRes] =
     await Promise.all([
       getSiteContent(),
       (supabase as any)
@@ -103,7 +103,12 @@ async function getMarketingData() {
         .select('*')
         .eq('is_published', true)
         .order('display_order'),
-      (supabase as any).from('settings').select('*').single(),
+      (supabase as any).from('settings').select('value').eq('key', 'business_hours').single(),
+      (supabase as any)
+        .from('addons')
+        .select('id, name, price')
+        .eq('is_active', true)
+        .order('display_order'),
     ]);
 
   // Filter banners by date range
@@ -125,7 +130,8 @@ async function getMarketingData() {
     banners: activeBanners,
     beforeAfterPairs: (beforeAfterRes.data as BeforeAfterPair[]) || [],
     galleryImages: (galleryRes.data as GalleryImage[]) || [],
-    businessHours: settingsRes.data?.business_hours || {},
+    businessHours: settingsRes.data?.value || {},
+    addons: (addonsRes.data as Array<{ id: string; name: string; price: number }>) || [],
   };
 }
 
@@ -142,7 +148,7 @@ export default async function MarketingPage() {
 
       {/* Before/After Transformations Section */}
       {data.beforeAfterPairs.length > 0 && (
-        <section className="relative py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#EAE0D5]">
+        <section className="relative py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#F8EEE5]">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section Header with decorative underline */}
             <div className="text-center mb-16">
@@ -161,16 +167,16 @@ export default async function MarketingPage() {
       )}
 
       {/* Services Section */}
-      <section id="services" className="relative py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#EAE0D5]">
+      <section id="services" className="relative py-20 md:py-28 bg-[#F8EEE5]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <ServiceGrid services={data.services} />
+          <ServiceGrid services={data.services} addons={data.addons} />
           <GroomingToolDecoration/>
         </div>
       </section>
 
       {/* Gallery Section */}
       {data.galleryImages.length > 0 && (
-        <section id="gallery" className="relative py-20 md:py-28 bg-gradient-to-b from-[#FFFBF7] to-[#F8EEE5]">
+        <section id="gallery" className="relative py-20 md:py-28 bg-gradient-to-b from-[#F8EEE5] to-[#FFFBF7]">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section Header with decorative underline */}
             <div className="text-center mb-16">
@@ -203,6 +209,7 @@ export default async function MarketingPage() {
         phone={data.siteContent.business.phone}
         email={data.siteContent.business.email}
         address={`${data.siteContent.business.address}, ${data.siteContent.business.city}, ${data.siteContent.business.state} ${data.siteContent.business.zip}`}
+        businessHours={data.businessHours}
       />
 
       {/* Structured Data for SEO - Dynamic from database */}

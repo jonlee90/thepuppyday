@@ -5,7 +5,7 @@
  */
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { requireAdmin } from '@/lib/admin/auth';
+import { requireAdmin, getAuthenticatedAdmin } from '@/lib/admin/auth';
 import { CalendarSettingsClient } from './CalendarSettingsClient';
 import { getActiveConnection } from '@/lib/calendar/connection';
 import { getValidAccessToken } from '@/lib/calendar/token-manager';
@@ -68,6 +68,10 @@ async function getConnectionStatus(
         calendar_id: connection.calendar_id,
         last_sync_at: connection.last_sync_at,
         is_active: connection.is_active,
+        auto_sync_paused: connection.auto_sync_paused,
+        paused_at: connection.paused_at,
+        pause_reason: connection.pause_reason,
+        consecutive_failures: connection.consecutive_failures,
       },
       sync_stats: {
         total_synced: totalSyncedResult.count || 0,
@@ -148,7 +152,7 @@ async function getAvailableCalendars(
     return response.data.items.map((cal) => ({
       id: cal.id || '',
       summary: cal.summary || 'Unnamed Calendar',
-      description: cal.description,
+      description: cal.description || undefined,
       timeZone: cal.timeZone || 'America/Los_Angeles',
       primary: cal.primary || false,
     }));
@@ -170,11 +174,9 @@ async function getCalendarData(): Promise<{
 }> {
   try {
     const supabase = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const adminResult = await getAuthenticatedAdmin(supabase);
 
-    if (!user) {
+    if (!adminResult) {
       return {
         connectionStatus: { connected: false },
         syncSettings: null,
@@ -182,6 +184,8 @@ async function getCalendarData(): Promise<{
         error: 'User not authenticated',
       };
     }
+
+    const { user } = adminResult;
 
     // Fetch connection status (direct DB query)
     const connectionStatus = await getConnectionStatus(supabase, user.id);

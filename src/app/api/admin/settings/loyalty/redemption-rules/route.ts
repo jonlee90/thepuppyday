@@ -6,7 +6,7 @@
  */
 
 import { NextResponse, after } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logSettingsChange } from '@/lib/admin/audit-log';
 import {
@@ -21,13 +21,14 @@ import {
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access
     await requireAdmin(supabase);
 
     // Fetch redemption rules from settings table
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingRecord, error: settingsError } = (await (supabase as any)
+    const { data: settingRecord, error: settingsError } = (await (serviceClient as any)
       .from('settings')
       .select('value, updated_at')
       .eq('key', 'loyalty_redemption_rules')
@@ -38,11 +39,10 @@ export async function GET() {
 
     // If not found, fetch all service IDs and return defaults
     if (settingsError?.message === 'No rows found' || !settingRecord?.value) {
-      console.log('[Redemption Rules API] No settings found, fetching defaults');
 
       // Fetch all service IDs from database
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: services, error: servicesError } = (await (supabase as any)
+      const { data: services, error: servicesError } = (await (serviceClient as any)
         .from('services')
         .select('id')
         .eq('is_active', true)) as {
@@ -86,7 +86,7 @@ export async function GET() {
 
     // Note: pending rewards count was already fetched in parallel above
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count: pendingRewardsCount, error: pendingError } = (await (supabase as any)
+    const { count: pendingRewardsCount, error: pendingError } = (await (serviceClient as any)
       .from('loyalty_redemptions')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending')) as { count: number | null; error: Error | null };
@@ -125,6 +125,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
 
     // Verify admin access and get admin user
     const { user: admin } = await requireAdmin(supabase);
@@ -195,7 +196,7 @@ export async function PUT(request: Request) {
 
     // Validate all service IDs exist in the database
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: services, error: servicesError } = (await (supabase as any)
+    const { data: services, error: servicesError } = (await (serviceClient as any)
       .from('services')
       .select('id')
       .in('id', eligible_services)) as {
@@ -233,7 +234,7 @@ export async function PUT(request: Request) {
 
     // Fetch existing settings for audit log
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: oldSettingRecord } = (await (supabase as any)
+    const { data: oldSettingRecord } = (await (serviceClient as any)
       .from('settings')
       .select('value')
       .eq('key', 'loyalty_redemption_rules')
@@ -250,7 +251,7 @@ export async function PUT(request: Request) {
 
     // Upsert redemption rules (settings.key has UNIQUE constraint)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: upsertError } = (await (supabase as any)
+    const { error: upsertError } = (await (serviceClient as any)
       .from('settings')
       .upsert(
         {
@@ -281,7 +282,7 @@ export async function PUT(request: Request) {
 
     // Count pending rewards (customers with pending redemptions)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count: pendingRewardsCount, error: pendingError } = (await (supabase as any)
+    const { count: pendingRewardsCount, error: pendingError } = (await (serviceClient as any)
       .from('loyalty_redemptions')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending')) as { count: number | null; error: Error | null };
@@ -306,11 +307,6 @@ export async function PUT(request: Request) {
       }
     }
 
-    console.log(
-      `[Redemption Rules API] Redemption rules updated by admin ${admin.id}:`,
-      `eligible_services=${eligible_services.length}, `,
-      `expiration_days=${expiration_days}, max_value=${max_value ?? 'unlimited'}`
-    );
 
     // Build descriptive message
     let message = 'Loyalty redemption rules updated successfully. ';

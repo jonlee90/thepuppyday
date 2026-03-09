@@ -8,6 +8,7 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBookingStore } from '@/stores/bookingStore';
+import { useServices } from '@/hooks/useServices';
 import { BookingProgress } from './BookingProgress';
 import { PriceSummary } from './PriceSummary';
 import { ServiceStep } from './steps/ServiceStep';
@@ -48,11 +49,15 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
     isSessionExpired,
     reset,
     selectedService,
+    selectedServiceId,
     selectedAddons,
     servicePrice,
     totalPrice,
     selectedCustomerId,
+    selectService,
   } = useBookingStore();
+
+  const { services } = useServices();
 
   // Check session expiry on mount
   useEffect(() => {
@@ -60,6 +65,16 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
       reset();
     }
   }, [isSessionExpired, reset]);
+
+  // Pre-select service from any step (handles cases where we skip ServiceStep)
+  useEffect(() => {
+    if (preSelectedServiceId && !selectedServiceId && services.length > 0) {
+      const service = services.find((s) => s.id === preSelectedServiceId && s.name !== 'Add-Ons');
+      if (service) {
+        selectService(service);
+      }
+    }
+  }, [preSelectedServiceId, selectedServiceId, services, selectService]);
 
   // Track step direction for animations
   const direction = 1; // Always forward for now, could track previous step

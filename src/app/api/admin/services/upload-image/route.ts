@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { validateImageFile } from '@/lib/utils/validation';
 
@@ -15,6 +15,7 @@ import { validateImageFile } from '@/lib/utils/validation';
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
     await requireAdmin(supabase);
 
     const formData = await request.formData();
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       const uint8Array = new Uint8Array(arrayBuffer);
 
       // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await (supabase as any)
+      const { data: uploadData, error: uploadError } = await (serviceClient as any)
         .storage
         .from('service-images')
         .upload(filePath, uint8Array, {
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Get public URL
-      const { data: urlData } = (supabase as any)
+      const { data: urlData } = (serviceClient as any)
         .storage
         .from('service-images')
         .getPublicUrl(filePath);
