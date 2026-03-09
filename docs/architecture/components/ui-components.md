@@ -1,10 +1,10 @@
 # UI Components - Architecture Documentation
 
 > **Module**: Base UI Components
-> **Location**: `src/components/ui/`
+> **Location**: `src/components/ui/` (shared) and `src/components/admin/ui/` (admin-specific)
 > **Status**: Completed
 > **Design System**: DaisyUI + Clean & Elegant Professional
-> **Last Updated**: 2026-03-07
+> **Last Updated**: 2026-03-09
 
 ## Overview
 
@@ -51,12 +51,48 @@ import { Button } from '@/components/ui/button';
 - `outline`: `btn-outline` - Alternative style
 - `error`, `success`, `warning`, `info`: Contextual actions
 
-**Loading State**: When `isLoading` is true, the button is disabled and shows a DaisyUI `loading-spinner` followed by either `loadingText` or the original `children`.
+**Loading State**: When `isLoading` is true, the button is disabled and shows a DaisyUI `loading-spinner` followed by either `loadingText` or the original `children`. Uses `aria-busy` for the loading signal and `!opacity-100` on the spinner to prevent DaisyUI's opacity reduction from dimming it.
 
 **DaisyUI Classes**:
 ```tsx
 className={cn('btn', variantClasses[variant], sizeClasses[size], className)}
 ```
+
+---
+
+### AdminButton (`src/components/admin/ui/AdminButton.tsx`)
+
+**Purpose**: Admin-panel-specific button with a reduced variant set, design-system-correct colors, and a visible loading spinner. Uses `aria-busy` (not `disabled`) for loading state to prevent DaisyUI from applying opacity reduction to the spinner. Implemented as `memo(forwardRef(...))`.
+
+**Props**:
+```typescript
+export interface AdminButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  isLoading?: boolean;
+  loadingText?: string;
+}
+```
+
+**Variants**:
+| Variant | Style |
+|---------|-------|
+| `primary` | Charcoal (#434E54) bg, white text — default |
+| `secondary` | Outlined, charcoal border/text, fills on hover |
+| `danger` | Red-600 bg, white text |
+| `ghost` | Transparent, charcoal text, cream hover bg |
+
+**Loading behavior**: When `isLoading` is true, `onClick` is swallowed (set to `undefined`), `aria-busy` is set, and a spinner with `!opacity-100` (forces full opacity) and variant-matched text color is shown alongside `loadingText` or `children`.
+
+**Usage**:
+```tsx
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+
+<AdminButton variant="primary" onClick={handleSave}>Save</AdminButton>
+<AdminButton variant="danger" isLoading={deleting} loadingText="Deleting...">Delete</AdminButton>
+```
+
+**Consumers**: `StatusTransitionButton`, `AppointmentDetailModal`, CSV upload steps (`DuplicateHandler`, `FileUploadStep`, `ValidationPreview`), `FillSlotModal`.
 
 ---
 
@@ -432,5 +468,5 @@ Components use DaisyUI theme variables defined in `globals.css`:
 
 ---
 
-**Last Updated**: 2026-03-07 by Claude Code
-**Changes**: Updated StatusBadge to reflect colorful status-specific colors (yellow/green/gray/charcoal/red) replacing the previous monochrome charcoal palette. Noted shared usage across admin views.
+**Last Updated**: 2026-03-09 by Claude Code
+**Changes**: Added `AdminButton` (`src/components/admin/ui/AdminButton.tsx`) — admin-specific button with 4 variants, `aria-busy` loading pattern, `!opacity-100` spinner fix. Updated `button.tsx` loading note to reflect `aria-busy` usage. Updated module location header to include `src/components/admin/ui/`.

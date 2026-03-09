@@ -4,7 +4,7 @@
 > **Status**: Phases 5, 6, 8, 9, 11 Complete | Phase 7 Pending (Payments) | Admin Dashboard Redesign Complete
 > **Base Path**: `admin/`
 > **Authentication**: Required (admin or groomer role)
-> **Last Updated**: 2026-03-07
+> **Last Updated**: 2026-03-09
 
 ## Overview
 
@@ -29,17 +29,14 @@ src/app/admin/
 ├── appointments/
 │   ├── page.tsx                      # Appointment management (calendar + list)
 │   └── [id]/
-│       └── report-card/page.tsx      # Create/edit report card
+│       ├── report-card/
+│       │   ├── page.tsx              # Create/edit report card
+│       │   └── loading.tsx           # Report card loading state
 ├── customers/
 │   ├── page.tsx                      # Customer list
 │   └── [id]/page.tsx                 # Customer profile
-├── services/
-│   ├── page.tsx                      # Service management
-│   └── ServicesClient.tsx            # Client component
-├── addons/
-│   ├── page.tsx                      # Add-on management
-│   └── AddOnsClient.tsx              # Client component
-├── gallery/page.tsx                  # Gallery management
+├── staff/
+│   └── page.tsx                      # Staff directory & commission management
 ├── analytics/page.tsx                # Business analytics
 ├── waitlist/page.tsx                 # Waitlist management
 ├── marketing/
@@ -62,7 +59,10 @@ src/app/admin/
 │       ├── page.tsx                  # Notification settings
 │       └── components/              # Settings sub-components
 └── settings/
-    ├── page.tsx                      # Settings dashboard
+    ├── page.tsx                      # Settings dashboard (SettingsDashboardClient)
+    ├── addons/
+    │   ├── page.tsx                  # Add-on management
+    │   └── AddOnsClient.tsx          # Client component
     ├── banners/
     │   ├── page.tsx                  # Promo banner management
     │   └── BannersClient.tsx         # Client component
@@ -76,13 +76,17 @@ src/app/admin/
     │   ├── page.tsx                  # Calendar sync settings
     │   ├── actions.ts                # Server actions
     │   └── CalendarSettingsClient.tsx # Client component
+    ├── gallery/
+    │   └── page.tsx                  # Gallery management
     ├── loyalty/
     │   ├── page.tsx                  # Loyalty program settings
     │   └── punch-card-demo/page.tsx  # Punch card preview
-    ├── site-content/
-    │   ├── page.tsx                  # Homepage & SEO content
-    │   └── client.tsx                # Client component
-    └── staff/page.tsx                # Staff & commission management
+    ├── services/
+    │   ├── page.tsx                  # Service management
+    │   └── ServicesClient.tsx        # Client component
+    └── site-content/
+        ├── page.tsx                  # Homepage & SEO content
+        └── client.tsx                # Client component
 ```
 
 **Note**: The `(admin)` route group contains only `error.tsx` and `loading.tsx`. All actual admin pages are under the `admin/` directory (without parentheses).
@@ -99,13 +103,13 @@ Thin server component — renders `<DashboardClient />` only. All data fetching 
 **Architecture**: See full component docs at `docs/architecture/components/admin-dashboard.md`
 
 **Key Components**:
-- `DashboardHeader` — title, business-timezone date, New Booking + Walk-in buttons
+- `DashboardHeader` — title, business-timezone date, New Booking + Walk-in buttons; receives `isConnected`/`isPolling` for connection status banner
 - `RevenueOverview` — 3-card grid (Today / This Week / This Month) with animated counters and trend badges
+- `PendingActionsWidget` — full-width row above main grid; up to 5 pending appointments with inline confirm; **hidden entirely (returns null) when empty**
 - `DashboardTimeline` — vertical timeline of today's appointments with NowIndicator and status actions
 - `ProductivityWidget` — SVG ring showing completion ratio, capacity %, avg revenue/apt
 - `WaitlistWidget` — self-fetching waitlist summary with fill rate and top 3 entries
-- `PendingActionsWidget` — up to 5 pending appointments with inline confirm
-- `QuickAccess` — 6 compact navigation pills
+- ~~`QuickAccess`~~ — removed from dashboard layout
 
 **Data Hook**: `useDashboardData` (`src/hooks/admin/use-dashboard-data.ts`) — fires all 3 endpoints in parallel on mount, 30s polling, Supabase Realtime in production, `refetch()` on status updates
 
@@ -135,9 +139,18 @@ Client component with toggleable calendar/list views.
 - **Mobile/Tablet (<lg)**: Title hidden (shown in mobile nav bar instead); single toolbar row with Calendar/List toggle buttons + Create button; Import CSV button hidden
 
 **Features**:
-- Appointment detail modal (uses shared `StatusBadge` component)
-- CSV bulk import modal (desktop only)
+- Appointment detail modal (uses `AdminButton`, `StatusTransitionButton`, `StatusBadge`)
+- CSV bulk import modal (desktop only; upload steps use `AdminButton`)
 - Admin create button (opens BookingModal)
+
+**`AppointmentDetailModal`** (`src/components/admin/appointments/AppointmentDetailModal.tsx`):
+- Redesigned with sticky edit footer (save/cancel fixed at bottom in edit mode)
+- Hero summary section with paw print icon, customer/pet/service at a glance
+- Groomer assignment confirmation via `pendingGroomerId` state (prevents accidental reassignment)
+- Parallelized data fetches using `Promise.all()` for services, addons, groomers, flags
+- AM/PM time select dropdown in edit form (instead of free text)
+- App-level toast notifications (`toast.success`/`toast.error` from `@/hooks/use-toast`)
+- Uses `AdminButton` for all action buttons
 
 **Manual Appointment Creation** (via BookingModal `mode="admin"`):
 - **6-step wizard**: Service -> Date/Time -> Customer -> Pet -> Review+Addons -> Confirmation
@@ -173,16 +186,22 @@ Create/edit grooming report cards with before/after photos, groomer notes, and h
 
 ---
 
-### 5. Services & Addons
+### 5. Services, Addons & Gallery
 
-**Services** (`/admin/services`): CRUD with size-based pricing, duration, display order.
+These pages were moved under `/admin/settings/` as of Phase 10 polish:
 
-**Addons** (`/admin/addons`): CRUD with fixed pricing, display order.
+**Services** (`/admin/settings/services`): CRUD with size-based pricing, duration, display order.
+
+**Addons** (`/admin/settings/addons`): CRUD with fixed pricing, display order.
+
+**Gallery** (`/admin/settings/gallery`): Upload, manage, and organize gallery images with drag-and-drop reordering.
 
 ---
 
-### 6. Gallery (`/admin/gallery`)
-Upload, manage, and organize gallery images with drag-and-drop reordering.
+### 6. Staff (`/admin/staff`)
+**File**: `src/app/admin/staff/page.tsx`
+
+Staff directory, commission settings, and earnings. Moved out of `/admin/settings/staff` to a top-level `/admin/staff/` route.
 
 ---
 
@@ -219,9 +238,11 @@ Revenue analytics, appointment trends, customer acquisition, service popularity,
 
 ### 11. Settings
 
+The settings hub (`/admin/settings`) is a server component that fetches metadata for each section and renders `SettingsDashboardClient` with navigation cards. Services, add-ons, and gallery were moved under the settings hierarchy.
+
 | Route | Purpose |
 |-------|---------|
-| `/admin/settings` | Settings dashboard with navigation cards |
+| `/admin/settings` | Settings dashboard with navigation cards (SettingsDashboardClient) |
 | `/admin/settings/site-content` | Hero section, SEO settings, business info |
 | `/admin/settings/banners` | Promo banner CRUD with scheduling and analytics |
 | `/admin/settings/booking` | Advance booking window, cancellation policy, buffer time |
@@ -230,7 +251,11 @@ Revenue analytics, appointment trends, customer acquisition, service popularity,
 | `/admin/settings/calendar` | Google Calendar sync, error recovery, quota tracking |
 | `/admin/settings/loyalty` | Punch card, earning rules, redemption, referral |
 | `/admin/settings/loyalty/punch-card-demo` | Visual punch card preview |
-| `/admin/settings/staff` | Staff directory, commission settings, earnings |
+| `/admin/settings/services` | Service CRUD with size-based pricing (moved from `/admin/services`) |
+| `/admin/settings/addons` | Add-on CRUD with pricing (moved from `/admin/addons`) |
+| `/admin/settings/gallery` | Gallery image management (moved from `/admin/gallery`) |
+
+**Note**: Staff management moved to `/admin/staff/` (top-level, not under settings).
 
 ---
 

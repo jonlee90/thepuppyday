@@ -1,7 +1,7 @@
 # The Puppy Day - Master Architecture Documentation
 
-> **Version**: 1.4
-> **Last Updated**: 2026-03-07
+> **Version**: 1.5
+> **Last Updated**: 2026-03-09
 > **Status**: Production-Ready (Phases 1-6, 8-9, 11 Complete | Admin Dashboard Redesign Complete | Phase 7 Pending | Phase 10 In Progress)
 
 ## Table of Contents
@@ -60,9 +60,9 @@
 | 7 | Payments & Memberships | Pending | Stripe integration, memberships, loyalty program |
 | 8 | Notifications | Completed | Templates, triggers, preferences, email/SMS providers, unsubscribe system |
 | 9 | Admin Settings | Completed | Business settings, staff management, site content, banners |
-| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), comprehensive testing pending |
+| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), AdminButton component (done), AppointmentDetailModal redesign (done), settings hierarchy reorganization (done), comprehensive testing pending |
 | 11 | Calendar Error Recovery | Completed | Retry queue, error recovery UI, quota tracking, auto-pause system |
-| F | Admin Dashboard Redesign | Completed | Replaced DashboardStats/TodayAppointments/PendingAppointments with RevenueOverview, DashboardTimeline, ProductivityWidget, WaitlistWidget, PendingActionsWidget, QuickAccess pills; useDashboardData hook; revenue-overview API endpoint |
+| F | Admin Dashboard Redesign | Completed | Replaced DashboardStats/TodayAppointments/PendingAppointments with RevenueOverview, DashboardTimeline, ProductivityWidget, WaitlistWidget, PendingActionsWidget; useDashboardData hook; revenue-overview API endpoint; QuickAccess removed; PendingActionsWidget moved full-width above grid |
 
 ---
 
@@ -399,13 +399,13 @@ thepuppyday/
 │   │   │   ├── page.tsx             # Admin home
 │   │   │   ├── dashboard/           # Admin dashboard
 │   │   │   ├── appointments/        # Appointment management
-│   │   │   │   └── [id]/report-card/page.tsx
+│   │   │   │   └── [id]/report-card/
+│   │   │   │       ├── page.tsx
+│   │   │   │       └── loading.tsx
 │   │   │   ├── customers/
 │   │   │   │   ├── page.tsx
 │   │   │   │   └── [id]/page.tsx
-│   │   │   ├── services/page.tsx
-│   │   │   ├── addons/page.tsx
-│   │   │   ├── gallery/page.tsx
+│   │   │   ├── staff/page.tsx       # Staff directory & commission management
 │   │   │   ├── analytics/page.tsx
 │   │   │   ├── waitlist/page.tsx
 │   │   │   ├── marketing/campaigns/
@@ -418,18 +418,20 @@ thepuppyday/
 │   │   │   │   ├── log/page.tsx
 │   │   │   │   └── settings/page.tsx
 │   │   │   └── settings/
-│   │   │       ├── page.tsx         # Settings dashboard
+│   │   │       ├── page.tsx         # Settings hub (SettingsDashboardClient)
+│   │   │       ├── addons/          # Add-on management (moved from /admin/addons)
 │   │   │       ├── banners/page.tsx
 │   │   │       ├── booking/
 │   │   │       │   ├── page.tsx
 │   │   │       │   └── blocked-dates/page.tsx
 │   │   │       ├── business-hours/page.tsx
 │   │   │       ├── calendar/page.tsx  # Google Calendar settings
+│   │   │       ├── gallery/         # Gallery management (moved from /admin/gallery)
 │   │   │       ├── loyalty/
 │   │   │       │   ├── page.tsx
 │   │   │       │   └── punch-card-demo/page.tsx
-│   │   │       ├── site-content/page.tsx
-│   │   │       └── staff/page.tsx
+│   │   │       ├── services/        # Service management (moved from /admin/services)
+│   │   │       └── site-content/page.tsx
 │   │   ├── api/                     # API Routes (see API Routes section)
 │   │   ├── robots.ts                # SEO robots.txt generation
 │   │   ├── sitemap.ts               # SEO sitemap.xml generation
@@ -453,6 +455,7 @@ thepuppyday/
 │   │   │       └── ConfirmationStep.tsx
 │   │   ├── customer/               # Customer portal components
 │   │   ├── admin/                  # Admin panel components
+│   │   │   └── ui/                 # Admin-specific UI primitives (AdminButton, etc.)
 │   │   ├── marketing/              # Marketing site components
 │   │   └── providers/              # Context providers
 │   ├── lib/                        # Business logic & utilities

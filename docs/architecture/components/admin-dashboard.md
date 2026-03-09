@@ -2,8 +2,8 @@
 
 > **Module**: Admin Dashboard
 > **Location**: `src/components/admin/dashboard/`
-> **Status**: Complete (Phases A-F, admin-dashboard-redesign spec)
-> **Last Updated**: 2026-03-07
+> **Status**: Complete (Phases A-F, admin-dashboard-redesign spec, Phase 10 polish)
+> **Last Updated**: 2026-03-09
 
 ## Overview
 
@@ -24,12 +24,14 @@ src/components/admin/dashboard/
 ├── DashboardTimeline.tsx       # Vertical timeline of today's appointments
 ├── ProductivityWidget.tsx      # SVG ring showing completion ratio + stats
 ├── WaitlistWidget.tsx          # Self-fetching waitlist summary (top 3 + fill rate)
-├── PendingActionsWidget.tsx    # Up to 5 pending appointments with confirm action
-├── QuickAccess.tsx             # 6 compact navigation pills
+├── PendingActionsWidget.tsx    # Up to 5 pending appointments; returns null when empty
 ├── WalkInButton.tsx            # Floating action button for mobile walk-ins
 ├── CalendarSyncWidget.tsx      # Calendar sync status widget
 ├── ActivityFeed.tsx            # Recent activity feed (retained, not in primary layout)
 └── index.ts                    # Barrel exports for all active components
+
+# Removed components:
+# QuickAccess.tsx               # Navigation pills — removed from dashboard layout
 ```
 
 ---
@@ -44,15 +46,18 @@ page.tsx (Server Component)
         │     ├── GET /api/admin/dashboard/appointments
         │     └── GET /api/admin/dashboard/pending-appointments
         │
-        ├── DashboardHeader        (props: onNewBooking, onWalkIn)
+        ├── DashboardHeader        (props: onNewBooking, onWalkIn, isConnected, isPolling)
         ├── RevenueOverview        (props: revenueData, loading, error, onRetry)
-        ├── DashboardTimeline      (props: appointments, loading, error, onStatusUpdate)
-        ├── ProductivityWidget     (props: appointments, revenueData, loading)
-        ├── WaitlistWidget         (self-fetching — no props)
-        ├── PendingActionsWidget   (props: pending, loading, error, onStatusUpdate)
-        ├── QuickAccess            (no props)
+        ├── PendingActionsWidget   (props: pending, loading, error, onStatusUpdate) — full width, hidden when empty
+        ├── grid lg:grid-cols-5:
+        │     ├── DashboardTimeline      (col-span-3, props: appointments, loading, error, onStatusUpdate)
+        │     └── col-span-2 sidebar:
+        │           ├── ProductivityWidget   (props: appointments, revenueData, loading)
+        │           └── WaitlistWidget       (self-fetching — no props)
         └── BookingModal x2        (admin + walkin modes)
 ```
+
+**Note**: `QuickAccess` component was removed from the dashboard layout. `PendingActionsWidget` is now rendered above the main grid (full-width) rather than in the sidebar.
 
 ---
 
@@ -68,18 +73,18 @@ Root client orchestrator. Owns all modal state and wires callbacks.
 
 **Layout** (responsive grid):
 ```
-DashboardHeader
+DashboardHeader (isConnected, isPolling props passed for connection banner)
 RevenueOverview (3 columns on md+)
+PendingActionsWidget — full-width row, hidden (returns null) when empty
 grid-cols-1 lg:grid-cols-5:
   ├── DashboardTimeline    (col-span-3)
-  └── Sidebar col-span-2:
+  └── Sidebar col-span-2 (sm:grid-cols-2 lg:grid-cols-1 gap-6):
         ├── ProductivityWidget
-        ├── WaitlistWidget
-        └── PendingActionsWidget
-QuickAccess (flex-wrap pills)
+        └── WaitlistWidget
+BookingModal x2 (admin + walkin)
 ```
 
-**Connection status banners**: `role="status" aria-live="polite"` banner when `!isConnected && isPolling`.
+**Changes vs. previous layout**: `PendingActionsWidget` moved from the sidebar into a full-width position above the main grid. `QuickAccess` removed entirely. Connection status banner responsibility shifted to `DashboardHeader` via `isConnected`/`isPolling` props.
 
 ---
 
@@ -199,24 +204,20 @@ interface PendingActionsWidgetProps {
 
 **Behavior**:
 - Shows up to 5 pending appointments (`MAX_VISIBLE = 5`)
+- **Returns `null` when empty** (and not loading/error) — widget is completely hidden from the layout when there are no pending appointments
 - Framer Motion staggered entrance: `initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}` at `delay: index * 0.06`
-- Confirm button: POSTs to `/api/admin/appointments/{id}/status`, optimistic removal from local list
+- Confirm button: POSTs to `/api/admin/appointments/{id}/status`, optimistic removal from local list; uses `toast.success`/`toast.error` from `@/hooks/use-toast`
 - "View All" link to `/admin/appointments?status=pending` when `pending.length > 5`
-- Empty state: `PawPrint` icon + "All caught up!"
 - Count badge: `aria-live="polite" aria-atomic="true"`
+- Rendered full-width above the main timeline/sidebar grid (not in sidebar)
+
+**Empty behavior**: The component returns `null` when `!loading && !error && localPending.length === 0`, so no empty-state card appears — the section vanishes entirely.
 
 ---
 
-### `QuickAccess` (`QuickAccess.tsx`)
+### `QuickAccess` (`QuickAccess.tsx`) — REMOVED
 
-No props. Six compact navigation pills in a `flex flex-wrap gap-3` row.
-
-**Pills**: Appointments, Waitlist, Customers, Services, Analytics, Settings
-
-**Behavior**:
-- Each pill: `motion.div` with staggered entrance `initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}` at `delay: index * 0.05`
-- Wrapped in `<nav aria-label="Quick access navigation">`
-- Each link has `aria-label="Navigate to {title}"`
+**Status**: Removed from the dashboard layout as of Phase 10 polish. The file may still exist in `src/components/admin/dashboard/` but is no longer imported or rendered by `DashboardClient`.
 
 ---
 
@@ -300,11 +301,13 @@ The following files were deleted as part of the admin-dashboard-redesign:
 
 ## Responsive Behavior
 
-| Breakpoint | Revenue Cards | Main Grid | Quick Access |
+| Breakpoint | Revenue Cards | Pending Widget | Main Grid |
 |---|---|---|---|
-| Mobile (< 768px) | 1 column stacked | Single column | Flex wrap (wraps to multiple rows) |
-| Tablet (768–1023px) | 3 columns | Single column | Flex wrap |
-| Desktop (>= 1024px) | 3 columns | `grid-cols-5` (Timeline 3 + Sidebar 2) | Inline row |
+| Mobile (< 768px) | 1 column stacked | Full width (or hidden) | Single column |
+| Tablet (768–1023px) | 3 columns | Full width (or hidden) | Single column |
+| Desktop (>= 1024px) | 3 columns | Full width (or hidden) | `grid-cols-5` (Timeline 3 + Sidebar 2) |
+
+Sidebar at tablet: `sm:grid-cols-2 lg:grid-cols-1` — ProductivityWidget and WaitlistWidget sit side-by-side on tablet, stack vertically on desktop.
 
 Walk-in on mobile/tablet: `DashboardHeader`'s Walk-in button is `hidden lg:inline-flex` (hidden on mobile and tablet); the `WalkInButton` FAB component handles mobile walk-ins.
 
@@ -316,7 +319,6 @@ Walk-in on mobile/tablet: `DashboardHeader`'s Walk-in button is `hidden lg:inlin
 - Timeline cards: `role="button"`, `tabIndex={0}`, keyboard handler (`Enter`/`Space`)
 - Revenue container: `aria-live="polite"` for dynamic value updates
 - Pending count badge: `aria-live="polite" aria-atomic="true"`
-- Connection status banner: `role="status" aria-live="polite"`
+- Connection status banner: `role="status" aria-live="polite"` (managed in `DashboardHeader`)
 - ProductivityWidget SVG ring: `role="img"` with descriptive `aria-label`
 - WaitlistWidget fill rate bar: `role="progressbar"` with `aria-valuenow/min/max`
-- QuickAccess: `<nav aria-label="Quick access navigation">` wrapper
