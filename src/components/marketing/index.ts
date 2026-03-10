@@ -2,8 +2,8 @@
  * Barrel export for marketing components
  */
 
-export { Header } from './Header';
-export { Footer } from './Footer';
+export { Header } from './header';
+export { Footer } from './footer';
 export { HeroSection } from './HeroSection';
 export { ServiceSection } from './ServiceSection';
 export { BeforeAfterSection } from './BeforeAfterSection';
@@ -19,3 +19,8 @@ export { PromoBannerCarousel } from './PromoBannerCarousel';
 export { MarketingCTA } from './MarketingCTA';
 export { StickyBookingButton } from './StickyBookingButton';
 export { AddressBar, HoursBar } from './AnnouncementBars';
+export { FAQAccordion } from './FAQAccordion';
+export { ServiceDetailPage } from './ServiceDetailPage';
+export { CityLandingPage } from './CityLandingPage';
+export { BlogPostLayout } from './BlogPostLayout';
+export { RelatedPosts } from './RelatedPosts';

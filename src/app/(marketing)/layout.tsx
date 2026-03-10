@@ -3,13 +3,21 @@
  * Task 0168: Updated to use dynamic business info from database
  */
 
-import { Header } from '@/components/marketing/Header';
-import { Footer } from '@/components/marketing/Footer';
+import type { Metadata } from 'next';
+import { Header } from '@/components/marketing/header';
+import { Footer } from '@/components/marketing/footer';
 import { BookingModalProvider } from '@/components/booking';
 import { StickyBookingButton } from '@/components/marketing/StickyBookingButton';
 import { getBusinessInfo } from '@/lib/site-content';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { summarizeBusinessHours } from '@/lib/utils/business-hours';
+
+export const metadata: Metadata = {
+  title: {
+    template: '%s | Puppy Day Dog Grooming La Mirada',
+    default: 'Puppy Day - Dog Grooming in La Mirada, CA',
+  },
+};
 
 export default async function MarketingLayout({
   children,
