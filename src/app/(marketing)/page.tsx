@@ -5,8 +5,10 @@
  */
 
 import { Metadata } from 'next';
+import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getSiteContent } from '@/lib/site-content';
+import { BLOG_POSTS } from '@/data/blog-posts';
 import {
   HeroSection,
   PromoBannerCarousel,
@@ -16,7 +18,11 @@ import {
   AboutSection,
   TestimonialsSection,
   ContactSection,
+  BlogSection,
 } from '@/components/marketing';
+import { SchemaOrg } from '@/components/common/SchemaOrg';
+import { SERVICE_SLUGS, SERVICE_CONFIGS } from '@/data/services';
+import { CITY_SLUGS, CITY_CONFIGS } from '@/data/cities';
 import type {
   Service,
   PromoBanner as PromoBannerType,
@@ -32,16 +38,19 @@ export async function generateMetadata(): Promise<Metadata> {
     title: seo.page_title,
     description: seo.meta_description,
     keywords: [
+      'dog grooming La Mirada',
+      'pet groomer La Mirada CA',
+      'dog grooming near me',
+      'best dog groomer La Mirada',
+      'puppy grooming La Mirada',
       'pet grooming',
-      'dog grooming',
-      'La Mirada pet grooming',
-      'professional pet care',
       'dog spa',
-      'puppy grooming',
-      'pet salon',
-      'La Mirada CA',
+      'professional pet care',
     ],
     authors: [{ name: 'The Puppy Day' }],
+    alternates: {
+      canonical: 'https://thepuppyday.com',
+    },
     openGraph: {
       title: seo.og_title,
       description: seo.og_description,
@@ -69,13 +78,9 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: {
       index: true,
       follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
     },
   };
 }
@@ -156,7 +161,7 @@ export default async function MarketingPage() {
 
       {/* Gallery Section */}
       {data.galleryImages.length > 0 && (
-        <GallerySection images={data.galleryImages} />
+        <GallerySection images={data.galleryImages} showViewAll />
       )}
 
 
@@ -167,7 +172,29 @@ export default async function MarketingPage() {
       <AboutSection
         title="About Puppy Day"
         description="At The Puppy Day, we’re a family-run grooming salon that believes every dog deserves to feel comfortable and look their best. Our La Mirada studio was designed to feel like a second home for your pup and we use warm water and premium hypoallergenic products during every session."
+        showViewAll
       />
+
+      {/* Latest from Our Blog */}
+      <BlogSection
+        posts={[...BLOG_POSTS]
+          .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
+          .slice(0, 3)
+          .map(({ slug, title, excerpt, readTime, publishDate }) => ({
+            slug, title, excerpt, readTime, publishDate,
+          }))}
+      />
+
+      {/* Areas We Serve */}
+      <section className="py-8 px-4 text-center bg-white">
+        <p className="text-[#6B7280] text-base">
+          {'Proudly serving '}
+          <Link href="/areas" className="text-[#C67C4E] hover:underline font-medium">
+            La Mirada and surrounding cities
+          </Link>
+          {' including Norwalk, Buena Park, Whittier, Cerritos, and more.'}
+        </p>
+      </section>
 
       {/* Contact Section - Dynamic from database */}
       <ContactSection
@@ -177,53 +204,66 @@ export default async function MarketingPage() {
         businessHours={data.businessHours}
       />
 
-      {/* Structured Data for SEO - Dynamic from database */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'LocalBusiness',
-            '@id': 'https://thepuppyday.com',
-            name: data.siteContent.business.name,
-            description: `Professional dog grooming and day care services in ${data.siteContent.business.city}, ${data.siteContent.business.state}`,
-            url: 'https://thepuppyday.com',
-            telephone: data.siteContent.business.phone,
-            email: data.siteContent.business.email,
-            address: {
-              '@type': 'PostalAddress',
-              streetAddress: data.siteContent.business.address,
-              addressLocality: data.siteContent.business.city,
-              addressRegion: data.siteContent.business.state,
-              postalCode: data.siteContent.business.zip,
-              addressCountry: 'US',
-            },
-            geo: {
-              '@type': 'GeoCoordinates',
-              latitude: '33.9172',
-              longitude: '-118.0120',
-            },
-            openingHoursSpecification: data.businessHours
-              ? Object.entries(data.businessHours).map(([day, hours]) => ({
-                  '@type': 'OpeningHoursSpecification',
-                  dayOfWeek: day.charAt(0).toUpperCase() + day.slice(1),
-                  opens: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).open : undefined,
-                  closes: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).close : undefined,
-                }))
-              : [],
-            priceRange: '$$',
-            image: 'https://placedog.net/1200/630?id=business',
-            aggregateRating: {
-              '@type': 'AggregateRating',
-              ratingValue: '4.9',
-              reviewCount: '127',
-            },
-            sameAs: [
-              data.siteContent.business.social_links.instagram,
-              data.siteContent.business.social_links.yelp,
-              data.siteContent.business.social_links.facebook,
-            ].filter(Boolean),
-          }),
+      {/* Structured Data for SEO — PetGroomer schema via SchemaOrg */}
+      <SchemaOrg
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'PetGroomer',
+          '@id': 'https://thepuppyday.com',
+          name: data.siteContent.business.name,
+          description: `Professional dog grooming and day care services in ${data.siteContent.business.city}, ${data.siteContent.business.state}`,
+          url: 'https://thepuppyday.com',
+          telephone: data.siteContent.business.phone,
+          email: data.siteContent.business.email,
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: data.siteContent.business.address,
+            addressLocality: data.siteContent.business.city,
+            addressRegion: data.siteContent.business.state,
+            postalCode: data.siteContent.business.zip,
+            addressCountry: 'US',
+          },
+          geo: {
+            '@type': 'GeoCoordinates',
+            latitude: '33.9172',
+            longitude: '-118.0120',
+          },
+          openingHoursSpecification: data.businessHours
+            ? Object.entries(data.businessHours).map(([day, hours]) => ({
+                '@type': 'OpeningHoursSpecification',
+                dayOfWeek: day.charAt(0).toUpperCase() + day.slice(1),
+                opens: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).open : undefined,
+                closes: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).close : undefined,
+              }))
+            : [],
+          priceRange: '$$',
+          image: 'https://placedog.net/1200/630?id=business',
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: '5.0',
+            reviewCount: '16',
+          },
+          hasOfferCatalog: {
+            '@type': 'OfferCatalog',
+            name: 'Dog Grooming Services',
+            itemListElement: SERVICE_SLUGS.map((slug) => ({
+              '@type': 'Offer',
+              itemOffered: {
+                '@type': 'Service',
+                name: SERVICE_CONFIGS[slug].displayName,
+                url: `https://thepuppyday.com/services/${slug}`,
+              },
+            })),
+          },
+          areaServed: CITY_SLUGS.map((slug) => ({
+            '@type': 'City',
+            name: CITY_CONFIGS[slug].name,
+          })),
+          sameAs: [
+            data.siteContent.business.social_links.instagram,
+            data.siteContent.business.social_links.yelp,
+            data.siteContent.business.social_links.facebook,
+          ].filter(Boolean),
         }}
       />
     </div>

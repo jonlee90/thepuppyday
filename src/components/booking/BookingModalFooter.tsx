@@ -49,7 +49,7 @@ const getButtonText = (
     }
   }
 
-  // Admin and Customer modes: Service → DateTime → Customer → Pet → Review → Confirmation
+  // Admin and Customer modes: Service → Customer → Pet → DateTime → Review → Confirmation
   switch (currentStep) {
     case 4: // Review
       if (mode === 'admin') return 'Create Appointment';
@@ -66,7 +66,7 @@ const getPreviousStepName = (currentStep: number, mode: BookingModalMode): strin
     return stepNames[currentStep - 1] || 'previous';
   }
   // Admin and Customer modes
-  const stepNames = ['Service', 'Date & Time', 'Customer', 'Pet', 'Review'];
+  const stepNames = ['Service', 'Customer', 'Pet', 'Date & Time', 'Review'];
   return stepNames[currentStep - 1] || 'previous';
 };
 

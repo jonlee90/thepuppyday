@@ -237,6 +237,7 @@ export function DateTimeStep() {
           }}
           date={selectedDate}
           time={waitlistTime}
+          businessHours={businessHours}
         />
       )}
     </div>

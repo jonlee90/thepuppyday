@@ -3,7 +3,7 @@
  * Determines if a step can proceed to the next step
  * Supports multiple modes with different step orders
  *
- * Customer/Admin: Service → DateTime → Customer → Pet → Review → Confirmation (6 steps, 0-5)
+ * Customer/Admin: Service → Customer → Pet → DateTime → Review → Confirmation (6 steps, 0-5)
  * Walk-in: Service → Customer → Pet → Review → Confirmation (5 steps, 0-4)
  */
 
@@ -75,27 +75,27 @@ export function canContinueFromStep(
     }
   }
 
-  // Admin mode: Service → DateTime → Customer → Pet → Review → Confirmation
+  // Admin mode: Service → Customer → Pet → DateTime → Review → Confirmation
   if (mode === 'admin') {
     switch (currentStep) {
       case 0: // Service step
         return hasValidService(bookingState);
 
-      case 1: // Date & Time step
-        return hasValidDateTime(bookingState);
-
-      case 2: // Customer step
+      case 1: // Customer step
         return hasValidCustomer(bookingState);
 
-      case 3: // Pet step
+      case 2: // Pet step
         return hasValidPet(bookingState);
+
+      case 3: // Date & Time step
+        return hasValidDateTime(bookingState);
 
       case 4: // Review step
         return (
           hasValidService(bookingState) &&
-          hasValidDateTime(bookingState) &&
           hasValidCustomer(bookingState) &&
-          hasValidPet(bookingState)
+          hasValidPet(bookingState) &&
+          hasValidDateTime(bookingState)
         );
 
       case 5: // Confirmation step
@@ -106,26 +106,26 @@ export function canContinueFromStep(
     }
   }
 
-  // Customer mode: Service → DateTime → Customer → Pet → Review → Confirmation
+  // Customer mode: Service → Customer → Pet → DateTime → Review → Confirmation
   switch (currentStep) {
     case 0: // Service step
       return hasValidService(bookingState);
 
-    case 1: // Date & Time step
-      return hasValidDateTime(bookingState);
-
-    case 2: // Customer step
+    case 1: // Customer step
       return hasValidCustomer(bookingState);
 
-    case 3: // Pet step
+    case 2: // Pet step
       return hasValidPet(bookingState);
+
+    case 3: // Date & Time step
+      return hasValidDateTime(bookingState);
 
     case 4: // Review step
       return (
         hasValidService(bookingState) &&
-        hasValidDateTime(bookingState) &&
         hasValidCustomer(bookingState) &&
-        hasValidPet(bookingState)
+        hasValidPet(bookingState) &&
+        hasValidDateTime(bookingState)
       );
 
     case 5: // Confirmation step
@@ -169,11 +169,11 @@ export function getStepValidationMessage(
       case 0:
         return 'Please select a service to continue';
       case 1:
-        return 'Please select a date and time to continue';
-      case 2:
         return 'Please select or create a customer to continue';
-      case 3:
+      case 2:
         return 'Please provide pet information to continue';
+      case 3:
+        return 'Please select a date and time to continue';
       case 4:
         return 'Please complete all required information';
       default:
@@ -186,11 +186,11 @@ export function getStepValidationMessage(
     case 0:
       return 'Please select a service to continue';
     case 1:
-      return 'Please select a date and time to continue';
-    case 2:
       return 'Please provide your contact information to continue';
-    case 3:
+    case 2:
       return 'Please provide pet information to continue';
+    case 3:
+      return 'Please select a date and time to continue';
     case 4:
       return 'Please complete all required information';
     default:

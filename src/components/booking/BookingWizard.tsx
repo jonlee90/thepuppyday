@@ -87,8 +87,8 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
 
   /**
    * Render step based on mode
-   * - customer mode: Service → DateTime → Customer → Pet → Review → Confirmation (6 steps, 0-5)
-   * - admin mode: Service → DateTime → Customer → Pet → Review → Confirmation (6 steps, 0-5)
+   * - customer mode: Service → Customer → Pet → DateTime → Review → Confirmation (6 steps, 0-5)
+   * - admin mode: Service → Customer → Pet → DateTime → Review → Confirmation (6 steps, 0-5)
    * - walkin mode: Service → Customer → Pet → Review → Confirmation (5 steps, 0-4)
    */
   const renderStep = () => {
@@ -110,17 +110,17 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
       }
     }
 
-    // Admin mode: Service → DateTime → Customer → Pet → Review → Confirmation
+    // Admin mode: Service → Customer → Pet → DateTime → Review → Confirmation
     if (mode === 'admin') {
       switch (currentStep) {
         case 0:
           return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
         case 1:
-          return <DateTimeStep />;
-        case 2:
           return <DetailsStep mode="admin" section="customer" />;
-        case 3:
+        case 2:
           return <DetailsStep mode="admin" section="pet" />;
+        case 3:
+          return <DateTimeStep />;
         case 4:
           return <ReviewStep adminMode={true} customerId={selectedCustomerId} />;
         case 5:
@@ -130,16 +130,16 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
       }
     }
 
-    // Customer mode: Service → DateTime → Customer → Pet → Review → Confirmation
+    // Customer mode: Service → Customer → Pet → DateTime → Review → Confirmation
     switch (currentStep) {
       case 0:
         return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
       case 1:
-        return <DateTimeStep />;
-      case 2:
         return <DetailsStep mode="customer" section="customer" />;
-      case 3:
+      case 2:
         return <DetailsStep mode="customer" section="pet" />;
+      case 3:
+        return <DateTimeStep />;
       case 4:
         return <ReviewStep />;
       case 5:

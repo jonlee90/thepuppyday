@@ -125,7 +125,16 @@ export function Lightbox({
             <div className="relative w-full h-full max-w-6xl max-h-[90vh]">
               <OptimizedImage
                 src={currentImage.image_url}
-                alt={currentImage.caption || `Gallery image ${currentIndex + 1}`}
+                alt={
+                  currentImage.caption ||
+                  (currentImage.dog_name && currentImage.breed
+                    ? `${currentImage.breed} grooming at Puppy Day La Mirada — ${currentImage.dog_name}`
+                    : currentImage.dog_name
+                    ? `Dog grooming at Puppy Day La Mirada — ${currentImage.dog_name}`
+                    : currentImage.breed
+                    ? `${currentImage.breed} groomed at Puppy Day La Mirada`
+                    : `Professional dog grooming at Puppy Day La Mirada`)
+                }
                 fill
                 className="object-contain"
                 sizes="100vw"
