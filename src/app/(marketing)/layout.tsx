@@ -8,6 +8,7 @@ import { Header } from '@/components/marketing/header';
 import { Footer } from '@/components/marketing/footer';
 import { BookingModalProvider } from '@/components/booking';
 import { StickyBookingButton } from '@/components/marketing/StickyBookingButton';
+import { HashRedirect } from '@/components/marketing/HashRedirect';
 import { getBusinessInfo } from '@/lib/site-content';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { summarizeBusinessHours } from '@/lib/utils/business-hours';
@@ -42,6 +43,7 @@ export default async function MarketingLayout({
 
   return (
     <BookingModalProvider>
+      <HashRedirect />
       <Header hoursText={hoursText} />
       <main className="min-h-screen pt-[160px]">
         {children}

@@ -104,20 +104,20 @@ export function useBookingModal() {
  * Mode-specific configuration
  * Step order must match BookingWizard.renderStep() for each mode
  *
- * Customer: Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation (6 steps)
- * Admin: Service → DateTime → Customer → Pet → Review (includes add-ons) → Confirmation (6 steps)
+ * Customer: Service → Customer → Pet → DateTime → Review (includes add-ons) → Confirmation (6 steps)
+ * Admin: Service → Customer → Pet → DateTime → Review (includes add-ons) → Confirmation (6 steps)
  * Walk-in: Service → Customer → Pet → Review (includes add-ons) → Confirmation (5 steps, no DateTime)
  */
 export const MODE_CONFIG = {
   customer: {
     title: 'Book Your Appointment',
     subtitle: 'Schedule your pet\'s grooming session',
-    steps: ['Service', 'Date & Time', 'Customer', 'Pet', 'Review', 'Confirmation'],
+    steps: ['Service', 'Customer', 'Pet', 'Date & Time', 'Review', 'Confirmation'],
     stepTitles: [
       'Select a Service',       // Step 0
-      'Select Date & Time',     // Step 1
-      'Your Information',       // Step 2
-      'Pet Information',        // Step 3
+      'Your Information',       // Step 1
+      'Pet Information',        // Step 2
+      'Select Date & Time',     // Step 3
       'Review Your Booking',    // Step 4 (Includes add-ons)
       'Booking Confirmed',      // Step 5
     ],
@@ -133,12 +133,12 @@ export const MODE_CONFIG = {
   admin: {
     title: 'Create Appointment',
     subtitle: 'Schedule a new appointment',
-    steps: ['Service', 'Date & Time', 'Customer', 'Pet', 'Review', 'Confirmation'],
+    steps: ['Service', 'Customer', 'Pet', 'Date & Time', 'Review', 'Confirmation'],
     stepTitles: [
       'Select a Service',       // Step 0
-      'Select Date & Time',     // Step 1
-      'Customer Details',       // Step 2
-      'Pet Details',            // Step 3
+      'Customer Details',       // Step 1
+      'Pet Details',            // Step 2
+      'Select Date & Time',     // Step 3
       'Review Appointment',     // Step 4 (Includes add-ons)
       'Appointment Created',    // Step 5
     ],

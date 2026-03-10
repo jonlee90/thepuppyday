@@ -24,3 +24,4 @@ export { ServiceDetailPage } from './ServiceDetailPage';
 export { CityLandingPage } from './CityLandingPage';
 export { BlogPostLayout } from './BlogPostLayout';
 export { RelatedPosts } from './RelatedPosts';
+export { BlogSection } from './BlogSection';

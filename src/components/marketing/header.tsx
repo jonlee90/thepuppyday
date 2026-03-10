@@ -2,11 +2,12 @@
 
 /**
  * Marketing site header with sticky navigation
- * Features smooth scrolling to sections, active state highlighting, and mobile responsive design
+ * Uses Next.js Link for page navigation with pathname-based active state
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OptimizedImage } from '@/components/common/OptimizedImage';
 import { AddressBar, HoursBar } from '@/components/marketing/AnnouncementBars';
@@ -16,14 +17,21 @@ interface HeaderProps {
   hoursText?: string;
 }
 
+const navLinks = [
+  { label: 'Services', href: '/services' },
+  { label: 'Gallery', href: '/gallery' },
+  { label: 'Reviews', href: '/reviews' },
+  { label: 'About Us', href: '/about' },
+  { label: 'Contact', href: '/contact' },
+];
+
 export function Header({ hoursText }: HeaderProps) {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('home');
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
   const { user, isAuthenticated } = useAuthStore();
+  const pathname = usePathname();
 
   const SCROLL_THRESHOLD = 10;
 
@@ -31,43 +39,19 @@ export function Header({ hoursText }: HeaderProps) {
     const currentScrollY = window.scrollY;
     const delta = currentScrollY - lastScrollY.current;
 
-    setIsScrolled(currentScrollY > 20);
-
-    // Only toggle visibility if scroll exceeds threshold
     if (Math.abs(delta) >= SCROLL_THRESHOLD) {
       if (delta > 0 && currentScrollY > 160) {
-        // Scrolling down & past the header area — hide
         setIsHeaderVisible(false);
-        // Close mobile menu when hiding header
         setMobileMenuOpen(false);
       } else if (delta < 0) {
-        // Scrolling up — show
         setIsHeaderVisible(true);
       }
       lastScrollY.current = currentScrollY;
     }
 
-    // Always at top — show
     if (currentScrollY <= 0) {
       setIsHeaderVisible(true);
       lastScrollY.current = 0;
-    }
-
-    // Determine active section based on scroll position
-    const sections = ['services', 'gallery', 'testimonials', 'about', 'contact'];
-    const scrollPosition = currentScrollY + 100;
-
-    for (const section of sections) {
-      const element = document.getElementById(section);
-      if (element) {
-        const offsetTop = element.offsetTop;
-        const offsetBottom = offsetTop + element.offsetHeight;
-
-        if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
-          setActiveSection(section);
-          break;
-        }
-      }
     }
 
     ticking.current = false;
@@ -85,43 +69,6 @@ export function Header({ hoursText }: HeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [updateHeader]);
 
-  const navLinks = [
-    { label: 'Services', href: '#services' },
-    { label: 'Gallery', href: '#gallery' },
-    { label: 'Reviews', href: '#testimonials' },
-    { label: 'About Us', href: '#about' },
-    { label: 'Contact', href: '#contact' },
-  ];
-
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    const targetId = href.replace('#', '');
-    const element = document.getElementById(targetId);
-
-    if (element) {
-      const offsetTop = element.offsetTop - 160; // Account for announcement bar (44px) + header (80px) + hours bar (36px)
-      window.scrollTo({
-        top: offsetTop,
-        behavior: 'smooth',
-      });
-      setMobileMenuOpen(false);
-      setActiveSection(targetId);
-    }
-  };
-
-  const handleBookNowClick = () => {
-    const bookingElement = document.getElementById('booking');
-    if (bookingElement) {
-      const offsetTop = bookingElement.offsetTop - 160; // Account for announcement bar (44px) + header (80px) + hours bar (36px)
-      window.scrollTo({
-        top: offsetTop,
-        behavior: 'smooth',
-      });
-      setMobileMenuOpen(false);
-      setActiveSection('booking');
-    }
-  };
-
   return (
     <header
       className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out will-change-transform"
@@ -130,20 +77,13 @@ export function Header({ hoursText }: HeaderProps) {
       }}
     >
       <AddressBar />
-      <div
-        className={`transition-all duration-300 bg-white shadow-md backdrop-blur-sm`}
-      >
+      <div className="transition-all duration-300 bg-white shadow-md backdrop-blur-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link
               href="/"
               className="flex items-center space-x-3 group"
-              onClick={(e) => {
-                e.preventDefault();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                setActiveSection('home');
-              }}
             >
               <div className="relative w-10 h-10 sm:w-12 sm:h-12 transition-transform duration-200 group-hover:scale-105">
                 <OptimizedImage
@@ -164,12 +104,11 @@ export function Header({ hoursText }: HeaderProps) {
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-1">
               {navLinks.map((link) => {
-                const isActive = activeSection === link.href.replace('#', '');
+                const isActive = pathname.startsWith(link.href);
                 return (
-                  <a
+                  <Link
                     key={link.href}
                     href={link.href}
-                    onClick={(e) => handleNavClick(e, link.href)}
                     className={`relative px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-lg ${
                       isActive
                         ? 'text-[#434E54]'
@@ -177,14 +116,14 @@ export function Header({ hoursText }: HeaderProps) {
                     }`}
                   >
                     {link.label}
-                    {isActive && (
+                    {isActive ? (
                       <motion.div
                         layoutId="activeTab"
                         className="absolute inset-0 bg-[#F8EEE5] rounded-lg -z-10"
                         transition={{ type: 'spring', duration: 0.5, bounce: 0.2 }}
                       />
-                    )}
-                  </a>
+                    ) : null}
+                  </Link>
                 );
               })}
             </nav>
@@ -245,12 +184,12 @@ export function Header({ hoursText }: HeaderProps) {
               >
                 <nav className="py-4 space-y-1">
                   {navLinks.map((link) => {
-                    const isActive = activeSection === link.href.replace('#', '');
+                    const isActive = pathname.startsWith(link.href);
                     return (
-                      <a
+                      <Link
                         key={link.href}
                         href={link.href}
-                        onClick={(e) => handleNavClick(e, link.href)}
+                        onClick={() => setMobileMenuOpen(false)}
                         className={`block px-4 py-3 text-sm font-medium transition-colors duration-200 rounded-lg ${
                           isActive
                             ? 'text-[#434E54] bg-[#F8EEE5]'
@@ -258,7 +197,7 @@ export function Header({ hoursText }: HeaderProps) {
                         }`}
                       >
                         {link.label}
-                      </a>
+                      </Link>
                     );
                   })}
                   <div className="pt-4 px-4 space-y-2">

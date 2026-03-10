@@ -9,6 +9,7 @@ import { BLOG_POSTS } from '@/data/blog-posts';
 import { getSiteContent } from '@/lib/site-content';
 import { Breadcrumb } from '@/components/common/Breadcrumb';
 import { CTABooking } from '@/components/common/CTABooking';
+import { SchemaOrg } from '@/components/common/SchemaOrg';
 
 export const revalidate = 900;
 
@@ -47,6 +48,28 @@ export default async function BlogIndexPage() {
 
   return (
     <div className="min-h-screen bg-[#F8EEE5]">
+      <SchemaOrg
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'Blog',
+          name: 'Dog Grooming Blog - Puppy Day La Mirada',
+          description:
+            'Expert dog grooming tips, breed guides, and care advice from the team at Puppy Day in La Mirada, CA.',
+          url: 'https://thepuppyday.com/blog',
+          publisher: {
+            '@type': 'Organization',
+            name: 'Puppy Day',
+            url: 'https://thepuppyday.com',
+          },
+          blogPost: sortedPosts.map((post) => ({
+            '@type': 'BlogPosting',
+            headline: post.title,
+            description: post.excerpt,
+            datePublished: post.publishDate,
+            url: `https://thepuppyday.com/blog/${post.slug}`,
+          })),
+        }}
+      />
       <div className="max-w-6xl mx-auto px-4 py-12">
         <Breadcrumb
           items={[{ label: 'Home', href: '/' }, { label: 'Blog' }]}

@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/admin/', '/dashboard/', '/profile/'],
+      disallow: ['/admin/', '/login/', '/api/'],
     },
     sitemap: 'https://thepuppyday.com/sitemap.xml',
   };

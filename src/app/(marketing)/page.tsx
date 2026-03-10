@@ -18,6 +18,7 @@ import {
   AboutSection,
   TestimonialsSection,
   ContactSection,
+  BlogSection,
 } from '@/components/marketing';
 import { SchemaOrg } from '@/components/common/SchemaOrg';
 import { SERVICE_SLUGS, SERVICE_CONFIGS } from '@/data/services';
@@ -37,16 +38,19 @@ export async function generateMetadata(): Promise<Metadata> {
     title: seo.page_title,
     description: seo.meta_description,
     keywords: [
+      'dog grooming La Mirada',
+      'pet groomer La Mirada CA',
+      'dog grooming near me',
+      'best dog groomer La Mirada',
+      'puppy grooming La Mirada',
       'pet grooming',
-      'dog grooming',
-      'La Mirada pet grooming',
-      'professional pet care',
       'dog spa',
-      'puppy grooming',
-      'pet salon',
-      'La Mirada CA',
+      'professional pet care',
     ],
     authors: [{ name: 'The Puppy Day' }],
+    alternates: {
+      canonical: 'https://thepuppyday.com',
+    },
     openGraph: {
       title: seo.og_title,
       description: seo.og_description,
@@ -74,13 +78,9 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: {
       index: true,
       follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
     },
   };
 }
@@ -176,39 +176,11 @@ export default async function MarketingPage() {
       />
 
       {/* Latest from Our Blog */}
-      <section className="py-12 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-semibold text-[#434E54] mb-3">Dog Grooming Tips &amp; Guides</h2>
-            <p className="text-[#6B7280] max-w-xl mx-auto">
-              Expert advice from our grooming team to keep your pup looking and feeling their best.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {BLOG_POSTS.slice(0, 3).map((post) => (
-              <Link
-                key={post.slug}
-                href={`/blog/${post.slug}`}
-                className="block bg-[#F8EEE5] rounded-xl p-6 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 border border-transparent hover:border-[#C67C4E]"
-              >
-                <h3 className="font-semibold text-[#434E54] mb-2 leading-snug">{post.title}</h3>
-                <p className="text-[#6B7280] text-sm leading-relaxed mb-3 line-clamp-2">
-                  {post.excerpt}
-                </p>
-                <span className="text-xs text-[#C67C4E] font-medium">{post.readTime}</span>
-              </Link>
-            ))}
-          </div>
-          <div className="text-center mt-8">
-            <Link
-              href="/blog"
-              className="inline-flex items-center gap-2 text-[#434E54] font-medium hover:text-[#C67C4E] transition-colors duration-200"
-            >
-              View All Posts →
-            </Link>
-          </div>
-        </div>
-      </section>
+      <BlogSection
+        posts={BLOG_POSTS.slice(0, 3).map(({ slug, title, excerpt, readTime, publishDate }) => ({
+          slug, title, excerpt, readTime, publishDate,
+        }))}
+      />
 
       {/* Areas We Serve */}
       <section className="py-8 px-4 text-center bg-white">

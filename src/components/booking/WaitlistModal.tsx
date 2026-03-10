@@ -4,49 +4,100 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBooking } from '@/hooks/useBooking';
-import { formatTimeDisplay } from '@/lib/booking/availability';
-import type { TimePreference } from '@/types/database';
+import { useBookingModal } from '@/hooks/useBookingModal';
+import { formatTimeDisplay, type BusinessHours } from '@/lib/booking/availability';
+import { formatTime } from '@/lib/utils/business-hours';
+import { toast } from '@/hooks/use-toast';
+
+type UITimePreference = 'selected_time' | 'morning' | 'afternoon';
 
 interface WaitlistModalProps {
   isOpen: boolean;
   onClose: () => void;
   date: string;
   time?: string;
+  businessHours: BusinessHours;
 }
 
-export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProps) {
-  const [timePreference, setTimePreference] = useState<TimePreference>(
-    time
-      ? parseInt(time.split(':')[0], 10) < 12
-        ? 'morning'
-        : 'afternoon'
-      : 'any'
+/** Compute the midpoint of the business day for splitting morning/afternoon */
+function getMidpoint(open: string, close: string): number {
+  const [openH, openM] = open.split(':').map(Number);
+  const [closeH, closeM] = close.split(':').map(Number);
+  return Math.floor((openH * 60 + openM + closeH * 60 + closeM) / 2);
+}
+
+export function WaitlistModal({ isOpen, onClose, date, time, businessHours }: WaitlistModalProps) {
+  const [preference, setPreference] = useState<UITimePreference>(
+    time ? 'selected_time' : 'morning'
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+
+  // Reset preference when modal opens with a new time
+  useEffect(() => {
+    if (isOpen) {
+      setPreference(time ? 'selected_time' : 'morning');
+    }
+  }, [isOpen, time]);
 
   const { joinWaitlist } = useBooking();
+  const { close: closeBookingModal } = useBookingModal();
+
+  // Get hours for the selected date's day of week
+  const dayName = new Date(date + 'T00:00:00')
+    .toLocaleDateString('en-US', { weekday: 'long' })
+    .toLowerCase();
+  const dayHours = businessHours[dayName];
+
+  // Build time range descriptions from business hours
+  let morningDesc = '9:00 AM - 12:00 PM';
+  let afternoonDesc = '12:00 PM - 5:00 PM';
+
+  if (dayHours?.is_open) {
+    const midMins = getMidpoint(dayHours.open, dayHours.close);
+    const midH = Math.floor(midMins / 60);
+    const midM = midMins % 60;
+    const midStr = `${midH.toString().padStart(2, '0')}:${midM.toString().padStart(2, '0')}`;
+    morningDesc = `${formatTime(dayHours.open)} - ${formatTime(midStr)}`;
+    afternoonDesc = `${formatTime(midStr)} - ${formatTime(dayHours.close)}`;
+  }
+
+  /** Map UI preference to API-compatible value */
+  function getApiPreference(): 'morning' | 'afternoon' | 'any' {
+    if (preference === 'selected_time' && time) {
+      const hour = parseInt(time.split(':')[0], 10);
+      const minute = parseInt(time.split(':')[1], 10) || 0;
+      const slotMins = hour * 60 + minute;
+
+      if (dayHours?.is_open) {
+        const mid = getMidpoint(dayHours.open, dayHours.close);
+        return slotMins < mid ? 'morning' : 'afternoon';
+      }
+      return hour < 12 ? 'morning' : 'afternoon';
+    }
+    if (preference === 'morning') return 'morning';
+    if (preference === 'afternoon') return 'afternoon';
+    return 'any';
+  }
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
     try {
-      const result = await joinWaitlist(date, timePreference);
+      const result = await joinWaitlist(date, getApiPreference());
 
       if (result) {
-        setIsSuccess(true);
-        setTimeout(() => {
-          onClose();
-          setIsSuccess(false);
-        }, 2000);
+        onClose();
+        closeBookingModal();
+        toast.success("You're on the waitlist! We'll notify you when a spot opens up.");
       } else {
-        console.error('Failed to join waitlist');
+        toast.error('Failed to join waitlist');
       }
     } catch (error) {
       console.error('Waitlist error:', error);
+      toast.error('Failed to join waitlist');
     } finally {
       setIsSubmitting(false);
     }
@@ -60,10 +111,18 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
     });
   };
 
-  const timePreferences: { value: TimePreference; label: string; description: string }[] = [
-    { value: 'morning', label: 'Morning', description: '9 AM - 12 PM' },
-    { value: 'afternoon', label: 'Afternoon', description: '12 PM - 6 PM' },
-    { value: 'any', label: 'Any Time', description: 'First available' },
+  const timeOptions: { value: UITimePreference; label: string; description: string }[] = [
+    ...(time
+      ? [
+          {
+            value: 'selected_time' as UITimePreference,
+            label: `${formatTimeDisplay(time)} only`,
+            description: 'Notify me for this time slot only',
+          },
+        ]
+      : []),
+    { value: 'morning', label: 'Morning', description: morningDesc },
+    { value: 'afternoon', label: 'Afternoon', description: afternoonDesc },
   ];
 
   return (
@@ -87,35 +146,6 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-              {isSuccess ? (
-                // Success state
-                <div className="p-8 text-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                    className="w-16 h-16 bg-[#434E54]/10 rounded-full flex items-center justify-center mx-auto mb-4"
-                  >
-                    <svg
-                      className="w-8 h-8 text-[#434E54]"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </motion.div>
-                  <h3 className="text-xl font-bold text-[#434E54] mb-2">
-                    You&apos;re on the Waitlist!
-                  </h3>
-                  <p className="text-[#434E54]/70">
-                    We&apos;ll notify you if a spot opens up.
-                  </p>
-                </div>
-              ) : (
-                // Form state
-                <>
                   {/* Header */}
                   <div className="p-6 border-b border-[#434E54]/20">
                     <div className="flex items-center justify-between">
@@ -166,14 +196,7 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                             />
                           </svg>
                         </div>
-                        <div>
-                          <p className="font-medium text-[#434E54]">{formatDate(date)}</p>
-                          {time && (
-                            <p className="text-sm text-[#434E54]/70">
-                              Preferred: {formatTimeDisplay(time)}
-                            </p>
-                          )}
-                        </div>
+                        <p className="font-medium text-[#434E54]">{formatDate(date)}</p>
                       </div>
                     </div>
 
@@ -183,13 +206,13 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                         Preferred Time
                       </label>
                       <div className="space-y-2">
-                        {timePreferences.map((pref) => (
+                        {timeOptions.map((opt) => (
                           <label
-                            key={pref.value}
+                            key={opt.value}
                             className={`
                               flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all duration-200
                               ${
-                                timePreference === pref.value
+                                preference === opt.value
                                   ? 'border-[#434E54] bg-[#434E54]/5 shadow-md'
                                   : 'border-[#EAE0D5] hover:border-[#434E54]/50'
                               }
@@ -199,15 +222,15 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                               <input
                                 type="radio"
                                 name="timePreference"
-                                value={pref.value}
-                                checked={timePreference === pref.value}
-                                onChange={() => setTimePreference(pref.value)}
+                                value={opt.value}
+                                checked={preference === opt.value}
+                                onChange={() => setPreference(opt.value)}
                                 className="w-5 h-5 text-[#434E54] border-2 border-[#EAE0D5] focus:ring-2 focus:ring-[#434E54]/50"
                               />
                               <div>
-                                <span className="font-semibold text-[#434E54]">{pref.label}</span>
+                                <span className="font-semibold text-[#434E54]">{opt.label}</span>
                                 <span className="text-sm text-[#434E54]/60 ml-2">
-                                  {pref.description}
+                                  {opt.description}
                                 </span>
                               </div>
                             </div>
@@ -284,8 +307,6 @@ export function WaitlistModal({ isOpen, onClose, date, time }: WaitlistModalProp
                       </button>
                     </div>
                   </div>
-                </>
-              )}
             </div>
           </motion.div>
         </>

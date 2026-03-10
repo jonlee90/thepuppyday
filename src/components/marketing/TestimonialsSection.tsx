@@ -6,8 +6,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ExternalLink } from 'lucide-react';
+import { ArrowRight, ExternalLink } from 'lucide-react';
 import { OptimizedImage } from '@/components/common/OptimizedImage';
 import { Lightbox } from '@/components/marketing/Lightbox';
 import { SectionHeader } from '@/components/common/SectionHeader';
@@ -246,14 +247,21 @@ export function TestimonialsSection() {
           ))}
         </div>
 
-        {/* Yelp CTA */}
+        {/* Links */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-center mt-12"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mt-12"
         >
+          <Link
+            href="/reviews"
+            className="inline-flex items-center gap-2 text-[#434E54] hover:text-[#C67C4E] font-semibold transition-colors duration-200"
+          >
+            Read All Reviews
+            <ArrowRight className="w-5 h-5" />
+          </Link>
           <a
             href="https://www.yelp.com/biz/puppy-day-la-mirada"
             target="_blank"
