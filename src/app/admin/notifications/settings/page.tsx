@@ -5,10 +5,10 @@
  * Configure notification channels and delivery settings for each notification type
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { NotificationSettingCard } from './components/NotificationSettingCard';
-import { ToastContainer, type ToastItem } from './components/Toast';
 import { getNotificationTypeLabel } from './utils';
+import { toast } from '@/hooks/use-toast';
 import type { NotificationSettingsRow } from '@/lib/notifications/database-types';
 
 interface SettingsResponse {
@@ -19,14 +19,8 @@ export default function NotificationSettingsPage() {
   const [settings, setSettings] = useState<NotificationSettingsRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  // Fetch settings on mount
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -42,11 +36,16 @@ export default function NotificationSettingsPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
-      addToast(message, 'error');
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Fetch settings on mount
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const handleUpdateSetting = async (
     notificationType: string,
@@ -83,22 +82,13 @@ export default function NotificationSettingsPage() {
       const channelLabel = channel === 'email' ? 'Email' : 'SMS';
       const statusLabel = enabled ? 'enabled' : 'disabled';
       const typeLabel = getNotificationTypeLabel(notificationType);
-      addToast(`${channelLabel} notifications ${statusLabel} for ${typeLabel}`, 'success');
+      toast.success(`${channelLabel} notifications ${statusLabel} for ${typeLabel}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update settings';
-      addToast(message, 'error');
+      toast.error(message);
       // Re-throw to trigger rollback in ChannelToggle
       throw err;
     }
-  };
-
-  const addToast = (message: string, type: 'success' | 'error') => {
-    const id = `toast-${Date.now()}-${Math.random()}`;
-    setToasts((prev) => [...prev, { id, message, type }]);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
   return (
@@ -154,9 +144,6 @@ export default function NotificationSettingsPage() {
           </>
         )}
       </div>
-
-      {/* Toast notifications */}
-      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
     </div>
   );
 }

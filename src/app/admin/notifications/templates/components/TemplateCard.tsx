@@ -2,17 +2,23 @@
 
 import { memo } from 'react';
 import { NotificationTemplate } from '@/types/template';
-import { Mail, MessageSquare, Edit, Send, Power } from 'lucide-react';
+import { Mail, MessageSquare, Pencil, Power, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 interface TemplateCardProps {
   template: NotificationTemplate;
-  onTest: (templateId: string) => void;
+  channelEnabled: boolean;
+  index: number;
   onToggleActive: (templateId: string, currentStatus: boolean) => void;
 }
 
-export const TemplateCard = memo(function TemplateCard({ template, onTest, onToggleActive }: TemplateCardProps) {
+export const TemplateCard = memo(function TemplateCard({
+  template,
+  channelEnabled,
+  index,
+  onToggleActive,
+}: TemplateCardProps) {
   const router = useRouter();
 
   const handleEdit = () => {
@@ -27,74 +33,141 @@ export const TemplateCard = memo(function TemplateCard({ template, onTest, onTog
     });
   };
 
+  const isEmail = template.channel === 'email';
+
   return (
     <motion.div
-      whileHover={{ y: -2 }}
-      className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 p-6"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 16 }}
+      transition={{ duration: 0.2, delay: index * 0.05 }}
+      className="group relative rounded-2xl bg-white shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
+      onClick={handleEdit}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-[#EAE0D5] rounded-lg">
-            {template.channel === 'email' ? (
-              <Mail className="w-5 h-5 text-[#434E54]" />
-            ) : (
-              <MessageSquare className="w-5 h-5 text-[#434E54]" />
-            )}
+      {/* Channel accent strip */}
+      <div
+        className={`h-1.5 w-full ${
+          isEmail
+            ? 'bg-gradient-to-r from-[#434E54] to-[#5A6970]'
+            : 'bg-gradient-to-r from-[#D4A574] to-[#E8C49A]'
+        }`}
+      />
+
+      {/* Live status dot */}
+      <div className="absolute top-4 right-4">
+        {template.is_active ? (
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+          </span>
+        ) : (
+          <span className="inline-flex rounded-full h-2.5 w-2.5 bg-gray-300 opacity-40" />
+        )}
+      </div>
+
+      <div className="p-5">
+        {/* Header: Icon + Name */}
+        <div className="flex items-start gap-3 mb-3">
+          <div className="shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#EAE0D5] to-[#D4C4B4] shadow-inner flex items-center justify-center">
+              {isEmail ? (
+                <Mail className="w-[18px] h-[18px] text-[#434E54]" />
+              ) : (
+                <MessageSquare className="w-[18px] h-[18px] text-[#434E54]" />
+              )}
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-[#434E54]">{template.name}</h3>
-            <p className="text-sm text-[#6B7280]">{template.trigger_event}</p>
+          <div className="flex-1 min-w-0 pr-6">
+            <h3 className="font-semibold text-[#434E54] truncate leading-tight">
+              {template.name}
+            </h3>
+            <p className="text-xs text-[#8B7355] mt-0.5 truncate">
+              {template.trigger_event}
+            </p>
           </div>
         </div>
 
-        {/* Active Status Badge */}
-        <div className={`badge ${template.is_active ? 'badge-success' : 'badge-ghost'} gap-2`}>
-          {template.is_active ? 'Active' : 'Inactive'}
+        {/* Description */}
+        <p className="text-sm text-[#8B7355] mb-3 leading-relaxed line-clamp-2">
+          {template.description}
+        </p>
+
+        {/* Channel disabled warning */}
+        {template.is_active && !channelEnabled && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200/50 mb-3">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <span className="text-xs text-amber-700">
+              {template.channel.toUpperCase()} channel disabled in settings
+            </span>
+          </div>
+        )}
+
+        {/* Stats row */}
+        <div className="flex items-center border-t border-[#F0EAE0] pt-4 mt-1">
+          <div className="flex-1 text-center">
+            <div className="flex items-center justify-center gap-1">
+              {isEmail ? (
+                <Mail className="w-3 h-3 text-[#434E54]" />
+              ) : (
+                <MessageSquare className="w-3 h-3 text-[#D4A574]" />
+              )}
+              <span className="text-sm font-bold text-[#434E54]">
+                {template.channel.toUpperCase()}
+              </span>
+            </div>
+            <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mt-0.5">
+              Channel
+            </div>
+          </div>
+          <div className="w-px h-8 bg-[#F0EAE0]" />
+          <div className="flex-1 text-center">
+            <div className="text-2xl font-bold text-[#434E54]">
+              {template.version}
+            </div>
+            <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mt-0.5">
+              Version
+            </div>
+          </div>
+          <div className="w-px h-8 bg-[#F0EAE0]" />
+          <div className="flex-1 text-center">
+            <div className="text-sm font-bold text-[#434E54]">
+              {formatDate(template.updated_at)}
+            </div>
+            <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mt-0.5">
+              Updated
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Description */}
-      <p className="text-sm text-[#6B7280] mb-4 leading-relaxed line-clamp-2">
-        {template.description}
-      </p>
-
-      {/* Metadata */}
-      <div className="flex items-center gap-4 mb-5 text-sm text-[#6B7280]">
-        <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#EAE0D5] text-[#434E54] font-medium">
-          {template.channel.toUpperCase()}
-        </span>
-        <span>v{template.version}</span>
-        <span>Updated {formatDate(template.updated_at)}</span>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-2">
-        <button
-          onClick={handleEdit}
-          className="flex-1 btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none"
-        >
-          <Edit className="w-4 h-4" />
-          Edit
-        </button>
-        <button
-          onClick={() => onTest(template.id)}
-          className="btn btn-sm bg-transparent text-[#434E54] border border-[#434E54] hover:bg-[#434E54] hover:text-white"
-        >
-          <Send className="w-4 h-4" />
-          Test
-        </button>
-        <button
-          onClick={() => onToggleActive(template.id, template.is_active)}
-          className={`btn btn-sm ${
-            template.is_active
-              ? 'bg-transparent text-[#6B7280] border border-[#6B7280] hover:bg-[#6B7280] hover:text-white'
-              : 'bg-[#6BCB77] text-white hover:bg-[#5AB966] border-none'
-          }`}
-          title={template.is_active ? 'Deactivate' : 'Activate'}
-        >
-          <Power className="w-4 h-4" />
-        </button>
+      {/* Action bar */}
+      <div className="border-t border-[#F0EAE0]">
+        <div className="flex">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit();
+            }}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-[#434E54] hover:bg-[#F8EEE5] transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Edit
+          </button>
+          <div className="w-px bg-[#F0EAE0]" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleActive(template.id, template.is_active);
+            }}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
+              template.is_active
+                ? 'text-amber-500 hover:bg-amber-50'
+                : 'text-emerald-500 hover:bg-emerald-50'
+            }`}
+          >
+            <Power className="w-3.5 h-3.5" />
+            {template.is_active ? 'Deactivate' : 'Activate'}
+          </button>
+        </div>
       </div>
     </motion.div>
   );

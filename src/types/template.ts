@@ -9,7 +9,8 @@ export interface NotificationTemplate {
   description: string;
   trigger_event: string;
   channel: 'email' | 'sms';
-  subject?: string;
+  subject_template?: string;
+  subject?: string; // alias — client-side only
   html_template?: string;
   text_template?: string;
   sms_template?: string;
@@ -69,7 +70,7 @@ export interface TemplateTestResponse {
 }
 
 export interface TemplateUpdateRequest {
-  subject?: string;
+  subject_template?: string;
   html_template?: string;
   text_template?: string;
   sms_template?: string;

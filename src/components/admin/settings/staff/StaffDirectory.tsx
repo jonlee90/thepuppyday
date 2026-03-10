@@ -445,8 +445,8 @@ const StaffCard = memo(function StaffCard({
         </div>
       </div>
 
-      {/* Action bar — always visible on mobile, hover-reveal on desktop */}
-      <div className="border-t border-[#F0EAE0] md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
+      {/* Action bar */}
+      <div className="border-t border-[#F0EAE0]">
         <div className="flex">
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(member.id); }}

@@ -15,7 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/gallery`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${baseUrl}/reviews`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${baseUrl}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${baseUrl}/areas`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/dog-grooming`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
   ];
 
   const servicePages: MetadataRoute.Sitemap = SERVICE_SLUGS.map(slug => ({
@@ -26,7 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   const cityPages: MetadataRoute.Sitemap = CITY_SLUGS.map(slug => ({
-    url: `${baseUrl}/areas/${slug}`,
+    url: `${baseUrl}/dog-grooming/${slug}`,
     lastModified: new Date(),
     changeFrequency: 'monthly',
     priority: 0.7,

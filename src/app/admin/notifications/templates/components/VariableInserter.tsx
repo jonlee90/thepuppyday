@@ -23,8 +23,8 @@ export function VariableInserter({ variables, onInsert }: VariableInserterProps)
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="btn btn-sm bg-transparent text-[#434E54] border border-[#434E54]
-                   hover:bg-[#434E54] hover:text-white gap-2"
+        className="btn btn-sm bg-[#EAE0D5]/50 text-[#434E54] border border-[#F0EAE0]
+                   hover:bg-[#EAE0D5] gap-2"
       >
         <Code className="w-4 h-4" />
         Insert Variable
@@ -40,10 +40,10 @@ export function VariableInserter({ variables, onInsert }: VariableInserterProps)
           />
 
           {/* Dropdown */}
-          <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-lg shadow-lg
-                         border border-gray-200 z-20 max-h-96 overflow-y-auto">
+          <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-lg
+                         border border-[#F0EAE0] z-20 max-h-96 overflow-y-auto">
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3">
+            <div className="sticky top-0 bg-[#FDFAF7] border-b border-[#F0EAE0] px-4 py-3 rounded-t-xl">
               <h4 className="font-semibold text-[#434E54]">Available Variables</h4>
               <p className="text-xs text-[#6B7280] mt-1">
                 Click to insert at cursor position
@@ -62,7 +62,7 @@ export function VariableInserter({ variables, onInsert }: VariableInserterProps)
                     key={variable.name}
                     type="button"
                     onClick={() => handleInsert(variable.name)}
-                    className="w-full text-left px-4 py-3 hover:bg-[#F8EEE5] transition-colors"
+                    className="w-full text-left px-4 py-3 hover:bg-[#EAE0D5]/30 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
@@ -72,7 +72,7 @@ export function VariableInserter({ variables, onInsert }: VariableInserterProps)
                             {`{{${variable.name}}}`}
                           </code>
                           {variable.required && (
-                            <span className="text-xs text-red-500 font-medium">Required</span>
+                            <span className="text-xs text-[#D4A574] font-medium">Required</span>
                           )}
                         </div>
                         <p className="text-sm text-[#6B7280] leading-relaxed">
@@ -91,7 +91,7 @@ export function VariableInserter({ variables, onInsert }: VariableInserterProps)
             </div>
 
             {/* Footer */}
-            <div className="sticky bottom-0 bg-[#F8EEE5] border-t border-gray-200 px-4 py-3">
+            <div className="sticky bottom-0 bg-[#EAE0D5]/30 border-t border-[#F0EAE0] px-4 py-3 rounded-b-xl">
               <p className="text-xs text-[#6B7280]">
                 Variables will be replaced with actual values when the notification is sent.
               </p>

@@ -5,7 +5,7 @@
  * Elegant toggle for email/SMS notification channels
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, MessageSquare } from 'lucide-react';
 
 export interface ChannelToggleProps {
@@ -27,6 +27,11 @@ export function ChannelToggle({
 }: ChannelToggleProps) {
   const [localEnabled, setLocalEnabled] = useState(enabled);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Sync localEnabled when parent prop changes (e.g. after re-fetch)
+  useEffect(() => {
+    setLocalEnabled(enabled);
+  }, [enabled]);
 
   const handleToggle = async () => {
     if (disabled || isLoading) {
