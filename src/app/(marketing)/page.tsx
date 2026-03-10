@@ -177,9 +177,12 @@ export default async function MarketingPage() {
 
       {/* Latest from Our Blog */}
       <BlogSection
-        posts={BLOG_POSTS.slice(0, 3).map(({ slug, title, excerpt, readTime, publishDate }) => ({
-          slug, title, excerpt, readTime, publishDate,
-        }))}
+        posts={[...BLOG_POSTS]
+          .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
+          .slice(0, 3)
+          .map(({ slug, title, excerpt, readTime, publishDate }) => ({
+            slug, title, excerpt, readTime, publishDate,
+          }))}
       />
 
       {/* Areas We Serve */}

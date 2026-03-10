@@ -57,10 +57,10 @@ export default async function CityPage({
   const services = ((servicesData as Array<{ id: string; name: string; slug: string }>) || []).map(
     (s) => {
       const match = Object.entries(SERVICE_CONFIGS).find(
-        ([, cfg]) => cfg.displayName === s.name
+        ([, cfg]) => cfg.dbServiceName === s.name
       );
       return {
-        name: s.name,
+        name: match ? match[1].displayName : s.name,
         slug: match ? match[0] : s.name.toLowerCase().replace(/\s+/g, '-'),
       };
     }

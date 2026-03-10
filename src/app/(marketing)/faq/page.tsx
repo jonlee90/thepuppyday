@@ -9,6 +9,7 @@ import { Breadcrumb } from '@/components/common/Breadcrumb';
 import { CTABooking } from '@/components/common/CTABooking';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { FAQAccordion } from '@/components/marketing/FAQAccordion';
+import { SchemaOrg } from '@/components/common/SchemaOrg';
 import { FAQ_ITEMS } from '@/data/faq';
 import { getBusinessInfo } from '@/lib/site-content';
 
@@ -33,6 +34,20 @@ export default async function FAQPage() {
 
   return (
     <div>
+      <SchemaOrg
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: FAQ_ITEMS.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: item.answer,
+            },
+          })),
+        }}
+      />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <Breadcrumb
           items={[
