@@ -336,8 +336,12 @@ export function AppointmentDetailModal({
     setError('');
 
     try {
-      // Combine date and time into scheduled_at
-      const scheduled_at = new Date(`${editForm.scheduled_date}T${editForm.scheduled_time}:00`).toISOString();
+      // Combine date and time with local timezone offset to preserve intended date
+      const localDt = new Date(`${editForm.scheduled_date}T${editForm.scheduled_time}:00`);
+      const tzOffset = -localDt.getTimezoneOffset();
+      const tzSign = tzOffset >= 0 ? '+' : '-';
+      const tzPad = (n: number) => String(Math.abs(n)).padStart(2, '0');
+      const scheduled_at = `${editForm.scheduled_date}T${editForm.scheduled_time}:00${tzSign}${tzPad(Math.floor(Math.abs(tzOffset) / 60))}:${tzPad(Math.abs(tzOffset) % 60)}`;
 
       // Get duration from selected service
       const selectedService = services.find((s: any) => s.id === editForm.service_id);

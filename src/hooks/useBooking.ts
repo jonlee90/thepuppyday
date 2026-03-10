@@ -400,7 +400,7 @@ export function useBooking() {
   ]);
 
   const joinWaitlist = useCallback(
-    async (date: string, timePreference: 'morning' | 'afternoon' | 'any'): Promise<boolean> => {
+    async (date: string, timePreference: 'morning' | 'afternoon' | 'any', preferredTime?: string | null): Promise<boolean> => {
       try {
         const customerId = user?.id || (selectedCustomerId && selectedCustomerId !== 'new' ? selectedCustomerId : null);
         const petId = selectedPet?.id;
@@ -424,6 +424,7 @@ export function useBooking() {
             service_id: selectedService.id,
             requested_date: date,
             time_preference: timePreference,
+            ...(preferredTime ? { preferred_time: preferredTime } : {}),
           }),
         });
 

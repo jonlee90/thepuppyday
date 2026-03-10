@@ -1,7 +1,7 @@
 # The Puppy Day - Master Architecture Documentation
 
 > **Version**: 1.5
-> **Last Updated**: 2026-03-09
+> **Last Updated**: 2026-03-10
 > **Status**: Production-Ready (Phases 1-6, 8-9, 11 Complete | Admin Dashboard Redesign Complete | Phase 7 Pending | Phase 10 In Progress)
 
 ## Table of Contents
@@ -60,7 +60,7 @@
 | 7 | Payments & Memberships | Pending | Stripe integration, memberships, loyalty program |
 | 8 | Notifications | Completed | Templates, triggers, preferences, email/SMS providers, unsubscribe system |
 | 9 | Admin Settings | Completed | Business settings, staff management, site content, banners |
-| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), AdminButton component (done), AppointmentDetailModal redesign (done), settings hierarchy reorganization (done), comprehensive testing pending |
+| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), AdminButton component (done), AppointmentDetailModal redesign (done), settings hierarchy reorganization (done), custom swimlane calendar with overlap layout (done), StaffForm edit data loading fix (done), comprehensive testing pending |
 | 11 | Calendar Error Recovery | Completed | Retry queue, error recovery UI, quota tracking, auto-pause system |
 | F | Admin Dashboard Redesign | Completed | Replaced DashboardStats/TodayAppointments/PendingAppointments with RevenueOverview, DashboardTimeline, ProductivityWidget, WaitlistWidget, PendingActionsWidget; useDashboardData hook; revenue-overview API endpoint; QuickAccess removed; PendingActionsWidget moved full-width above grid |
 
@@ -117,7 +117,6 @@
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **FullCalendar** | 6.1.19 | Interactive calendar for appointment scheduling |
 | **Chart.js** | 4.5.1 | Chart library for analytics dashboards |
 | **react-chartjs-2** | 5.3.1 | React wrapper for Chart.js |
 | **Recharts** | 3.5.1 | Composable charting library for analytics |

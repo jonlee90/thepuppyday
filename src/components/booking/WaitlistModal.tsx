@@ -64,34 +64,42 @@ export function WaitlistModal({ isOpen, onClose, date, time, businessHours }: Wa
     afternoonDesc = `${formatTime(midStr)} - ${formatTime(dayHours.close)}`;
   }
 
-  /** Map UI preference to API-compatible value */
-  function getApiPreference(): 'morning' | 'afternoon' | 'any' {
+  /** Map UI preference to API-compatible values */
+  function getApiValues(): { time_preference: 'morning' | 'afternoon' | 'any'; preferred_time: string | null } {
     if (preference === 'selected_time' && time) {
+      // Determine morning/afternoon based on time, store exact time separately
       const hour = parseInt(time.split(':')[0], 10);
       const minute = parseInt(time.split(':')[1], 10) || 0;
       const slotMins = hour * 60 + minute;
 
+      let bucket: 'morning' | 'afternoon' = 'morning';
       if (dayHours?.is_open) {
         const mid = getMidpoint(dayHours.open, dayHours.close);
-        return slotMins < mid ? 'morning' : 'afternoon';
+        bucket = slotMins < mid ? 'morning' : 'afternoon';
+      } else {
+        bucket = hour < 12 ? 'morning' : 'afternoon';
       }
-      return hour < 12 ? 'morning' : 'afternoon';
+      return { time_preference: bucket, preferred_time: time };
     }
-    if (preference === 'morning') return 'morning';
-    if (preference === 'afternoon') return 'afternoon';
-    return 'any';
+    if (preference === 'morning') return { time_preference: 'morning', preferred_time: null };
+    if (preference === 'afternoon') return { time_preference: 'afternoon', preferred_time: null };
+    return { time_preference: 'any', preferred_time: null };
   }
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
     try {
-      const result = await joinWaitlist(date, getApiPreference());
+      const { time_preference, preferred_time } = getApiValues();
+      const result = await joinWaitlist(date, time_preference, preferred_time);
 
       if (result) {
+        toast.success("You're on the waitlist!", {
+          description: "We'll send you an email or text as soon as a spot opens up.",
+          duration: 6000,
+        });
         onClose();
         closeBookingModal();
-        toast.success("You're on the waitlist! We'll notify you when a spot opens up.");
       } else {
         toast.error('Failed to join waitlist');
       }

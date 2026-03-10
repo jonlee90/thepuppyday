@@ -23,7 +23,7 @@ export function HeroSection({
   afterPhotoUrl,
 }: HeroSectionProps) {
   // Format date for display
-  const formattedDate = new Date(appointmentDate).toLocaleDateString('en-US', {
+  const formattedDate = new Date(appointmentDate + 'T00:00:00').toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',

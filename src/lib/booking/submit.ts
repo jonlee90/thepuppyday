@@ -68,6 +68,7 @@ async function submitCustomerAppointment(
     selectedDate,
     selectedTimeSlot,
     selectedAddonIds,
+    selectedGroomerId,
     guestInfo,
     totalPrice,
   } = bookingStore;
@@ -81,8 +82,12 @@ async function submitCustomerAppointment(
     };
   }
 
-  // Combine date and time into ISO datetime
-  const scheduledAt = new Date(`${selectedDate}T${selectedTimeSlot}:00`).toISOString();
+  // Combine date and time with local timezone offset to preserve intended date
+  const localDt = new Date(`${selectedDate}T${selectedTimeSlot}:00`);
+  const tzOffset = -localDt.getTimezoneOffset();
+  const tzSign = tzOffset >= 0 ? '+' : '-';
+  const tzPad = (n: number) => String(Math.abs(n)).padStart(2, '0');
+  const scheduledAt = `${selectedDate}T${selectedTimeSlot}:00${tzSign}${tzPad(Math.floor(Math.abs(tzOffset) / 60))}:${tzPad(Math.abs(tzOffset) % 60)}`;
 
   // Determine customer_id and pet_id
   let customerId: string | undefined;
@@ -126,6 +131,7 @@ async function submitCustomerAppointment(
     total_price: totalPrice,
     notes: null,
     addon_ids: selectedAddonIds || [],
+    groomer_id: selectedGroomerId || null,
   };
 
   // Only include customer_id if we have one

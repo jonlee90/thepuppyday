@@ -51,7 +51,7 @@ export async function sendWaitlistOfferSMS(
     } = params;
 
     // Format the date
-    const formattedDate = new Date(appointmentDate).toLocaleDateString('en-US', {
+    const formattedDate = new Date(appointmentDate + 'T00:00:00').toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',

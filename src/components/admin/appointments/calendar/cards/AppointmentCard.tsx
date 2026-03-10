@@ -14,6 +14,8 @@ interface AppointmentCardProps {
   onMouseEnter?: (e: React.MouseEvent, appointment: CalendarAppointment) => void;
   onMouseLeave?: () => void;
   isDragging?: boolean;
+  overlapIndex?: number;
+  overlapTotal?: number;
 }
 
 export function AppointmentCard({
@@ -24,6 +26,8 @@ export function AppointmentCard({
   onMouseEnter,
   onMouseLeave,
   isDragging = false,
+  overlapIndex = 0,
+  overlapTotal = 1,
 }: AppointmentCardProps) {
   const scheduledDate = new Date(appointment.scheduled_at);
   const top = getPositionFromTime(scheduledDate);
@@ -40,6 +44,20 @@ export function AppointmentCard({
   const timeLabel = formatAppointmentTime(appointment.scheduled_at);
 
   const isCompact = height < 60;
+  const hasOverlap = overlapTotal > 1;
+  // When overlapping with 3+, compact cards show time only
+  const isNarrowOverlap = hasOverlap && overlapTotal >= 3 && isCompact;
+
+  // Overlap-aware positioning
+  const positionStyle: React.CSSProperties = hasOverlap
+    ? {
+        width: `calc((100% - 8px) / ${overlapTotal} - 1px)`,
+        left: `calc(4px + ${overlapIndex} * ((100% - 8px) / ${overlapTotal}))`,
+      }
+    : {
+        left: 4,
+        right: 4,
+      };
 
   return (
     <motion.div
@@ -47,15 +65,16 @@ export function AppointmentCard({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: isDragging ? 0.4 : 1, scale: 1 }}
       transition={{ duration: ANIMATION.cardAppear.duration }}
-      className={`absolute left-1 right-1 rounded-md cursor-pointer overflow-hidden select-none ${
-        isDragging ? 'opacity-40' : 'hover:brightness-95'
-      }`}
+      className={`absolute rounded-md cursor-pointer overflow-hidden select-none ${
+        hasOverlap ? 'hover:shadow-md hover:z-[25]' : ''
+      } ${isDragging ? 'opacity-40' : 'hover:brightness-95'}`}
       style={{
         top,
         height: Math.max(height, minHeight),
         backgroundColor: statusColor + '20', // 12% opacity tint
         borderLeft: `4px solid ${groomerColor}`,
         zIndex: isDragging ? 5 : 10,
+        ...positionStyle,
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -73,7 +92,7 @@ export function AppointmentCard({
               style={{ backgroundColor: statusColor }}
             />
             <span className="text-xs font-medium text-[#434E54] truncate">
-              {timeLabel} {customerName}
+              {timeLabel}{!isNarrowOverlap ? ` ${customerName}` : ''}
             </span>
           </div>
         ) : (

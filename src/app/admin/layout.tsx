@@ -10,7 +10,6 @@ import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
 import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
 import { AdminMainContent } from '@/components/admin/AdminMainContent';
 import { MobileHeader, MobileBottomTabs } from '@/components/admin/layout';
-import { Toaster } from '@/components/ui/toaster';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getAuthenticatedAdmin } from '@/lib/admin/auth';
 
@@ -60,8 +59,6 @@ export default async function AdminLayout({
         {/* Main content area - Responsive to sidebar collapse state */}
         <AdminMainContent>{children}</AdminMainContent>
 
-        {/* Toast notifications */}
-        <Toaster />
       </div>
     </AdminLayoutClient>
   );

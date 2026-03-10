@@ -21,6 +21,10 @@ const waitlistSchema = z.object({
       message: 'Time preference must be morning, afternoon, or any',
     })
     .default('any'),
+  preferred_time: z.union([
+    z.string().regex(/^\d{1,2}:\d{2}$/, 'Preferred time must be in HH:MM format'),
+    z.null(),
+  ]).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -63,6 +67,7 @@ export async function POST(req: NextRequest) {
         service_id: validated.service_id,
         requested_date: validated.requested_date,
         time_preference: validated.time_preference,
+        preferred_time: validated.preferred_time || null,
         status: 'active',
         notified_at: null,
       })

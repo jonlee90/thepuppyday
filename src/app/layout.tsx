@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Bricolage_Grotesque, DM_Sans } from 'next/font/google';
 import { AuthProvider } from '@/components/providers/auth-provider';
+import { Toaster } from '@/components/ui/toaster';
 import { ErrorFilter } from './ErrorFilter';
 import './globals.css';
 
@@ -58,6 +59,7 @@ export default function RootLayout({
 
         <ErrorFilter />
         <AuthProvider>{children}</AuthProvider>
+        <Toaster />
       </body>
     </html>
   );

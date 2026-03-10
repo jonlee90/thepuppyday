@@ -96,7 +96,10 @@
       "mcp__plugin_serena_serena__find_file",
       "mcp__plugin_serena_serena__find_symbol",
       "Bash(npx next:*)",
-      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx tsc:*)"
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx tsc:*)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=8192\" npm run:*)",
+      "Bash(gh pr:*)",
+      "mcp__plugin_supabase_supabase__execute_sql"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -106,7 +106,9 @@ export async function GET(request: Request) {
     // For now, we'll fetch all and filter in memory if search is provided
     // TODO: Optimize with database-level full-text search in production
 
-    // Apply sorting
+    // Apply sorting: primary sort by status group (active first, booked second, cancelled last)
+    // Uses a computed column via Supabase's order — we add secondary sort by requested_date
+    // Status priority is handled post-query for reliability
     const sortField = params.sort_by === 'priority' ? 'created_at' : params.sort_by!;
     query = query.order(sortField, { ascending: params.sort_order === 'asc' });
 
@@ -142,6 +144,27 @@ export async function GET(request: Request) {
         );
       });
     }
+
+    // Sort by status group (active/notified first, booked second, cancelled/expired last)
+    // then by requested_date closest to today within each group
+    const STATUS_ORDER: Record<string, number> = {
+      active: 0,
+      notified: 0,
+      booked: 1,
+      expired: 2,
+      expired_offer: 2,
+      cancelled: 3,
+    };
+    const today = new Date().toISOString().split('T')[0];
+    filteredEntries.sort((a: any, b: any) => {
+      const groupA = STATUS_ORDER[a.status] ?? 1;
+      const groupB = STATUS_ORDER[b.status] ?? 1;
+      if (groupA !== groupB) return groupA - groupB;
+      // Within same group, sort by date closest to today
+      const diffA = Math.abs(new Date(a.requested_date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime());
+      const diffB = Math.abs(new Date(b.requested_date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime());
+      return diffA - diffB;
+    });
 
     return NextResponse.json(
       {

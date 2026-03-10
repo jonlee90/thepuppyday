@@ -119,7 +119,7 @@ export function ReportCardForm({
         <div className="text-[#6B7280]">
           <p className="text-lg font-medium">{petName} - {serviceName}</p>
           <p className="text-sm">
-            {customerName} • {new Date(appointmentDate).toLocaleDateString('en-US', {
+            {customerName} • {new Date(appointmentDate + 'T00:00:00').toLocaleDateString('en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',

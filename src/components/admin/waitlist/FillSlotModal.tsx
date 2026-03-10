@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, CalendarDays } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { createFocusTrap } from '@/lib/accessibility/focus';
 import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { SlotSummary } from './SlotSummary';
 import { MatchingWaitlistList } from './MatchingWaitlistList';
@@ -40,15 +42,9 @@ export function FillSlotModal({
     >
   >([]);
   const [isLoading, setIsLoading] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
-  // Fetch matching waitlist entries when modal opens
-  useEffect(() => {
-    if (isOpen && slotDate && serviceId) {
-      fetchMatchingEntries();
-    }
-  }, [isOpen, slotDate, serviceId]);
-
-  const fetchMatchingEntries = async () => {
+  const fetchMatchingEntries = useCallback(async () => {
     setIsLoading(true);
     try {
       // Calculate date range (±3 days)
@@ -82,59 +78,139 @@ export function FillSlotModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [slotDate, serviceId]);
+
+  // Fetch matching waitlist entries when modal opens
+  useEffect(() => {
+    if (isOpen && slotDate && serviceId) {
+      fetchMatchingEntries();
+    }
+  }, [isOpen, slotDate, serviceId, fetchMatchingEntries]);
+
+  // Focus trap and body scroll lock
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      document.body.style.overflow = 'hidden';
+      const focusTrap = createFocusTrap(modalRef.current);
+      focusTrap.activate();
+
+      return () => {
+        focusTrap.deactivate();
+        document.body.style.overflow = '';
+      };
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // Escape key handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   const handleSelectEntry = (entryId: string) => {
     onBookEntry(entryId);
     onClose();
   };
 
-  if (!isOpen) return null;
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box max-w-3xl">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h3 className="font-bold text-2xl">Fill Open Slot from Waitlist</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              Select a waitlist entry to book for this available slot
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="btn btn-ghost btn-sm btn-circle"
-            aria-label="Close modal"
+    <AnimatePresence>
+      {isOpen ? (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/50 z-50"
+            aria-hidden="true"
+          />
+
+          {/* Modal container */}
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={handleBackdropClick}
           >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+            <motion.div
+              ref={modalRef}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+              role="dialog"
+              aria-modal="true"
+              tabIndex={-1}
+            >
+              {/* Header */}
+              <div className="p-6 pb-4 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#EAE0D5] flex items-center justify-center">
+                    <CalendarDays className="w-4 h-4 text-[#434E54]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[#434E54] leading-tight">
+                      Fill Open Slot from Waitlist
+                    </h3>
+                    <p className="text-xs text-[#434E54]/50 mt-0.5">
+                      Select a waitlist entry to book for this available slot
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-lg text-[#434E54]/60 hover:bg-[#EAE0D5] transition-colors"
+                  aria-label="Close modal"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
-        {/* Slot Summary */}
-        <div className="mb-6">
-          <SlotSummary date={slotDate} time={slotTime} serviceName={serviceName} />
-        </div>
+              {/* Body — scrollable */}
+              <div className="overflow-y-auto flex-1 px-6 pb-4">
+                {/* Slot Summary */}
+                <div className="mb-6">
+                  <SlotSummary date={slotDate} time={slotTime} serviceName={serviceName} />
+                </div>
 
-        {/* Matching Entries List */}
-        <div>
-          {isLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <span className="loading loading-spinner loading-lg"></span>
-            </div>
-          ) : (
-            <MatchingWaitlistList matches={matches} onSelect={handleSelectEntry} />
-          )}
-        </div>
+                {/* Matching Entries List */}
+                <div>
+                  {isLoading ? (
+                    <div className="flex justify-center items-center py-12">
+                      <span className="loading loading-spinner loading-lg text-[#434E54]"></span>
+                    </div>
+                  ) : (
+                    <MatchingWaitlistList matches={matches} onSelect={handleSelectEntry} />
+                  )}
+                </div>
+              </div>
 
-        {/* Footer */}
-        <div className="modal-action">
-          <AdminButton variant="ghost" onClick={onClose}>
-            Cancel
-          </AdminButton>
-        </div>
-      </div>
-      <div className="modal-backdrop" onClick={onClose} />
-    </div>
+              {/* Footer */}
+              <div className="p-6 pt-4 border-t border-[#434E54]/10 bg-[#EAE0D5]/30 flex gap-3 justify-end shrink-0">
+                <AdminButton variant="ghost" onClick={onClose}>
+                  Cancel
+                </AdminButton>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      ) : null}
+    </AnimatePresence>
   );
 }
