@@ -1,3 +1,12 @@
+import withSerwistInit from '@serwist/next';
+
+const withSerwist = withSerwistInit({
+  swSrc: 'src/sw.ts',
+  swDest: 'public/sw.js',
+  disable: process.env.NODE_ENV === 'development',
+  additionalPrecacheEntries: [{ url: '/~offline', revision: crypto.randomUUID() }],
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -62,6 +71,8 @@ const nextConfig = {
               "base-uri 'self'",
               // Form action: only allow forms to submit to same origin
               "form-action 'self'",
+              // Worker source: allow service worker from same origin
+              "worker-src 'self'",
               // Frame ancestors: prevent clickjacking (same as X-Frame-Options)
               "frame-ancestors 'self'",
               // Upgrade insecure requests in production
@@ -109,4 +120,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

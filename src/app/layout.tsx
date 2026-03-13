@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, DM_Sans } from 'next/font/google';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { Toaster } from '@/components/ui/toaster';
@@ -20,15 +20,28 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
+export const viewport: Viewport = {
+  themeColor: '#434E54',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://thepuppyday.com'),
   title: 'The Puppy Day - Professional Dog Grooming in La Mirada, CA',
   description:
     'Professional pet grooming services in La Mirada, CA. Book your appointment online for a gentle, stress-free grooming experience for your furry friend.',
   keywords: ['dog grooming', 'pet grooming', 'La Mirada', 'California', 'pet salon'],
+  applicationName: 'Puppy Day',
   icons: {
-    icon: '/images/logo.png',
-    apple: '/images/logo.png',
+    icon: '/icons/icon-192x192.png',
+    apple: '/icons/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Puppy Day',
+  },
+  formatDetection: {
+    telephone: false,
   },
   openGraph: {
     title: 'The Puppy Day - Professional Dog Grooming',
