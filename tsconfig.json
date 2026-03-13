@@ -27,9 +27,7 @@
         "./src/*"
       ]
     },
-    "types": [
-      "@serwist/next/typings"
-    ]
+    "types": []
   },
   "include": [
     "next-env.d.ts",
@@ -41,6 +39,9 @@
   ],
   "exclude": [
     "node_modules",
-    "public/sw.js"
+    "public/sw.js",
+    "e2e",
+    "playwright.config.ts",
+    "scripts"
   ]
 }

@@ -1,11 +1,4 @@
-import withSerwistInit from '@serwist/next';
-
-const withSerwist = withSerwistInit({
-  swSrc: 'src/sw.ts',
-  swDest: 'public/sw.js',
-  disable: process.env.NODE_ENV === 'development',
-  additionalPrecacheEntries: [{ url: '/~offline', revision: crypto.randomUUID() }],
-});
+import { withSerwist } from '@serwist/turbopack';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

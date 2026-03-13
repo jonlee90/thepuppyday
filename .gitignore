@@ -46,7 +46,4 @@ nul
 .playwright-mcp/
 .claude\settings.json
 
-# Serwist service worker build output
-public/sw.js
-public/sw.js.map
-public/swe-worker-*.js
+# Serwist service worker build output (generated in .next/ by turbopack, no public artifacts)
