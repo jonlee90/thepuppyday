@@ -12,7 +12,7 @@ import { GuestInfoForm } from '../GuestInfoForm';
 import { AddonCard } from '../AddonCard';
 import { GroomerSelect } from '../GroomerSelect';
 import { useAddons } from '@/hooks/useAddons';
-import { formatCurrency, formatDuration, getSizeShortLabel } from '@/lib/booking/pricing';
+import { formatCurrency, formatDuration, getSizeLabel } from '@/lib/booking/pricing';
 import { formatTimeDisplay } from '@/lib/booking/availability';
 import type { Addon } from '@/types/database';
 
@@ -146,7 +146,8 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
           breed_id: selectedPet?.breed_id || newPetData?.breed_id,
           breed_name: selectedPet?.breed_custom || newPetData?.breed_custom,
           size: petSize || pet.size,
-          weight: selectedPet?.weight || newPetData?.weight,
+          gender: selectedPet?.gender || newPetData?.gender,
+          color: selectedPet?.color || newPetData?.color,
         },
         service_id: selectedService.id,
         addon_ids: selectedAddons.map(addon => addon.id),
@@ -272,9 +273,15 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
               <p className="text-sm text-[#434E54]/70 mb-0.5">Pet</p>
               <p className="font-semibold text-[#434E54] text-[15px]">{petName}</p>
               <p className="text-xs text-[#434E54]/70 mt-0.5">
-                {petSize ? getSizeShortLabel(petSize) : ''}
+                {petSize ? getSizeLabel(petSize) : ''}
+                {(selectedPet?.gender || newPetData?.gender) && (
+                  <> • <span className="capitalize">{selectedPet?.gender || newPetData?.gender}</span></>
+                )}
                 {(selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom) && (
                   <> • {selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom}</>
+                )}
+                {(selectedPet?.color || newPetData?.color) && (
+                  <> • {selectedPet?.color || newPetData?.color}</>
                 )}
               </p>
             </div>
@@ -355,22 +362,17 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
             </div>
           )}
 
-          {/* Regular add-ons */}
-          {regularAddons.length > 0 && (
+          {/* Regular add-ons (only shown when no upsell section) */}
+          {regularAddons.length > 0 && upsellAddons.length === 0 && (
             <div className="space-y-3">
-              {upsellAddons.length > 0 && (
-                <h4 className="text-sm font-medium text-[#434E54]/60">Other add-ons</h4>
-              )}
-              <div className="space-y-3">
-                {regularAddons.map((addon) => (
-                  <AddonCard
-                    key={addon.id}
-                    addon={addon}
-                    isSelected={selectedAddonIds.includes(addon.id)}
-                    onToggle={() => handleToggleAddon(addon)}
-                  />
-                ))}
-              </div>
+              {regularAddons.map((addon) => (
+                <AddonCard
+                  key={addon.id}
+                  addon={addon}
+                  isSelected={selectedAddonIds.includes(addon.id)}
+                  onToggle={() => handleToggleAddon(addon)}
+                />
+              ))}
             </div>
           )}
         </div>

@@ -17,6 +17,9 @@ const updateProfileSchema = z.object({
     .max(MAX_PHONE_LENGTH, `Phone cannot exceed ${MAX_PHONE_LENGTH} characters`)
     .nullable()
     .optional(),
+  address: z.string().max(200).nullable().optional(),
+  city: z.string().max(100).nullable().optional(),
+  zip: z.string().max(10).nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest) {

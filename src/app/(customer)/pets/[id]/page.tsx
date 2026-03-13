@@ -9,6 +9,8 @@ import { notFound } from 'next/navigation';
 import { DashboardSkeleton } from '@/components/ui/skeletons';
 import { BookAppointmentButton } from '@/components/customer/BookAppointmentButton';
 import { createServerSupabaseClient, getCurrentUser } from '@/lib/supabase/server';
+import { getSizeLabel } from '@/lib/booking/pricing';
+import type { PetSize } from '@/types/database';
 
 interface PetDetailPageProps {
   params: Promise<{ id: string }>;
@@ -150,16 +152,10 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
 
               {/* Details grid */}
               <div className="grid grid-cols-2 gap-4">
-                {pet.weight && (
-                  <div>
-                    <p className="text-xs text-[#434E54]/50 uppercase tracking-wide mb-1">Weight</p>
-                    <p className="font-semibold text-[#434E54]">{pet.weight} lbs</p>
-                  </div>
-                )}
                 {pet.size && (
                   <div>
                     <p className="text-xs text-[#434E54]/50 uppercase tracking-wide mb-1">Size</p>
-                    <p className="font-semibold text-[#434E54] capitalize">{pet.size}</p>
+                    <p className="font-semibold text-[#434E54]">{getSizeLabel(pet.size as PetSize)}</p>
                   </div>
                 )}
                 {pet.gender && (
@@ -168,10 +164,16 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
                     <p className="font-semibold text-[#434E54] capitalize">{pet.gender}</p>
                   </div>
                 )}
-                {pet.birthday && (
+                {pet.color && (
                   <div>
-                    <p className="text-xs text-[#434E54]/50 uppercase tracking-wide mb-1">Birthday</p>
-                    <p className="font-semibold text-[#434E54]">{formatDate(pet.birthday)}</p>
+                    <p className="text-xs text-[#434E54]/50 uppercase tracking-wide mb-1">Color</p>
+                    <p className="font-semibold text-[#434E54]">{pet.color}</p>
+                  </div>
+                )}
+                {pet.birth_date && (
+                  <div>
+                    <p className="text-xs text-[#434E54]/50 uppercase tracking-wide mb-1">Birth Date</p>
+                    <p className="font-semibold text-[#434E54]">{formatDate(pet.birth_date)}</p>
                   </div>
                 )}
               </div>

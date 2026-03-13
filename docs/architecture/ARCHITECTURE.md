@@ -597,6 +597,9 @@ interface User {
   role: string | null;             // 'customer' | 'admin' | 'groomer'
   avatar_url: string | null;       // Profile photo URL
   preferences: Json | null;        // JSON column for notification preferences
+  address: string | null;          // Street address
+  city: string | null;             // City
+  zip: string | null;              // ZIP code
   created_at: string | null;
   updated_at: string | null;
 }
@@ -618,7 +621,8 @@ interface Pet {
   breed_id: string | null;         // Foreign key -> breeds.id
   breed_custom: string | null;     // Custom breed name (if breed_id is null)
   size: string;                    // 'small' | 'medium' | 'large' | 'xlarge'
-  weight: number | null;           // Weight in pounds
+  gender: string;                  // 'male' | 'female' (NOT NULL, default 'male', CHECK constraint)
+  color: string | null;            // Color/markings (free text)
   birth_date: string | null;       // Date of birth
   notes: string | null;            // General notes
   medical_info: string | null;     // Medical information
@@ -629,13 +633,13 @@ interface Pet {
 }
 ```
 
-**Size Weight Ranges**:
+**Size Ranges** (used for pricing):
 ```typescript
-const SIZE_WEIGHT_RANGES = {
-  small: { min: 0, max: 18 },      // 0-18 lbs
-  medium: { min: 19, max: 35 },    // 19-35 lbs
-  large: { min: 36, max: 65 },     // 36-65 lbs
-  xlarge: { min: 66, max: Infinity } // 66+ lbs
+const SIZE_RANGES = {
+  small: '0-18 lbs',
+  medium: '19-35 lbs',
+  large: '36-65 lbs',
+  xlarge: '66+ lbs',
 };
 ```
 

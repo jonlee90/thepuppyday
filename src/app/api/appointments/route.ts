@@ -21,6 +21,9 @@ const appointmentRequestSchema = appointmentCreationSchema
         lastName: z.string().min(1),
         email: z.string().email(),
         phone: z.string().min(10),
+        address: z.string().max(200).optional(),
+        city: z.string().max(100).optional(),
+        zip: z.string().optional(),
       })
       .optional(),
     new_pet: z
@@ -28,7 +31,8 @@ const appointmentRequestSchema = appointmentCreationSchema
         name: z.string().min(1),
         breed_id: z.string().uuid().optional(),
         size: z.enum(['small', 'medium', 'large', 'xlarge']),
-        weight: z.number().positive().optional(),
+        gender: z.enum(['male', 'female']).default('male'),
+        color: z.string().optional(),
         breed_custom: z.string().optional(),
       })
       .optional(),
@@ -125,6 +129,9 @@ export async function POST(req: NextRequest) {
             first_name: validated.guest_info.firstName,
             last_name: validated.guest_info.lastName,
             phone: validated.guest_info.phone,
+            address: validated.guest_info.address || null,
+            city: validated.guest_info.city || null,
+            zip: validated.guest_info.zip || null,
             role: 'customer',
             avatar_url: null,
             preferences: {},
@@ -154,7 +161,8 @@ export async function POST(req: NextRequest) {
           name: validated.new_pet.name,
           breed_id: validated.new_pet.breed_id || null,
           size: validated.new_pet.size,
-          weight: validated.new_pet.weight || null,
+          gender: validated.new_pet.gender,
+          color: validated.new_pet.color || null,
           breed_custom: validated.new_pet.breed_custom || null,
         })
         .select()
@@ -233,6 +241,20 @@ export async function POST(req: NextRequest) {
       reference = `APT-${new Date().getFullYear()}-${timestamp}`;
     }
 
+    // Apply default groomer if none specified
+    let groomerId = validated.groomer_id || null;
+    if (!groomerId) {
+      const { data: defaultGroomerSetting } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'default_groomer')
+        .maybeSingle();
+
+      if (defaultGroomerSetting?.value && typeof defaultGroomerSetting.value === 'object' && 'groomer_id' in (defaultGroomerSetting.value as Record<string, unknown>)) {
+        groomerId = (defaultGroomerSetting.value as Record<string, unknown>).groomer_id as string;
+      }
+    }
+
     // Create appointment record with full details for notification
     // Fetch related data in a single query to avoid N+1
     const { data: appointment, error: apptError } = await supabase
@@ -241,7 +263,7 @@ export async function POST(req: NextRequest) {
         customer_id: customerId,
         pet_id: petId,
         service_id: validated.service_id,
-        groomer_id: validated.groomer_id || null,
+        groomer_id: groomerId,
         scheduled_at: validated.scheduled_at,
         duration_minutes: validated.duration_minutes,
         status: 'pending',

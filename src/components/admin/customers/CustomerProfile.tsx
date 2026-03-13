@@ -28,6 +28,8 @@ import { AppointmentHistoryList } from './AppointmentHistoryList';
 import { CustomerFlagBadge, SingleFlagBadge } from './CustomerFlagBadge';
 import { CustomerFlagForm, RemoveFlagConfirmation } from './CustomerFlagForm';
 import { isWalkinPlaceholderEmail } from '@/lib/utils';
+import { getSizeLabel } from '@/lib/booking/pricing';
+import type { PetSize } from '@/types/database';
 import { usePhoneMask, formatPhoneNumber } from '@/hooks/usePhoneMask';
 import type { User as UserType, Pet, CustomerFlag } from '@/types/database';
 
@@ -54,6 +56,9 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
     last_name: '',
     email: '',
     phone: '',
+    address: '',
+    city: '',
+    zip: '',
   });
   const [savingContact, setSavingContact] = useState(false);
 
@@ -96,6 +101,9 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
         last_name: result.data.last_name,
         email: result.data.email,
         phone: result.data.phone || '',
+        address: result.data.address || '',
+        city: result.data.city || '',
+        zip: result.data.zip || '',
       });
       phoneInput.setValue(result.data.phone || '');
     } catch (err) {
@@ -139,6 +147,9 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
         last_name: customer.last_name,
         email: customer.email,
         phone: customer.phone || '',
+        address: customer.address || '',
+        city: customer.city || '',
+        zip: customer.zip || '',
       });
     }
     setIsEditingContact(false);
@@ -342,6 +353,56 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
           </div>
 
           <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+            {isEditingContact ? (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={editedContact.address || ''}
+                  onChange={(e) =>
+                    setEditedContact({ ...editedContact, address: e.target.value })
+                  }
+                  placeholder="123 Main St"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200
+                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]"
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={editedContact.city || ''}
+                    onChange={(e) =>
+                      setEditedContact({ ...editedContact, city: e.target.value })
+                    }
+                    placeholder="La Mirada"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200
+                               focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]"
+                  />
+                  <input
+                    type="text"
+                    value={editedContact.zip || ''}
+                    onChange={(e) =>
+                      setEditedContact({ ...editedContact, zip: e.target.value })
+                    }
+                    placeholder="90638"
+                    maxLength={10}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200
+                               focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-[#434E54]">
+                <MapPin className="w-4 h-4" />
+                <p>
+                  {customer.address
+                    ? [customer.address, customer.city, customer.zip].filter(Boolean).join(', ')
+                    : 'Not provided'}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Registration Date
             </label>
@@ -377,7 +438,7 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-[#434E54]">{pet.name}</h3>
                       <span className="px-2 py-0.5 rounded-full bg-[#EAE0D5] text-[#434E54] text-xs font-medium">
-                        {pet.size.toUpperCase()}
+                        {getSizeLabel(pet.size as PetSize)}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
@@ -387,10 +448,16 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
                           {pet.breed?.name || pet.breed_custom || 'Unknown'}
                         </span>
                       </div>
-                      {pet.weight && (
+                      {pet.gender && (
                         <div>
-                          <span className="text-gray-600">Weight: </span>
-                          <span className="text-[#434E54]">{pet.weight} lbs</span>
+                          <span className="text-gray-600">Gender: </span>
+                          <span className="text-[#434E54] capitalize">{pet.gender}</span>
+                        </div>
+                      )}
+                      {pet.color && (
+                        <div>
+                          <span className="text-gray-600">Color: </span>
+                          <span className="text-[#434E54]">{pet.color}</span>
                         </div>
                       )}
                     </div>

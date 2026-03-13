@@ -322,7 +322,8 @@ const CreateAppointmentSchema = z.object({
       .transform((val) => (val && val !== '' ? val : undefined)),
     breed_name: z.string().optional(),
     size: z.enum(['small', 'medium', 'large', 'xlarge', 'x-large']),
-    weight: z.number().min(0).max(300).optional().nullable().transform((val) => val ?? undefined),
+    gender: z.enum(['male', 'female']).default('male'),
+    color: z.string().optional().nullable().transform((val) => val ?? undefined),
     isNew: z.boolean().optional(), // Track if this is a new pet from walk-in
   }),
   service_id: z.string().uuid(),
@@ -502,7 +503,8 @@ export async function POST(request: NextRequest) {
             breed_id: data.pet.breed_id || null,
             breed_custom: data.pet.breed_name || null,
             size: petSize,
-            weight: data.pet.weight || null,
+            gender: data.pet.gender || 'male',
+            color: data.pet.color || null,
           })
           .select('id')
           .single();

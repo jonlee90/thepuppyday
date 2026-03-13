@@ -22,7 +22,7 @@ async function getAppointment(appointmentId: string, userId: string) {
 
   const { data: appointment } = await (supabase as any)
     .from('appointments')
-    .select('*, services(name, description, duration_minutes), pets(id, name, photo_url, breed_custom, weight, size)')
+    .select('*, services(name, description, duration_minutes), pets(id, name, photo_url, breed_custom, gender, color, size)')
     .eq('id', appointmentId)
     .eq('customer_id', userId)
     .single();
@@ -251,7 +251,8 @@ export default async function AppointmentDetailPage({ params }: AppointmentDetai
                   <p className="font-semibold text-[#434E54]">{appointment.pets?.name}</p>
                   <p className="text-sm text-[#434E54]/60">
                     {appointment.pets?.breed_custom}
-                    {appointment.pets?.weight && ` • ${appointment.pets.weight} lbs`}
+                    {appointment.pets?.gender && <> • <span className="capitalize">{appointment.pets.gender}</span></>}
+                    {appointment.pets?.color && ` • ${appointment.pets.color}`}
                   </p>
                 </div>
                 <svg className="w-5 h-5 text-[#434E54]/40 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

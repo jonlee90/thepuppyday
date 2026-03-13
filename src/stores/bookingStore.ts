@@ -12,6 +12,9 @@ export interface GuestInfo {
   lastName: string;
   email: string;
   phone: string;
+  address?: string;
+  city?: string;
+  zip?: string;
 }
 
 export interface BookingState {

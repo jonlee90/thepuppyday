@@ -230,7 +230,7 @@ describe('validation utilities', () => {
       name: 'Buddy',
       size: 'medium',
       breed_id: 'breed-123',
-      weight: 25,
+      gender: 'male',
       notes: 'Good dog',
     };
 
@@ -343,67 +343,38 @@ describe('validation utilities', () => {
       });
     });
 
-    describe('weight validation', () => {
-      it('should accept optional weight', () => {
+    describe('gender validation', () => {
+      it('should require gender', () => {
+        const { gender, ...withoutGender } = validPetInfo;
+        const result = petFormSchema.safeParse(withoutGender);
+        expect(result.success).toBe(false);
+      });
+
+      it('should accept male gender', () => {
         const result = petFormSchema.safeParse({
           ...validPetInfo,
-          weight: undefined,
+          gender: 'male',
         });
         expect(result.success).toBe(true);
       });
 
-      it('should accept null weight', () => {
+      it('should accept female gender', () => {
         const result = petFormSchema.safeParse({
           ...validPetInfo,
-          weight: null,
+          gender: 'female',
         });
         expect(result.success).toBe(true);
       });
 
-      it('should accept positive weight', () => {
+      it('should reject invalid gender values', () => {
         const result = petFormSchema.safeParse({
           ...validPetInfo,
-          weight: 25.5,
-        });
-        expect(result.success).toBe(true);
-      });
-
-      it('should reject negative weight', () => {
-        const result = petFormSchema.safeParse({
-          ...validPetInfo,
-          weight: -5,
+          gender: 'other',
         });
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.error.issues[0].message).toBe('Weight must be positive');
+          expect(result.error.issues[0].message).toBe('Please select a gender');
         }
-      });
-
-      it('should reject zero weight', () => {
-        const result = petFormSchema.safeParse({
-          ...validPetInfo,
-          weight: 0,
-        });
-        expect(result.success).toBe(false);
-      });
-
-      it('should reject weight over 300 lbs', () => {
-        const result = petFormSchema.safeParse({
-          ...validPetInfo,
-          weight: 301,
-        });
-        expect(result.success).toBe(false);
-        if (!result.success) {
-          expect(result.error.issues[0].message).toBe('Weight seems too high');
-        }
-      });
-
-      it('should accept weight at maximum (300 lbs)', () => {
-        const result = petFormSchema.safeParse({
-          ...validPetInfo,
-          weight: 300,
-        });
-        expect(result.success).toBe(true);
       });
     });
 

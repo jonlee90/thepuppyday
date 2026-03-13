@@ -109,7 +109,8 @@ async function submitCustomerAppointment(
         name: newPetData.name,
         breed_id: newPetData.breed_id,
         size: newPetData.size,
-        weight: newPetData.weight,
+        gender: newPetData.gender || 'male',
+        color: newPetData.color || undefined,
         breed_custom: newPetData.breed_custom,
       }
     : undefined;
@@ -256,7 +257,8 @@ async function submitAdminAppointment(
     pet.name = selectedPet.name;
     pet.breed_id = selectedPet.breed_id;
     pet.size = selectedPet.size;
-    pet.weight = selectedPet.weight;
+    pet.gender = selectedPet.gender;
+    pet.color = selectedPet.color;
   } else if (newPetData) {
     // New pet
     pet.isNew = true;
@@ -264,7 +266,8 @@ async function submitAdminAppointment(
     pet.breed_id = newPetData.breed_id;
     pet.breed_name = newPetData.breed_custom;
     pet.size = newPetData.size;
-    pet.weight = newPetData.weight;
+    pet.gender = newPetData.gender || 'male';
+    pet.color = newPetData.color;
   } else {
     return {
       success: false,
@@ -272,6 +275,13 @@ async function submitAdminAppointment(
       reference: '',
       error: 'No pet information provided',
     };
+  }
+
+  // Add address fields for new customers
+  if (selectedCustomerId === 'new' && guestInfo) {
+    customer.address = guestInfo.address;
+    customer.city = guestInfo.city;
+    customer.zip = guestInfo.zip;
   }
 
   const requestBody = {
@@ -387,7 +397,8 @@ async function submitWalkinAppointment(
     pet.name = selectedPet.name;
     pet.breed_id = selectedPet.breed_id;
     pet.size = selectedPet.size;
-    pet.weight = selectedPet.weight;
+    pet.gender = selectedPet.gender;
+    pet.color = selectedPet.color;
   } else if (newPetData) {
     // New pet
     pet.isNew = true;
@@ -395,7 +406,8 @@ async function submitWalkinAppointment(
     pet.breed_id = newPetData.breed_id;
     pet.breed_name = newPetData.breed_custom;
     pet.size = newPetData.size;
-    pet.weight = newPetData.weight;
+    pet.gender = newPetData.gender || 'male';
+    pet.color = newPetData.color;
   } else {
     return {
       success: false,
@@ -403,6 +415,13 @@ async function submitWalkinAppointment(
       reference: '',
       error: 'No pet information provided',
     };
+  }
+
+  // Add address fields for new customers
+  if (selectedCustomerId === 'new' && guestInfo) {
+    customer.address = guestInfo.address;
+    customer.city = guestInfo.city;
+    customer.zip = guestInfo.zip;
   }
 
   const requestBody = {

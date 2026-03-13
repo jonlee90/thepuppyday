@@ -5,7 +5,6 @@
 
 import { z } from 'zod';
 import { guestInfoSchema, petFormSchema } from '@/lib/booking/validation';
-import { SIZE_WEIGHT_RANGES, getSizeFromWeight } from '@/lib/booking/pricing';
 import type { PetSize, PaymentStatus } from '@/types/database';
 
 /**
@@ -30,7 +29,8 @@ export const CSVPetSchema = z.object({
   pet_name: z.string().min(1, 'Pet name is required').max(100),
   pet_breed: z.string().optional(), // Optional for CSV imports
   pet_size: z.string().min(1, 'Pet size is required'),
-  pet_weight: z.string().optional(),
+  pet_gender: z.string().optional(),
+  pet_color: z.string().optional(),
 });
 
 /**
@@ -47,7 +47,8 @@ export const CSVAppointmentRowSchema = z.object({
   pet_name: z.string().min(1, 'Pet name is required'),
   pet_breed: z.string().optional(), // Optional for CSV imports - breed can be empty
   pet_size: z.string().min(1, 'Pet size is required'),
-  pet_weight: z.string().optional(),
+  pet_gender: z.string().optional(),
+  pet_color: z.string().optional(),
 
   // Service fields
   service_name: z.string().min(1, 'Service name is required'),
@@ -197,36 +198,6 @@ export function normalizePetSize(size: string): PetSize | null {
   };
 
   return mapping[normalized] || null;
-}
-
-/**
- * Validate weight against size range
- * Returns warning (not error) if weight doesn't match size
- */
-export function validateWeightForSize(
-  weight: number,
-  size: PetSize
-): { isValid: boolean; warning?: ValidationWarning } {
-  const range = SIZE_WEIGHT_RANGES[size];
-
-  const isInRange = weight >= range.min && weight <= range.max;
-
-  if (!isInRange) {
-    const rangeStr = range.max === Infinity
-      ? `${range.min}+ lbs`
-      : `${range.min}-${range.max} lbs`;
-
-    return {
-      isValid: false,
-      warning: {
-        field: 'pet_weight',
-        message: `Weight ${weight} lbs does not match ${size} size range (${rangeStr}). Admin can override.`,
-        severity: 'warning',
-      },
-    };
-  }
-
-  return { isValid: true };
 }
 
 /**
