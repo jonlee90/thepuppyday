@@ -5,8 +5,9 @@
 
 'use client';
 
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { MapPin, Sparkles, Heart, Clock } from 'lucide-react';
+import { ArrowRight, MapPin, Sparkles, Heart, Clock } from 'lucide-react';
 import { OptimizedImage } from '@/components/common/OptimizedImage';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { IconBox } from '@/components/ui/IconBox';
@@ -14,6 +15,7 @@ import { IconBox } from '@/components/ui/IconBox';
 interface AboutSectionProps {
   title: string;
   description: string;
+  showViewAll?: boolean;
 }
 
 const stats = [
@@ -37,7 +39,7 @@ const highlights = [
   },
 ];
 
-export function AboutSection({ title, description }: AboutSectionProps) {
+export function AboutSection({ title, description, showViewAll = false }: AboutSectionProps) {
   return (
     <section id="about" className="relative py-20 md:py-28 overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -129,6 +131,18 @@ export function AboutSection({ title, description }: AboutSectionProps) {
               </div>
             </motion.div>
           </div>
+
+          {showViewAll ? (
+            <div className="text-center mt-10">
+              <Link
+                href="/about"
+                className="inline-flex items-center gap-2 text-[#434E54] hover:text-[#C67C4E] font-semibold transition-colors duration-200"
+              >
+                Learn More About Us
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </div>
+          ) : null}
 
         </div>
       </div>

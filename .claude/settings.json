@@ -11,22 +11,7 @@
 				]
 			}
 		],
-		"PreToolUse": [
-			{
-				"matcher": "Bash",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "~/.claude/hooks/deny_check.sh"
-					},
-					{
-						"type": "command",
-						"command": "~/.claude/hooks/check_ai_commit.sh"
-					}
-				]
-			}
-		],
-		"Notification": [
+"Notification": [
 			{
 				"matcher": "*",
 				"hooks": [

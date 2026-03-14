@@ -32,7 +32,8 @@ export interface CalendarAppointment {
     name: string;
     breed?: string;
     size?: string;
-    weight?: number | null;
+    gender?: string;
+    color?: string | null;
   } | null;
   service: {
     name: string;

@@ -1,13 +1,25 @@
 /**
  * Admin Staff Detail API Route
  * GET /api/admin/settings/staff/[id] - Get staff member detail
- * Task 0206: Staff Detail API
+ * PUT /api/admin/settings/staff/[id] - Update staff member
+ * DELETE /api/admin/settings/staff/[id] - Soft delete staff member (set is_active=false)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import type { User, Appointment, StaffCommission } from '@/types/database';
+import { logSettingsChange } from '@/lib/admin/audit-log';
+import { z } from 'zod';
+import type { User, StaffCommission } from '@/types/database';
+
+const updateStaffSchema = z.object({
+  first_name: z.string().min(1, 'First name is required').optional(),
+  last_name: z.string().min(1, 'Last name is required').optional(),
+  email: z.string().email('Invalid email address').optional(),
+  phone: z.string().optional().nullable(),
+  role: z.enum(['groomer', 'admin']).optional(),
+  is_active: z.boolean().optional(),
+});
 
 interface StaffDetailResponse {
   profile: User;
@@ -234,5 +246,154 @@ export async function GET(
       { error: 'Internal server error' },
       { status: 500 }
     );
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
+    const { user: adminUser } = await requireAdmin(supabase);
+
+    const { id: staffId } = await params;
+    const body = await request.json();
+    const validation = updateStaffSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: validation.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const updates = validation.data;
+
+    // Verify staff exists
+    const { data: existing, error: fetchError } = await (serviceClient as any)
+      .from('users')
+      .select('id, email, first_name, last_name, role, is_active')
+      .eq('id', staffId)
+      .single();
+
+    if (fetchError || !existing) {
+      return NextResponse.json({ error: 'Staff member not found' }, { status: 404 });
+    }
+
+    // Check email uniqueness (excluding self)
+    if (updates.email && updates.email !== existing.email) {
+      const { data: emailConflict } = await (serviceClient as any)
+        .from('users')
+        .select('id')
+        .eq('email', updates.email)
+        .neq('id', staffId)
+        .single();
+
+      if (emailConflict) {
+        return NextResponse.json(
+          { error: 'A user with this email already exists' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const { data: updatedStaff, error: updateError } = await (serviceClient as any)
+      .from('users')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', staffId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('[Staff API] Error updating staff:', updateError);
+      return NextResponse.json({ error: 'Failed to update staff member' }, { status: 500 });
+    }
+
+    after(() => logSettingsChange(
+      supabase,
+      adminUser.id,
+      'staff',
+      `staff.${staffId}`,
+      existing,
+      updates
+    ));
+
+    return NextResponse.json({ data: updatedStaff });
+  } catch (error) {
+    console.error('[Staff API] Error in PUT route:', error);
+
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
+    const { user: adminUser } = await requireAdmin(supabase);
+
+    const { id: staffId } = await params;
+
+    // Verify staff exists
+    const { data: existing, error: fetchError } = await (serviceClient as any)
+      .from('users')
+      .select('id, first_name, last_name, email, role, is_active')
+      .eq('id', staffId)
+      .single();
+
+    if (fetchError || !existing) {
+      return NextResponse.json({ error: 'Staff member not found' }, { status: 404 });
+    }
+
+    // Count upcoming appointments as a warning
+    const now = new Date();
+    const { count: upcomingCount } = await (serviceClient as any)
+      .from('appointments')
+      .select('*', { count: 'exact', head: true })
+      .eq('groomer_id', staffId)
+      .in('status', ['pending', 'confirmed'])
+      .gte('scheduled_at', now.toISOString());
+
+    // Soft delete: set is_active = false
+    const { error: updateError } = await (serviceClient as any)
+      .from('users')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('id', staffId);
+
+    if (updateError) {
+      console.error('[Staff API] Error deactivating staff:', updateError);
+      return NextResponse.json({ error: 'Failed to deactivate staff member' }, { status: 500 });
+    }
+
+    after(() => logSettingsChange(
+      supabase,
+      adminUser.id,
+      'staff',
+      `staff.${staffId}`,
+      { is_active: true },
+      { is_active: false }
+    ));
+
+    return NextResponse.json({
+      data: { id: staffId, upcoming_appointments: upcomingCount || 0 },
+      message: 'Staff member deactivated',
+    });
+  } catch (error) {
+    console.error('[Staff API] Error in DELETE route:', error);
+
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -36,7 +36,8 @@ import { StatusTransitionButton } from './StatusTransitionButton';
 import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { toast } from '@/hooks/use-toast';
 import type { Appointment, CustomerFlag, Service, Addon, Pet, ServicePrice } from '@/types/database';
-import type { User as UserType } from '@/types/database';
+import type { User as UserType, PetSize } from '@/types/database';
+import { getSizeLabel } from '@/lib/booking/pricing';
 
 interface EditFormState {
   scheduled_date: string;
@@ -336,8 +337,12 @@ export function AppointmentDetailModal({
     setError('');
 
     try {
-      // Combine date and time into scheduled_at
-      const scheduled_at = new Date(`${editForm.scheduled_date}T${editForm.scheduled_time}:00`).toISOString();
+      // Combine date and time with local timezone offset to preserve intended date
+      const localDt = new Date(`${editForm.scheduled_date}T${editForm.scheduled_time}:00`);
+      const tzOffset = -localDt.getTimezoneOffset();
+      const tzSign = tzOffset >= 0 ? '+' : '-';
+      const tzPad = (n: number) => String(Math.abs(n)).padStart(2, '0');
+      const scheduled_at = `${editForm.scheduled_date}T${editForm.scheduled_time}:00${tzSign}${tzPad(Math.floor(Math.abs(tzOffset) / 60))}:${tzPad(Math.abs(tzOffset) % 60)}`;
 
       // Get duration from selected service
       const selectedService = services.find((s: any) => s.id === editForm.service_id);
@@ -660,8 +665,9 @@ export function AppointmentDetailModal({
                   <div className="space-y-2">
                     <div className="text-sm font-medium text-[#434E54]">{appointment.pet?.name}</div>
                     <div className="flex gap-3 text-xs text-[#6B7280]">
-                      <span className="capitalize">{appointment.pet?.size} size</span>
-                      {appointment.pet?.weight && <span>{appointment.pet.weight} lbs</span>}
+                      <span>{appointment.pet?.size ? getSizeLabel(appointment.pet.size as PetSize) : ''}</span>
+                      {appointment.pet?.gender && <span className="capitalize">{appointment.pet.gender}</span>}
+                      {appointment.pet?.color && <span>{appointment.pet.color}</span>}
                     </div>
                     {appointment.pet?.medical_info && (
                       <div className="text-xs bg-[#FFF3CD]/30 p-2 rounded border-l-2 border-[#FFB347] text-[#92400E]">
@@ -909,7 +915,7 @@ export function AppointmentDetailModal({
                 <div className="space-y-1.5">
                   {/* Base Service */}
                   <div className="flex justify-between text-xs">
-                    <span className="text-[#6B7280]">{appointment.service?.name} ({appointment.pet?.size})</span>
+                    <span className="text-[#6B7280]">{appointment.service?.name} ({appointment.pet?.size ? getSizeLabel(appointment.pet.size as PetSize) : ''})</span>
                     <span className="text-[#434E54] font-medium">${basePrice.toFixed(2)}</span>
                   </div>
 

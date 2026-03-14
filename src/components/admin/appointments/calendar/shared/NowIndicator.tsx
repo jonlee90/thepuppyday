@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { isToday } from 'date-fns';
 import { getPositionFromTime } from '../utils';
+import { DISPLAY_HOURS } from '../constants';
 
 interface NowIndicatorProps {
   date: Date;
@@ -16,7 +17,8 @@ export function NowIndicator({ date }: NowIndicatorProps) {
     return () => clearInterval(interval);
   }, []);
 
-  if (!isToday(date)) return null;
+  const currentHour = now.getHours() + now.getMinutes() / 60;
+  if (!isToday(date) || currentHour < DISPLAY_HOURS.start || currentHour >= DISPLAY_HOURS.end) return null;
 
   const top = getPositionFromTime(now);
 

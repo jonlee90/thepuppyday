@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
-import { formatCurrency, formatDuration, getSizeShortLabel } from '@/lib/booking/pricing';
+import { formatCurrency, formatDuration, getSizeLabel } from '@/lib/booking/pricing';
 import { GroomerSelect } from '../GroomerSelect';
 import { Scissors, Check } from 'lucide-react';
 
@@ -112,7 +112,8 @@ export function WalkinReviewStep({ onComplete, customerId }: WalkinReviewStepPro
           breed_id: selectedPet?.breed_id || newPetData?.breed_id,
           breed_name: selectedPet?.breed_custom || newPetData?.breed_custom,
           size: petSize || pet.size,
-          weight: selectedPet?.weight || newPetData?.weight,
+          gender: selectedPet?.gender || newPetData?.gender,
+          color: selectedPet?.color || newPetData?.color,
         },
         service_id: selectedService.id,
         addon_ids: selectedAddons.map(addon => addon.id),
@@ -251,9 +252,15 @@ export function WalkinReviewStep({ onComplete, customerId }: WalkinReviewStepPro
               <p className="text-sm text-[#434E54]/70">Pet</p>
               <p className="font-semibold text-[#434E54]">{petName}</p>
               <p className="text-sm text-[#434E54]/70">
-                {petSize ? getSizeShortLabel(petSize) : ''}
+                {petSize ? getSizeLabel(petSize) : ''}
+                {(selectedPet?.gender || newPetData?.gender) && (
+                  <> • <span className="capitalize">{selectedPet?.gender || newPetData?.gender}</span></>
+                )}
                 {(selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom) && (
                   <> • {selectedPet?.breed_custom || selectedPet?.breed?.name || newPetData?.breed_custom}</>
+                )}
+                {(selectedPet?.color || newPetData?.color) && (
+                  <> • {selectedPet?.color || newPetData?.color}</>
                 )}
               </p>
             </div>

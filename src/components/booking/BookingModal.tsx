@@ -87,7 +87,7 @@ export function BookingModal({
   const preSelectedCustomerId = propCustomerId || modalStore.preSelectedCustomerId;
 
   const config = MODE_CONFIG[mode];
-  const { currentStep, reset, nextStep, prevStep, selectDateTime, setMode, setStep } = bookingStore;
+  const { currentStep, reset, nextStep, prevStep, selectDateTime, setMode, setStep, setSelectedCustomerId, selectPet, setGuestInfo } = bookingStore;
 
   // Sync mode and initial step to booking store when modal opens
   useEffect(() => {
@@ -97,8 +97,20 @@ export function BookingModal({
       if (modalStore.initialStep > 0) {
         setStep(modalStore.initialStep);
       }
+      // Pre-select customer
+      if (preSelectedCustomerId) {
+        setSelectedCustomerId(preSelectedCustomerId);
+      }
+      // Pre-fill guest info from pre-selected customer (needed for submission)
+      if (modalStore.preSelectedCustomerInfo) {
+        setGuestInfo(modalStore.preSelectedCustomerInfo);
+      }
+      // Pre-select pet
+      if (modalStore.preSelectedPet) {
+        selectPet(modalStore.preSelectedPet);
+      }
     }
-  }, [isOpen, mode, setMode, reset, setStep, modalStore.initialStep]);
+  }, [isOpen, mode, setMode, reset, setStep, modalStore.initialStep, preSelectedCustomerId, setSelectedCustomerId, selectPet, setGuestInfo, modalStore.preSelectedPet, modalStore.preSelectedCustomerInfo]);
 
   // Auto-set date/time to NOW for walk-in mode when modal opens
   useEffect(() => {
@@ -280,15 +292,33 @@ export function BookingModal({
         modalStore.setCanClose(true);
       }
     } else {
-      // Regular step navigation
-      nextStep();
+      // Skip customer+pet steps (1 & 2) in admin mode when both are pre-selected
+      const skipDetailsSteps =
+        mode === 'admin' &&
+        !!modalStore.preSelectedCustomerId &&
+        !!modalStore.preSelectedPet;
+
+      if (skipDetailsSteps && currentStep === 0) {
+        setStep(3); // Service → DateTime
+      } else {
+        nextStep();
+      }
     }
-  }, [currentStep, nextStep, modalStore, mode, bookingStore, handleSuccess, handleClose]);
+  }, [currentStep, nextStep, modalStore, mode, bookingStore, handleSuccess, handleClose, setStep]);
 
   // Handle back from footer
   const handleBack = useCallback(() => {
-    prevStep();
-  }, [prevStep]);
+    const skipDetailsSteps =
+      mode === 'admin' &&
+      !!modalStore.preSelectedCustomerId &&
+      !!modalStore.preSelectedPet;
+
+    if (skipDetailsSteps && currentStep === 3) {
+      setStep(0); // DateTime → Service (skip pet+customer steps)
+    } else {
+      prevStep();
+    }
+  }, [prevStep, currentStep, mode, modalStore, setStep]);
 
   // Determine if continue button should be enabled
   const canContinue = canContinueFromStep(currentStep, bookingStore, mode);

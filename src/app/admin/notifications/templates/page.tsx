@@ -1,14 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { NotificationTemplate } from '@/types/template';
 import { TemplateCard } from './components/TemplateCard';
 import { TemplateFilters, FilterOptions } from './components/TemplateFilters';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+
+interface TemplateWithChannelStatus extends NotificationTemplate {
+  channel_enabled: boolean;
+}
 
 export default function TemplatesPage() {
-  const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
-  const [filteredTemplates, setFilteredTemplates] = useState<NotificationTemplate[]>([]);
+  const [templates, setTemplates] = useState<TemplateWithChannelStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -36,7 +40,8 @@ export default function TemplatesPage() {
     }
   }, []);
 
-  const applyFilters = useCallback(() => {
+  // Derived state: filter templates based on current filters
+  const filteredTemplates = useMemo(() => {
     let filtered = [...templates];
 
     // Search filter
@@ -54,30 +59,28 @@ export default function TemplatesPage() {
       filtered = filtered.filter((t) => t.channel === filters.channel);
     }
 
-    // Status filter
+    // Status filter — a template is effectively active only if both is_active and channel_enabled
     if (filters.status !== 'all') {
-      filtered = filtered.filter((t) =>
-        filters.status === 'active' ? t.is_active : !t.is_active
-      );
+      filtered = filtered.filter((t) => {
+        const effectivelyActive = t.is_active && t.channel_enabled;
+        return filters.status === 'active' ? effectivelyActive : !effectivelyActive;
+      });
     }
 
-    setFilteredTemplates(filtered);
+    // Sort: effectively active templates first, disabled at the bottom
+    filtered.sort((a, b) => {
+      const aActive = a.is_active && a.channel_enabled ? 1 : 0;
+      const bActive = b.is_active && b.channel_enabled ? 1 : 0;
+      return bActive - aActive;
+    });
+
+    return filtered;
   }, [templates, filters]);
 
   // Fetch templates on mount
   useEffect(() => {
     fetchTemplates();
   }, [fetchTemplates]);
-
-  // Apply filters whenever templates or filters change
-  useEffect(() => {
-    applyFilters();
-  }, [applyFilters]);
-
-  const handleTest = useCallback(async (templateId: string) => {
-    // TODO: Open test modal
-    console.log('Test template:', templateId);
-  }, []);
 
   const handleToggleActive = useCallback(async (templateId: string, currentStatus: boolean) => {
     try {
@@ -94,11 +97,12 @@ export default function TemplatesPage() {
         throw new Error('Failed to update template');
       }
 
+      toast.success(`Template ${currentStatus ? 'deactivated' : 'activated'}`);
       // Refresh templates
       await fetchTemplates();
     } catch (err) {
-      console.error('Error toggling template:', err);
-      alert('Failed to update template status');
+      console.error('[TemplatesPage] Error toggling template:', err);
+      toast.error('Failed to update template status');
     }
   }, [fetchTemplates]);
 
@@ -153,11 +157,12 @@ export default function TemplatesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTemplates.map((template) => (
+            {filteredTemplates.map((template, index) => (
               <TemplateCard
                 key={template.id}
                 template={template}
-                onTest={handleTest}
+                channelEnabled={template.channel_enabled}
+                index={index}
                 onToggleActive={handleToggleActive}
               />
             ))}

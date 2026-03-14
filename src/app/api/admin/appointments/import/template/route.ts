@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
     await requireAdmin(supabase);
 
     // CSV template with headers and example data
-    const template = `customer_name,customer_email,customer_phone,pet_name,pet_breed,pet_size,pet_weight,service_name,date,time,addons,notes,payment_status,payment_method,amount_paid
-Sarah Johnson,sarah@example.com,(657) 555-0123,Max,Golden Retriever,Large,55,Basic Grooming,2025-12-15,11:00 AM,Pawdicure,"Special grooming instructions",Pending,,
-John Smith,john@example.com,(714) 555-0456,Bella,Poodle,Medium,25,Premium Grooming,2025-12-18,2:00 PM,"Teeth Brushing,Pawdicure",,Paid,Card,95.00
-Emily Davis,emily@example.com,(562) 555-0789,Charlie,Labrador Retriever,Large,60,Basic Grooming,2025-12-20,9:30 AM,,,Deposit Paid,Cash,35.00`;
+    const template = `customer_name,customer_email,customer_phone,pet_name,pet_breed,pet_size,pet_gender,pet_color,service_name,date,time,addons,notes,payment_status,payment_method,amount_paid
+Sarah Johnson,sarah@example.com,(657) 555-0123,Max,Golden Retriever,Large,male,Golden,Basic Grooming,2025-12-15,11:00 AM,Pawdicure,"Special grooming instructions",Pending,,
+John Smith,john@example.com,(714) 555-0456,Bella,Poodle,Medium,female,White,Premium Grooming,2025-12-18,2:00 PM,"Teeth Brushing,Pawdicure",,Paid,Card,95.00
+Emily Davis,emily@example.com,(562) 555-0789,Charlie,Labrador Retriever,Large,male,Chocolate,Basic Grooming,2025-12-20,9:30 AM,,,Deposit Paid,Cash,35.00`;
 
     // Return as downloadable CSV file
     return new NextResponse(template, {

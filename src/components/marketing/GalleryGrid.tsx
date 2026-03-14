@@ -41,7 +41,16 @@ export function GalleryGrid({ images }: GalleryGridProps) {
           >
             <OptimizedImage
               src={image.image_url}
-              alt={image.caption || `Gallery image ${index + 1}`}
+              alt={
+                image.caption ||
+                (image.dog_name && image.breed
+                  ? `${image.breed} grooming at Puppy Day La Mirada — ${image.dog_name}`
+                  : image.dog_name
+                  ? `Dog grooming at Puppy Day La Mirada — ${image.dog_name}`
+                  : image.breed
+                  ? `${image.breed} groomed at Puppy Day La Mirada`
+                  : `Professional dog grooming at Puppy Day La Mirada`)
+              }
               fill
               className="object-cover"
               sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"

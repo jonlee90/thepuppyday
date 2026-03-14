@@ -96,7 +96,7 @@ export function SmsCharacterCounter({ content, variables }: SmsCharacterCounterP
   const progressPercentage = Math.min((segmentInfo.characterCount / 160) * 100, 100);
 
   return (
-    <div className="bg-[#FFFBF7] rounded-lg p-4 border border-gray-200">
+    <div className="bg-[#FFFBF7] rounded-lg p-4 border border-[#F0EAE0]">
       {/* Character Count Display */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -111,7 +111,7 @@ export function SmsCharacterCounter({ content, variables }: SmsCharacterCounterP
       </div>
 
       {/* Progress Bar */}
-      <div className="relative w-full h-2 bg-gray-200 rounded-full mb-3 overflow-hidden">
+      <div className="relative w-full h-2 bg-[#EAE0D5]/50 rounded-full mb-3 overflow-hidden">
         <div
           className={`absolute top-0 left-0 h-full ${getProgressColor()} transition-all duration-300`}
           style={{ width: `${progressPercentage}%` }}
@@ -126,13 +126,13 @@ export function SmsCharacterCounter({ content, variables }: SmsCharacterCounterP
       </p>
 
       {/* Helper Text */}
-      <p className="text-xs text-[#9CA3AF] mt-2">
+      <p className="text-xs text-[#6B7280] mt-2">
         Character count includes maximum variable lengths. Recommended: Keep under 160 characters.
       </p>
 
       {/* Segment Breakdown */}
       {segmentInfo.segmentCount > 1 && (
-        <div className="mt-3 pt-3 border-t border-gray-200">
+        <div className="mt-3 pt-3 border-t border-[#F0EAE0]">
           <p className="text-xs text-[#6B7280]">
             <strong>Cost Impact:</strong> This message will be billed as {segmentInfo.segmentCount}{' '}
             separate SMS messages.

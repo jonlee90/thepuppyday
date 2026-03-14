@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
 import { useBookingModalStore } from '@/hooks/useBookingModal';
-import { formatCurrency, formatDuration, getSizeShortLabel } from '@/lib/booking/pricing';
+import { formatCurrency, formatDuration, getSizeLabel } from '@/lib/booking/pricing';
 import { formatTimeDisplay } from '@/lib/booking/availability';
 
 export function ConfirmationStep() {
@@ -192,7 +192,7 @@ export function ConfirmationStep() {
             <div>
               <p className="text-sm font-medium text-[#434E54]">{petName}</p>
               <p className="text-xs text-[#434E54]/70">
-                {petSize && getSizeShortLabel(petSize)}
+                {petSize && getSizeLabel(petSize)}
               </p>
             </div>
           </div>

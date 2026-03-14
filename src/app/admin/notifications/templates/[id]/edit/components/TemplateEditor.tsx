@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { NotificationTemplate } from '@/types/template';
 import { VariableInserter } from '../../../components/VariableInserter';
 import { SmsCharacterCounter } from './SmsCharacterCounter';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Mail, Code, FileText, MessageSquare, Type } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface TemplateEditorProps {
   template: NotificationTemplate;
   onSave: (updates: {
-    subject?: string;
+    subject_template?: string;
     html_template?: string;
     text_template?: string;
     sms_template?: string;
@@ -24,13 +25,12 @@ interface TemplateEditorProps {
 }
 
 export function TemplateEditor({ template, onSave, onContentChange }: TemplateEditorProps) {
-  const [subject, setSubject] = useState(template.subject || '');
+  const [subject, setSubject] = useState(template.subject_template || '');
   const [htmlTemplate, setHtmlTemplate] = useState(template.html_template || '');
   const [textTemplate, setTextTemplate] = useState(template.text_template || '');
   const [smsTemplate, setSmsTemplate] = useState(template.sms_template || '');
   const [changeReason, setChangeReason] = useState('');
   const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
 
   // Refs for cursor position tracking
   const subjectRef = useRef<HTMLInputElement>(null);
@@ -38,24 +38,25 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
   const textRef = useRef<HTMLTextAreaElement>(null);
   const smsRef = useRef<HTMLTextAreaElement>(null);
 
-  // Track changes
-  useEffect(() => {
-    const changed =
-      subject !== (template.subject || '') ||
+  // Track changes with useMemo
+  const hasChanges = useMemo(() => {
+    return (
+      subject !== (template.subject_template || '') ||
       htmlTemplate !== (template.html_template || '') ||
       textTemplate !== (template.text_template || '') ||
-      smsTemplate !== (template.sms_template || '');
+      smsTemplate !== (template.sms_template || '')
+    );
+  }, [subject, htmlTemplate, textTemplate, smsTemplate, template]);
 
-    setHasChanges(changed);
-
-    // Notify parent of content changes for preview
+  // Notify parent of content changes for preview
+  useEffect(() => {
     onContentChange({
       subject,
       html_template: htmlTemplate,
       text_template: textTemplate,
       sms_template: smsTemplate,
     });
-  }, [subject, htmlTemplate, textTemplate, smsTemplate, template]);
+  }, [subject, htmlTemplate, textTemplate, smsTemplate, onContentChange]);
 
   const handleInsertVariable = (variable: string, field: 'subject' | 'html' | 'text' | 'sms') => {
     let ref: HTMLInputElement | HTMLTextAreaElement | null = null;
@@ -109,13 +110,13 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
 
   const handleSave = async () => {
     if (!changeReason.trim()) {
-      alert('Please provide a reason for this change');
+      toast.error('Please provide a change reason');
       return;
     }
 
     // Validation
     if (template.channel === 'email' && !subject.trim()) {
-      alert('Email templates require a subject line');
+      toast.error('Subject line is required');
       return;
     }
 
@@ -128,7 +129,7 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
 
     for (const variable of requiredVars) {
       if (!content.includes(`{{${variable.name}}}`)) {
-        alert(`Required variable {{${variable.name}}} is missing from the template`);
+        toast.error(`Required variable {{${variable.name}}} is missing`);
         return;
       }
     }
@@ -139,7 +140,7 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
       await onSave({
         ...(template.channel === 'email'
           ? {
-              subject,
+              subject_template: subject,
               html_template: htmlTemplate,
               text_template: textTemplate,
             }
@@ -150,7 +151,6 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
       });
 
       setChangeReason('');
-      setHasChanges(false);
     } catch (err) {
       console.error('Error saving template:', err);
     } finally {
@@ -161,23 +161,25 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
   return (
     <div className="space-y-6">
       {/* Template Metadata */}
-      <div className="bg-[#F8EEE5] rounded-lg p-4 border border-gray-200">
+      <div className="bg-[#EAE0D5]/30 rounded-xl p-4 border border-[#F0EAE0]">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-[#434E54] mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#434E54]/40 mb-1">
               Template Name
             </label>
-            <p className="text-sm text-[#6B7280]">{template.name}</p>
+            <p className="text-sm text-[#434E54]">{template.name}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#434E54] mb-1">Channel</label>
-            <p className="text-sm text-[#6B7280]">{template.channel.toUpperCase()}</p>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#434E54]/40 mb-1">
+              Channel
+            </label>
+            <p className="text-sm text-[#434E54]">{template.channel.toUpperCase()}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#434E54] mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#434E54]/40 mb-1">
               Trigger Event
             </label>
-            <p className="text-sm text-[#6B7280]">{template.trigger_event}</p>
+            <p className="text-sm text-[#434E54]">{template.trigger_event}</p>
           </div>
         </div>
       </div>
@@ -187,11 +189,14 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
         <>
           {/* Subject Line */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-[#434E54]">
-                Subject Line
-                <span className="text-red-500 ml-1">*</span>
-              </label>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Type className="w-3.5 h-3.5 text-[#434E54]/40" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#434E54]/40">
+                  Subject Line
+                </span>
+                <span className="text-[#D4A574]">*</span>
+              </div>
               <VariableInserter
                 variables={template.variables}
                 onInsert={(variable) => handleInsertVariable(variable, 'subject')}
@@ -203,16 +208,21 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Enter email subject..."
-              className="w-full py-2.5 px-4 rounded-lg border border-gray-200 bg-white
-                       focus:outline-none focus:ring-2 focus:ring-[#434E54]/20
+              className="w-full py-2.5 px-4 rounded-lg border border-[#434E54]/20 bg-white
+                       focus:outline-none focus:ring-2 focus:ring-[#434E54]/30
                        focus:border-[#434E54] placeholder:text-gray-400"
             />
           </div>
 
           {/* HTML Template */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-[#434E54]">HTML Template</label>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Mail className="w-3.5 h-3.5 text-[#434E54]/40" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#434E54]/40">
+                  HTML Template
+                </span>
+              </div>
               <VariableInserter
                 variables={template.variables}
                 onInsert={(variable) => handleInsertVariable(variable, 'html')}
@@ -223,8 +233,8 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
               value={htmlTemplate}
               onChange={(e) => setHtmlTemplate(e.target.value)}
               placeholder="Enter HTML template..."
-              className="w-full py-2.5 px-4 rounded-lg border border-gray-200 bg-white
-                       focus:outline-none focus:ring-2 focus:ring-[#434E54]/20
+              className="w-full py-2.5 px-4 rounded-lg border border-[#434E54]/20 bg-white
+                       focus:outline-none focus:ring-2 focus:ring-[#434E54]/30
                        focus:border-[#434E54] placeholder:text-gray-400 font-mono text-sm
                        resize-none"
               rows={12}
@@ -236,10 +246,13 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
 
           {/* Plain Text Template */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-[#434E54]">
-                Plain Text Version
-              </label>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-3.5 h-3.5 text-[#434E54]/40" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#434E54]/40">
+                  Plain Text Version
+                </span>
+              </div>
               <VariableInserter
                 variables={template.variables}
                 onInsert={(variable) => handleInsertVariable(variable, 'text')}
@@ -250,8 +263,8 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
               value={textTemplate}
               onChange={(e) => setTextTemplate(e.target.value)}
               placeholder="Enter plain text version..."
-              className="w-full py-2.5 px-4 rounded-lg border border-gray-200 bg-white
-                       focus:outline-none focus:ring-2 focus:ring-[#434E54]/20
+              className="w-full py-2.5 px-4 rounded-lg border border-[#434E54]/20 bg-white
+                       focus:outline-none focus:ring-2 focus:ring-[#434E54]/30
                        focus:border-[#434E54] placeholder:text-gray-400 resize-none"
               rows={8}
             />
@@ -265,11 +278,14 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
       {/* SMS Template Fields */}
       {template.channel === 'sms' && (
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-[#434E54]">
-              SMS Message
-              <span className="text-red-500 ml-1">*</span>
-            </label>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-3.5 h-3.5 text-[#434E54]/40" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#434E54]/40">
+                SMS Message
+              </span>
+              <span className="text-[#D4A574]">*</span>
+            </div>
             <VariableInserter
               variables={template.variables}
               onInsert={(variable) => handleInsertVariable(variable, 'sms')}
@@ -280,8 +296,8 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
             value={smsTemplate}
             onChange={(e) => setSmsTemplate(e.target.value)}
             placeholder="Enter SMS message..."
-            className="w-full py-2.5 px-4 rounded-lg border border-gray-200 bg-white
-                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/20
+            className="w-full py-2.5 px-4 rounded-lg border border-[#434E54]/20 bg-white
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/30
                      focus:border-[#434E54] placeholder:text-gray-400 resize-none"
             rows={6}
           />
@@ -294,8 +310,13 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
       )}
 
       {/* Available Variables Reference */}
-      <div className="bg-[#FFFBF7] rounded-lg p-4 border border-gray-200">
-        <h4 className="font-semibold text-[#434E54] mb-3">Available Variables</h4>
+      <div className="bg-[#EAE0D5]/30 rounded-xl p-5 border border-[#F0EAE0]">
+        <div className="flex items-center gap-2 mb-3">
+          <Code className="w-3.5 h-3.5 text-[#434E54]/40" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#434E54]/40">
+            Available Variables
+          </span>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {template.variables.map((variable) => (
             <div key={variable.name} className="flex items-start gap-2">
@@ -306,7 +327,7 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-[#6B7280]">{variable.description}</p>
                 {variable.required && (
-                  <span className="text-xs text-red-500 font-medium">Required</span>
+                  <span className="text-xs text-[#D4A574] font-medium">Required</span>
                 )}
               </div>
             </div>
@@ -316,18 +337,18 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
 
       {/* Change Reason & Save */}
       {hasChanges && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="bg-[#FDF6EE] border border-[#F0EAE0] rounded-xl p-4">
           <label className="block text-sm font-medium text-[#434E54] mb-2">
             Change Reason
-            <span className="text-red-500 ml-1">*</span>
+            <span className="text-[#D4A574] ml-1">*</span>
           </label>
           <input
             type="text"
             value={changeReason}
             onChange={(e) => setChangeReason(e.target.value)}
             placeholder="Briefly describe what you changed and why..."
-            className="w-full py-2.5 px-4 rounded-lg border border-gray-200 bg-white
-                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/20
+            className="w-full py-2.5 px-4 rounded-lg border border-[#434E54]/20 bg-white
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/30
                      focus:border-[#434E54] placeholder:text-gray-400 mb-3"
           />
           <button
@@ -353,8 +374,8 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
 
       {/* Unsaved Changes Warning */}
       {hasChanges && (
-        <div className="text-sm text-amber-600 flex items-center gap-2">
-          <span className="inline-block w-2 h-2 bg-amber-600 rounded-full" />
+        <div className="text-sm text-[#D4A574] flex items-center gap-2">
+          <span className="inline-block w-2 h-2 bg-[#D4A574] rounded-full" />
           You have unsaved changes
         </div>
       )}

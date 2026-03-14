@@ -6,12 +6,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { NotificationResult } from '../types';
 import { sendNotification } from '../index';
-import {
-  createReportCardEmail,
-  createReportCardSms,
-  type ReportCardData,
-} from '../email-templates';
-
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -20,6 +14,7 @@ export interface ReportCardCompletionTriggerData {
   reportCardId: string;
   appointmentId: string;
   customerId: string;
+  customerName: string;
   customerEmail: string;
   customerPhone: string | null;
   petName: string;
@@ -62,15 +57,17 @@ export async function triggerReportCardCompletion(
     `[ReportCardCompletion] Triggering report card notification for ${data.reportCardId}`
   );
 
-  // Generate report card link
-  // In production, this would be the full URL with the report card UUID
-  const reportCardLink = generateReportCardLink(data.reportCardId);
+  const reportCardUrl = generateReportCardLink(data.reportCardId);
+  const reviewUrl = process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL || 'https://g.page/r/CbbCwxWs-HjiEAE';
 
-  const templateData: ReportCardData = {
+  const templateData: Record<string, string> = {
+    customer_name: data.customerName,
     pet_name: data.petName,
-    report_card_link: reportCardLink,
-    before_image_url: data.beforeImageUrl,
-    after_image_url: data.afterImageUrl,
+    report_card_url: reportCardUrl,
+    review_url: reviewUrl,
+    groomer_notes_section: '',
+    next_grooming_section: '',
+    photos_section: buildPhotosSection(data.beforeImageUrl, data.afterImageUrl),
   };
 
   // Send email notification
@@ -176,13 +173,35 @@ export async function triggerReportCardCompletion(
 // HELPER FUNCTIONS
 // ============================================================================
 
-/**
- * Generate public report card link
- * Uses the report card UUID for public access
- */
 function generateReportCardLink(reportCardId: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   return `${baseUrl}/report-cards/${reportCardId}`;
+}
+
+function buildPhotosSection(beforeUrl?: string, afterUrl?: string): string {
+  if (!beforeUrl && !afterUrl) return '';
+
+  const beforeCell = beforeUrl
+    ? `<td width="49%" align="center" style="padding: 4px;">
+        <p style="margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; font-weight: 600; text-align: center;">Before</p>
+        <img src="${beforeUrl}" alt="Before grooming" width="220" style="width: 100%; max-width: 220px; border-radius: 12px; display: block;" />
+      </td>`
+    : '<td width="49%"></td>';
+
+  const afterCell = afterUrl
+    ? `<td width="49%" align="center" style="padding: 4px;">
+        <p style="margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; font-weight: 600; text-align: center;">After</p>
+        <img src="${afterUrl}" alt="After grooming" width="220" style="width: 100%; max-width: 220px; border-radius: 12px; display: block;" />
+      </td>`
+    : '<td width="49%"></td>';
+
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin: 24px 0;">
+  <tr><td align="center">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; max-width: 480px;">
+      <tr>${beforeCell}<td width="2%"></td>${afterCell}</tr>
+    </table>
+  </td></tr>
+</table>`;
 }
 
 /**

@@ -311,7 +311,8 @@ const CreateAppointmentSchema = z.object({
     last_name: z.string().min(1).max(100),
     // Email is optional for walk-in customers
     email: z.string().email().trim().toLowerCase().optional().or(z.literal('')),
-    phone: z.string().min(10),
+    // Phone required for new customers (used for lookup/creation); optional when id is provided
+    phone: z.union([z.string().min(10), z.literal('')]).optional().default(''),
     isNew: z.boolean().optional(), // Track if this is a new customer from walk-in
   }),
   pet: z.object({
@@ -322,7 +323,8 @@ const CreateAppointmentSchema = z.object({
       .transform((val) => (val && val !== '' ? val : undefined)),
     breed_name: z.string().optional(),
     size: z.enum(['small', 'medium', 'large', 'xlarge', 'x-large']),
-    weight: z.number().min(0).max(300).optional().nullable().transform((val) => val ?? undefined),
+    gender: z.enum(['male', 'female']).default('male'),
+    color: z.string().optional().nullable().transform((val) => val ?? undefined),
     isNew: z.boolean().optional(), // Track if this is a new pet from walk-in
   }),
   service_id: z.string().uuid(),
@@ -502,7 +504,8 @@ export async function POST(request: NextRequest) {
             breed_id: data.pet.breed_id || null,
             breed_custom: data.pet.breed_name || null,
             size: petSize,
-            weight: data.pet.weight || null,
+            gender: data.pet.gender || 'male',
+            color: data.pet.color || null,
           })
           .select('id')
           .single();

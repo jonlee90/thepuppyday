@@ -3,6 +3,8 @@
  * Owns its section wrapper and uses SectionHeader
  */
 
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { ServiceCard } from './ServiceCard';
 import type { Service } from '@/types/database';
@@ -61,6 +63,15 @@ export function ServiceSection({ services, addons }: ServiceSectionProps) {
           </div>
         )}
 
+        <div className="text-center mt-10">
+          <Link
+            href="/services"
+            className="inline-flex items-center gap-2 text-[#434E54] hover:text-[#C67C4E] font-semibold transition-colors duration-200"
+          >
+            View All Services
+            <ArrowRight className="w-5 h-5" />
+          </Link>
+        </div>
       </div>
     </section>
   );

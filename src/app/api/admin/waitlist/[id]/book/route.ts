@@ -14,7 +14,7 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { z } from 'zod';
 
 const bookingSchema = z.object({
-  scheduled_at: z.string().datetime(),
+  scheduled_at: z.string().datetime({ offset: true }),
   discount_percentage: z.number().min(0).max(100).default(0),
   notes: z.string().optional(),
 });
@@ -81,25 +81,12 @@ export async function POST(
       );
     }
 
-    // Get pet size and check for slot conflicts in parallel
-    const slotDate = new Date(validated.scheduled_at);
-    const dateStart = new Date(slotDate);
-    dateStart.setHours(0, 0, 0, 0);
-    const dateEnd = new Date(slotDate);
-    dateEnd.setHours(23, 59, 59, 999);
-
-    const [{ data: pet }, { data: allAppointments }] = await Promise.all([
-      (serviceClient as any)
-        .from('pets')
-        .select('size')
-        .eq('id', waitlistEntry.pet_id)
-        .single(),
-      (serviceClient as any)
-        .from('appointments')
-        .select('*')
-        .gte('scheduled_at', dateStart.toISOString())
-        .lte('scheduled_at', dateEnd.toISOString()),
-    ]);
+    // Get pet size for pricing
+    const { data: pet } = await (serviceClient as any)
+      .from('pets')
+      .select('size')
+      .eq('id', waitlistEntry.pet_id)
+      .single();
 
     const petSize = pet?.size || 'medium';
 
@@ -124,33 +111,6 @@ export async function POST(
 
     // Get service duration
     const durationMinutes = waitlistEntry.service.duration_minutes || 60;
-
-    // Check for conflicts
-    const slotStart = new Date(validated.scheduled_at);
-    const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60000);
-
-    for (const appointment of allAppointments || []) {
-      // Skip cancelled or no-show appointments
-      if (
-        appointment.status === 'cancelled' ||
-        appointment.status === 'no_show'
-      ) {
-        continue;
-      }
-
-      const appointmentStart = new Date(appointment.scheduled_at);
-      const appointmentEnd = new Date(
-        appointmentStart.getTime() + appointment.duration_minutes * 60000
-      );
-
-      // Check for overlap
-      if (slotStart < appointmentEnd && slotEnd > appointmentStart) {
-        return NextResponse.json(
-          { error: 'Time slot conflicts with existing appointment', code: 'SLOT_CONFLICT' },
-          { status: 409 }
-        );
-      }
-    }
 
     // Generate unique booking reference
     let reference = generateBookingReference();
@@ -184,7 +144,7 @@ export async function POST(
         service_id: waitlistEntry.service_id,
         scheduled_at: validated.scheduled_at,
         duration_minutes: durationMinutes,
-        status: 'scheduled',
+        status: 'confirmed',
         payment_status: 'pending',
         total_price: totalPrice,
         notes: validated.notes || null,

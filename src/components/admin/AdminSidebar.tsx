@@ -22,7 +22,6 @@ import {
   ChevronRight,
   LogOut,
   BarChart3,
-  Megaphone,
   Clock,
   Bell,
   FileText,
@@ -96,12 +95,6 @@ const navSections: NavSection[] = [
   {
     title: 'Marketing',
     items: [
-      {
-        label: 'Campaigns',
-        href: '/admin/marketing/campaigns',
-        icon: Megaphone,
-        ownerOnly: true,
-      },
       {
         label: 'Notifications',
         icon: Bell,

@@ -4,7 +4,7 @@
 > **Status**: Completed (Phase 4)
 > **Base Path**: `(customer)/`
 > **Authentication**: Required (customer, admin, or groomer role)
-> **Last Updated**: 2026-03-07
+> **Last Updated**: 2026-03-14
 
 ## Overview
 
@@ -137,12 +137,14 @@ Grid of all grooming report cards for the customer's pets with before/after phot
 
 ## API Endpoints
 
-The customer portal uses only two custom API routes:
+The customer portal uses the following API routes:
 
 | Route | Methods | Purpose |
 |-------|---------|---------|
 | `/api/customer/appointments/[id]` | PUT, DELETE | Reschedule or cancel an appointment |
 | `/api/customer/preferences/notifications` | GET, PUT | Get/update notification preferences |
+| `/api/customer/profile` | GET | Fetch customer profile data |
+| `/api/customer/account` | DELETE | Delete customer account |
 
 **Public report card route**:
 

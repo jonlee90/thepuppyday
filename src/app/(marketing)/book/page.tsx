@@ -32,4 +32,5 @@ function BookingPageSkeleton() {
 export const metadata = {
   title: 'Book Appointment | Puppy Day',
   description: 'Book your dog grooming appointment at Puppy Day in La Mirada, CA',
+  alternates: { canonical: 'https://thepuppyday.com/book' },
 };

@@ -7,7 +7,7 @@ import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/auth-store';
 import { getMockStore } from '@/mocks/supabase/store';
 import { config } from '@/lib/config';
-import type { User, Pet, Appointment, WaitlistEntry } from '@/types/database';
+import type { User, Pet, Appointment } from '@/types/database';
 
 interface BookingResult {
   success: boolean;
@@ -28,6 +28,7 @@ export function useBooking() {
     selectedAddons,
     totalPrice,
     guestInfo,
+    selectedCustomerId,
     selectedGroomerId,
     setSelectedGroomerId,
     setBookingResult,
@@ -130,7 +131,8 @@ export function useBooking() {
           size: newPetData.size,
           breed_id: newPetData.breed_id || null,
           breed_custom: newPetData.breed_custom || null,
-          weight: newPetData.weight || null,
+          gender: newPetData.gender || 'male',
+          color: newPetData.color || null,
           notes: newPetData.notes || null,
           is_active: true,
         }) as unknown as Pet;
@@ -270,12 +272,8 @@ export function useBooking() {
         // Add optional fields only if they have values
         if (newPetData.breed_id) petPayload.breed_id = newPetData.breed_id;
         if (newPetData.breed_custom) petPayload.breed_custom = newPetData.breed_custom;
-        if (newPetData.weight) {
-          // Ensure weight is a number
-          petPayload.weight = typeof newPetData.weight === 'string'
-            ? parseFloat(newPetData.weight)
-            : newPetData.weight;
-        }
+        if (newPetData.gender) petPayload.gender = newPetData.gender;
+        if (newPetData.color) petPayload.color = newPetData.color;
         if (newPetData.notes) petPayload.notes = newPetData.notes;
 
         // For guests with a created user ID, add owner_id
@@ -399,65 +397,44 @@ export function useBooking() {
   ]);
 
   const joinWaitlist = useCallback(
-    async (date: string, timePreference: 'morning' | 'afternoon' | 'any'): Promise<boolean> => {
-      const store = getMockStore();
-
+    async (date: string, timePreference: 'morning' | 'afternoon' | 'any', preferredTime?: string | null): Promise<boolean> => {
       try {
-        let customerId = user?.id;
+        const customerId = user?.id || (selectedCustomerId && selectedCustomerId !== 'new' ? selectedCustomerId : null);
         const petId = selectedPet?.id;
 
         if (!customerId) {
-          // For guests, we need their info first
-          if (guestInfo) {
-            const existingUsers = store.select('users', {
-              column: 'email',
-              value: guestInfo.email,
-            }) as unknown as User[];
-            customerId = existingUsers.length > 0 ? existingUsers[0].id : undefined;
-          }
-
-          if (!customerId) {
-            console.error('Cannot join waitlist without customer ID');
-            return false;
-          }
-        }
-
-        if (!petId && newPetData) {
-          // Would need to create pet first, but for waitlist we'll just skip
-          console.error('Pet must be saved before joining waitlist');
+          console.error('Cannot join waitlist without customer ID');
           return false;
         }
 
         if (!petId || !selectedService) {
+          console.error('Missing pet or service for waitlist');
           return false;
         }
 
-        // Check for existing waitlist entry
-        const existingEntries = (store.select('waitlist') as unknown as WaitlistEntry[]).filter(
-          (entry) =>
-            entry.customer_id === customerId &&
-            entry.service_id === selectedService.id &&
-            entry.requested_date === date &&
-            entry.status === 'active'
-        );
-
-        if (existingEntries.length > 0) {
-          console.log('Already on waitlist for this date');
-          return false;
-        }
-
-        // Create waitlist entry
-        store.insert('waitlist', {
-          customer_id: customerId,
-          pet_id: petId,
-          service_id: selectedService.id,
-          requested_date: date,
-          time_preference: timePreference,
-          status: 'active',
-          notified_at: null,
+        const response = await fetch('/api/waitlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_id: customerId,
+            pet_id: petId,
+            service_id: selectedService.id,
+            requested_date: date,
+            time_preference: timePreference,
+            ...(preferredTime ? { preferred_time: preferredTime } : {}),
+          }),
         });
 
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Failed to join waitlist' }));
+          console.error('[useBooking] Waitlist API error:', errorData);
+          return false;
+        }
+
+        const data = await response.json();
         console.log('📋 Added to waitlist:', {
+          waitlist_id: data.waitlist_id,
+          position: data.position,
           date,
           timePreference,
           service: selectedService.name,
@@ -469,7 +446,7 @@ export function useBooking() {
         return false;
       }
     },
-    [user, selectedPet, newPetData, selectedService, guestInfo]
+    [user, selectedCustomerId, selectedPet, selectedService]
   );
 
   return {

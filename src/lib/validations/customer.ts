@@ -15,6 +15,9 @@ export const profileUpdateSchema = z.object({
   last_name: z.string().min(1).max(50).optional(),
   phone: phoneSchema,
   avatar_url: z.string().url().optional(),
+  address: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  zip: z.string().regex(/^\d{5}(-\d{4})?$/).optional().or(z.literal('')),
 }).refine(
   (data) => Object.keys(data).length > 0,
   'At least one field must be provided'
@@ -31,7 +34,8 @@ export const createPetSchema = z.object({
   breed_id: uuidSchema.optional(),
   breed_custom: z.string().max(100).optional(),
   size: z.enum(['small', 'medium', 'large', 'xlarge']),
-  weight: z.number().positive().max(200).optional(),
+  gender: z.enum(['male', 'female']),
+  color: z.string().max(100).optional(),
   birth_date: z.string().optional(),
   medical_info: z.string().max(1000).optional(),
   notes: z.string().max(500).optional(),

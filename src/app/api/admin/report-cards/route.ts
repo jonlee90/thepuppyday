@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/admin/auth';
 import { validateReportCard, sanitizeGroomerNotes } from '@/lib/admin/report-card-validation';
 import type { ReportCardFormState } from '@/types/report-card';
 
@@ -24,6 +25,8 @@ export async function GET(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await requireAdmin(authSupabase);
 
     // Get appointment ID from query params
     const { searchParams } = new URL(request.url);
@@ -77,6 +80,8 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    await requireAdmin(authSupabase);
 
     const body = await request.json();
     const { formState, isDraft, dontSend } = body as {

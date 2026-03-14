@@ -4,8 +4,8 @@
  * DELETE: Cancel appointment
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse, after } from 'next/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 
 // PUT - Reschedule appointment (update scheduled_at)
 export async function PUT(
@@ -135,6 +135,39 @@ export async function PUT(
       );
     }
 
+    // Send reschedule notification in background (non-blocking)
+    // Use service role client because after() runs after the response —
+    // the request cookie context is gone, so RLS-authenticated queries fail.
+    after(async () => {
+      try {
+        const serviceClient = createServiceRoleClient();
+        const { triggerAppointmentRescheduled } = await import('@/lib/notifications/triggers');
+
+        // Fetch customer, pet, service in parallel
+        const [{ data: customer }, { data: pet }, { data: service }] = await Promise.all([
+          (serviceClient as any).from('users').select('id, first_name, last_name, email, phone').eq('id', user.id).single(),
+          (serviceClient as any).from('pets').select('name').eq('id', appointment.pet_id).single(),
+          (serviceClient as any).from('services').select('name').eq('id', appointment.service_id).single(),
+        ]);
+
+        if (customer && pet && service) {
+          await triggerAppointmentRescheduled(serviceClient as any, {
+            appointmentId: id,
+            customerId: user.id,
+            customerName: `${customer.first_name} ${customer.last_name}`,
+            customerEmail: customer.email,
+            customerPhone: customer.phone,
+            petName: pet.name,
+            serviceName: service.name,
+            originalScheduledAt: appointment.scheduled_at,
+            newScheduledAt: scheduled_at,
+          });
+        }
+      } catch (notifError) {
+        console.error('[Customer API] Reschedule notification error:', notifError);
+      }
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Appointment rescheduled successfully',
@@ -238,8 +271,40 @@ export async function DELETE(
       );
     }
 
-    // TODO: Send cancellation confirmation email (when email service is ready)
-    // await sendCancellationEmail(user.email, appointment);
+    // Send cancellation notification in background (non-blocking)
+    // Use service role client because after() runs after the response —
+    // the request cookie context is gone, so RLS-authenticated queries fail.
+    after(async () => {
+      try {
+        const serviceClient = createServiceRoleClient();
+        const { triggerAppointmentCancelled } = await import('@/lib/notifications/triggers');
+
+        // Fetch customer, pet, service in parallel
+        const [{ data: customer }, { data: pet }, { data: service }] = await Promise.all([
+          (serviceClient as any).from('users').select('id, first_name, last_name, email, phone').eq('id', user.id).single(),
+          (serviceClient as any).from('pets').select('name').eq('id', appointment.pet_id).single(),
+          (serviceClient as any).from('services').select('name').eq('id', appointment.service_id).single(),
+        ]);
+
+        if (customer && pet && service) {
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+          await triggerAppointmentCancelled(serviceClient as any, {
+            appointmentId: id,
+            customerId: user.id,
+            customerName: `${customer.first_name} ${customer.last_name}`,
+            customerEmail: customer.email,
+            customerPhone: customer.phone,
+            petName: pet.name,
+            serviceName: service.name,
+            scheduledAt: appointment.scheduled_at,
+            cancelledBy: 'customer',
+            rebookUrl: `${baseUrl}/booking`,
+          });
+        }
+      } catch (notifError) {
+        console.error('[Customer API] Cancellation notification error:', notifError);
+      }
+    });
 
     return NextResponse.json({
       success: true,

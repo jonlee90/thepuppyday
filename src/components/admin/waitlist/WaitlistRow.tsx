@@ -1,9 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { WaitlistActionMenu } from './WaitlistActionMenu';
-import type { WaitlistEntry, WaitlistStatus, TimePreference } from '@/types/database';
+import { Calendar } from 'lucide-react';
+import type { WaitlistEntry, WaitlistStatus } from '@/types/database';
 
 interface WaitlistRowProps {
   entry: WaitlistEntry & {
@@ -13,125 +11,120 @@ interface WaitlistRowProps {
   };
   onBookNow: (entryId: string) => void;
   onEdit: (entryId: string) => void;
-  onContact: (entryId: string) => void;
-  onCancel: (entryId: string) => void;
 }
 
 const STATUS_STYLES: Record<WaitlistStatus, string> = {
-  active: 'badge-info',
-  notified: 'badge-warning',
-  booked: 'badge-success',
-  expired: 'badge-ghost',
-  expired_offer: 'badge-ghost',
-  cancelled: 'badge-error',
+  active: 'bg-blue-50 text-blue-700 border border-blue-100',
+  notified: 'bg-amber-50 text-amber-700 border border-amber-100',
+  booked: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
+  expired: 'bg-gray-100 text-gray-500 border border-gray-200',
+  expired_offer: 'bg-gray-100 text-gray-500 border border-gray-200',
+  cancelled: 'bg-red-50 text-red-600 border border-red-100',
 };
 
-const TIME_PREFERENCE_LABELS: Record<TimePreference, string> = {
+const STATUS_LABELS: Record<WaitlistStatus, string> = {
+  active: 'Active',
+  notified: 'Notified',
+  booked: 'Booked',
+  expired: 'Expired',
+  expired_offer: 'Expired Offer',
+  cancelled: 'Cancelled',
+};
+
+const TIME_PREFERENCE_LABELS: Record<string, string> = {
   morning: 'Morning',
   afternoon: 'Afternoon',
   any: 'Any Time',
 };
 
-/**
- * WaitlistRow - Individual waitlist table row with expandable details
- * Displays customer, pet, service, date, and actions
- */
-export function WaitlistRow({
-  entry,
-  onBookNow,
-  onEdit,
-  onContact,
-  onCancel,
-}: WaitlistRowProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+function formatTime12h(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
 
+function formatTimePreference(pref: string, preferredTime?: string | null): string {
+  if (preferredTime) return formatTime12h(preferredTime);
+  return TIME_PREFERENCE_LABELS[pref] || pref;
+}
+
+const INACTIVE_STATUSES = new Set<WaitlistStatus>(['cancelled', 'booked', 'expired', 'expired_offer']);
+
+export function WaitlistRow({ entry, onBookNow, onEdit }: WaitlistRowProps) {
+  const isInactive = INACTIVE_STATUSES.has(entry.status);
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const d = dateString.includes('T') ? new Date(dateString) : new Date(dateString + 'T00:00:00');
+    return d.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
   };
 
-  return (
-    <>
-      {/* Main Row */}
-      <tr
-        className="hover:bg-base-200 cursor-pointer"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <td>
-          <div className="flex items-center gap-2">
-            {isExpanded ? (
-              <ChevronUp className="h-4 w-4 text-gray-400" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-gray-400" />
-            )}
-            <div>
-              <div className="font-medium">
-                {entry.customer
-                  ? `${entry.customer.first_name} ${entry.customer.last_name}`
-                  : 'Unknown'}
-              </div>
-              <div className="text-sm text-gray-500">{entry.customer?.phone || ''}</div>
-            </div>
-          </div>
-        </td>
-        <td>
-          <span className="font-medium">{entry.pet?.name || 'Unknown'}</span>
-        </td>
-        <td>{entry.service?.name || 'Unknown'}</td>
-        <td>{formatDate(entry.requested_date)}</td>
-        <td>
-          <span className="badge badge-outline">
-            {TIME_PREFERENCE_LABELS[entry.time_preference]}
-          </span>
-        </td>
-        <td>
-          <span className={`badge ${STATUS_STYLES[entry.status]}`}>
-            {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
-          </span>
-        </td>
-        <td onClick={(e) => e.stopPropagation()}>
-          <WaitlistActionMenu
-            entryId={entry.id}
-            onBookNow={onBookNow}
-            onEdit={onEdit}
-            onContact={onContact}
-            onCancel={onCancel}
-          />
-        </td>
-      </tr>
+  const isToday = (dateString: string) => {
+    const today = new Date();
+    const d = dateString.includes('T') ? new Date(dateString) : new Date(dateString + 'T00:00:00');
+    return (
+      d.getFullYear() === today.getFullYear() &&
+      d.getMonth() === today.getMonth() &&
+      d.getDate() === today.getDate()
+    );
+  };
 
-      {/* Expanded Details Row */}
-      {isExpanded && (
-        <tr className="bg-base-50">
-          <td colSpan={7} className="py-4 px-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-gray-700">Email:</span>{' '}
-                <span className="text-gray-600">{entry.customer?.email || 'N/A'}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-700">Added:</span>{' '}
-                <span className="text-gray-600">{formatDate(entry.created_at)}</span>
-              </div>
-              {entry.notified_at && (
-                <div>
-                  <span className="font-medium text-gray-700">Notified:</span>{' '}
-                  <span className="text-gray-600">{formatDate(entry.notified_at)}</span>
-                </div>
-              )}
-              {entry.notes && (
-                <div className="md:col-span-2">
-                  <span className="font-medium text-gray-700">Notes:</span>{' '}
-                  <p className="text-gray-600 mt-1">{entry.notes}</p>
-                </div>
-              )}
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
+  return (
+    <tr
+      className="hover:bg-[#F8EEE5]/50 cursor-pointer border-b border-[#434E54]/5 transition-colors"
+      onClick={() => onEdit(entry.id)}
+    >
+      <td className="px-4 py-3">
+        <div className="font-medium text-[#434E54]">
+          {entry.customer
+            ? `${entry.customer.first_name} ${entry.customer.last_name}`
+            : 'Unknown'}
+        </div>
+        <div className="text-sm text-[#434E54]/60">{entry.customer?.phone || ''}</div>
+      </td>
+      <td className="px-4 py-3">
+        <span className="font-medium text-[#434E54]">{entry.pet?.name || 'Unknown'}</span>
+      </td>
+      <td className="px-4 py-3 text-[#434E54]">{entry.service?.name || 'Unknown'}</td>
+      <td className="px-4 py-3 text-[#434E54]">
+        {isToday(entry.requested_date) ? (
+          <span className="font-semibold text-emerald-600">Today</span>
+        ) : (
+          formatDate(entry.requested_date)
+        )}
+      </td>
+      <td className="px-4 py-3">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-[#EAE0D5] text-[#434E54]">
+          {formatTimePreference(
+            entry.time_preference,
+            (entry as { preferred_time?: string | null }).preferred_time,
+          )}
+        </span>
+      </td>
+      <td className="px-4 py-3">
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[entry.status]}`}
+        >
+          {STATUS_LABELS[entry.status]}
+        </span>
+      </td>
+      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={() => onBookNow(entry.id)}
+          disabled={isInactive}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            isInactive
+              ? 'bg-[#EAE0D5] text-[#434E54]/30 cursor-not-allowed'
+              : 'bg-[#434E54] hover:bg-[#363F44] text-white'
+          }`}
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          Book Now
+        </button>
+      </td>
+    </tr>
   );
 }

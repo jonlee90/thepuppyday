@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { NotificationTemplate } from '@/types/template';
 import { TemplateEditor } from './components/TemplateEditor';
 import { LivePreview } from './components/LivePreview';
 import { TestNotificationModal } from './components/TestNotificationModal';
 import { VersionHistorySidebar } from './components/VersionHistorySidebar';
-import { ArrowLeft, Send, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, AlertCircle, Mail, Phone } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 export default function TemplateEditPage() {
   const params = useParams();
@@ -27,11 +29,7 @@ export default function TemplateEditPage() {
     sms_template: '',
   });
 
-  useEffect(() => {
-    fetchTemplate();
-  }, [templateId]);
-
-  const fetchTemplate = async () => {
+  const fetchTemplate = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -45,7 +43,7 @@ export default function TemplateEditPage() {
       const data = await response.json();
       setTemplate(data.template);
       setPreviewContent({
-        subject: data.template.subject || '',
+        subject: data.template.subject_template || '',
         html_template: data.template.html_template || '',
         text_template: data.template.text_template || '',
         sms_template: data.template.sms_template || '',
@@ -55,10 +53,14 @@ export default function TemplateEditPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [templateId]);
+
+  useEffect(() => {
+    fetchTemplate();
+  }, [fetchTemplate]);
 
   const handleSave = async (updates: {
-    subject?: string;
+    subject_template?: string;
     html_template?: string;
     text_template?: string;
     sms_template?: string;
@@ -79,25 +81,25 @@ export default function TemplateEditPage() {
       await fetchTemplate();
 
       // Show success message
-      alert('Template updated successfully!');
+      toast.success('Template saved');
     } catch (err) {
       throw err;
     }
   };
 
-  const handleContentChange = (content: {
+  const handleContentChange = useCallback((content: {
     subject?: string;
     html_template?: string;
     text_template?: string;
     sms_template?: string;
   }) => {
-    setPreviewContent(content);
-  };
+    setPreviewContent(content as typeof previewContent);
+  }, []);
 
-  const handleRollback = () => {
+  const handleRollback = useCallback(() => {
     // Refresh template after rollback
     fetchTemplate();
-  };
+  }, [fetchTemplate]);
 
   if (loading) {
     return (
@@ -117,8 +119,8 @@ export default function TemplateEditPage() {
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => router.push('/admin/notifications/templates')}
-              className="btn bg-transparent text-[#434E54] border border-gray-200
-                       hover:bg-gray-50"
+              className="btn bg-transparent text-[#434E54] border border-[#434E54]/20
+                       hover:bg-[#EAE0D5]/30"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Templates
@@ -135,26 +137,35 @@ export default function TemplateEditPage() {
     );
   }
 
+  const ChannelIcon = template.channel === 'email' ? Mail : Phone;
+
   return (
     <div className="min-h-screen bg-[#F8EEE5]">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+      <div className="bg-[#FDFAF7] border-b border-[#F0EAE0] sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/admin/notifications/templates')}
-                className="btn btn-sm bg-transparent text-[#434E54] border border-gray-200
-                         hover:bg-gray-50 gap-2"
+                className="p-2 rounded-lg text-[#434E54]/60 hover:bg-[#EAE0D5] hover:text-[#434E54] transition-colors"
+                aria-label="Back to templates"
               >
-                <ArrowLeft className="w-4 h-4" />
-                Back
+                <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-[#434E54]">{template.name}</h1>
+                <div className="flex items-center gap-3 mb-1">
+                  <h1 className="text-xl font-semibold text-[#434E54]">{template.name}</h1>
+                  <span className="inline-flex items-center gap-1.5 bg-[#EAE0D5] text-[#434E54] px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
+                    <ChannelIcon className="w-3 h-3" />
+                    {template.channel}
+                  </span>
+                  <span className="bg-[#EAE0D5] text-[#434E54] px-2 py-0.5 rounded-full text-xs font-medium">
+                    v{template.version}
+                  </span>
+                </div>
                 <p className="text-sm text-[#6B7280]">
-                  {template.channel.toUpperCase()} • {template.trigger_event} • v
-                  {template.version}
+                  {template.trigger_event}
                 </p>
               </div>
             </div>
@@ -166,8 +177,7 @@ export default function TemplateEditPage() {
               />
               <button
                 onClick={() => setTestModalOpen(true)}
-                className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none
-                         gap-2"
+                className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none gap-2"
               >
                 <Send className="w-4 h-4" />
                 Send Test
@@ -181,19 +191,35 @@ export default function TemplateEditPage() {
       <div className="max-w-[1600px] mx-auto p-6">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Editor (60% - 3 cols) */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-lg font-semibold text-[#434E54] mb-6">Template Editor</h2>
-              <TemplateEditor
-                template={template}
-                onSave={handleSave}
-                onContentChange={handleContentChange}
-              />
+          <motion.div
+            className="lg:col-span-3"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+              <div className={`h-1.5 bg-gradient-to-r ${
+                template.channel === 'email'
+                  ? 'from-[#434E54] to-[#5A6870]'
+                  : 'from-[#D4A574] to-[#E8C5A0]'
+              }`} />
+              <div className="p-6">
+                <TemplateEditor
+                  template={template}
+                  onSave={handleSave}
+                  onContentChange={handleContentChange}
+                />
+              </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Preview (40% - 2 cols) */}
-          <div className="lg:col-span-2">
+          <motion.div
+            className="lg:col-span-2"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <div className="sticky top-24">
               <LivePreview
                 channel={template.channel}
@@ -204,7 +230,7 @@ export default function TemplateEditPage() {
                 variables={template.variables}
               />
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 

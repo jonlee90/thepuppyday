@@ -59,7 +59,7 @@ export async function generateReportCardPDF(
   yPos += 6;
 
   // Date
-  const formattedDate = new Date(reportCard.appointment_date).toLocaleDateString(
+  const formattedDate = new Date(reportCard.appointment_date + 'T00:00:00').toLocaleDateString(
     'en-US',
     {
       weekday: 'long',
