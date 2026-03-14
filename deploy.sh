@@ -28,6 +28,13 @@ echo ""
 echo "--- Building ---"
 npm run build
 
+# Copy public assets and static files into standalone output
+# (standalone mode doesn't include these automatically)
+echo ""
+echo "--- Copying static assets ---"
+cp -r public .next/standalone/public
+cp -r .next/static .next/standalone/.next/static
+
 # Restart PM2
 echo ""
 echo "--- Restarting PM2 ---"
