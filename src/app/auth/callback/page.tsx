@@ -9,11 +9,11 @@
  * in the browser, so this must be a client component.
  */
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-export default function AuthCallbackPage() {
+function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -64,5 +64,13 @@ export default function AuthCallbackPage() {
         <p style={{ color: '#434E54', fontFamily: 'sans-serif', fontSize: 16 }}>Setting up your account…</p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense>
+      <AuthCallbackInner />
+    </Suspense>
   );
 }
