@@ -368,7 +368,9 @@ export async function POST(request: NextRequest) {
     // Step 1: Send invite — this creates the auth.users entry and triggers
     // handle_new_user which inserts the public.users row automatically.
     // We must do this BEFORE any public.users insert to avoid unique email conflict.
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thepuppyday.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.startsWith('http://localhost')
+      ? 'https://thepuppyday.com'
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://thepuppyday.com');
     const { data: inviteData, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
       data: { first_name, last_name, role },
       redirectTo: `${siteUrl}/auth/callback?next=/admin`,
