@@ -3,6 +3,9 @@ import { withSerwist } from '@serwist/turbopack';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  turbopack: {
+    root: import.meta.dirname,
+  },
   images: {
     remotePatterns: [
       {
