@@ -172,9 +172,10 @@ export function StaffForm({ staffId, isOpen, onClose, onSuccess }: StaffFormProp
       return;
     }
     try {
-      const response = await fetch(`/api/admin/settings/staff?email=${encodeURIComponent(email)}`);
+      const response = await fetch(`/api/admin/settings/staff?status=all`);
       const result = await response.json();
-      setEmailError(response.ok && result.data.length > 0 ? 'This email is already in use' : '');
+      const exists = result.data?.some((s: { email: string }) => s.email.toLowerCase() === email.toLowerCase());
+      setEmailError(exists ? 'This email is already in use' : '');
     } catch (error) {
       console.error('Email check failed:', error);
     }

@@ -266,29 +266,236 @@ If it says `syntax is ok` and `test is successful`, proceed. If errors, fix the 
 systemctl reload nginx
 ```
 
-> **Note**: At this point, `http://thepuppyday.com` will return a 502 Bad Gateway if DNS isn't pointed yet, or will work if you've already set DNS. The SSL blocks will fail until certbot runs. If you want to test before SSL, temporarily comment out the 443 server blocks and just use the port 80 → proxy block.
+> **Important**: Since `thepuppyday.com` currently points to an old WordPress site, we must use a temporary Nginx config first (HTTP-only, no SSL references). SSL gets added in Step 8 after DNS is migrated.
+
+### 7e. Create a temporary HTTP-only config for testing
+
+Before DNS cutover, use this approach so Nginx starts without SSL errors:
+
+```bash
+# Comment out the 443 blocks temporarily
+cat > /etc/nginx/sites-available/thepuppyday.com << 'NGINX'
+# Temporary HTTP-only config — replace with full config after SSL setup
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name thepuppyday.com www.thepuppyday.com;
+
+    client_max_body_size 10M;
+
+    # Next.js static assets — serve from disk
+    location /_next/static {
+        alias /var/www/html/thepuppyday/.next/static;
+        expires 365d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    location /images/ {
+        alias /var/www/html/thepuppyday/public/images/;
+        expires 30d;
+        add_header Cache-Control "public";
+        access_log off;
+    }
+
+    location /api/health {
+        proxy_pass http://127.0.0.1:3001;
+        access_log off;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+NGINX
+```
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+### 7f. Test locally on VPS
+
+```bash
+curl -I http://127.0.0.1:3001
+# Should return HTTP 200 or 307
+```
+
+At this point, the Next.js app is running on port 3001 behind Nginx on port 80, but the domain still points to WordPress. Proceed to Step 8 (domain migration).
 
 ---
 
-## Step 8: Set Up SSL with Let's Encrypt
+## Step 8: Migrate Domain from WordPress to VPS
 
-### 8a. Install certbot (if not already installed)
+Your domain `thepuppyday.com` currently points to a Hostinger WordPress site. This step cuts over DNS to your VPS.
+
+### 8a. Pre-migration checklist
+
+- [ ] Next.js app is running on VPS (`pm2 list` shows `online`)
+- [ ] `curl http://127.0.0.1:3001` returns a response on VPS
+- [ ] Nginx is configured and running (`nginx -t` passes)
+- [ ] You have login access to Hostinger domain management
+- [ ] **Optional**: Back up your WordPress site if you need any content from it
+
+### 8b. Find your VPS IP address
+
+```bash
+# Run on VPS
+curl -4 ifconfig.me
+```
+
+Note this IP — you'll use it in the DNS records.
+
+### 8c. Determine where DNS is managed
+
+Your domain DNS could be managed in one of these places:
+
+1. **Hostinger DNS Zone** (most likely if domain was bought on Hostinger)
+2. **External registrar** pointing nameservers to Hostinger
+
+To check: Go to **Hostinger hPanel → Domains → thepuppyday.com → DNS / Nameservers**.
+
+### 8d. Option A — DNS managed by Hostinger (same account as VPS)
+
+If both the domain and VPS are on the same Hostinger account:
+
+1. Go to **Hostinger hPanel → Domains → thepuppyday.com → DNS Zone**
+2. Find the existing **A record** for `@` (root) — it currently points to the WordPress hosting IP
+3. **Edit** the A record for `@`:
+   - Type: `A`
+   - Name: `@`
+   - Points to: `<YOUR_VPS_IP>`
+   - TTL: `300` (5 minutes — change to 3600 once confirmed working)
+4. Find or create the **A record** for `www`:
+   - Type: `A`
+   - Name: `www`
+   - Points to: `<YOUR_VPS_IP>`
+   - TTL: `300`
+5. **Delete** any other A or CNAME records for `@` or `www` that point to the old WordPress hosting
+
+> **Warning**: If Hostinger has a "WordPress site" or "Web Hosting" attached to this domain, those DNS records may auto-regenerate. You may need to go to **Hosting → Manage → Domains** and unlink the WordPress hosting from the domain first, keeping only DNS management.
+
+### 8e. Option B — Use Hostinger VPS nameservers
+
+If the WordPress hosting keeps overriding DNS records, you can point the domain to custom nameservers or use Hostinger's VPS DNS management:
+
+1. Go to **Hostinger hPanel → Domains → thepuppyday.com → Nameservers**
+2. If nameservers are set to Hostinger's shared hosting (e.g., `ns1.dns-parking.com`), change them to point directly, or:
+3. Use **Cloudflare** as DNS manager (free plan):
+   - Create a Cloudflare account
+   - Add `thepuppyday.com`
+   - Cloudflare will give you 2 nameservers (e.g., `ada.ns.cloudflare.com`)
+   - Update nameservers in Hostinger to the Cloudflare ones
+   - In Cloudflare DNS, add:
+     - `A` record `@` → `<VPS_IP>` (Proxy status: DNS only for now)
+     - `A` record `www` → `<VPS_IP>` (DNS only)
+
+### 8f. Deactivate WordPress hosting (important)
+
+To prevent the old WordPress site from interfering:
+
+1. Go to **Hostinger hPanel → Hosting**
+2. Find the WordPress hosting plan linked to `thepuppyday.com`
+3. Either:
+   - **Unlink** the domain from that hosting plan (preferred — keeps hosting for reference)
+   - Or **pause/cancel** the WordPress hosting if you no longer need it
+
+> **Don't delete yet** — keep it around for a week in case you need to roll back.
+
+### 8g. Verify DNS propagation
+
+```bash
+# From your LOCAL machine (not VPS)
+dig thepuppyday.com +short
+dig www.thepuppyday.com +short
+```
+
+Both should return your VPS IP. If they still show the old IP:
+- Wait 5-30 minutes (Hostinger DNS usually propagates fast)
+- Check with multiple DNS resolvers: `dig @8.8.8.8 thepuppyday.com +short`
+
+> **Quick test while waiting**: Add to your LOCAL machine's `/etc/hosts`:
+> ```
+> <VPS_IP> thepuppyday.com www.thepuppyday.com
+> ```
+> Visit `http://thepuppyday.com` in your browser — you should see the Next.js app.
+> **Remove this line** once DNS propagates.
+
+### 8h. Verify the site loads via HTTP
+
+Once DNS propagates:
+
+```bash
+curl -I http://thepuppyday.com
+```
+
+Should return HTTP 200 or a redirect from your Next.js app (not WordPress).
+
+---
+
+## Step 9: Set Up SSL with Let's Encrypt
+
+> **Prerequisite**: DNS must be pointed to VPS (Step 8 complete). Certbot validates domain ownership via HTTP.
+
+### 9a. Install certbot (if not already installed)
 
 ```bash
 apt install certbot python3-certbot-nginx -y
 ```
 
-### 8b. Get certificates
-
-> **DNS must be pointed first** (Step 9). Certbot validates domain ownership via HTTP.
+### 9b. Get certificates
 
 ```bash
 certbot --nginx -d thepuppyday.com -d www.thepuppyday.com
 ```
 
-Follow the prompts. Certbot will automatically modify the Nginx config to add SSL directives.
+Follow the prompts. Certbot will:
+- Verify domain ownership via HTTP challenge
+- Issue SSL certificates
+- Automatically modify the Nginx config to add SSL directives and HTTPS redirects
 
-### 8c. Verify auto-renewal
+### 9c. Replace with the full Nginx config
+
+After certbot succeeds, replace the temporary config with the full production one:
+
+```bash
+cp /var/www/html/thepuppyday/nginx/thepuppyday.conf /etc/nginx/sites-available/thepuppyday.com
+```
+
+Now update the SSL paths if certbot used a different directory name:
+
+```bash
+ls /etc/letsencrypt/live/
+# Should show thepuppyday.com/ — if it shows something like thepuppyday.com-0001, update the paths in the config
+```
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+### 9d. Verify SSL is working
+
+```bash
+# Should show HTTPS redirect
+curl -sI http://thepuppyday.com | grep Location
+
+# Should return 200 over HTTPS
+curl -sI https://thepuppyday.com | head -5
+
+# Check certificate dates
+echo | openssl s_client -connect thepuppyday.com:443 -servername thepuppyday.com 2>/dev/null | openssl x509 -noout -dates
+```
+
+### 9e. Verify auto-renewal
 
 ```bash
 certbot renew --dry-run
@@ -296,46 +503,26 @@ certbot renew --dry-run
 
 Should say "Congratulations, all simulated renewals succeeded".
 
-### 8d. Verify SSL paths match config
-
-Certbot may create certs at a different path. Check:
-
-```bash
-ls /etc/letsencrypt/live/thepuppyday.com/
-```
-
-Should contain `fullchain.pem` and `privkey.pem`. If the directory name differs, update the Nginx config.
-
 ---
 
-## Step 9: Point DNS
+## Step 10: Point DNS (already done in Step 8)
 
-In your domain registrar (Hostinger, Namecheap, etc.):
+> DNS migration was handled in Step 8 as part of the WordPress cutover. If you followed Step 8, skip this.
+
+If you haven't done it yet:
+
+In your domain registrar (Hostinger, Cloudflare, etc.):
 
 | Type | Name | Value | TTL |
 |------|------|-------|-----|
 | A | `@` | `<VPS_IP>` | 300 (lower for initial setup, raise to 3600 later) |
 | A | `www` | `<VPS_IP>` | 300 |
 
-### Verify propagation
-
-```bash
-# From your local machine (not VPS)
-dig thepuppyday.com +short
-dig www.thepuppyday.com +short
-```
-
-Both should return your VPS IP. Propagation takes 5 minutes to 48 hours depending on registrar.
-
-> **Quick test while waiting for DNS**: Add to your local `/etc/hosts`:
-> ```
-> <VPS_IP> thepuppyday.com www.thepuppyday.com
-> ```
-> Then visit `http://thepuppyday.com` in your browser. Remove this line after DNS propagates.
+Once confirmed working, raise TTL to `3600`.
 
 ---
 
-## Step 10: Set Up Cron Jobs
+## Step 11: Set Up Cron Jobs
 
 ### 10a. Set server timezone to Pacific (business is in La Mirada, CA)
 
@@ -405,7 +592,7 @@ Should output: `[cron] 2026-03-14 12:00:00 OK /api/cron/notifications/retry (200
 
 ---
 
-## Step 11: Update External Services
+## Step 12: Update External Services
 
 ### 11a. Supabase Auth
 
@@ -440,7 +627,7 @@ Should output: `[cron] 2026-03-14 12:00:00 OK /api/cron/notifications/retry (200
 
 ---
 
-## Step 12: Post-Deployment Verification Checklist
+## Step 13: Post-Deployment Verification Checklist
 
 Run through each item from the VPS:
 
