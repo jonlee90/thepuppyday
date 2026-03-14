@@ -21,6 +21,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isValidToken, setIsValidToken] = useState(false);
+  const [isInvite, setIsInvite] = useState(false);
 
   const {
     register,
@@ -33,6 +34,13 @@ export default function ResetPasswordPage() {
   // Verify the reset token on mount
   useEffect(() => {
     const supabase = createClient();
+
+    // Detect if coming from an invite link
+    const hash = window.location.hash.substring(1);
+    const hashParams = new URLSearchParams(hash);
+    if (hashParams.get('type') === 'invite') {
+      setIsInvite(true);
+    }
 
     // Check if we have a valid authenticated user from the email link
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -60,9 +68,9 @@ export default function ResetPasswordPage() {
 
       setSuccess(true);
 
-      // Redirect to login after 2 seconds
+      // Staff invite → go to admin, regular reset → go to login
       setTimeout(() => {
-        router.push('/login');
+        router.push(isInvite ? '/admin' : '/login');
       }, 2000);
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
@@ -83,9 +91,9 @@ export default function ResetPasswordPage() {
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-[#434E54] mb-3">Password Reset Successful!</h1>
+          <h1 className="text-3xl font-bold text-[#434E54] mb-3">{isInvite ? 'Account Created!' : 'Password Reset Successful!'}</h1>
           <p className="text-[#6B7280] mb-8 leading-relaxed">
-            Your password has been updated successfully. Redirecting to login...
+            {isInvite ? 'Your account is ready. Redirecting to the admin panel…' : 'Your password has been updated successfully. Redirecting to login...'}
           </p>
         </div>
       </motion.div>
