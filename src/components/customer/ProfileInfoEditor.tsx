@@ -11,6 +11,9 @@ interface ProfileUser {
   email: string;
   phone: string | null;
   avatar_url: string | null;
+  address: string | null;
+  city: string | null;
+  zip: string | null;
 }
 
 interface ProfileInfoEditorProps {
@@ -26,12 +29,21 @@ export function ProfileInfoEditor({ user }: ProfileInfoEditorProps) {
   const [form, setForm] = useState({
     first_name: user.first_name || '',
     last_name: user.last_name || '',
+    address: user.address || '',
+    city: user.city || '',
+    zip: user.zip || '',
   });
 
   const phoneInput = usePhoneMask(user.phone || '');
 
   const handleEdit = () => {
-    setForm({ first_name: currentUser.first_name || '', last_name: currentUser.last_name || '' });
+    setForm({
+      first_name: currentUser.first_name || '',
+      last_name: currentUser.last_name || '',
+      address: currentUser.address || '',
+      city: currentUser.city || '',
+      zip: currentUser.zip || '',
+    });
     phoneInput.setValue(currentUser.phone || '');
     setError(null);
     setIsEditing(true);
@@ -63,6 +75,9 @@ export function ProfileInfoEditor({ user }: ProfileInfoEditorProps) {
           first_name: form.first_name.trim(),
           last_name: form.last_name.trim(),
           phone: phoneInput.rawValue || null,
+          address: form.address.trim() || null,
+          city: form.city.trim() || null,
+          zip: form.zip.trim() || null,
         }),
       });
 
@@ -80,6 +95,9 @@ export function ProfileInfoEditor({ user }: ProfileInfoEditorProps) {
         first_name: result.data.first_name,
         last_name: result.data.last_name,
         phone: result.data.phone,
+        address: result.data.address,
+        city: result.data.city,
+        zip: result.data.zip,
       }));
       setIsEditing(false);
     } catch {
@@ -164,6 +182,14 @@ export function ProfileInfoEditor({ user }: ProfileInfoEditorProps) {
                   {currentUser.phone ? formatPhoneNumber(currentUser.phone) : '-'}
                 </p>
               </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs text-[#434E54]/50 uppercase tracking-wide mb-1">Address</p>
+                <p className="font-semibold text-[#434E54]">
+                  {currentUser.address
+                    ? [currentUser.address, currentUser.city, currentUser.zip].filter(Boolean).join(', ')
+                    : '-'}
+                </p>
+              </div>
             </div>
           ) : (
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -206,6 +232,43 @@ export function ProfileInfoEditor({ user }: ProfileInfoEditorProps) {
                   onChange={phoneInput.onChange}
                   onPaste={phoneInput.onPaste}
                   placeholder="(555) 123-4567"
+                  className="w-full px-3 py-2 rounded-lg border border-[#434E54]/20 text-[#434E54]
+                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+                             text-sm font-medium"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-[#434E54]/50 uppercase tracking-wide mb-1">Address</label>
+                <input
+                  type="text"
+                  value={form.address}
+                  onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+                  placeholder="123 Main St"
+                  className="w-full px-3 py-2 rounded-lg border border-[#434E54]/20 text-[#434E54]
+                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+                             text-sm font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-[#434E54]/50 uppercase tracking-wide mb-1">City</label>
+                <input
+                  type="text"
+                  value={form.city}
+                  onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+                  placeholder="La Mirada"
+                  className="w-full px-3 py-2 rounded-lg border border-[#434E54]/20 text-[#434E54]
+                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+                             text-sm font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-[#434E54]/50 uppercase tracking-wide mb-1">ZIP Code</label>
+                <input
+                  type="text"
+                  value={form.zip}
+                  onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))}
+                  placeholder="90638"
+                  maxLength={10}
                   className="w-full px-3 py-2 rounded-lg border border-[#434E54]/20 text-[#434E54]
                              focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
                              text-sm font-medium"

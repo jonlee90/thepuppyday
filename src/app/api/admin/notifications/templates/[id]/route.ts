@@ -75,7 +75,19 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ template });
+    // Normalize variables: DB may store as string[] (new migrations) or TemplateVariable[] (legacy)
+    const normalizedTemplate = {
+      ...template,
+      variables: Array.isArray(template.variables)
+        ? template.variables.map((v: unknown) =>
+            typeof v === 'string'
+              ? { name: v, description: v.replace(/_/g, ' '), required: false }
+              : v
+          )
+        : [],
+    };
+
+    return NextResponse.json({ template: normalizedTemplate });
   } catch (error) {
     console.error('[Admin API] Error fetching notification template:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch template';

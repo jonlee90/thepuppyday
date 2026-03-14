@@ -25,7 +25,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/settings/services': 'Services',
   '/admin/settings/addons': 'Add-ons',
   '/admin/settings/gallery': 'Gallery',
-  '/admin/marketing/campaigns': 'Campaigns',
   '/admin/notifications': 'Notifications',
   '/admin/notifications/dashboard': 'Notifications',
   '/admin/notifications/templates': 'Templates',

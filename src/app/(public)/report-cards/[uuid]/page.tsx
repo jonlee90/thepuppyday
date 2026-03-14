@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { PublicReportCard } from '@/components/public/report-cards/PublicReportCard';
 import type { PublicReportCard as PublicReportCardType } from '@/types/report-card';
 
@@ -105,6 +106,14 @@ export async function generateMetadata({
  */
 export default async function ReportCardPage({ params }: PageProps) {
   const { uuid } = await params;
+
+  // Require authentication — redirect to login with return URL
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect(`/login?returnTo=/report-cards/${uuid}`);
+  }
+
   const { data, error, status, hasExistingReview } = await getReportCard(uuid);
 
   // Handle 404 - Report card not found

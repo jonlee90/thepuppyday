@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: 'Areas We Serve - Dog Grooming Near You | Puppy Day La Mirada',
     description:
       "Puppy Day serves La Mirada and surrounding cities including Norwalk, Buena Park, Whittier, Cerritos, and more. Book your dog's grooming appointment today.",
-    alternates: { canonical: 'https://thepuppyday.com/areas' },
+    alternates: { canonical: 'https://thepuppyday.com/dog-grooming' },
   };
 }
 
@@ -30,12 +30,12 @@ export default async function AreasPage() {
           '@type': 'ItemList',
           name: 'Dog Grooming Service Areas',
           description: 'Cities served by Puppy Day dog grooming salon based in La Mirada, CA',
-          url: 'https://thepuppyday.com/areas',
+          url: 'https://thepuppyday.com/dog-grooming',
           itemListElement: CITY_SLUGS.map((slug, index) => ({
             '@type': 'ListItem',
             position: index + 1,
             name: CITY_CONFIGS[slug as CitySlug].name,
-            url: `https://thepuppyday.com/areas/${slug}`,
+            url: `https://thepuppyday.com/dog-grooming/${slug}`,
           })),
         }}
       />
@@ -59,7 +59,7 @@ export default async function AreasPage() {
               return (
                 <Link
                   key={slug}
-                  href={`/areas/${slug}`}
+                  href={`/dog-grooming/${slug}`}
                   className={`relative block bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow ${isHome ? 'border-2 border-[#C67C4E]' : ''}`}
                 >
                   {isHome ? (

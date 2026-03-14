@@ -189,7 +189,7 @@ export default async function MarketingPage() {
       <section className="py-8 px-4 text-center bg-white">
         <p className="text-[#6B7280] text-base">
           {'Proudly serving '}
-          <Link href="/areas" className="text-[#C67C4E] hover:underline font-medium">
+          <Link href="/dog-grooming" className="text-[#C67C4E] hover:underline font-medium">
             La Mirada and surrounding cities
           </Link>
           {' including Norwalk, Buena Park, Whittier, Cerritos, and more.'}

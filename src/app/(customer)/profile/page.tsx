@@ -49,6 +49,9 @@ export default async function ProfilePage() {
                 email: user.email,
                 phone: user.phone,
                 avatar_url: user.avatar_url,
+                address: (user as any).address || null,
+                city: (user as any).city || null,
+                zip: (user as any).zip || null,
               }}
             />
 

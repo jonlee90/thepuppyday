@@ -16,7 +16,6 @@ import {
   sanitizeCSVValue,
   parseAmountPaid,
   normalizePaymentMethod,
-  validateWeightForSize,
   type CSVAppointmentRow,
   type ValidationWarning,
 } from './csv-validation';
@@ -189,7 +188,8 @@ export class RowValidator {
         return {
           ...row,
           pet_breed: row.pet_breed || '', // Ensure pet_breed is a string
-          pet_weight: row.pet_weight || '',
+          pet_gender: row.pet_gender || '',
+          pet_color: row.pet_color || '',
           rowNumber,
           isValid: false,
           errors,
@@ -217,18 +217,7 @@ export class RowValidator {
         });
       }
 
-      // 4. Validate weight vs size (warning only)
-      if (row.pet_weight && petSize) {
-        const weight = parseFloat(row.pet_weight);
-        if (!isNaN(weight)) {
-          const weightValidation = validateWeightForSize(weight, petSize);
-          if (!weightValidation.isValid && weightValidation.warning) {
-            warnings.push(weightValidation.warning);
-          }
-        }
-      }
-
-      // 5. Validate service exists
+      // 4. Validate service exists
       const { data: service, error: serviceError } = await this.supabase
         .from('services')
         .select('id, name, duration_minutes')
@@ -243,7 +232,7 @@ export class RowValidator {
         });
       }
 
-      // 6. Validate service price exists for size
+      // 5. Validate service price exists for size
       if (service && petSize) {
         const { data: priceData } = await this.supabase
           .from('service_prices')
@@ -261,7 +250,7 @@ export class RowValidator {
         }
       }
 
-      // 7. Parse and validate date/time
+      // 6. Parse and validate date/time
       const scheduledAt = parseCSVDateTime(row.date, row.time);
       if (!scheduledAt) {
         errors.push({
@@ -300,7 +289,7 @@ export class RowValidator {
         }
       }
 
-      // 8. Validate addons if provided
+      // 7. Validate addons if provided
       const addonNames = parseAddons(row.addons);
       const validAddonIds: string[] = [];
 
@@ -324,7 +313,7 @@ export class RowValidator {
         }
       }
 
-      // 9. Validate payment information
+      // 8. Validate payment information
       const paymentStatus = normalizePaymentStatus(row.payment_status);
 
       if ((paymentStatus === 'paid' || paymentStatus === 'deposit_paid') && row.payment_method) {
@@ -352,7 +341,8 @@ export class RowValidator {
       return {
         ...row,
         pet_breed: row.pet_breed || '',
-        pet_weight: row.pet_weight || '',
+        pet_gender: row.pet_gender || '',
+        pet_color: row.pet_color || '',
         rowNumber,
         isValid: errors.length === 0,
         errors,
@@ -368,7 +358,8 @@ export class RowValidator {
       return {
         ...row,
         pet_breed: row.pet_breed || '',
-        pet_weight: row.pet_weight || '',
+        pet_gender: row.pet_gender || '',
+        pet_color: row.pet_color || '',
         rowNumber,
         isValid: false,
         errors,
@@ -445,7 +436,8 @@ export class DuplicateDetector {
               csvRow: {
                 ...row,
                 pet_breed: row.pet_breed || '',
-                pet_weight: row.pet_weight || '',
+                pet_gender: row.pet_gender || '',
+                pet_color: row.pet_color || '',
                 rowNumber,
                 isValid: true,
                 errors: [],

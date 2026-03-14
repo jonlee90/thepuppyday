@@ -29,7 +29,7 @@ export function ExportButton({ logs, filters, totalCount, onExportAll }: ExportB
         !onExportAll || logs.length >= totalCount ? logs : await onExportAll();
 
       if (logsToExport.length === 0) {
-        alert('No logs to export');
+        console.warn('[ExportButton] No logs to export');
         return;
       }
 
@@ -43,7 +43,7 @@ export function ExportButton({ logs, filters, totalCount, onExportAll }: ExportB
       downloadCSV(csvContent, filename);
     } catch (error) {
       console.error('Failed to export logs:', error);
-      alert('Failed to export logs. Please try again.');
+      console.error('[ExportButton] Failed to export logs. Please try again.');
     } finally {
       setExporting(false);
     }

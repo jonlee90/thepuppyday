@@ -14,6 +14,11 @@ import {
   MARKETING_NOTIFICATION_TYPES,
 } from '@/types/preferences';
 
+// Helper to extract value from form events in strict TS environments
+function getTargetValue(e: { target: unknown }): string {
+  return (e.target as { value: string }).value;
+}
+
 interface LogFiltersProps {
   filters: NotificationLogFilters;
   onFilterChange: (filters: NotificationLogFilters) => void;
@@ -92,7 +97,7 @@ export function LogFilters({ filters, onFilterChange, onApplyFilters }: LogFilte
           <input
             type="text"
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={(e) => setSearchInput(getTargetValue(e))}
             placeholder="Search by email or phone..."
             className="input input-bordered w-full pl-10 bg-white border-gray-200
                      focus:border-[#434E54] focus:outline-none"
@@ -107,7 +112,7 @@ export function LogFilters({ filters, onFilterChange, onApplyFilters }: LogFilte
           <label className="block text-sm font-medium text-[#434E54] mb-2">Type</label>
           <select
             value={filters.type || ''}
-            onChange={(e) => handleTypeChange(e.target.value)}
+            onChange={(e) => handleTypeChange(getTargetValue(e))}
             className="select select-bordered w-full bg-white border-gray-200
                      focus:border-[#434E54] focus:outline-none"
           >
@@ -134,7 +139,7 @@ export function LogFilters({ filters, onFilterChange, onApplyFilters }: LogFilte
           <label className="block text-sm font-medium text-[#434E54] mb-2">Channel</label>
           <select
             value={filters.channel || 'all'}
-            onChange={(e) => handleChannelChange(e.target.value as NotificationChannel | 'all')}
+            onChange={(e) => handleChannelChange(getTargetValue(e) as NotificationChannel | 'all')}
             className="select select-bordered w-full bg-white border-gray-200
                      focus:border-[#434E54] focus:outline-none"
           >
@@ -149,7 +154,7 @@ export function LogFilters({ filters, onFilterChange, onApplyFilters }: LogFilte
           <label className="block text-sm font-medium text-[#434E54] mb-2">Status</label>
           <select
             value={filters.status || 'all'}
-            onChange={(e) => handleStatusChange(e.target.value as NotificationStatus | 'all')}
+            onChange={(e) => handleStatusChange(getTargetValue(e) as NotificationStatus | 'all')}
             className="select select-bordered w-full bg-white border-gray-200
                      focus:border-[#434E54] focus:outline-none"
           >
@@ -169,7 +174,7 @@ export function LogFilters({ filters, onFilterChange, onApplyFilters }: LogFilte
               type="date"
               value={filters.start_date ? filters.start_date.split('T')[0] : ''}
               onChange={(e) =>
-                handleStartDateChange(e.target.value ? `${e.target.value}T00:00:00` : '')
+                handleStartDateChange(getTargetValue(e) ? `${getTargetValue(e)}T00:00:00` : '')
               }
               className="input input-bordered w-full pl-10 bg-white border-gray-200
                        focus:border-[#434E54] focus:outline-none"
@@ -188,7 +193,7 @@ export function LogFilters({ filters, onFilterChange, onApplyFilters }: LogFilte
               type="date"
               value={filters.end_date ? filters.end_date.split('T')[0] : ''}
               onChange={(e) =>
-                handleEndDateChange(e.target.value ? `${e.target.value}T23:59:59` : '')
+                handleEndDateChange(getTargetValue(e) ? `${getTargetValue(e)}T23:59:59` : '')
               }
               className="input input-bordered w-full pl-10 bg-white border-gray-200
                        focus:border-[#434E54] focus:outline-none"

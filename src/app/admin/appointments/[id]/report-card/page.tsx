@@ -29,7 +29,7 @@ export default async function ReportCardPage({ params }: PageProps) {
     .from('appointments')
     .select(`
       id,
-      appointment_date,
+      scheduled_at,
       status,
       pet:pets (
         id,
@@ -81,7 +81,7 @@ export default async function ReportCardPage({ params }: PageProps) {
         petName={petName}
         serviceName={serviceName}
         customerName={customerName}
-        appointmentDate={appointment.appointment_date}
+        appointmentDate={appointment.scheduled_at}
       />
     </div>
   );

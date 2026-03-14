@@ -4,7 +4,7 @@
 > **Status**: Phases 5, 6, 8, 9, 11 Complete | Phase 7 Pending (Payments) | Admin Dashboard Redesign Complete
 > **Base Path**: `admin/`
 > **Authentication**: Required (admin or groomer role)
-> **Last Updated**: 2026-03-09
+> **Last Updated**: 2026-03-14
 
 ## Overview
 
@@ -131,7 +131,16 @@ Thin server component — renders `<DashboardClient />` only. All data fetching 
 Client component with toggleable calendar/list views.
 
 **Views**:
-1. **Calendar View** (FullCalendar) - Day/week/month, color-coded by status. Swipe-to-navigate is disabled (touch swipe callbacks are no-ops).
+1. **Calendar View** (Custom swimlane calendar) - Day/week views with groomer swimlane columns. Replaces FullCalendar with iPad-optimized touch interactions.
+   - **Component tree**: `AppointmentCalendar` → `CalendarHeader` + `CalendarLegend` + `DayView`/`WeekView`
+   - **Location**: `src/components/admin/appointments/calendar/`
+   - **Day View** (`views/DayView.tsx`): Groomer columns side-by-side with time column, click-to-create on empty slots
+   - **Week View** (`views/WeekView.tsx`): Two layout modes — tab-based (>3 groomers: day tabs + groomer columns) or side-by-side (≤3 groomers: 7 day columns)
+   - **Overlap handling**: `computeOverlapLayout()` in `utils.ts` implements an interval-graph algorithm to detect overlapping appointments and render them side-by-side (Google Calendar style). Each card gets `overlapIndex`/`overlapTotal` props for width and position calculation.
+   - **NowIndicator** (`shared/NowIndicator.tsx`): Red pulsing dot + horizontal line at current time; updates every 60s; only renders within display hours (9am–8pm, defined by `DISPLAY_HOURS` constant)
+   - **AppointmentCard** (`cards/AppointmentCard.tsx`): Absolute-positioned card with overlap-aware width/left via CSS `calc()`. Compact mode for ≥3 overlapping cards shows time only. Hover elevates with `shadow-md` and `z-[25]`.
+   - **SwimlaneLane** (`shared/SwimlaneLane.tsx`): Renders time grid lines and business hours background
+   - **Constants**: `DISPLAY_HOURS` (9am–8pm), `SLOT_CONFIG` (pixels per minute), groomer color palette
 2. **List View** - Filterable table with pagination and bulk actions. Calendar sync status fetching uses a `fetchedSyncIdsRef` to prevent infinite request loops.
 
 **Responsive Layout**:
@@ -181,8 +190,9 @@ Create/edit grooming report cards with before/after photos, groomer notes, and h
 - Account activation status
 
 **Customer Profile** (`/admin/customers/[id]`):
-- Personal information, pets, appointment history
+- Personal information, pets (with inline edit via PetEditModal), appointment history
 - Customer flags/notes, account activation controls
+- Pet CRUD via `/api/admin/customers/[id]/pets` (GET) and `/api/admin/customers/[id]/pets/[petId]` (PATCH)
 
 ---
 
@@ -202,6 +212,11 @@ These pages were moved under `/admin/settings/` as of Phase 10 polish:
 **File**: `src/app/admin/staff/page.tsx`
 
 Staff directory, commission settings, and earnings. Moved out of `/admin/settings/staff` to a top-level `/admin/staff/` route.
+
+**Components**:
+- `StaffDirectory` (`src/components/admin/settings/staff/StaffDirectory.tsx`): Card grid with search, filters, and inline actions
+- `StaffForm` (`src/components/admin/settings/staff/StaffForm.tsx`): Create/edit form with React Hook Form + Zod validation. Edit mode fetches staff data from `GET /api/admin/settings/staff/[id]` and populates via `reset()`. API response structure: `{ data: { profile, stats, recent_appointments, commission_settings } }` — form reads from `profile` object.
+- `CommissionSettings` (`src/components/admin/settings/staff/CommissionSettings.tsx`): Per-staff commission configuration via separate `/api/admin/settings/staff/[id]/commission` endpoint
 
 ---
 

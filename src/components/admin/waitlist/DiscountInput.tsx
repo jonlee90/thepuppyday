@@ -23,13 +23,13 @@ export function DiscountInput({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Discount Percentage */}
       <div>
-        <label className="label">
-          <span className="label-text font-medium flex items-center gap-2">
+        <label className="block text-sm font-medium text-[#434E54] mb-1.5">
+          <span className="flex items-center gap-2">
             <Percent className="h-4 w-4" />
             Discount Percentage
           </span>
         </label>
-        <div className="join w-full">
+        <div className="flex">
           <input
             type="number"
             min="0"
@@ -37,27 +37,27 @@ export function DiscountInput({
             step="5"
             value={discountPercentage}
             onChange={(e) => onDiscountChange(Number(e.target.value))}
-            className="input input-bordered join-item flex-1"
+            className="flex-1 px-3 py-2.5 rounded-l-lg border border-r-0 border-[#434E54]/20 bg-white text-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]/40 transition-colors text-sm"
             aria-label="Discount percentage"
           />
-          <span className="btn btn-outline join-item">%</span>
-        </div>
-        <label className="label">
-          <span className="label-text-alt text-gray-500">
-            Default: 10%. Range: 0-100%
+          <span className="px-3 py-2.5 bg-[#EAE0D5] text-[#434E54]/70 text-sm font-medium rounded-r-lg border border-l-0 border-[#434E54]/20">
+            %
           </span>
-        </label>
+        </div>
+        <p className="text-xs text-[#434E54]/40 mt-1">
+          Default: 10%. Range: 0-100%
+        </p>
       </div>
 
       {/* Response Window */}
       <div>
-        <label className="label">
-          <span className="label-text font-medium flex items-center gap-2">
+        <label className="block text-sm font-medium text-[#434E54] mb-1.5">
+          <span className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Response Window
           </span>
         </label>
-        <div className="join w-full">
+        <div className="flex">
           <input
             type="number"
             min="1"
@@ -65,16 +65,16 @@ export function DiscountInput({
             step="1"
             value={responseWindowHours}
             onChange={(e) => onResponseWindowChange(Number(e.target.value))}
-            className="input input-bordered join-item flex-1"
+            className="flex-1 px-3 py-2.5 rounded-l-lg border border-r-0 border-[#434E54]/20 bg-white text-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]/40 transition-colors text-sm"
             aria-label="Response window in hours"
           />
-          <span className="btn btn-outline join-item">hours</span>
-        </div>
-        <label className="label">
-          <span className="label-text-alt text-gray-500">
-            Default: 2 hours. Range: 1-24 hours
+          <span className="px-3 py-2.5 bg-[#EAE0D5] text-[#434E54]/70 text-sm font-medium rounded-r-lg border border-l-0 border-[#434E54]/20">
+            hours
           </span>
-        </label>
+        </div>
+        <p className="text-xs text-[#434E54]/40 mt-1">
+          Default: 2 hours. Range: 1-24 hours
+        </p>
       </div>
     </div>
   );

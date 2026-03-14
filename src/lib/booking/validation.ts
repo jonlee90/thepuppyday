@@ -37,6 +37,9 @@ export const guestInfoSchema = z.object({
       },
       { message: 'Phone number must contain 10-15 digits' }
     ),
+  address: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  zip: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code').optional().or(z.literal('')),
 });
 
 export type GuestInfoFormData = z.infer<typeof guestInfoSchema>;
@@ -54,12 +57,9 @@ export const petFormSchema = z.object({
   }),
   breed_id: z.string().optional(),
   breed_custom: z.string().max(100, 'Breed name is too long').optional(),
-  weight: z
-    .number()
-    .positive('Weight must be positive')
-    .max(300, 'Weight seems too high')
-    .optional()
-    .nullable(),
+  gender: z.enum(['male', 'female'], { message: 'Please select a gender' }),
+  color: z.string().max(100).optional(),
+  birth_date: z.string().optional(),
   notes: z.string().max(500, 'Notes are too long').optional(),
 });
 

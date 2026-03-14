@@ -1,8 +1,8 @@
 # The Puppy Day - Master Architecture Documentation
 
-> **Version**: 1.5
-> **Last Updated**: 2026-03-09
-> **Status**: Production-Ready (Phases 1-6, 8-9, 11 Complete | Admin Dashboard Redesign Complete | Phase 7 Pending | Phase 10 In Progress)
+> **Version**: 1.6
+> **Last Updated**: 2026-03-14
+> **Status**: Production-Ready (Phases 1-6, 8-9, 11 Complete | Admin Dashboard Redesign Complete | Notification Templates Redesign In Progress | Phase 7 Pending | Phase 10 In Progress)
 
 ## Table of Contents
 
@@ -60,9 +60,12 @@
 | 7 | Payments & Memberships | Pending | Stripe integration, memberships, loyalty program |
 | 8 | Notifications | Completed | Templates, triggers, preferences, email/SMS providers, unsubscribe system |
 | 9 | Admin Settings | Completed | Business settings, staff management, site content, banners |
-| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), AdminButton component (done), AppointmentDetailModal redesign (done), settings hierarchy reorganization (done), comprehensive testing pending |
+| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), AdminButton component (done), AppointmentDetailModal redesign (done), settings hierarchy reorganization (done), custom swimlane calendar with overlap layout (done), StaffForm edit data loading fix (done), comprehensive testing pending |
 | 11 | Calendar Error Recovery | Completed | Retry queue, error recovery UI, quota tracking, auto-pause system |
+| SEO | Multi-Page SEO Architecture | Completed | Blog infrastructure with SEO articles, location-based `/dog-grooming/[city]` pages, individual `/services/[slug]` pages, standalone about/contact/gallery/reviews/faq/privacy/terms/accessibility pages, renamed `/areas` to `/dog-grooming` for keyword ranking |
+| PWA | Progressive Web App | Completed | Serwist/Turbopack PWA integration, service worker, offline support |
 | F | Admin Dashboard Redesign | Completed | Replaced DashboardStats/TodayAppointments/PendingAppointments with RevenueOverview, DashboardTimeline, ProductivityWidget, WaitlistWidget, PendingActionsWidget; useDashboardData hook; revenue-overview API endpoint; QuickAccess removed; PendingActionsWidget moved full-width above grid |
+| NT | Notification Templates Redesign | In Progress | Email mood system (celebration/reminder/urgent/info/warning/success), HTML email base redesign with charcoal header and gold accents, 7 reusable component functions, pill-style CTAs, all 13 email templates updated with mood banners and pet hero sections, 5 new notification triggers |
 
 ---
 
@@ -117,7 +120,6 @@
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **FullCalendar** | 6.1.19 | Interactive calendar for appointment scheduling |
 | **Chart.js** | 4.5.1 | Chart library for analytics dashboards |
 | **react-chartjs-2** | 5.3.1 | React wrapper for Chart.js |
 | **Recharts** | 3.5.1 | Composable charting library for analytics |
@@ -154,6 +156,13 @@
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | **Swiper** | 12.0.3 | Modern touch slider for image galleries |
+
+### Progressive Web App
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **@serwist/turbopack** | ^9.5.6 | PWA service worker integration for Next.js 16 with Turbopack |
+| **serwist** | ^9.5.6 | Service worker runtime and caching strategies |
 
 ### Testing
 
@@ -598,6 +607,9 @@ interface User {
   role: string | null;             // 'customer' | 'admin' | 'groomer'
   avatar_url: string | null;       // Profile photo URL
   preferences: Json | null;        // JSON column for notification preferences
+  address: string | null;          // Street address
+  city: string | null;             // City
+  zip: string | null;              // ZIP code
   created_at: string | null;
   updated_at: string | null;
 }
@@ -619,7 +631,8 @@ interface Pet {
   breed_id: string | null;         // Foreign key -> breeds.id
   breed_custom: string | null;     // Custom breed name (if breed_id is null)
   size: string;                    // 'small' | 'medium' | 'large' | 'xlarge'
-  weight: number | null;           // Weight in pounds
+  gender: string;                  // 'male' | 'female' (NOT NULL, default 'male', CHECK constraint)
+  color: string | null;            // Color/markings (free text)
   birth_date: string | null;       // Date of birth
   notes: string | null;            // General notes
   medical_info: string | null;     // Medical information
@@ -630,13 +643,13 @@ interface Pet {
 }
 ```
 
-**Size Weight Ranges**:
+**Size Ranges** (used for pricing):
 ```typescript
-const SIZE_WEIGHT_RANGES = {
-  small: { min: 0, max: 18 },      // 0-18 lbs
-  medium: { min: 19, max: 35 },    // 19-35 lbs
-  large: { min: 36, max: 65 },     // 36-65 lbs
-  xlarge: { min: 66, max: Infinity } // 66+ lbs
+const SIZE_RANGES = {
+  small: '0-18 lbs',
+  medium: '19-35 lbs',
+  large: '36-65 lbs',
+  xlarge: '66+ lbs',
 };
 ```
 
@@ -1036,6 +1049,26 @@ interface NotificationSettings {
   updated_at: string;
 }
 ```
+
+**Active Notification Types** (post-migration `20260314_cleanup_unused_notification_types.sql`):
+
+| Type | Email | SMS | Description |
+|------|-------|-----|-------------|
+| `booking_confirmation` | Yes | Yes | Appointment booked confirmation |
+| `appointment_reminder` | Yes | Yes | Reminder before appointment |
+| `appointment_cancelled` | Yes | No | Appointment cancelled |
+| `appointment_rescheduled` | Yes | Yes | Appointment rescheduled |
+| `review_request` | Yes | No | Post-appointment review request |
+| `waitlist_added` | Yes | Yes | Added to waitlist confirmation |
+| `waitlist_available` | Yes | Yes | Waitlist slot opened |
+| `report_card_ready` | Yes | Yes | Grooming report card available |
+| `retention_reminder` | Yes | Yes | Re-booking reminder |
+| `payment_failed` | Yes | No | Payment failure notice |
+| `payment_reminder` | Yes | No | Payment due reminder |
+| `payment_success` | Yes | No | Payment confirmed |
+| `payment_final_notice` | Yes | No | Final payment warning |
+
+**Removed types** (migration `20260314_cleanup_unused_notification_types.sql`): `status_checked_in`, `status_in_progress`, `status_completed`, `status_ready`, `membership_activated`, `membership_renewed`, `membership_expiring`, `membership_cancelled`
 
 #### 24. `notification_template_history` Table
 Version history for notification templates (read-only audit trail).

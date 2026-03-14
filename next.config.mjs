@@ -1,5 +1,8 @@
+import { withSerwist } from '@serwist/turbopack';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -15,6 +18,7 @@ const nextConfig = {
         hostname: 'jajbtwgbhrkvgxvvruaa.supabase.co',
       },
     ],
+    qualities: [75, 90],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -62,6 +66,8 @@ const nextConfig = {
               "base-uri 'self'",
               // Form action: only allow forms to submit to same origin
               "form-action 'self'",
+              // Worker source: allow service worker from same origin
+              "worker-src 'self'",
               // Frame ancestors: prevent clickjacking (same as X-Frame-Options)
               "frame-ancestors 'self'",
               // Upgrade insecure requests in production
@@ -109,4 +115,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

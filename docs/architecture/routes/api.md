@@ -3,8 +3,8 @@
 > **Module**: API Routes
 > **Status**: Core Complete
 > **Base Path**: `/api/`
-> **Framework**: Next.js 14+ App Router API Routes
-> **Last Updated**: 2026-03-07
+> **Framework**: Next.js 16 App Router API Routes
+> **Last Updated**: 2026-03-14
 
 ## Overview
 
@@ -38,8 +38,10 @@ src/app/api/
 │   │   └── retry/
 │   └── waitlist-expiration/
 ├── customer/                        # Customer endpoints (session-auth)
+│   ├── account/                     # Account deletion
 │   ├── appointments/[id]/
-│   └── preferences/notifications/
+│   ├── preferences/notifications/
+│   └── profile/                     # Profile data
 ├── health/                          # Health check endpoint
 ├── pets/                            # Pet creation/listing
 ├── report-cards/[uuid]/             # Public report card by UUID
@@ -104,6 +106,8 @@ src/app/api/
 |-------|---------|---------|
 | `/api/customer/appointments/[id]` | PUT, DELETE | Reschedule or cancel appointment |
 | `/api/customer/preferences/notifications` | GET, PUT | Notification preferences |
+| `/api/customer/profile` | GET | Fetch customer profile data |
+| `/api/customer/account` | DELETE | Delete customer account |
 
 ### Webhook Endpoints
 
@@ -161,6 +165,7 @@ src/app/api/
 | `/api/admin/customers/[id]/appointments` | GET | Get customer's appointments |
 | `/api/admin/customers/[id]/flags` | POST | Add customer flag |
 | `/api/admin/customers/[id]/flags/[flagId]` | PATCH, DELETE | Update/remove customer flag |
+| `/api/admin/customers/[id]/pets/[petId]` | PATCH | Update a customer's pet |
 
 #### Services & Addons
 
@@ -214,6 +219,7 @@ src/app/api/
 | `/api/admin/waitlist/[id]/book` | POST | Convert waitlist entry to appointment |
 | `/api/admin/waitlist/match` | POST | Match waitlist entries to open slots |
 | `/api/admin/waitlist/fill-slot` | POST | Fill slot from waitlist |
+| `/api/admin/waitlist/[id]/cancel` | POST | Cancel a waitlist entry |
 
 #### Notifications
 
@@ -234,6 +240,7 @@ src/app/api/
 | `/api/admin/notifications/templates/[id]/test` | POST | Send test notification |
 | `/api/admin/notifications/templates/[id]/history` | GET | Template version history |
 | `/api/admin/notifications/templates/[id]/rollback` | POST | Rollback to previous version |
+| `/api/admin/notifications/templates/email-shell` | GET | Get base email HTML shell for preview rendering |
 | `/api/admin/notifications/jobs/reminders/trigger` | POST | Manually trigger reminders |
 | `/api/admin/notifications/jobs/retention/trigger` | POST | Manually trigger retention |
 
@@ -247,6 +254,9 @@ src/app/api/
 | `/api/admin/analytics/charts/services` | GET | Service popularity data |
 | `/api/admin/analytics/charts/customers` | GET | Customer acquisition data |
 | `/api/admin/analytics/charts/operations` | GET | Operational metrics |
+| `/api/admin/analytics/charts/booking-sources` | GET | Booking source breakdown |
+| `/api/admin/analytics/charts/peak-hours` | GET | Peak hours heatmap data |
+| `/api/admin/analytics/charts/pet-sizes` | GET | Pet size distribution |
 | `/api/admin/analytics/groomers` | GET | Groomer performance |
 | `/api/admin/analytics/marketing` | GET | Marketing analytics |
 | `/api/admin/analytics/report-cards` | GET | Report card metrics |
@@ -276,6 +286,7 @@ src/app/api/
 | `/api/admin/settings/staff/earnings` | GET | Earnings reports |
 | `/api/admin/settings/templates` | GET, PUT | Default templates |
 | `/api/admin/settings/templates/reset` | POST | Reset templates to defaults |
+| `/api/admin/settings/default-groomer` | POST, PUT | Set default groomer assignment |
 | `/api/admin/settings/phase6` | GET, PUT | Phase 6 settings |
 
 #### Calendar (Google Calendar Integration)

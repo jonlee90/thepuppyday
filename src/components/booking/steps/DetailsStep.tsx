@@ -71,6 +71,9 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
     last_name: guestInfo?.lastName || '',
     email: guestInfo?.email || '',
     phone: guestInfo?.phone || '',
+    address: guestInfo?.address || '',
+    city: guestInfo?.city || '',
+    zip: guestInfo?.zip || '',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [duplicateEmailError, setDuplicateEmailError] = useState('');
@@ -270,6 +273,9 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
         lastName: newCustomerForm.last_name,
         email: newCustomerForm.email,
         phone: newCustomerForm.phone,
+        address: newCustomerForm.address || undefined,
+        city: newCustomerForm.city || undefined,
+        zip: newCustomerForm.zip || undefined,
       });
       setSelectedCustomer({
         id: 'new',
@@ -309,7 +315,9 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
       size: data.size,
       breed_id: data.breed_id || undefined,
       breed_custom: data.breed_custom || undefined,
-      weight: data.weight || undefined,
+      gender: data.gender,
+      color: data.color || undefined,
+      birth_date: data.birth_date || undefined,
       notes: data.notes || undefined,
     };
 
@@ -367,6 +375,15 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
           {/* Login Form */}
           {viewMode === 'login' && (
             <div className="space-y-3 p-4 bg-white rounded-xl border border-[#E5E5E5]">
+              <div className="text-center">
+                <button
+                  onClick={() => setViewMode('register')}
+                  className="text-sm text-[#434E54] hover:underline"
+                >
+                  Don&apos;t have an account? <span className="font-semibold">Register</span>
+                </button>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-[#434E54] mb-2">
                   Email <span className="text-[#EF4444]">*</span>
@@ -416,21 +433,21 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
                   </>
                 )}
               </button>
-
-              <div className="text-center">
-                <button
-                  onClick={() => setViewMode('register')}
-                  className="text-sm text-[#434E54] hover:underline"
-                >
-                  Don&apos;t have an account? <span className="font-semibold">Register</span>
-                </button>
-              </div>
             </div>
           )}
 
           {/* Register Form */}
           {viewMode === 'register' && (
             <div className="space-y-3 p-4 bg-white rounded-xl border border-[#E5E5E5]">
+              <div className="text-center">
+                <button
+                  onClick={() => setViewMode('login')}
+                  className="text-sm text-[#434E54] hover:underline"
+                >
+                  Already have an account? <span className="font-semibold">Log In</span>
+                </button>
+              </div>
+
               {renderNewCustomerFormFields()}
 
               <button
@@ -450,15 +467,6 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
                   </>
                 )}
               </button>
-
-              <div className="text-center">
-                <button
-                  onClick={() => setViewMode('login')}
-                  className="text-sm text-[#434E54] hover:underline"
-                >
-                  Already have an account? <span className="font-semibold">Log In</span>
-                </button>
-              </div>
             </div>
           )}
 
@@ -706,6 +714,53 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
         {formErrors.phone && (
           <p className="text-sm text-[#EF4444] mt-1">{formErrors.phone}</p>
         )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-[#434E54] mb-2">
+          Address
+        </label>
+        <input
+          type="text"
+          value={newCustomerForm.address}
+          onChange={(e) =>
+            setNewCustomerForm({ ...newCustomerForm, address: e.target.value })
+          }
+          className="input input-bordered w-full h-12 bg-white rounded-lg border-[#E5E5E5] focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20"
+          placeholder="123 Main St"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-[#434E54] mb-2">
+            City
+          </label>
+          <input
+            type="text"
+            value={newCustomerForm.city}
+            onChange={(e) =>
+              setNewCustomerForm({ ...newCustomerForm, city: e.target.value })
+            }
+            className="input input-bordered w-full h-12 bg-white rounded-lg border-[#E5E5E5] focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20"
+            placeholder="La Mirada"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-[#434E54] mb-2">
+            ZIP Code
+          </label>
+          <input
+            type="text"
+            value={newCustomerForm.zip}
+            onChange={(e) =>
+              setNewCustomerForm({ ...newCustomerForm, zip: e.target.value })
+            }
+            maxLength={10}
+            className="input input-bordered w-full h-12 bg-white rounded-lg border-[#E5E5E5] focus:border-[#434E54] focus:outline-none focus:ring-2 focus:ring-[#434E54]/20"
+            placeholder="90638"
+          />
+        </div>
       </div>
     </>
   );

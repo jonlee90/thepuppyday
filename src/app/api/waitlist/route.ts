@@ -2,8 +2,8 @@
  * POST /api/waitlist - Add customer to waitlist for a date/service
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse, after } from 'next/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 /**
@@ -21,6 +21,10 @@ const waitlistSchema = z.object({
       message: 'Time preference must be morning, afternoon, or any',
     })
     .default('any'),
+  preferred_time: z.union([
+    z.string().regex(/^\d{1,2}:\d{2}$/, 'Preferred time must be in HH:MM format'),
+    z.null(),
+  ]).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -63,6 +67,7 @@ export async function POST(req: NextRequest) {
         service_id: validated.service_id,
         requested_date: validated.requested_date,
         time_preference: validated.time_preference,
+        preferred_time: validated.preferred_time || null,
         status: 'active',
         notified_at: null,
       })
@@ -84,10 +89,46 @@ export async function POST(req: NextRequest) {
       .eq('requested_date', validated.requested_date)
       .eq('status', 'active');
 
+    const position = count || 1;
+
+    // Send waitlist confirmation notification in background (non-blocking)
+    // Use service role client because after() runs after the response —
+    // the request cookie context is gone, so RLS-authenticated queries fail.
+    after(async () => {
+      try {
+        const serviceClient = createServiceRoleClient();
+        const { triggerWaitlistAdded } = await import('@/lib/notifications/triggers');
+
+        // Fetch customer, pet, service in parallel
+        const [{ data: customer }, { data: pet }, { data: service }] = await Promise.all([
+          (serviceClient as any).from('users').select('id, first_name, last_name, email, phone').eq('id', validated.customer_id).single(),
+          (serviceClient as any).from('pets').select('name').eq('id', validated.pet_id).single(),
+          (serviceClient as any).from('services').select('name').eq('id', validated.service_id).single(),
+        ]);
+
+        if (customer && pet && service) {
+          await triggerWaitlistAdded(serviceClient as any, {
+            waitlistEntryId: entry.id,
+            customerId: validated.customer_id,
+            customerName: `${customer.first_name} ${customer.last_name}`,
+            customerEmail: customer.email,
+            customerPhone: customer.phone,
+            petName: pet.name,
+            serviceName: service.name,
+            requestedDate: validated.requested_date,
+            timePreference: validated.time_preference,
+            position,
+          });
+        }
+      } catch (notifError) {
+        console.error('[Waitlist API] Waitlist added notification error:', notifError);
+      }
+    });
+
     return NextResponse.json({
       success: true,
       waitlist_id: entry.id,
-      position: count || 1,
+      position,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

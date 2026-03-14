@@ -37,6 +37,10 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "public/sw.js",
+    "e2e",
+    "playwright.config.ts",
+    "scripts"
   ]
 }

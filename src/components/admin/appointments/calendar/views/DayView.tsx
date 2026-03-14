@@ -3,7 +3,7 @@
 import { useRef, useEffect, useMemo } from 'react';
 import { isToday, getDay } from 'date-fns';
 import type { CalendarAppointment, Groomer, GroomerColorMap } from '../types';
-import { groupByGroomer, getPositionFromTime, getTimeFromPosition, snapToInterval, getTotalDisplayMinutes } from '../utils';
+import { groupByGroomer, getPositionFromTime, getTimeFromPosition, snapToInterval, getTotalDisplayMinutes, computeOverlapLayout } from '../utils';
 import { SLOT_CONFIG, UNASSIGNED_COLOR } from '../constants';
 import { TimeColumn } from '../shared/TimeColumn';
 import { SwimlaneLane } from '../shared/SwimlaneLane';
@@ -117,16 +117,21 @@ export function DayView({
                 }}
               >
                 <SwimlaneLane date={date} dayOfWeek={dayOfWeek}>
-                  {laneAppointments.map((apt) => (
-                    <AppointmentCard
-                      key={apt.id}
-                      appointment={apt}
-                      groomerColorMap={groomerColorMap}
-                      onClick={onEventClick}
-                      onMouseEnter={onPreviewShow}
-                      onMouseLeave={onPreviewHide}
-                    />
-                  ))}
+                  {(() => {
+                    const overlapMap = computeOverlapLayout(laneAppointments);
+                    return laneAppointments.map((apt) => (
+                      <AppointmentCard
+                        key={apt.id}
+                        appointment={apt}
+                        groomerColorMap={groomerColorMap}
+                        onClick={onEventClick}
+                        onMouseEnter={onPreviewShow}
+                        onMouseLeave={onPreviewHide}
+                        overlapIndex={overlapMap.get(apt.id)?.columnIndex}
+                        overlapTotal={overlapMap.get(apt.id)?.totalColumns}
+                      />
+                    ));
+                  })()}
                 </SwimlaneLane>
               </div>
             </div>

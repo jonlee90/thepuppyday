@@ -131,7 +131,8 @@ export function useBooking() {
           size: newPetData.size,
           breed_id: newPetData.breed_id || null,
           breed_custom: newPetData.breed_custom || null,
-          weight: newPetData.weight || null,
+          gender: newPetData.gender || 'male',
+          color: newPetData.color || null,
           notes: newPetData.notes || null,
           is_active: true,
         }) as unknown as Pet;
@@ -271,12 +272,8 @@ export function useBooking() {
         // Add optional fields only if they have values
         if (newPetData.breed_id) petPayload.breed_id = newPetData.breed_id;
         if (newPetData.breed_custom) petPayload.breed_custom = newPetData.breed_custom;
-        if (newPetData.weight) {
-          // Ensure weight is a number
-          petPayload.weight = typeof newPetData.weight === 'string'
-            ? parseFloat(newPetData.weight)
-            : newPetData.weight;
-        }
+        if (newPetData.gender) petPayload.gender = newPetData.gender;
+        if (newPetData.color) petPayload.color = newPetData.color;
         if (newPetData.notes) petPayload.notes = newPetData.notes;
 
         // For guests with a created user ID, add owner_id
@@ -400,7 +397,7 @@ export function useBooking() {
   ]);
 
   const joinWaitlist = useCallback(
-    async (date: string, timePreference: 'morning' | 'afternoon' | 'any'): Promise<boolean> => {
+    async (date: string, timePreference: 'morning' | 'afternoon' | 'any', preferredTime?: string | null): Promise<boolean> => {
       try {
         const customerId = user?.id || (selectedCustomerId && selectedCustomerId !== 'new' ? selectedCustomerId : null);
         const petId = selectedPet?.id;
@@ -424,6 +421,7 @@ export function useBooking() {
             service_id: selectedService.id,
             requested_date: date,
             time_preference: timePreference,
+            ...(preferredTime ? { preferred_time: preferredTime } : {}),
           }),
         });
 

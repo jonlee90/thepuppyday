@@ -1,10 +1,10 @@
 # Marketing Site Routes - Architecture Documentation
 
 > **Module**: Public Marketing Site
-> **Status**: Completed (Phase 2)
+> **Status**: Completed (Phase 2 + SEO Phase)
 > **Base Path**: `(marketing)/`
 > **Authentication**: Not Required
-> **Last Updated**: 2026-03-07
+> **Last Updated**: 2026-03-14
 
 ## Overview
 
@@ -20,9 +20,41 @@ src/app/(marketing)/
 ├── page.tsx                # Homepage (/)
 ├── loading.tsx             # Homepage loading skeleton
 ├── error.tsx               # Marketing error boundary
-└── book/
-    ├── page.tsx            # Booking page (/book)
-    └── loading.tsx         # Booking page loading skeleton
+├── about/
+│   └── page.tsx            # About page (/about)
+├── blog/
+│   ├── page.tsx            # Blog index (/blog)
+│   ├── signs-dog-needs-grooming/
+│   │   └── page.tsx        # Blog article
+│   ├── dog-grooming-cost-la-mirada/
+│   │   └── page.tsx        # Blog article
+│   └── goldendoodle-grooming-guide/
+│       └── page.tsx        # Blog article
+├── book/
+│   ├── page.tsx            # Booking page (/book)
+│   └── loading.tsx         # Booking page loading skeleton
+├── contact/
+│   └── page.tsx            # Contact page (/contact)
+├── dog-grooming/
+│   ├── page.tsx            # Location hub (/dog-grooming)
+│   └── [city]/
+│       └── page.tsx        # City-specific SEO page (/dog-grooming/la-mirada)
+├── faq/
+│   └── page.tsx            # FAQ page (/faq)
+├── gallery/
+│   └── page.tsx            # Gallery page (/gallery)
+├── privacy/
+│   └── page.tsx            # Privacy policy (/privacy)
+├── reviews/
+│   └── page.tsx            # Reviews page (/reviews)
+├── services/
+│   ├── page.tsx            # Services listing (/services)
+│   └── [slug]/
+│       └── page.tsx        # Individual service page (/services/basic-grooming)
+├── terms/
+│   └── page.tsx            # Terms of service (/terms)
+└── accessibility/
+    └── page.tsx            # Accessibility statement (/accessibility)
 ```
 
 ### Additional SEO Files
@@ -101,6 +133,64 @@ Standalone booking page with `BookingWizard` component.
 
 ---
 
+### 3. Services (`/services`)
+
+**File**: `src/app/(marketing)/services/page.tsx`
+
+Services listing page with all active grooming services and pricing.
+
+### 4. Service Detail (`/services/[slug]`)
+
+**File**: `src/app/(marketing)/services/[slug]/page.tsx`
+
+Individual service page with detailed description, size-based pricing, and booking CTA. Dynamic route using service slug.
+
+### 5. Blog (`/blog`)
+
+**File**: `src/app/(marketing)/blog/page.tsx`
+
+Blog index page listing all SEO articles. Individual articles use static routes (not dynamic `[slug]`):
+
+| Article | Route |
+|---------|-------|
+| Signs Your Dog Needs Grooming | `/blog/signs-dog-needs-grooming` |
+| Dog Grooming Cost in La Mirada | `/blog/dog-grooming-cost-la-mirada` |
+| Goldendoodle Grooming Guide | `/blog/goldendoodle-grooming-guide` |
+
+### 6. Location-Based SEO Pages (`/dog-grooming`)
+
+**File**: `src/app/(marketing)/dog-grooming/page.tsx` (hub) + `[city]/page.tsx` (city pages)
+
+Location hub page linking to city-specific landing pages. Each city page targets "dog grooming in [city]" keywords. Renamed from `/areas` for better SEO keyword ranking.
+
+### 7. About (`/about`)
+
+**File**: `src/app/(marketing)/about/page.tsx` — Business story, team, and trust signals.
+
+### 8. Contact (`/contact`)
+
+**File**: `src/app/(marketing)/contact/page.tsx` — Contact form, map, business info.
+
+### 9. Gallery (`/gallery`)
+
+**File**: `src/app/(marketing)/gallery/page.tsx` — Full photo gallery with lightbox.
+
+### 10. Reviews (`/reviews`)
+
+**File**: `src/app/(marketing)/reviews/page.tsx` — Customer reviews and ratings.
+
+### 11. FAQ (`/faq`)
+
+**File**: `src/app/(marketing)/faq/page.tsx` — Frequently asked questions.
+
+### 12. Legal Pages
+
+- **Privacy Policy** (`/privacy`): `src/app/(marketing)/privacy/page.tsx`
+- **Terms of Service** (`/terms`): `src/app/(marketing)/terms/page.tsx`
+- **Accessibility** (`/accessibility`): `src/app/(marketing)/accessibility/page.tsx`
+
+---
+
 ## Layout (`layout.tsx`)
 
 **File**: `src/app/(marketing)/layout.tsx`
@@ -163,6 +253,12 @@ Schema.org `LocalBusiness` with address, phone, hours, geo, ratings, and social 
 
 ### ISR
 Pages revalidate every 15 minutes (900 seconds) matching banner cache TTL.
+
+### Multi-Page SEO Architecture
+- **Blog articles**: Targeting long-tail keywords (e.g., "dog grooming cost La Mirada", "signs dog needs grooming")
+- **Location pages** (`/dog-grooming/[city]`): Targeting "[city] dog grooming" search queries for surrounding cities
+- **Service pages** (`/services/[slug]`): Individual service pages with detailed descriptions and pricing
+- **Standalone pages**: About, contact, gallery, reviews, FAQ each have dedicated URLs for search engine indexing
 
 ---
 

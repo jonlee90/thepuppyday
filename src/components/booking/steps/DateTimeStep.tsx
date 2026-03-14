@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { CalendarPicker } from '../CalendarPicker';
 import { TimeSlotGrid } from '../TimeSlotGrid';
@@ -71,6 +71,31 @@ export function DateTimeStep() {
     maxDateTime.setDate(maxDateTime.getDate() + bookingSettings.max_advance_days);
     return maxDateTime.toISOString().split('T')[0];
   }, [bookingSettings]);
+
+  // Auto-select the next available date when the step first loads
+  useEffect(() => {
+    if (selectedDate || !bookingSettings) return;
+
+    const disabledSet = new Set(disabledDates);
+    const start = minDate ? new Date(minDate + 'T00:00:00') : new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const max = maxDate ? new Date(maxDate + 'T00:00:00') : new Date();
+    if (!maxDate) max.setMonth(max.getMonth() + 2);
+
+    const cursor = new Date(start);
+    while (cursor <= max) {
+      const y = cursor.getFullYear();
+      const m = String(cursor.getMonth() + 1).padStart(2, '0');
+      const d = String(cursor.getDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${d}`;
+      if (!disabledSet.has(dateStr)) {
+        selectDateTime(dateStr, '');
+        break;
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  }, [bookingSettings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDateSelect = (date: string) => {
     // Clear time when date changes

@@ -103,7 +103,7 @@ export default async function ServicePage({
       const rsConfig = SERVICE_CONFIGS[rs];
       return rsConfig ? { slug: rs, displayName: rsConfig.displayName } : null;
     })
-    .filter((rs): rs is { slug: string; displayName: string } => rs !== null);
+    .filter((rs): rs is NonNullable<typeof rs> => rs !== null);
 
   return (
     <div>

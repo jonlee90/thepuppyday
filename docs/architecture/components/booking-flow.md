@@ -467,7 +467,8 @@ const MAX_STEP: Record<BookingModalMode, number> = {
     name: string,
     breed_id?: string,
     size: 'small' | 'medium' | 'large' | 'xlarge',
-    weight?: number
+    gender: 'male' | 'female',
+    color?: string
   },
   service_id: string,
   addon_ids: string[],

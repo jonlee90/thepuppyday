@@ -8,6 +8,7 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { requireAdmin } from '@/lib/admin/auth';
 import { isValidUUID } from '@/lib/utils/validation';
 import { createTemplateEngine } from '@/lib/notifications/template-engine';
+import { wrapEmailContent } from '@/lib/notifications/email-base';
 
 interface NotificationTemplate {
   id: string;
@@ -81,7 +82,7 @@ export async function POST(
       : undefined;
 
     const rendered_html = template.html_template
-      ? engine.render(template.html_template, sample_data)
+      ? wrapEmailContent(engine.render(template.html_template, sample_data)).html
       : undefined;
 
     const rendered_text = engine.render(template.text_template, sample_data);

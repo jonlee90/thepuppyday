@@ -24,15 +24,15 @@ const serviceLinks = [
 ];
 
 const areaLinks = [
-  { label: 'La Mirada', href: '/areas/la-mirada' },
-  { label: 'Norwalk', href: '/areas/norwalk' },
-  { label: 'Buena Park', href: '/areas/buena-park' },
-  { label: 'Whittier', href: '/areas/whittier' },
-  { label: 'Santa Fe Springs', href: '/areas/santa-fe-springs' },
-  { label: 'Cerritos', href: '/areas/cerritos' },
-  { label: 'Hacienda Heights', href: '/areas/hacienda-heights' },
-  { label: 'Fullerton', href: '/areas/fullerton' },
-  { label: 'Brea', href: '/areas/brea' },
+  { label: 'La Mirada', href: '/dog-grooming/la-mirada' },
+  { label: 'Norwalk', href: '/dog-grooming/norwalk' },
+  { label: 'Buena Park', href: '/dog-grooming/buena-park' },
+  { label: 'Whittier', href: '/dog-grooming/whittier' },
+  { label: 'Santa Fe Springs', href: '/dog-grooming/santa-fe-springs' },
+  { label: 'Cerritos', href: '/dog-grooming/cerritos' },
+  { label: 'Hacienda Heights', href: '/dog-grooming/hacienda-heights' },
+  { label: 'Fullerton', href: '/dog-grooming/fullerton' },
+  { label: 'Brea', href: '/dog-grooming/brea' },
 ];
 
 const quickLinks = [

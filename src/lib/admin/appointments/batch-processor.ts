@@ -199,7 +199,6 @@ export class BatchProcessor {
     } else {
       // Create new pet
       const petSize = normalizePetSize(row.pet_size)!;
-      const weight = row.pet_weight ? parseFloat(row.pet_weight) : null;
 
       // Look up breed by name (case-insensitive)
       const { data: breedData } = await this.supabase
@@ -216,7 +215,8 @@ export class BatchProcessor {
           breed_id: breedData?.id || null,
           breed_custom: breedData ? null : (row.pet_breed || '').trim(),
           size: petSize,
-          weight: !isNaN(weight!) ? weight : null,
+          gender: row.pet_gender || 'male',
+          color: row.pet_color || null,
         })
         .select('id')
         .single();

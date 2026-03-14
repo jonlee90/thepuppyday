@@ -34,7 +34,8 @@ export interface SelectedPet {
   breed_id: string | null; // null for pets without breed
   breed_name?: string;
   size: 'small' | 'medium' | 'large' | 'x-large';
-  weight: number;
+  gender: string;
+  color?: string | null;
   isNew: boolean;
 }
 
@@ -107,7 +108,8 @@ export interface ParsedCSVRow {
   pet_name: string;
   pet_breed: string;
   pet_size: string;
-  pet_weight: string;
+  pet_gender: string;
+  pet_color: string;
   service_name: string;
   addons?: string; // comma-separated
   date: string;

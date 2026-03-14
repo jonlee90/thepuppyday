@@ -1,45 +1,136 @@
 /**
  * AppointmentHistoryList Component
- * Displays customer appointment history with filters and metrics
- * Task 0019: Create AppointmentHistoryList component
+ * Displays customer appointment history with filters.
+ * Data-driven: receives appointments, loading, error, and onRefresh as props.
+ * Task 0062: Convert to data-driven props and remove internal fetch + metrics cards
  */
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { format, subDays, isAfter, isBefore } from 'date-fns';
+import { useState, useMemo } from 'react';
+import { format, subDays, isAfter } from 'date-fns';
 import {
   Calendar,
   Clock,
   DollarSign,
   Filter,
-  TrendingUp,
-  Award,
-  CalendarDays,
   Image as ImageIcon,
 } from 'lucide-react';
 import { AppointmentDetailModal } from '@/components/admin/appointments/AppointmentDetailModal';
-import type { Appointment, AppointmentStatus } from '@/types/database';
-
-interface AppointmentHistoryListProps {
-  customerId: string;
-}
+import type { AppointmentStatus } from '@/types/database';
 
 type DateRangeFilter = 'last_30' | 'last_90' | 'last_year' | 'all';
 type StatusFilter = 'all' | 'completed' | 'cancelled' | 'no_show';
 
-interface AppointmentWithDetails extends Appointment {
-  pet?: any;
-  service?: any;
-  addons?: any[];
-  report_card?: any;
+/** Appointment with joined pet, service, addons, and report_card */
+export interface AppointmentWithDetails {
+  // Base appointment fields (from Supabase 'appointments' table)
+  id: string;
+  customer_id: string;
+  pet_id: string;
+  service_id: string;
+  groomer_id: string | null;
+  scheduled_at: string;
+  duration_minutes: number;
+  status: AppointmentStatus | null;
+  total_price: number;
+  payment_status: string | null;
+  notes: string | null;
+  booking_reference: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+
+  // Joined relations (populated by API)
+  pet?: {
+    id: string;
+    name: string;
+    size: string;
+    breed_id: string | null;
+    breed_custom: string | null;
+    [key: string]: unknown;
+  };
+  service?: {
+    id: string;
+    name: string;
+    [key: string]: unknown;
+  };
+  addons?: Array<{
+    id: string;
+    appointment_id: string;
+    addon_id: string;
+    price: number;
+    addon?: { id: string; name: string; price: number };
+  }>;
+  report_card?: {
+    id: string;
+    appointment_id: string;
+    [key: string]: unknown;
+  } | null;
 }
 
-interface CustomerMetrics {
+/** Metrics computed from appointment history, displayed in CustomerHero */
+export interface CustomerMetrics {
+  /** Total number of appointments (all statuses) */
   total_appointments: number;
+  /** Sum of total_price for completed appointments */
   total_spent: number;
+  /** Name of the most frequently booked service, or null */
   favorite_service: string | null;
+  /** Average days between completed visits, or null if < 2 visits */
   avg_visit_frequency_days: number | null;
+}
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+/**
+ * Calculate customer metrics from appointments in a single pass.
+ * Combines what was previously filter + reduce + forEach into one loop.
+ */
+export function calculateCustomerMetrics(
+  appointments: AppointmentWithDetails[]
+): CustomerMetrics {
+  let totalSpent = 0;
+  const serviceCounts: Record<string, number> = {};
+  const completedDates: number[] = [];
+
+  for (const apt of appointments) {
+    if (apt.status === 'completed') {
+      totalSpent += apt.total_price || 0;
+      if (apt.service) {
+        serviceCounts[apt.service.name] =
+          (serviceCounts[apt.service.name] || 0) + 1;
+      }
+      completedDates.push(new Date(apt.scheduled_at).getTime());
+    }
+  }
+
+  // Favorite service
+  let favoriteService: string | null = null;
+  let maxCount = 0;
+  for (const [name, count] of Object.entries(serviceCounts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      favoriteService = name;
+    }
+  }
+
+  // Average visit frequency
+  let avgFrequency: number | null = null;
+  if (completedDates.length >= 2) {
+    completedDates.sort((a, b) => a - b);
+    let totalGap = 0;
+    for (let i = 1; i < completedDates.length; i++) {
+      totalGap += completedDates[i] - completedDates[i - 1];
+    }
+    avgFrequency = Math.round(totalGap / (completedDates.length - 1) / MS_PER_DAY);
+  }
+
+  return {
+    total_appointments: appointments.length,
+    total_spent: totalSpent,
+    favorite_service: favoriteService,
+    avg_visit_frequency_days: avgFrequency,
+  };
 }
 
 const STATUS_COLORS: Record<AppointmentStatus, { bg: string; text: string; border: string }> = {
@@ -52,11 +143,19 @@ const STATUS_COLORS: Record<AppointmentStatus, { bg: string; text: string; borde
   no_show: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
 };
 
-export function AppointmentHistoryList({ customerId }: AppointmentHistoryListProps) {
-  const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+interface AppointmentHistoryListProps {
+  appointments: AppointmentWithDetails[];
+  loading: boolean;
+  error: string;
+  onRefresh: () => void;
+}
 
+export function AppointmentHistoryList({
+  appointments,
+  loading,
+  error,
+  onRefresh,
+}: AppointmentHistoryListProps) {
   // Filters
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('all');
@@ -64,31 +163,6 @@ export function AppointmentHistoryList({ customerId }: AppointmentHistoryListPro
   // Modal state
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Fetch appointments
-  useEffect(() => {
-    fetchAppointments();
-  }, [customerId]);
-
-  const fetchAppointments = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch(`/api/admin/customers/${customerId}/appointments`);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch appointments');
-      }
-
-      setAppointments(result.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Filter appointments
   const filteredAppointments = useMemo(() => {
@@ -127,49 +201,6 @@ export function AppointmentHistoryList({ customerId }: AppointmentHistoryListPro
     return filtered;
   }, [appointments, statusFilter, dateRangeFilter]);
 
-  // Calculate customer metrics
-  const metrics: CustomerMetrics = useMemo(() => {
-    const completedAppointments = appointments.filter((apt) => apt.status === 'completed');
-
-    const totalSpent = completedAppointments.reduce((sum, apt) => sum + (apt.total_price || 0), 0);
-
-    // Find favorite service
-    const serviceCounts: Record<string, number> = {};
-    completedAppointments.forEach((apt) => {
-      if (apt.service) {
-        serviceCounts[apt.service.name] = (serviceCounts[apt.service.name] || 0) + 1;
-      }
-    });
-
-    const favoriteService =
-      Object.keys(serviceCounts).length > 0
-        ? Object.entries(serviceCounts).sort((a, b) => b[1] - a[1])[0][0]
-        : null;
-
-    // Calculate average visit frequency
-    let avgFrequency: number | null = null;
-    if (completedAppointments.length >= 2) {
-      const sortedDates = completedAppointments
-        .map((apt) => new Date(apt.scheduled_at).getTime())
-        .sort((a, b) => a - b);
-
-      const gaps: number[] = [];
-      for (let i = 1; i < sortedDates.length; i++) {
-        gaps.push(sortedDates[i] - sortedDates[i - 1]);
-      }
-
-      const avgGapMs = gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length;
-      avgFrequency = Math.round(avgGapMs / (1000 * 60 * 60 * 24)); // Convert to days
-    }
-
-    return {
-      total_appointments: appointments.length,
-      total_spent: totalSpent,
-      favorite_service: favoriteService,
-      avg_visit_frequency_days: avgFrequency,
-    };
-  }, [appointments]);
-
   const handleAppointmentClick = (appointmentId: string) => {
     setSelectedAppointmentId(appointmentId);
     setIsModalOpen(true);
@@ -181,70 +212,11 @@ export function AppointmentHistoryList({ customerId }: AppointmentHistoryListPro
   };
 
   const handleModalUpdate = () => {
-    fetchAppointments();
+    onRefresh();
   };
 
   return (
     <div className="space-y-4">
-      {/* Customer Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <CalendarDays className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Total Appointments</p>
-              <p className="text-2xl font-bold text-[#434E54]">{metrics.total_appointments}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-50 rounded-lg">
-              <DollarSign className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Total Spent</p>
-              <p className="text-2xl font-bold text-[#434E54]">
-                ${metrics.total_spent.toFixed(2)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-50 rounded-lg">
-              <Award className="w-5 h-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Favorite Service</p>
-              <p className="text-sm font-semibold text-[#434E54] truncate">
-                {metrics.favorite_service || 'N/A'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-50 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Avg Visit Frequency</p>
-              <p className="text-sm font-semibold text-[#434E54]">
-                {metrics.avg_visit_frequency_days
-                  ? `${metrics.avg_visit_frequency_days} days`
-                  : 'N/A'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">

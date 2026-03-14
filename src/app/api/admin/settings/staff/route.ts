@@ -30,6 +30,7 @@ interface StaffMemberResponse {
   last_name: string;
   phone: string | null;
   role: string;
+  is_active: boolean;
   avatar_url: string | null;
   created_at: string;
   appointment_count: number;
@@ -123,6 +124,7 @@ export async function GET(request: NextRequest) {
           last_name: staffMember.last_name,
           phone: staffMember.phone,
           role: staffMember.role,
+          is_active: (staffMember as any).is_active !== false,
           avatar_url: staffMember.avatar_url,
           created_at: staffMember.created_at,
           appointment_count,
@@ -147,10 +149,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Production Supabase query
-    const query = (serviceClient as any)
+    let query = (serviceClient as any)
       .from('users')
       .select('*')
       .in('role', roleFilter === 'all' ? ['admin', 'groomer'] : [roleFilter]);
+
+    if (statusFilter === 'active') {
+      query = query.eq('is_active', true);
+    } else if (statusFilter === 'inactive') {
+      query = query.eq('is_active', false);
+    }
 
     const { data: staffData, error: staffError } = await query;
 
@@ -249,6 +257,7 @@ export async function GET(request: NextRequest) {
         last_name: staffMember.last_name,
         phone: staffMember.phone,
         role: staffMember.role,
+        is_active: staffMember.is_active !== false,
         avatar_url: staffMember.avatar_url,
         created_at: staffMember.created_at,
         appointment_count: completedCountMap.get(staffMember.id) || 0,

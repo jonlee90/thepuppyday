@@ -27,7 +27,7 @@ export async function generateMetadata({
   return {
     title: `Dog Grooming in ${config.name}, CA | Puppy Day`,
     description: config.metaDescription,
-    alternates: { canonical: `https://thepuppyday.com/areas/${city}` },
+    alternates: { canonical: `https://thepuppyday.com/dog-grooming/${city}` },
   };
 }
 
@@ -70,7 +70,7 @@ export default async function CityPage({
     '@context': 'https://schema.org',
     '@type': 'PetGroomer',
     name: businessInfo.name,
-    url: `https://thepuppyday.com/areas/${city}`,
+    url: `https://thepuppyday.com/dog-grooming/${city}`,
     telephone: businessInfo.phone,
     address: {
       '@type': 'PostalAddress',
@@ -100,7 +100,7 @@ export default async function CityPage({
         <Breadcrumb
           items={[
             { label: 'Home', href: '/' },
-            { label: 'Areas We Serve', href: '/areas' },
+            { label: 'Areas We Serve', href: '/dog-grooming' },
             { label: config.name },
           ]}
         />

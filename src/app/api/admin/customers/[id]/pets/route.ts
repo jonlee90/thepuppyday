@@ -21,7 +21,8 @@ export async function GET(
         breed_id: 'breed-1',
         breed_name: 'Golden Retriever',
         size: 'large' as const,
-        weight: 65,
+        gender: 'male',
+        color: 'Golden',
         customer_id: customerId,
       },
       {
@@ -30,7 +31,8 @@ export async function GET(
         breed_id: 'breed-2',
         breed_name: 'Poodle',
         size: 'small' as const,
-        weight: 12,
+        gender: 'female',
+        color: 'White',
         customer_id: customerId,
       },
     ];

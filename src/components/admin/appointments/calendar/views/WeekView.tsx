@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { eachDayOfInterval, startOfWeek, endOfWeek, format, isToday, getDay } from 'date-fns';
 import type { CalendarAppointment, Groomer, GroomerColorMap } from '../types';
-import { filterAppointmentsForDay, groupByGroomer, getPositionFromTime, getTotalDisplayMinutes } from '../utils';
+import { filterAppointmentsForDay, groupByGroomer, getPositionFromTime, getTotalDisplayMinutes, computeOverlapLayout } from '../utils';
 import { SLOT_CONFIG, UNASSIGNED_COLOR } from '../constants';
 import { TimeColumn } from '../shared/TimeColumn';
 import { SwimlaneLane } from '../shared/SwimlaneLane';
@@ -145,16 +145,21 @@ export function WeekView({
                   {/* Lane content */}
                   <div className="relative" style={{ height: totalHeight }}>
                     <SwimlaneLane date={activeDay} dayOfWeek={getDay(activeDay)}>
-                      {laneApts.map((apt) => (
-                        <AppointmentCard
-                          key={apt.id}
-                          appointment={apt}
-                          groomerColorMap={groomerColorMap}
-                          onClick={onEventClick}
-                          onMouseEnter={onPreviewShow}
-                          onMouseLeave={onPreviewHide}
-                        />
-                      ))}
+                      {(() => {
+                        const overlapMap = computeOverlapLayout(laneApts);
+                        return laneApts.map((apt) => (
+                          <AppointmentCard
+                            key={apt.id}
+                            appointment={apt}
+                            groomerColorMap={groomerColorMap}
+                            onClick={onEventClick}
+                            onMouseEnter={onPreviewShow}
+                            onMouseLeave={onPreviewHide}
+                            overlapIndex={overlapMap.get(apt.id)?.columnIndex}
+                            overlapTotal={overlapMap.get(apt.id)?.totalColumns}
+                          />
+                        ));
+                      })()}
                     </SwimlaneLane>
                   </div>
                 </div>
@@ -206,16 +211,21 @@ export function WeekView({
               {/* Time grid with appointments */}
               <div className="relative" style={{ height: totalHeight }}>
                 <SwimlaneLane date={day} dayOfWeek={getDay(day)}>
-                  {dayApts.map((apt) => (
-                    <AppointmentCard
-                      key={apt.id}
-                      appointment={apt}
-                      groomerColorMap={groomerColorMap}
-                      onClick={onEventClick}
-                      onMouseEnter={onPreviewShow}
-                      onMouseLeave={onPreviewHide}
-                    />
-                  ))}
+                  {(() => {
+                    const overlapMap = computeOverlapLayout(dayApts);
+                    return dayApts.map((apt) => (
+                      <AppointmentCard
+                        key={apt.id}
+                        appointment={apt}
+                        groomerColorMap={groomerColorMap}
+                        onClick={onEventClick}
+                        onMouseEnter={onPreviewShow}
+                        onMouseLeave={onPreviewHide}
+                        overlapIndex={overlapMap.get(apt.id)?.columnIndex}
+                        overlapTotal={overlapMap.get(apt.id)?.totalColumns}
+                      />
+                    ));
+                  })()}
                 </SwimlaneLane>
               </div>
             </div>

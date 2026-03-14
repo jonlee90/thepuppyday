@@ -7,7 +7,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { getSizeShortLabel } from '@/lib/booking/pricing';
+import { getSizeLabel } from '@/lib/booking/pricing';
 import type { Pet } from '@/types/database';
 
 interface PetCardProps {
@@ -96,7 +96,7 @@ export function PetCard({ pet, isSelected, onSelect }: PetCardProps) {
               'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
               isSelected ? 'bg-[#434E54] text-white' : 'bg-[#EAE0D5] text-[#434E54]'
             )}>
-              {getSizeShortLabel(pet.size)}
+              {getSizeLabel(pet.size)}
             </span>
 
             {/* Breed with better overflow handling */}

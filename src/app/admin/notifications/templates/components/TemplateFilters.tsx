@@ -1,7 +1,6 @@
 'use client';
 
 import { Search, Filter } from 'lucide-react';
-import { useState } from 'react';
 
 export interface FilterOptions {
   search: string;
@@ -15,21 +14,6 @@ interface TemplateFiltersProps {
 }
 
 export function TemplateFilters({ filters, onFilterChange }: TemplateFiltersProps) {
-  const [localSearch, setLocalSearch] = useState(filters.search);
-
-  const handleSearchChange = (value: string) => {
-    setLocalSearch(value);
-    onFilterChange({ ...filters, search: value });
-  };
-
-  const handleChannelChange = (channel: FilterOptions['channel']) => {
-    onFilterChange({ ...filters, channel });
-  };
-
-  const handleStatusChange = (status: FilterOptions['status']) => {
-    onFilterChange({ ...filters, status });
-  };
-
   return (
     <div className="bg-white rounded-xl shadow-md p-6 mb-6">
       <div className="flex flex-col lg:flex-row gap-4">
@@ -40,8 +24,8 @@ export function TemplateFilters({ filters, onFilterChange }: TemplateFiltersProp
           </div>
           <input
             type="text"
-            value={localSearch}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            value={filters.search}
+            onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
             placeholder="Search by name or trigger event..."
             className="w-full pl-12 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white
                      focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
@@ -54,7 +38,7 @@ export function TemplateFilters({ filters, onFilterChange }: TemplateFiltersProp
           <Filter className="w-5 h-5 text-[#6B7280]" />
           <select
             value={filters.channel}
-            onChange={(e) => handleChannelChange(e.target.value as FilterOptions['channel'])}
+            onChange={(e) => onFilterChange({ ...filters, channel: e.target.value as FilterOptions['channel'] })}
             className="select select-bordered border-gray-200 bg-white focus:outline-none
                      focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]"
           >
@@ -68,7 +52,7 @@ export function TemplateFilters({ filters, onFilterChange }: TemplateFiltersProp
         <div className="flex items-center gap-2">
           <select
             value={filters.status}
-            onChange={(e) => handleStatusChange(e.target.value as FilterOptions['status'])}
+            onChange={(e) => onFilterChange({ ...filters, status: e.target.value as FilterOptions['status'] })}
             className="select select-bordered border-gray-200 bg-white focus:outline-none
                      focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]"
           >

@@ -39,3 +39,43 @@ export {
   type WaitlistNotificationTriggerResult,
   type WaitlistBatchNotificationResult,
 } from './waitlist-notification';
+
+// Task 0049: Appointment Reminder
+export {
+  triggerAppointmentReminder,
+  validateAppointmentReminderData,
+  type AppointmentReminderTriggerData,
+  type AppointmentReminderTriggerResult,
+} from './appointment-reminder';
+
+// Task 0050: Appointment Cancelled
+export {
+  triggerAppointmentCancelled,
+  validateAppointmentCancelledData,
+  type AppointmentCancelledTriggerData,
+  type AppointmentCancelledTriggerResult,
+} from './appointment-cancelled';
+
+// Task 0051: Appointment Rescheduled
+export {
+  triggerAppointmentRescheduled,
+  validateAppointmentRescheduledData,
+  type AppointmentRescheduledTriggerData,
+  type AppointmentRescheduledTriggerResult,
+} from './appointment-rescheduled';
+
+// Task 0052: Review Request
+export {
+  triggerReviewRequest,
+  validateReviewRequestData,
+  type ReviewRequestTriggerData,
+  type ReviewRequestTriggerResult,
+} from './review-request';
+
+// Task 0053: Waitlist Added
+export {
+  triggerWaitlistAdded,
+  validateWaitlistAddedData,
+  type WaitlistAddedTriggerData,
+  type WaitlistAddedTriggerResult,
+} from './waitlist-added';

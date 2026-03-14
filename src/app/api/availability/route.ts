@@ -187,8 +187,14 @@ export async function GET(req: NextRequest) {
 
     // Get ALL appointments for the requested date (bypass RLS to see all users' appointments)
     const serviceClient = createServiceRoleClient();
-    const dateStart = new Date(date + 'T00:00:00').toISOString();
-    const dateEnd = new Date(date + 'T23:59:59').toISOString();
+    // Use local midnight boundaries with timezone offset to query the correct calendar day
+    const localRef = new Date(date + 'T00:00:00');
+    const tzOffset = -localRef.getTimezoneOffset();
+    const tzSign = tzOffset >= 0 ? '+' : '-';
+    const tzPad = (n: number) => String(Math.abs(n)).padStart(2, '0');
+    const tz = `${tzSign}${tzPad(Math.floor(Math.abs(tzOffset) / 60))}:${tzPad(Math.abs(tzOffset) % 60)}`;
+    const dateStart = new Date(`${date}T00:00:00${tz}`).toISOString();
+    const dateEnd = new Date(`${date}T23:59:59${tz}`).toISOString();
 
     const { data: appointments, error: apptError } = await (serviceClient as any)
       .from('appointments')

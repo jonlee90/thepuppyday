@@ -49,8 +49,8 @@ export function LoginForm() {
 
     console.log('[Login] Sign in successful, user:', result.user?.email);
 
-    // Wait a moment for the auth state to be set in the store
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Wait for auth cookies to be set before server-side navigation
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     // Determine redirect based on user role
     let redirectTo = returnTo;

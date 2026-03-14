@@ -541,7 +541,8 @@ export type Database = {
           photo_url: string | null
           size: string
           updated_at: string | null
-          weight: number | null
+          gender: string
+          color: string | null
         }
         Insert: {
           birth_date?: string | null
@@ -557,7 +558,8 @@ export type Database = {
           photo_url?: string | null
           size: string
           updated_at?: string | null
-          weight?: number | null
+          gender?: string
+          color?: string | null
         }
         Update: {
           birth_date?: string | null
@@ -573,7 +575,8 @@ export type Database = {
           photo_url?: string | null
           size?: string
           updated_at?: string | null
-          weight?: number | null
+          gender?: string
+          color?: string | null
         }
         Relationships: [
           {
@@ -800,6 +803,9 @@ export type Database = {
           preferences: Json | null
           role: string | null
           updated_at: string | null
+          address: string | null
+          city: string | null
+          zip: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -812,6 +818,9 @@ export type Database = {
           preferences?: Json | null
           role?: string | null
           updated_at?: string | null
+          address?: string | null
+          city?: string | null
+          zip?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -824,6 +833,9 @@ export type Database = {
           preferences?: Json | null
           role?: string | null
           updated_at?: string | null
+          address?: string | null
+          city?: string | null
+          zip?: string | null
         }
         Relationships: []
       }

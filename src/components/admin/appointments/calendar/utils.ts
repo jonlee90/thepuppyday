@@ -184,3 +184,96 @@ export function getCustomerDisplayName(customer: { first_name: string; last_name
   if (!customer) return 'Unknown';
   return `${customer.first_name} ${customer.last_name}`;
 }
+
+/**
+ * Overlap layout info for a single appointment within a cluster
+ */
+export interface OverlapLayout {
+  columnIndex: number;   // 0-based position within cluster
+  totalColumns: number;  // total concurrent appointments in cluster
+}
+
+/**
+ * Compute overlap layout for appointments using an interval-graph algorithm.
+ * Groups overlapping appointments into clusters and assigns column indices
+ * so they render side-by-side (Google Calendar style).
+ */
+export function computeOverlapLayout(appointments: CalendarAppointment[]): Map<string, OverlapLayout> {
+  const result = new Map<string, OverlapLayout>();
+  if (appointments.length === 0) return result;
+
+  // Sort by start time, then longer duration first (so wider appointments get earlier columns)
+  const sorted = [...appointments].sort((a, b) => {
+    const startDiff = new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
+    if (startDiff !== 0) return startDiff;
+    return b.duration_minutes - a.duration_minutes;
+  });
+
+  // Build clusters of overlapping appointments
+  const clusters: CalendarAppointment[][] = [];
+  let currentCluster: CalendarAppointment[] = [];
+  let clusterEnd = 0;
+
+  for (const apt of sorted) {
+    const start = new Date(apt.scheduled_at).getTime();
+    const end = start + apt.duration_minutes * 60_000;
+
+    if (currentCluster.length === 0 || start < clusterEnd) {
+      // Overlaps with current cluster
+      currentCluster.push(apt);
+      clusterEnd = Math.max(clusterEnd, end);
+    } else {
+      // No overlap — finalize current cluster and start new one
+      clusters.push(currentCluster);
+      currentCluster = [apt];
+      clusterEnd = end;
+    }
+  }
+  if (currentCluster.length > 0) {
+    clusters.push(currentCluster);
+  }
+
+  // Assign columns within each cluster
+  for (const cluster of clusters) {
+    if (cluster.length === 1) {
+      result.set(cluster[0].id, { columnIndex: 0, totalColumns: 1 });
+      continue;
+    }
+
+    // Greedy column assignment
+    const columns: number[] = []; // end times per column
+    const assignments = new Map<string, number>();
+
+    for (const apt of cluster) {
+      const start = new Date(apt.scheduled_at).getTime();
+
+      // Find first column where the appointment fits (column's last end <= this start)
+      let col = -1;
+      for (let c = 0; c < columns.length; c++) {
+        if (columns[c] <= start) {
+          col = c;
+          break;
+        }
+      }
+
+      if (col === -1) {
+        col = columns.length;
+        columns.push(0);
+      }
+
+      const end = start + apt.duration_minutes * 60_000;
+      columns[col] = end;
+      assignments.set(apt.id, col);
+    }
+
+    const totalColumns = columns.length;
+    for (const apt of cluster) {
+      result.set(apt.id, {
+        columnIndex: assignments.get(apt.id)!,
+        totalColumns,
+      });
+    }
+  }
+
+  return result;
+}

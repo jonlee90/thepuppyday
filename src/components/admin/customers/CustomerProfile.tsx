@@ -1,51 +1,73 @@
 /**
  * CustomerProfile Component
- * Comprehensive customer profile with 6 sections
- * Task 0018: Create CustomerProfile component
+ * Hero + 2-column layout orchestrator for the admin customer detail page.
+ * Task 0063: Rewrite as Hero + 2-Column Layout Orchestrator
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import { motion } from 'framer-motion';
+import { useBookingModal } from '@/hooks/useBookingModal';
 import { format } from 'date-fns';
 import {
-  User,
-  Mail,
   Phone,
+  Mail,
   MapPin,
   Calendar,
   Edit2,
   Save,
   X,
   PawPrint,
-  ChevronDown,
-  ChevronUp,
   Award,
   Flag,
   Plus,
 } from 'lucide-react';
-import { AppointmentHistoryList } from './AppointmentHistoryList';
-import { CustomerFlagBadge, SingleFlagBadge } from './CustomerFlagBadge';
-import { CustomerFlagForm, RemoveFlagConfirmation } from './CustomerFlagForm';
+import { CustomerHero } from './CustomerHero';
+import type { CustomerDetail } from './CustomerHero';
+import { PetCard } from './PetCard';
+import { SingleFlagBadge } from './CustomerFlagBadge';
+import {
+  AppointmentHistoryList,
+  calculateCustomerMetrics,
+} from './AppointmentHistoryList';
+import type { AppointmentWithDetails } from './AppointmentHistoryList';
 import { isWalkinPlaceholderEmail } from '@/lib/utils';
 import { usePhoneMask, formatPhoneNumber } from '@/hooks/usePhoneMask';
-import type { User as UserType, Pet, CustomerFlag } from '@/types/database';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+import { toast } from '@/hooks/use-toast';
+import type { CustomerFlag, Pet } from '@/types/database';
+import type { PetWithBreed } from './PetCard';
 
-interface CustomerDetail extends UserType {
-  pets: Pet[];
-  flags: CustomerFlag[];
-  loyalty_points: any;
-  loyalty_transactions: any[];
-}
+// Dynamic imports — load only when needed
+const CustomerFlagForm = dynamic(
+  () => import('./CustomerFlagForm').then((m) => ({ default: m.CustomerFlagForm })),
+  { ssr: false }
+);
+const RemoveFlagConfirmation = dynamic(
+  () => import('./CustomerFlagForm').then((m) => ({ default: m.RemoveFlagConfirmation })),
+  { ssr: false }
+);
+const PetEditModal = dynamic(
+  () => import('./PetEditModal').then((m) => ({ default: m.PetEditModal })),
+  { ssr: false }
+);
+
+// Module-level constants
+const EMPTY_APPOINTMENTS: AppointmentWithDetails[] = [];
 
 interface CustomerProfileProps {
   customerId: string;
 }
 
 export function CustomerProfile({ customerId }: CustomerProfileProps) {
+  // Data state
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
+  const [appointments, setAppointments] = useState<AppointmentWithDetails[]>(EMPTY_APPOINTMENTS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [appointmentsError, setAppointmentsError] = useState('');
 
   // Contact info editing
   const [isEditingContact, setIsEditingContact] = useState(false);
@@ -53,15 +75,14 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
     first_name: '',
     last_name: '',
     email: '',
-    phone: '',
+    address: '',
+    city: '',
+    zip: '',
   });
   const [savingContact, setSavingContact] = useState(false);
 
   // Phone masking for contact editing
   const phoneInput = usePhoneMask('');
-
-  // Pet expansion state
-  const [expandedPetIds, setExpandedPetIds] = useState<Set<string>>(new Set());
 
   // Flag modal state
   const [isFlagFormOpen, setIsFlagFormOpen] = useState(false);
@@ -69,64 +90,107 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
   const [isRemoveFlagOpen, setIsRemoveFlagOpen] = useState(false);
   const [removingFlag, setRemovingFlag] = useState(false);
 
-  useEffect(() => {
-    fetchCustomer();
-  }, [customerId]);
+  // Pet editing state
+  const [editingPet, setEditingPet] = useState<PetWithBreed | null>(null);
 
-  // Sync phone input with editedContact
-  useEffect(() => {
-    setEditedContact((prev) => ({ ...prev, phone: phoneInput.rawValue }));
-  }, [phoneInput.rawValue]);
+  // Booking modal
+  const { open: openBookingModal } = useBookingModal();
 
-  const fetchCustomer = async () => {
+  // Loyalty program enabled state (default true = show; fail open)
+  const [loyaltyEnabled, setLoyaltyEnabled] = useState(true);
+
+  // Compute metrics from appointments
+  const metrics = useMemo(() => calculateCustomerMetrics(appointments), [appointments]);
+
+  // Parallel data fetching
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError('');
+    setAppointmentsError('');
 
-    try {
-      const response = await fetch(`/api/admin/customers/${customerId}`);
-      const result = await response.json();
+    const [customerResult, appointmentsResult, loyaltyResult] = await Promise.allSettled([
+      fetch(`/api/admin/customers/${customerId}`).then((r) => r.json().then((d) => ({ ok: r.ok, data: d }))),
+      fetch(`/api/admin/customers/${customerId}/appointments`).then((r) => r.json().then((d) => ({ ok: r.ok, data: d }))),
+      fetch('/api/admin/settings/loyalty').then((r) => r.json().then((d) => ({ ok: r.ok, data: d }))),
+    ]);
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch customer');
-      }
-
-      setCustomer(result.data);
+    // Handle customer result
+    if (customerResult.status === 'fulfilled' && customerResult.value.ok) {
+      const data = customerResult.value.data.data;
+      setCustomer(data);
       setEditedContact({
-        first_name: result.data.first_name,
-        last_name: result.data.last_name,
-        email: result.data.email,
-        phone: result.data.phone || '',
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        address: data.address || '',
+        city: data.city || '',
+        zip: data.zip || '',
       });
-      phoneInput.setValue(result.data.phone || '');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
+      phoneInput.setValue(data.phone || '');
+    } else {
+      const msg =
+        customerResult.status === 'rejected'
+          ? customerResult.reason?.message || 'Failed to fetch customer'
+          : customerResult.value.data?.error || 'Failed to fetch customer';
+      setError(msg);
     }
-  };
+
+    // Handle appointments result (non-fatal)
+    if (appointmentsResult.status === 'fulfilled' && appointmentsResult.value.ok) {
+      setAppointments(appointmentsResult.value.data.data ?? EMPTY_APPOINTMENTS);
+    } else {
+      const msg =
+        appointmentsResult.status === 'rejected'
+          ? appointmentsResult.reason?.message || 'Failed to fetch appointments'
+          : appointmentsResult.value.data?.error || 'Failed to fetch appointments';
+      setAppointmentsError(msg);
+      setAppointments(EMPTY_APPOINTMENTS);
+    }
+
+    // Handle loyalty enabled flag (non-fatal, default true)
+    if (loyaltyResult.status === 'fulfilled' && loyaltyResult.value.ok) {
+      setLoyaltyEnabled(loyaltyResult.value.data.data?.is_enabled ?? true);
+    }
+
+    setLoading(false);
+  }, [customerId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Refresh only appointments (used by AppointmentHistoryList onRefresh)
+  const fetchAppointments = useCallback(async () => {
+    setAppointmentsError('');
+    try {
+      const response = await fetch(`/api/admin/customers/${customerId}/appointments`);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to fetch appointments');
+      setAppointments(result.data ?? EMPTY_APPOINTMENTS);
+    } catch (err) {
+      setAppointmentsError(err instanceof Error ? err.message : 'An error occurred');
+    }
+  }, [customerId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSaveContact = async () => {
     setSavingContact(true);
-
     try {
+      const payload = {
+        ...editedContact,
+        phone: phoneInput.rawValue,
+      };
       const response = await fetch(`/api/admin/customers/${customerId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editedContact),
+        body: JSON.stringify(payload),
       });
-
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update customer');
-      }
-
-      setCustomer({ ...customer!, ...result.data });
+      if (!response.ok) throw new Error(result.error || 'Failed to update customer');
+      setCustomer((prev) => prev ? { ...prev, ...result.data } : prev);
       setIsEditingContact(false);
-    } catch (err) {
-      // Security: Replace alert() with console.error
-      // TODO: Implement toast notification system for better UX
-      console.error('Failed to update customer:', err instanceof Error ? err.message : 'Unknown error');
+      toast.success('Customer updated');
+    } catch {
+      toast.error('Failed to update customer');
     } finally {
       setSavingContact(false);
     }
@@ -138,31 +202,17 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
         first_name: customer.first_name,
         last_name: customer.last_name,
         email: customer.email,
-        phone: customer.phone || '',
+        address: customer.address || '',
+        city: customer.city || '',
+        zip: customer.zip || '',
       });
+      phoneInput.setValue(customer.phone || '');
     }
     setIsEditingContact(false);
   };
 
-  const togglePetExpansion = (petId: string) => {
-    setExpandedPetIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(petId)) {
-        newSet.delete(petId);
-      } else {
-        newSet.add(petId);
-      }
-      return newSet;
-    });
-  };
-
   const handleAddFlag = () => {
     setSelectedFlag(null);
-    setIsFlagFormOpen(true);
-  };
-
-  const handleEditFlag = (flag: CustomerFlag) => {
-    setSelectedFlag(flag);
     setIsFlagFormOpen(true);
   };
 
@@ -173,370 +223,499 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
 
   const confirmRemoveFlag = async () => {
     if (!selectedFlag) return;
-
     setRemovingFlag(true);
-
     try {
       const response = await fetch(
         `/api/admin/customers/${customerId}/flags/${selectedFlag.id}`,
         { method: 'DELETE' }
       );
-
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to remove flag');
-      }
-
-      fetchCustomer();
+      if (!response.ok) throw new Error(result.error || 'Failed to remove flag');
+      await fetchData();
       setIsRemoveFlagOpen(false);
       setSelectedFlag(null);
-    } catch (err) {
-      // Security: Replace alert() with console.error
-      // TODO: Implement toast notification system for better UX
-      console.error('Failed to remove flag:', err instanceof Error ? err.message : 'Unknown error');
+      toast.success('Flag removed');
+    } catch {
+      toast.error('Failed to remove flag');
     } finally {
       setRemovingFlag(false);
     }
   };
 
+  // Loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-2 text-gray-500">
-          <div className="w-5 h-5 border-2 border-gray-300 border-t-[#434E54] rounded-full animate-spin" />
-          <span>Loading customer profile...</span>
+      <div className="flex items-center justify-center py-24">
+        <div className="flex items-center gap-3 text-[#434E54]/60">
+          <div className="w-6 h-6 border-2 border-[#EAE0D5] border-t-[#D4A574] rounded-full animate-spin" />
+          <span className="text-sm">Loading customer profile...</span>
         </div>
       </div>
     );
   }
 
+  // Hard error — customer failed to load
   if (error || !customer) {
     return (
-      <div className="p-6 rounded-lg bg-red-50 border border-red-200">
-        <p className="text-red-700">{error || 'Customer not found'}</p>
+      <div className="p-6 rounded-2xl bg-red-50 border border-red-100">
+        <p className="text-red-700 font-medium">{error || 'Customer not found'}</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Section 1: Contact Info */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[#434E54] flex items-center gap-2">
-            <User className="w-5 h-5" />
-            Contact Information
-          </h2>
-          {!isEditingContact ? (
-            <button
-              onClick={() => setIsEditingContact(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm
-                         text-[#434E54] hover:bg-gray-100 transition-colors"
-            >
-              <Edit2 className="w-4 h-4" />
-              Edit
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleCancelEdit}
-                disabled={savingContact}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm
-                           border border-gray-200 text-[#434E54] hover:bg-gray-50 transition-colors"
-              >
-                <X className="w-4 h-4" />
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveContact}
-                disabled={savingContact}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm
-                           bg-[#434E54] text-white hover:bg-[#363F44] transition-colors
-                           disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                {savingContact ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Full-width hero */}
+      <CustomerHero
+        customer={customer}
+        metrics={metrics}
+        onBookAppointment={() => openBookingModal({
+          mode: 'admin',
+          preSelectedCustomerId: customer.id,
+          preSelectedCustomerInfo: {
+            firstName: customer.first_name,
+            lastName: customer.last_name,
+            email: customer.email,
+            phone: customer.phone || '',
+          },
+          onSuccess: () => fetchAppointments(),
+        })}
+        onAddPet={() => {
+          // TODO: open add pet modal
+        }}
+      />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-            {isEditingContact ? (
-              <input
-                type="text"
-                value={editedContact.first_name}
-                onChange={(e) =>
-                  setEditedContact({ ...editedContact, first_name: e.target.value })
-                }
-                className="w-full px-3 py-2 rounded-lg border border-gray-200
-                           focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]"
-              />
-            ) : (
-              <p className="text-[#434E54] font-medium">{customer.first_name}</p>
-            )}
-          </div>
+      {/* 2-column grid: sidebar left, appointments right */}
+      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-            {isEditingContact ? (
-              <input
-                type="text"
-                value={editedContact.last_name}
-                onChange={(e) =>
-                  setEditedContact({ ...editedContact, last_name: e.target.value })
-                }
-                className="w-full px-3 py-2 rounded-lg border border-gray-200
-                           focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]"
-              />
-            ) : (
-              <p className="text-[#434E54] font-medium">{customer.last_name}</p>
-            )}
-          </div>
+        {/* ── LEFT SIDEBAR ── */}
+        <div className="lg:sticky lg:top-6 lg:self-start space-y-6">
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            {isEditingContact ? (
-              <input
-                type="email"
-                value={isWalkinPlaceholderEmail(editedContact.email) ? '' : editedContact.email}
-                onChange={(e) =>
-                  setEditedContact({ ...editedContact, email: e.target.value })
-                }
-                placeholder={isWalkinPlaceholderEmail(customer.email) ? 'Add email address...' : undefined}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200
-                           focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]"
-              />
-            ) : (
-              <div className="flex items-center gap-2 text-[#434E54]">
-                <Mail className="w-4 h-4" />
-                {isWalkinPlaceholderEmail(customer.email) ? (
-                  <p className="text-gray-400 italic">Walk-in customer (phone only)</p>
-                ) : (
-                  <p>{customer.email}</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-            {isEditingContact ? (
-              <input
-                type="tel"
-                value={phoneInput.value}
-                onChange={phoneInput.onChange}
-                onPaste={phoneInput.onPaste}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200
-                           focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]"
-              />
-            ) : (
-              <div className="flex items-center gap-2 text-[#434E54]">
-                <Phone className="w-4 h-4" />
-                <p>{formatPhoneNumber(customer.phone || '')}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Registration Date
-            </label>
-            <div className="flex items-center gap-2 text-gray-600">
-              <Calendar className="w-4 h-4" />
-              <p>{format(new Date(customer.created_at), 'MMMM dd, yyyy')}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Section 2: Pets */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-lg font-semibold text-[#434E54] flex items-center gap-2 mb-4">
-          <PawPrint className="w-5 h-5" />
-          Pets ({customer.pets.length})
-        </h2>
-
-        {customer.pets.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <PawPrint className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-600">No pets registered</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {customer.pets.map((pet) => (
-              <div
-                key={pet.id}
-                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-[#434E54]">{pet.name}</h3>
-                      <span className="px-2 py-0.5 rounded-full bg-[#EAE0D5] text-[#434E54] text-xs font-medium">
-                        {pet.size.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-gray-600">Breed: </span>
-                        <span className="text-[#434E54]">
-                          {pet.breed?.name || pet.breed_custom || 'Unknown'}
-                        </span>
-                      </div>
-                      {pet.weight && (
-                        <div>
-                          <span className="text-gray-600">Weight: </span>
-                          <span className="text-[#434E54]">{pet.weight} lbs</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => togglePetExpansion(pet.id)}
-                    className="p-1 hover:bg-gray-100 rounded transition-colors"
-                  >
-                    {expandedPetIds.has(pet.id) ? (
-                      <ChevronUp className="w-5 h-5 text-gray-600" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-600" />
-                    )}
-                  </button>
-                </div>
-
-                {expandedPetIds.has(pet.id) && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 space-y-2 text-sm">
-                    {pet.notes && (
-                      <div>
-                        <span className="text-gray-600 font-medium">Notes: </span>
-                        <p className="text-[#434E54] mt-1">{pet.notes}</p>
-                      </div>
-                    )}
-                    {pet.medical_info && (
-                      <div>
-                        <span className="text-gray-600 font-medium">Medical Info: </span>
-                        <p className="text-[#434E54] mt-1">{pet.medical_info}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Section 3: Appointment History */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-lg font-semibold text-[#434E54] flex items-center gap-2 mb-4">
-          <Calendar className="w-5 h-5" />
-          Appointment History
-        </h2>
-        <AppointmentHistoryList customerId={customerId} />
-      </div>
-
-      {/* Section 4: Flags */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[#434E54] flex items-center gap-2">
-            <Flag className="w-5 h-5" />
-            Customer Flags ({customer.flags.length})
-          </h2>
-          <button
-            onClick={handleAddFlag}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm
-                       bg-[#434E54] text-white hover:bg-[#363F44] transition-colors"
+          {/* Pets section */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.05 }}
+            className="bg-white rounded-2xl shadow-sm overflow-hidden"
           >
-            <Plus className="w-4 h-4" />
-            Add Flag
-          </button>
-        </div>
+            <div className="h-1.5 bg-[#7CB9E8]" />
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-[#434E54] flex items-center gap-2 uppercase tracking-wide">
+                  <PawPrint className="w-4 h-4" />
+                  Pets ({customer.pets.length})
+                </h2>
+              </div>
 
-        {customer.flags.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <Flag className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-600">No flags set</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {customer.flags.map((flag) => (
-              <div
-                key={flag.id}
-                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <SingleFlagBadge flag={flag} size="md" />
-                    <p className="text-sm text-gray-700 mt-2">{flag.description}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Added {format(new Date(flag.created_at), 'MMM dd, yyyy')}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveFlag(flag)}
-                    className="text-sm text-red-600 hover:text-red-700 font-medium"
+              {customer.pets.length === 0 ? (
+                <div className="text-center py-8">
+                  <PawPrint className="w-10 h-10 text-[#EAE0D5] mx-auto mb-2" />
+                  <p className="text-sm text-[#434E54]/50">No pets registered</p>
+                  <AdminButton
+                    variant="ghost"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => {
+                      // TODO: open add pet modal
+                    }}
                   >
-                    Remove
-                  </button>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Pet
+                  </AdminButton>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {customer.pets.map((pet, index) => {
+                    // Derive last groom info from appointments
+                    const petAppointments = appointments
+                      .filter((a) => a.pet_id === pet.id && a.status === 'completed')
+                      .sort(
+                        (a, b) =>
+                          new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime()
+                      );
+                    const lastAppt = petAppointments[0];
+                    return (
+                      <PetCard
+                        key={pet.id}
+                        pet={pet as PetWithBreed}
+                        index={index}
+                        lastGroomDate={lastAppt?.scheduled_at ?? null}
+                        lastGroomService={lastAppt?.service?.name ?? null}
+                        onBook={(petId) => {
+                          const found = customer.pets.find((p) => p.id === petId);
+                          if (!found) return;
+                          openBookingModal({
+                            mode: 'admin',
+                            preSelectedCustomerId: customer.id,
+                            preSelectedCustomerInfo: {
+                              firstName: customer.first_name,
+                              lastName: customer.last_name,
+                              email: customer.email,
+                              phone: customer.phone || '',
+                            },
+                            preSelectedPet: found as Pet,
+                            onSuccess: () => fetchAppointments(),
+                          });
+                        }}
+                        onEdit={(petId) => {
+                          const found = customer.pets.find((p) => p.id === petId);
+                          if (found) setEditingPet(found as PetWithBreed);
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Contact section */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="bg-white rounded-2xl shadow-sm overflow-hidden"
+          >
+            <div className="h-1.5 bg-[#77BFA3]" />
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-[#434E54] uppercase tracking-wide">
+                  Contact
+                </h2>
+                {!isEditingContact ? (
+                  <AdminButton
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => setIsEditingContact(true)}
+                  >
+                    <Edit2 className="w-3.5 h-3.5 mr-1" />
+                    Edit
+                  </AdminButton>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <AdminButton
+                      variant="ghost"
+                      size="xs"
+                      onClick={handleCancelEdit}
+                      disabled={savingContact}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </AdminButton>
+                    <AdminButton
+                      variant="primary"
+                      size="xs"
+                      onClick={handleSaveContact}
+                      isLoading={savingContact}
+                      loadingText="Saving..."
+                    >
+                      <Save className="w-3.5 h-3.5 mr-1" />
+                      Save
+                    </AdminButton>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                {/* Name (editing only) */}
+                {isEditingContact && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-[#434E54]/60 mb-1">
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editedContact.first_name}
+                        onChange={(e) =>
+                          setEditedContact({ ...editedContact, first_name: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-[#434E54]/20 text-sm
+                                   focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#434E54]/60 mb-1">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editedContact.last_name}
+                        onChange={(e) =>
+                          setEditedContact({ ...editedContact, last_name: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-[#434E54]/20 text-sm
+                                   focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Email */}
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="w-4 h-4 text-[#434E54]/30 flex-shrink-0" />
+                  {isEditingContact ? (
+                    <input
+                      type="email"
+                      value={isWalkinPlaceholderEmail(editedContact.email) ? '' : editedContact.email}
+                      onChange={(e) =>
+                        setEditedContact({ ...editedContact, email: e.target.value })
+                      }
+                      placeholder={
+                        isWalkinPlaceholderEmail(customer.email) ? 'Add email address...' : undefined
+                      }
+                      className="flex-1 px-3 py-2 rounded-lg border border-[#434E54]/20 text-sm
+                                 focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]"
+                    />
+                  ) : isWalkinPlaceholderEmail(customer.email) ? (
+                    <span className="text-[#434E54]/40 italic">Walk-in (phone only)</span>
+                  ) : (
+                    <span className="text-[#434E54]">{customer.email}</span>
+                  )}
+                </div>
+
+                {/* Phone */}
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="w-4 h-4 text-[#434E54]/30 flex-shrink-0" />
+                  {isEditingContact ? (
+                    <input
+                      type="tel"
+                      value={phoneInput.value}
+                      onChange={phoneInput.onChange}
+                      onPaste={phoneInput.onPaste}
+                      className="flex-1 px-3 py-2 rounded-lg border border-[#434E54]/20 text-sm
+                                 focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]"
+                    />
+                  ) : (
+                    <span className="text-[#434E54]">
+                      {formatPhoneNumber(customer.phone || '') || 'Not provided'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Address */}
+                <div className="flex items-start gap-2 text-sm">
+                  <MapPin className="w-4 h-4 text-[#434E54]/30 flex-shrink-0 mt-0.5" />
+                  {isEditingContact ? (
+                    <div className="flex-1 space-y-2">
+                      <input
+                        type="text"
+                        value={editedContact.address}
+                        onChange={(e) =>
+                          setEditedContact({ ...editedContact, address: e.target.value })
+                        }
+                        placeholder="123 Main St"
+                        className="w-full px-3 py-2 rounded-lg border border-[#434E54]/20 text-sm
+                                   focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={editedContact.city}
+                          onChange={(e) =>
+                            setEditedContact({ ...editedContact, city: e.target.value })
+                          }
+                          placeholder="La Mirada"
+                          className="w-full px-3 py-2 rounded-lg border border-[#434E54]/20 text-sm
+                                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]"
+                        />
+                        <input
+                          type="text"
+                          value={editedContact.zip}
+                          onChange={(e) =>
+                            setEditedContact({ ...editedContact, zip: e.target.value })
+                          }
+                          placeholder="90638"
+                          maxLength={10}
+                          className="w-full px-3 py-2 rounded-lg border border-[#434E54]/20 text-sm
+                                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-[#434E54]">
+                      {customer.address
+                        ? [customer.address, customer.city, customer.zip].filter(Boolean).join(', ')
+                        : 'Not provided'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Registration date (read-only) */}
+                <div className="flex items-center gap-2 text-sm text-[#434E54]/50">
+                  <Calendar className="w-4 h-4 flex-shrink-0" />
+                  <span>Since {format(new Date(customer.created_at), 'MMMM d, yyyy')}</span>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Section 5: Loyalty Points */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-lg font-semibold text-[#434E54] flex items-center gap-2 mb-4">
-          <Award className="w-5 h-5" />
-          Loyalty Program
-        </h2>
-
-        {customer.loyalty_points ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-sm text-green-700 mb-1">Current Punches</p>
-                <p className="text-3xl font-bold text-green-800">
-                  {customer.loyalty_points.current_punches || 0}
-                </p>
-              </div>
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-blue-700 mb-1">Cards Completed</p>
-                <p className="text-3xl font-bold text-blue-800">
-                  {customer.loyalty_points.cards_completed || 0}
-                </p>
-              </div>
             </div>
+          </motion.div>
 
-            {customer.loyalty_transactions.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Recent Activity</h3>
+          {/* Loyalty section — hidden when program is disabled */}
+          {loyaltyEnabled && <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.15 }}
+            className="bg-white rounded-2xl shadow-sm overflow-hidden"
+          >
+            <div className="h-1.5 bg-[#D4A574]" />
+            <div className="p-4">
+              <h2 className="text-sm font-semibold text-[#434E54] flex items-center gap-2 uppercase tracking-wide mb-4">
+                <Award className="w-4 h-4" />
+                Loyalty Program
+              </h2>
+
+              {customer.loyalty_points ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-[#FFFBF7] rounded-xl border border-[#EAE0D5]">
+                      <p className="text-xs text-[#434E54]/60 mb-1">Current Punches</p>
+                      <p className="text-2xl font-bold text-[#434E54]">
+                        {(customer.loyalty_points as Record<string, unknown>).current_punches as number ?? 0}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-[#FFFBF7] rounded-xl border border-[#EAE0D5]">
+                      <p className="text-xs text-[#434E54]/60 mb-1">Cards Completed</p>
+                      <p className="text-2xl font-bold text-[#434E54]">
+                        {(customer.loyalty_points as Record<string, unknown>).cards_completed as number ?? 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  {(() => {
+                    const punches =
+                      ((customer.loyalty_points as Record<string, unknown>).current_punches as number) ?? 0;
+                    const maxPunches = 10;
+                    const pct = Math.min((punches / maxPunches) * 100, 100);
+                    return (
+                      <div>
+                        <div className="flex justify-between text-xs text-[#434E54]/50 mb-1.5">
+                          <span>{punches} / {maxPunches} punches</span>
+                          <span>{Math.round(pct)}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-[#EAE0D5]">
+                          <div
+                            className="h-2 rounded-full bg-gradient-to-r from-[#D4A574] to-[#E8C49A] transition-all duration-500"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {customer.loyalty_transactions.length > 0 && (
+                    <div>
+                      <h3 className="text-xs font-medium text-[#434E54]/60 uppercase tracking-wide mb-2">
+                        Recent Activity
+                      </h3>
+                      <div className="space-y-1.5">
+                        {customer.loyalty_transactions.slice(0, 5).map((transaction) => (
+                          <div
+                            key={(transaction as Record<string, unknown>).id as string}
+                            className="flex items-center justify-between text-sm p-2 rounded-lg bg-[#FFFBF7]"
+                          >
+                            <span className="text-[#434E54]/70">Punch added</span>
+                            <span className="text-[#434E54]/40 text-xs">
+                              {format(
+                                new Date((transaction as Record<string, unknown>).created_at as string),
+                                'MMM dd, yyyy'
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Award className="w-10 h-10 text-[#EAE0D5] mx-auto mb-2" />
+                  <p className="text-sm text-[#434E54]/50">Not enrolled in loyalty program</p>
+                </div>
+              )}
+            </div>
+          </motion.div>}
+
+          {/* Flags section */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="bg-white rounded-2xl shadow-sm overflow-hidden"
+          >
+            <div className="h-1.5 bg-[#C97B63]" />
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-[#434E54] flex items-center gap-2 uppercase tracking-wide">
+                  <Flag className="w-4 h-4" />
+                  Flags ({customer.flags.length})
+                </h2>
+                <AdminButton
+                  variant="ghost"
+                  size="xs"
+                  onClick={handleAddFlag}
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Add
+                </AdminButton>
+              </div>
+
+              {customer.flags.length === 0 ? (
+                <div className="text-center py-6">
+                  <Flag className="w-8 h-8 text-[#EAE0D5] mx-auto mb-2" />
+                  <p className="text-sm text-[#434E54]/50">No flags set</p>
+                </div>
+              ) : (
                 <div className="space-y-2">
-                  {customer.loyalty_transactions.slice(0, 5).map((transaction: any) => (
+                  {customer.flags.map((flag) => (
                     <div
-                      key={transaction.id}
-                      className="flex items-center justify-between text-sm p-2 rounded bg-gray-50"
+                      key={flag.id}
+                      className="flex items-start justify-between gap-3 p-3 rounded-xl bg-[#FFFBF7] border border-[#EAE0D5]"
                     >
-                      <span className="text-gray-700">Punch added</span>
-                      <span className="text-gray-500">
-                        {format(new Date(transaction.created_at), 'MMM dd, yyyy')}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <SingleFlagBadge flag={flag} size="md" />
+                        {flag.description && (
+                          <p className="text-xs text-[#434E54]/60 mt-1 line-clamp-2">
+                            {flag.description}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-[#434E54]/40 mt-1">
+                          Added {format(new Date(flag.created_at), 'MMM dd, yyyy')}
+                        </p>
+                      </div>
+                      <AdminButton
+                        variant="ghost"
+                        size="xs"
+                        onClick={() => handleRemoveFlag(flag)}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 flex-shrink-0"
+                      >
+                        Remove
+                      </AdminButton>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* ── RIGHT MAIN: Appointment History ── */}
+        <div>
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="h-1.5 bg-gradient-to-r from-[#434E54] to-[#6B7B85]" />
+            <div className="p-6">
+              <h2 className="text-sm font-semibold text-[#434E54] flex items-center gap-2 uppercase tracking-wide mb-4">
+                <Calendar className="w-4 h-4" />
+                Appointment History
+              </h2>
+              <AppointmentHistoryList
+                appointments={appointments}
+                loading={false}
+                error={appointmentsError}
+                onRefresh={fetchAppointments}
+              />
+            </div>
           </div>
-        ) : (
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <Award className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-600">Not enrolled in loyalty program</p>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Modals */}
@@ -548,7 +727,7 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
           setIsFlagFormOpen(false);
           setSelectedFlag(null);
         }}
-        onSuccess={fetchCustomer}
+        onSuccess={fetchData}
       />
 
       {selectedFlag && (
@@ -561,6 +740,26 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
           }}
           onConfirm={confirmRemoveFlag}
           loading={removingFlag}
+        />
+      )}
+
+      {editingPet && (
+        <PetEditModal
+          pet={editingPet}
+          customerId={customerId}
+          isOpen={!!editingPet}
+          onClose={() => setEditingPet(null)}
+          onSaved={(updated) => {
+            setCustomer((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    pets: prev.pets.map((p) => (p.id === updated.id ? updated : p)),
+                  }
+                : prev
+            );
+            setEditingPet(null);
+          }}
         />
       )}
     </div>

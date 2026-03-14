@@ -37,7 +37,9 @@ export function PetForm({ onSubmit, onCancel, initialData, selectedService }: Pe
       size: initialData?.size,
       breed_id: initialData?.breed_id || '',
       breed_custom: initialData?.breed_custom || '',
-      weight: initialData?.weight || null,
+      gender: initialData?.gender || '',
+      color: initialData?.color || '',
+      birth_date: initialData?.birth_date || '',
       notes: initialData?.notes || '',
     },
   });
@@ -129,32 +131,56 @@ export function PetForm({ onSubmit, onCancel, initialData, selectedService }: Pe
         )}
       </div>
 
-      {/* Weight */}
+      {/* Gender */}
+      <div className="space-y-2">
+        <label className="block">
+          <span className="text-sm font-semibold text-[#434E54]">Gender *</span>
+        </label>
+        <select
+          className={`w-full px-4 py-3 rounded-lg border-2 transition-colors duration-200
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1
+                     ${errors.gender ? 'border-[#434E54] bg-[#434E54]/5' : 'border-[#EAE0D5] hover:border-[#434E54]/40 bg-white'}`}
+          {...register('gender')}
+        >
+          <option value="">Select gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+        {errors.gender && (
+          <p className="text-sm text-[#434E54] font-medium mt-1.5">{errors.gender.message}</p>
+        )}
+      </div>
+
+      {/* Color / Markings */}
       <div className="space-y-2">
         <label className="block">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-[#434E54]">Weight (lbs)</span>
+            <span className="text-sm font-semibold text-[#434E54]">Color / Markings</span>
             <span className="text-xs text-[#434E54]/60">Optional</span>
           </div>
         </label>
         <input
-          type="number"
-          step="0.1"
-          min="0"
-          max="300"
-          placeholder="Enter weight in pounds"
-          className={`w-full px-4 py-3 rounded-lg border-2 transition-colors duration-200
-                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1
-                     ${errors.weight
-                       ? 'border-[#434E54] bg-[#434E54]/5'
-                       : 'border-[#EAE0D5] hover:border-[#434E54]/40 bg-white'}`}
-          {...register('weight', { valueAsNumber: true })}
+          type="text"
+          placeholder="e.g. Golden, Black & White, Brown with spots"
+          className="w-full px-4 py-3 rounded-lg border-2 border-[#EAE0D5] hover:border-[#434E54]/40 bg-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1"
+          {...register('color')}
         />
-        {errors.weight && (
-          <p className="text-sm text-[#434E54] font-medium mt-1.5">
-            {errors.weight.message}
-          </p>
-        )}
+      </div>
+
+      {/* Birth Date */}
+      <div className="space-y-2">
+        <label className="block">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-[#434E54]">Birth Date</span>
+            <span className="text-xs text-[#434E54]/60">Optional</span>
+          </div>
+        </label>
+        <input
+          type="date"
+          max={new Date().toISOString().split('T')[0]}
+          className="w-full px-4 py-3 rounded-lg border-2 border-[#EAE0D5] hover:border-[#434E54]/40 bg-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1"
+          {...register('birth_date')}
+        />
       </div>
 
       {/* Pet size */}

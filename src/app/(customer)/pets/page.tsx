@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PetCardSkeletonGrid } from '@/components/ui/skeletons';
 import { createServerSupabaseClient, getCurrentUser } from '@/lib/supabase/server';
+import { getSizeLabel } from '@/lib/booking/pricing';
+import type { PetSize } from '@/types/database';
 
 // Fetch pets
 async function getPets(userId: string) {
@@ -124,21 +126,18 @@ function PetCard({ pet }: { pet: any }) {
           {pet.breed_custom || 'Breed not specified'}
         </p>
         <div className="flex items-center gap-3 text-xs text-[#434E54]/50">
-          {pet.weight && (
-            <span className="flex items-center gap-1">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-              </svg>
-              {pet.weight} lbs
-            </span>
-          )}
           {pet.size && (
-            <span className="px-2 py-0.5 rounded-full bg-[#EAE0D5] capitalize">
-              {pet.size}
+            <span className="px-2 py-0.5 rounded-full bg-[#EAE0D5]">
+              {getSizeLabel(pet.size as PetSize)}
             </span>
           )}
           {pet.gender && (
-            <span className="capitalize">{pet.gender}</span>
+            <span className="px-2 py-0.5 rounded-full bg-[#434E54]/10 capitalize">
+              {pet.gender}
+            </span>
+          )}
+          {pet.color && (
+            <span>{pet.color}</span>
           )}
         </div>
       </div>

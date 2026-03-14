@@ -75,13 +75,37 @@ export async function GET(request: NextRequest) {
       throw error;
     }
 
+    // Fetch notification_settings to determine channel-level enabled state
+    const { data: settingsData } = (await (serviceClient as any)
+      .from('notification_settings')
+      .select('notification_type, email_enabled, sms_enabled')) as {
+      data: Array<{ notification_type: string; email_enabled: boolean; sms_enabled: boolean }> | null;
+    };
+
+    // Build a lookup map: notification_type -> { email_enabled, sms_enabled }
+    const settingsMap = new Map<string, { email_enabled: boolean; sms_enabled: boolean }>();
+    if (settingsData) {
+      for (const s of settingsData) {
+        settingsMap.set(s.notification_type, { email_enabled: s.email_enabled, sms_enabled: s.sms_enabled });
+      }
+    }
+
     // Extract just variable names (not full descriptions) for list view
-    const simplifiedTemplates = (templates || []).map((template) => ({
-      ...template,
-      variables: Array.isArray(template.variables)
-        ? template.variables.map((v) => (typeof v === 'object' && v !== null ? v.name : v))
-        : [],
-    }));
+    // Add channel_enabled based on notification_settings
+    const simplifiedTemplates = (templates || []).map((template) => {
+      const settings = settingsMap.get(template.type);
+      const channel_enabled = settings
+        ? (template.channel === 'email' ? settings.email_enabled : settings.sms_enabled)
+        : true; // Default to true if no settings row exists
+
+      return {
+        ...template,
+        channel_enabled,
+        variables: Array.isArray(template.variables)
+          ? template.variables.map((v) => (typeof v === 'object' && v !== null ? v.name : v))
+          : [],
+      };
+    });
 
     return NextResponse.json({ templates: simplifiedTemplates });
   } catch (error) {

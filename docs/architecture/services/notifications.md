@@ -4,7 +4,7 @@
 > **Location**: `src/lib/notifications/`
 > **Status**: Completed (Phase 8)
 > **Channels**: Email (Resend), SMS (Twilio)
-> **Last Updated**: 2026-03-06
+> **Last Updated**: 2026-03-14
 
 ## Overview
 
@@ -34,12 +34,19 @@ src/lib/notifications/
   index.ts                # Module exports
   providers/
     index.ts              # Provider factory (mock vs production)
+  templates/
+    email-base.html       # Base HTML email layout with mood banner placeholder
   triggers/
     index.ts              # Trigger module exports
     booking-confirmation.ts
     appointment-status.ts
     report-card-completion.ts
     waitlist-notification.ts
+    appointment-reminder.ts
+    appointment-cancelled.ts
+    appointment-rescheduled.ts
+    review-request.ts
+    waitlist-added.ts
 
 src/lib/resend/
   provider.ts             # ResendProvider (EmailProvider implementation)
@@ -171,20 +178,26 @@ interface RenderedTemplate {
 
 ## Notification Types
 
-### Transactional Notifications
-**Always sent** (cannot be disabled by customer):
-- `booking_confirmation` - Appointment booked
-- `booking_cancellation` - Appointment cancelled
-- `status_update` - Appointment status changed
-- `report_card_ready` - Grooming report card available
-- `waitlist_available` - Waitlist slot opened
+### Active Notification Types
 
-### Marketing Notifications
-**Respect customer preferences**:
-- `appointment_reminder` - Reminder before appointment
-- `retention_reminder` - Encourage rebooking
-- `promotional` - Special offers
-- `newsletter` - Monthly updates
+| Type | Email | SMS | Category |
+|------|-------|-----|----------|
+| `booking_confirmation` | Yes | Yes | Transactional |
+| `appointment_reminder` | Yes | Yes | Marketing |
+| `appointment_cancelled` | Yes | No | Transactional |
+| `appointment_rescheduled` | Yes | Yes | Transactional |
+| `review_request` | Yes | No | Marketing |
+| `waitlist_added` | Yes | Yes | Transactional |
+| `waitlist_available` | Yes | Yes | Transactional |
+| `report_card_ready` | Yes | Yes | Transactional |
+| `retention_reminder` | Yes | Yes | Marketing |
+| `payment_failed` | Yes | No | Transactional |
+| `payment_reminder` | Yes | No | Transactional |
+| `payment_success` | Yes | No | Transactional |
+| `payment_final_notice` | Yes | No | Transactional |
+
+**Transactional** notifications are always sent (cannot be disabled by customer).
+**Marketing** notifications respect customer preferences.
 
 ---
 
@@ -220,6 +233,87 @@ export async function triggerWaitlistNotification(data: WaitlistNotificationTrig
 export async function triggerWaitlistNotificationBatch(data: WaitlistNotificationTriggerData[]): Promise<WaitlistBatchNotificationResult>
 export function validateWaitlistNotificationData(data: unknown): boolean
 export async function handleWaitlistExpiration(data: unknown): Promise<void>
+```
+
+### Appointment Reminder (`appointment-reminder.ts`)
+```typescript
+export async function triggerAppointmentReminder(data: AppointmentReminderTriggerData): Promise<NotificationTriggerResult>
+```
+
+### Appointment Cancelled (`appointment-cancelled.ts`)
+```typescript
+export async function triggerAppointmentCancelled(data: AppointmentCancelledTriggerData): Promise<NotificationTriggerResult>
+```
+
+### Appointment Rescheduled (`appointment-rescheduled.ts`)
+```typescript
+export async function triggerAppointmentRescheduled(data: AppointmentRescheduledTriggerData): Promise<NotificationTriggerResult>
+```
+
+### Review Request (`review-request.ts`)
+```typescript
+export async function triggerReviewRequest(data: ReviewRequestTriggerData): Promise<NotificationTriggerResult>
+```
+
+### Waitlist Added (`waitlist-added.ts`)
+```typescript
+export async function triggerWaitlistAdded(data: WaitlistAddedTriggerData): Promise<NotificationTriggerResult>
+```
+
+---
+
+## Email Mood System
+
+**File**: `src/lib/notifications/email-base.ts`
+
+The mood system adds contextual colored banners to emails based on notification intent.
+
+### Mood Types
+
+```typescript
+type EmailMood = 'celebration' | 'reminder' | 'urgent' | 'info' | 'warning' | 'success';
+```
+
+| Mood | Background | Emoji | Use Case |
+|------|-----------|-------|----------|
+| `celebration` | Green | 🎉 | Booking confirmations, report cards, review requests |
+| `reminder` | Blue | ⏰ | Appointment reminders, retention |
+| `urgent` | Red | 🚨 | Waitlist available (time-sensitive) |
+| `info` | Blue | ℹ️ | Cancelled, rescheduled, waitlist added |
+| `warning` | Amber | ⚠️ | Payment failed, final notice |
+| `success` | Green | ✅ | Payment success |
+
+### Reusable Component Functions
+
+```typescript
+createPetHero(petName, context?)      // Dog emoji + pet name hero section
+createPrimaryCTA(text, url)           // Gold pill button (#D4A574) with VML fallback
+createSecondaryCTA(text, url)         // Outlined gold pill button
+createDangerCTA(text, url)            // Red pill button (#DC2626)
+createTimeComparison(oldDate, oldTime, newDate, newTime)  // Rescheduled appointment layout
+createDivider()                       // Gold gradient horizontal rule
+createTip(text)                       // Cream callout with paw emoji
+```
+
+### Base Email Template
+
+**File**: `src/lib/notifications/templates/email-base.html`
+
+- Charcoal header (#434E54) with paw print emoji and "The Puppy Day" in Georgia serif
+- Gold gradient accent strip
+- `{{MOOD_BANNER}}` placeholder for mood-specific banner injection
+- `{{CONTENT}}` placeholder for email body
+- Footer with gold gradient divider and unsubscribe link
+
+### Usage
+
+```typescript
+import { wrapEmailContent } from '@/lib/notifications/email-base';
+
+const html = wrapEmailContent(bodyHtml, {
+  mood: 'celebration',
+  moodTitle: 'Appointment Confirmed!'
+});
 ```
 
 ---
@@ -684,5 +778,5 @@ Retrieved via `service.getMetrics(startDate, endDate)`.
 
 ---
 
-**Last Updated**: 2026-03-06 by Claude Code
-**Changes**: Fixed provider class names (ResendProvider, TwilioProvider), corrected file paths to relative, fixed RetryConfig fields (maxRetries not maxAttempts, baseDelay/maxDelay/jitterFactor), corrected template fields (subject_template, html_template, text_template), documented logger camelCase fields, added notification triggers, added provider factory, accurate to source code.
+**Last Updated**: 2026-03-14 by Claude Code
+**Changes**: Added 5 new notification triggers (appointment-reminder, appointment-cancelled, appointment-rescheduled, review-request, waitlist-added), documented email mood system with 6 mood types and 7 reusable component functions, updated active notification types table (8 unused types removed via migration), added email-base.html template documentation.

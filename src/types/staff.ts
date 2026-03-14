@@ -16,6 +16,7 @@ export interface StaffMemberWithStats {
   last_name: string;
   phone: string | null;
   role: 'admin' | 'groomer';
+  is_active: boolean;
   avatar_url: string | null;
   created_at: string;
   appointment_count: number;
