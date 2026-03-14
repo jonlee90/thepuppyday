@@ -6,7 +6,7 @@ set -euo pipefail
 # Usage: ./scripts/deploy.sh [--skip-build]
 # ─────────────────────────────────────────────────────────────
 
-APP_DIR="/var/www/thepuppyday"
+APP_DIR="/var/www/html/thepuppyday"
 LOG_PREFIX="[deploy]"
 SKIP_BUILD=false
 

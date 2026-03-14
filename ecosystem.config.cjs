@@ -2,7 +2,7 @@ module.exports = {
   apps: [{
     name: 'thepuppyday',
     script: '.next/standalone/server.js',
-    cwd: '/var/www/thepuppyday',
+    cwd: '/var/www/html/thepuppyday',
     env: {
       NODE_ENV: 'production',
       PORT: 3001,

@@ -5,7 +5,7 @@ The server already hosts another Next.js app — this guide avoids conflicts.
 
 **Domain**: `thepuppyday.com`
 **Port**: 3001 (PM2 standalone server)
-**App dir**: `/var/www/thepuppyday`
+**App dir**: `/var/www/html/thepuppyday`
 
 ---
 
@@ -98,8 +98,8 @@ Expected output should show ~4G swap.
 ## Step 3: Create App Directory & Clone
 
 ```bash
-mkdir -p /var/www/thepuppyday
-cd /var/www/thepuppyday
+mkdir -p /var/www/html/thepuppyday
+cd /var/www/html/thepuppyday
 
 git clone https://github.com/<your-org>/thepuppyday.git .
 ```
@@ -243,7 +243,7 @@ Follow any instructions `pm2 startup` outputs (it may ask you to run a command a
 ### 7a. Copy the config file
 
 ```bash
-cp /var/www/thepuppyday/nginx/thepuppyday.conf /etc/nginx/sites-available/thepuppyday.com
+cp /var/www/html/thepuppyday/nginx/thepuppyday.conf /etc/nginx/sites-available/thepuppyday.com
 ```
 
 ### 7b. Enable the site
@@ -350,7 +350,7 @@ timedatectl
 
 ```bash
 # Get the secret from env file
-grep CRON_SECRET /var/www/thepuppyday/.env.production
+grep CRON_SECRET /var/www/html/thepuppyday/.env.production
 ```
 
 ### 10c. Edit crontab
@@ -364,7 +364,7 @@ Add these lines (replace `YOUR_CRON_SECRET` with the actual value):
 ```cron
 # ─── The Puppy Day Cron Jobs ────────────────────────────────
 CRON_SECRET=YOUR_CRON_SECRET
-CRON_RUNNER=/var/www/thepuppyday/scripts/cron-runner.sh
+CRON_RUNNER=/var/www/html/thepuppyday/scripts/cron-runner.sh
 
 # Appointment reminders (hourly)
 0 * * * * $CRON_RUNNER /api/cron/notifications/reminders >> /var/log/pm2/thepuppyday-cron.log 2>&1
@@ -398,7 +398,7 @@ crontab -l
 
 ```bash
 export CRON_SECRET=YOUR_CRON_SECRET
-/var/www/thepuppyday/scripts/cron-runner.sh /api/cron/notifications/retry
+/var/www/html/thepuppyday/scripts/cron-runner.sh /api/cron/notifications/retry
 ```
 
 Should output: `[cron] 2026-03-14 12:00:00 OK /api/cron/notifications/retry (200)`
@@ -489,13 +489,13 @@ Then test in a browser:
 After the initial setup, deployments are one command:
 
 ```bash
-ssh root@<VPS_IP> "cd /var/www/thepuppyday && ./scripts/deploy.sh"
+ssh root@<VPS_IP> "cd /var/www/html/thepuppyday && ./scripts/deploy.sh"
 ```
 
 Or SSH in and run manually:
 
 ```bash
-cd /var/www/thepuppyday
+cd /var/www/html/thepuppyday
 ./scripts/deploy.sh
 ```
 
@@ -575,7 +575,7 @@ crontab -l
 
 # Test manually
 export CRON_SECRET=<your-secret>
-/var/www/thepuppyday/scripts/cron-runner.sh /api/cron/notifications/retry
+/var/www/html/thepuppyday/scripts/cron-runner.sh /api/cron/notifications/retry
 
 # Check cron log
 tail -50 /var/log/pm2/thepuppyday-cron.log
@@ -591,7 +591,7 @@ systemctl status cron
 ### Quick: restore previous build
 
 ```bash
-cd /var/www/thepuppyday
+cd /var/www/html/thepuppyday
 rm -rf .next
 mv .next-backup .next
 cp -r public .next/standalone/public
@@ -602,7 +602,7 @@ pm2 restart ecosystem.config.cjs
 ### Full: revert to a specific commit
 
 ```bash
-cd /var/www/thepuppyday
+cd /var/www/html/thepuppyday
 git log --oneline -10          # find the good commit
 git checkout <commit-hash>
 npm ci
