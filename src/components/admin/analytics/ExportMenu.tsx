@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { Download, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
 import { exportKPIsToCSV, exportChartDataToCSV } from '@/lib/utils/csv-export';
 import { exportAnalyticsPDF } from '@/lib/utils/analytics-pdf';
+import { config } from '@/lib/config';
 
 interface ExportMenuProps {
   dateRange: {
@@ -228,17 +229,19 @@ export function ExportMenu({ dateRange }: ExportMenuProps) {
               </div>
             </button>
 
-            <button
-              onClick={handleExportWaitlistCSV}
-              disabled={isExporting}
-              className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-sm"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-gray-400" />
-              <div>
-                <div className="font-medium text-gray-900">Waitlist Report CSV</div>
-                <div className="text-xs text-gray-500">Waitlist performance metrics</div>
-              </div>
-            </button>
+            {config.features.waitlistEnabled && (
+              <button
+                onClick={handleExportWaitlistCSV}
+                disabled={isExporting}
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-sm"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-gray-400" />
+                <div>
+                  <div className="font-medium text-gray-900">Waitlist Report CSV</div>
+                  <div className="text-xs text-gray-500">Waitlist performance metrics</div>
+                </div>
+              </button>
+            )}
 
             <div className="border-t border-gray-200 my-2"></div>
 

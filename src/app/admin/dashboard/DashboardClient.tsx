@@ -12,9 +12,15 @@ import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { RevenueOverview } from '@/components/admin/dashboard/RevenueOverview';
 import { DashboardTimeline } from '@/components/admin/dashboard/DashboardTimeline';
 import { ProductivityWidget } from '@/components/admin/dashboard/ProductivityWidget';
-import { WaitlistWidget } from '@/components/admin/dashboard/WaitlistWidget';
 import { PendingActionsWidget } from '@/components/admin/dashboard/PendingActionsWidget';
+import { config } from '@/lib/config';
 import { BookingModal } from '@/components/booking/BookingModal';
+import dynamic from 'next/dynamic';
+
+const WaitlistWidget = dynamic(
+  () => import('@/components/admin/dashboard/WaitlistWidget').then((m) => m.WaitlistWidget),
+  { ssr: false }
+);
 
 export function DashboardClient() {
   const {
@@ -82,7 +88,7 @@ export function DashboardClient() {
             revenueData={revenue}
             loading={loading.appointments}
           />
-          <WaitlistWidget />
+          {config.features.waitlistEnabled && <WaitlistWidget />}
         </div>
       </div>
 

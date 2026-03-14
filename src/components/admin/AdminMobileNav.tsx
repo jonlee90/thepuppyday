@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { useAdminStore } from '@/stores/admin-store';
+import { config } from '@/lib/config';
 import type { User } from '@/types/database';
 import {
   LayoutDashboard,
@@ -191,7 +192,11 @@ export function AdminMobileNav({ user }: AdminMobileNavProps) {
   const isOwner = user?.role === 'admin';
 
   // Filter out owner-only items if user is not owner
-  const visibleItems = navItems.filter((item) => !item.ownerOnly || isOwner);
+  const visibleItems = navItems.filter(
+    (item) =>
+      (!item.ownerOnly || isOwner) &&
+      (config.features.waitlistEnabled || item.label !== 'Waitlist')
+  );
 
   // Close drawer when route changes
   const handleLinkClick = () => {

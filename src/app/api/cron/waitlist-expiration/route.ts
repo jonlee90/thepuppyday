@@ -9,6 +9,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { processExpiredOffers, getExpirationStats } from '@/lib/admin/waitlist-expiration';
 import { NextResponse } from 'next/server';
+import { waitlistDisabledResponse } from '@/lib/waitlist-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,9 @@ export const dynamic = 'force-dynamic';
  * - 500: Server error
  */
 export async function GET(request: Request) {
+  const guard = waitlistDisabledResponse();
+  if (guard) return guard;
+
   try {
     const { searchParams } = new URL(request.url);
     const secret = searchParams.get('secret');

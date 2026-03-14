@@ -9,6 +9,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
+import { config } from '@/lib/config';
 import { useCalendarState } from './calendar/hooks/useCalendarState';
 import { useCalendarAppointments } from './calendar/hooks/useCalendarAppointments';
 import { useCalendarTouch } from './calendar/hooks/useCalendarTouch';
@@ -115,6 +116,11 @@ export function AppointmentCalendar({
       if (time < new Date()) return;
 
       setSelectedSlot(time);
+
+      if (!config.features.waitlistEnabled) {
+        setSlotWaitlistCount(0);
+        return;
+      }
 
       try {
         const response = await fetch(

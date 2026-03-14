@@ -48,6 +48,13 @@ export const config = {
     url: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
     name: process.env.NEXT_PUBLIC_APP_NAME ?? 'The Puppy Day',
   },
+
+  /**
+   * Feature flags
+   */
+  features: {
+    waitlistEnabled: process.env.NEXT_PUBLIC_WAITLIST_ENABLED === 'true',
+  },
 } as const;
 
 /**

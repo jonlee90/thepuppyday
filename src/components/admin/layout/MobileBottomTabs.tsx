@@ -10,6 +10,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, Calendar, UserPlus, Users, MoreHorizontal, BarChart2, ClipboardList } from 'lucide-react';
 import { useAdminStore } from '@/stores/admin-store';
 import { useBookingModal } from '@/hooks/useBookingModal';
+import { config } from '@/lib/config';
 
 export function MobileBottomTabs() {
   const pathname = usePathname();
@@ -17,7 +18,7 @@ export function MobileBottomTabs() {
   const { activeBottomTab, setActiveBottomTab, toggleMobileDrawer } = useAdminStore();
   const { open: openModal } = useBookingModal();
 
-  const tabs = [
+  const allTabs = [
     {
       id: 'home' as const,
       label: 'Home',
@@ -62,7 +63,11 @@ export function MobileBottomTabs() {
     },
   ];
 
-  const handleTabClick = (tab: typeof tabs[number]) => {
+  const tabs = config.features.waitlistEnabled
+    ? allTabs
+    : allTabs.filter((tab) => tab.id !== 'waitlist');
+
+  const handleTabClick = (tab: typeof allTabs[number]) => {
     if (tab.action === 'walkin') {
       // Open walk-in booking modal
       openModal({ mode: 'walkin' });

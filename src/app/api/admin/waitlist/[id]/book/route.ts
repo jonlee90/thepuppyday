@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
+import { waitlistDisabledResponse } from '@/lib/waitlist-guard';
 import { z } from 'zod';
 
 const bookingSchema = z.object({
@@ -37,6 +38,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = waitlistDisabledResponse();
+  if (guard) return guard;
+
   try {
     const body = await req.json();
     const validated = bookingSchema.parse(body);

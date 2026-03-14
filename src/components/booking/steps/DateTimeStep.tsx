@@ -8,8 +8,14 @@ import { useState, useMemo, useEffect } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { CalendarPicker } from '../CalendarPicker';
 import { TimeSlotGrid } from '../TimeSlotGrid';
-import { WaitlistModal } from '../WaitlistModal';
 import { useAvailability } from '@/hooks/useAvailability';
+import { config } from '@/lib/config';
+import dynamic from 'next/dynamic';
+
+const WaitlistModal = dynamic(
+  () => import('../WaitlistModal').then((m) => m.WaitlistModal),
+  { ssr: false }
+);
 import {
   getDisabledDates,
   formatTimeDisplay,
@@ -200,7 +206,7 @@ export function DateTimeStep() {
               slots={slots}
               selectedTime={selectedTimeSlot}
               onTimeSelect={handleTimeSelect}
-              onJoinWaitlist={handleJoinWaitlist}
+              onJoinWaitlist={config.features.waitlistEnabled ? handleJoinWaitlist : undefined}
               loading={slotsLoading}
             />
           )}
@@ -253,7 +259,7 @@ export function DateTimeStep() {
       </div>
 
       {/* Waitlist Modal */}
-      {selectedDate && (
+      {config.features.waitlistEnabled && selectedDate && (
         <WaitlistModal
           isOpen={waitlistModalOpen}
           onClose={() => {

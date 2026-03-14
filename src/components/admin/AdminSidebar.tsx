@@ -36,6 +36,7 @@ import {
   UserCog,
 } from 'lucide-react';
 import { useState } from 'react';
+import { config } from '@/lib/config';
 
 interface NavItem {
   label: string;
@@ -288,7 +289,9 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
         {navSections.map((section, sectionIndex) => {
           // Filter out owner-only items if user is not owner
           const visibleItems = section.items.filter(
-            (item) => !item.ownerOnly || isOwner
+            (item) =>
+              (!item.ownerOnly || isOwner) &&
+              (config.features.waitlistEnabled || item.label !== 'Waitlist')
           );
 
           if (visibleItems.length === 0) {

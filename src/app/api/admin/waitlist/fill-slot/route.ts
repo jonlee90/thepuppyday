@@ -8,6 +8,7 @@
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { NextResponse } from 'next/server';
+import { waitlistDisabledResponse } from '@/lib/waitlist-guard';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -75,6 +76,9 @@ const fillSlotSchema = z.object({
  * - 500: Server error
  */
 export async function POST(request: Request) {
+  const guard = waitlistDisabledResponse();
+  if (guard) return guard;
+
   try {
     const supabase = await createServerSupabaseClient();
     const serviceClient = createServiceRoleClient();

@@ -16,6 +16,7 @@ import {
   type TimeSlot,
 } from '@/lib/booking';
 import type { BookingSettings, BlockedDate } from '@/types/settings';
+import { config } from '@/lib/config';
 
 /**
  * Convert new booking hours format to legacy format for getAvailableSlots
@@ -225,7 +226,11 @@ export async function GET(req: NextRequest) {
       bookingSettings
     );
 
-    // Get waitlist counts for unavailable slots (bypass RLS to see all entries)
+    // Get waitlist counts for unavailable slots (only when waitlist is enabled)
+    if (!config.features.waitlistEnabled) {
+      return NextResponse.json({ date, slots });
+    }
+
     const { data: waitlistEntries } = await (serviceClient as any)
       .from('waitlist')
       .select('*')

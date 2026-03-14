@@ -25,6 +25,7 @@ import {
   UserCog,
 } from 'lucide-react';
 import { NavPopover } from './NavPopover';
+import { config } from '@/lib/config';
 
 interface NavItem {
   label: string;
@@ -178,7 +179,11 @@ export function TabletSidebar({ user }: TabletSidebarProps) {
   const isOwner = user?.role === 'admin';
 
   // Filter out owner-only items if user is not owner
-  const visibleItems = navItems.filter((item) => !item.ownerOnly || isOwner);
+  const visibleItems = navItems.filter(
+    (item) =>
+      (!item.ownerOnly || isOwner) &&
+      (config.features.waitlistEnabled || item.label !== 'Waitlist')
+  );
 
   const handleItemClick = (item: NavItem) => {
     if (item.children && item.children.length > 0) {

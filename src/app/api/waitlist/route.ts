@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { waitlistDisabledResponse } from '@/lib/waitlist-guard';
 import { z } from 'zod';
 
 /**
@@ -30,6 +31,9 @@ const waitlistSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const guard = waitlistDisabledResponse();
+  if (guard) return guard;
+
   try {
     const body = await req.json();
     const validated = waitlistSchema.parse(body);

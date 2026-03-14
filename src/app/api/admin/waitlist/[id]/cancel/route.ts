@@ -8,11 +8,15 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
+import { waitlistDisabledResponse } from '@/lib/waitlist-guard';
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = waitlistDisabledResponse();
+  if (guard) return guard;
+
   try {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();

@@ -8,6 +8,7 @@
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { NextResponse } from 'next/server';
+import { waitlistDisabledResponse } from '@/lib/waitlist-guard';
 import type { WaitlistStatus, TimePreference } from '@/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -45,6 +46,9 @@ interface WaitlistQueryParams {
  * - limit: Items per page
  */
 export async function GET(request: Request) {
+  const guard = waitlistDisabledResponse();
+  if (guard) return guard;
+
   try {
     const supabase = await createServerSupabaseClient();
     const serviceClient = createServiceRoleClient();

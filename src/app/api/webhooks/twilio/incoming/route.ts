@@ -9,6 +9,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { handleWaitlistResponse } from '@/lib/admin/waitlist-response-handler';
 import { NextResponse } from 'next/server';
+import { config } from '@/lib/config';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
@@ -59,7 +60,18 @@ export async function POST(request: Request) {
       }
     }
 
-    // Handle the response
+    // Handle the response (skip waitlist handling when feature is disabled)
+    if (!config.features.waitlistEnabled) {
+      const noopTwiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>Thank you for your message. Please contact The Puppy Day at (657) 252-2903 for assistance.</Message>
+</Response>`;
+      return new Response(noopTwiml, {
+        status: 200,
+        headers: { 'Content-Type': 'text/xml' },
+      });
+    }
+
     const supabase = await createServerSupabaseClient();
     const result = await handleWaitlistResponse(supabase, from, body);
 

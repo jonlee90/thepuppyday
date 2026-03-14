@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { KPICard, KPIData } from './KPICard';
+import { config } from '@/lib/config';
 
 interface KPIGridProps {
   dateRange: {
@@ -91,7 +92,7 @@ export function KPIGrid({ dateRange }: KPIGridProps) {
       <KPICard data={kpis.avg_booking_value} />
       <KPICard data={kpis.retention_rate} />
       <KPICard data={kpis.review_generation_rate} />
-      <KPICard data={kpis.waitlist_fill_rate} />
+      {config.features.waitlistEnabled && <KPICard data={kpis.waitlist_fill_rate} />}
     </div>
   );
 }

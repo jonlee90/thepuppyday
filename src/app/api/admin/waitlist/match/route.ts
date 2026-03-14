@@ -9,6 +9,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { findMatchingWaitlistEntries } from '@/lib/admin/waitlist-matcher';
 import { NextResponse } from 'next/server';
+import { waitlistDisabledResponse } from '@/lib/waitlist-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,9 @@ export const dynamic = 'force-dynamic';
  * - 500: Server error
  */
 export async function POST(request: Request) {
+  const guard = waitlistDisabledResponse();
+  if (guard) return guard;
+
   try {
     const supabase = await createServerSupabaseClient();
 

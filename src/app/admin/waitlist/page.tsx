@@ -3,6 +3,7 @@ import { WaitlistDashboard } from '@/components/admin/waitlist/WaitlistDashboard
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { redirect } from 'next/navigation';
+import { config } from '@/lib/config';
 
 export const metadata: Metadata = {
   title: 'Waitlist Management | Admin - The Puppy Day',
@@ -19,6 +20,10 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 export default async function WaitlistPage() {
+  if (!config.features.waitlistEnabled) {
+    redirect('/admin/dashboard');
+  }
+
   const supabase = await createServerSupabaseClient();
 
   // Check admin authorization

@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { Clock, Save, FileText, Mail, MessageSquare, Settings } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { config } from '@/lib/config';
 import { ReportCardSettings } from '@/components/admin/settings/ReportCardSettings';
 import { WaitlistSettings } from '@/components/admin/settings/WaitlistSettings';
 import { MarketingSettings } from '@/components/admin/settings/MarketingSettings';
@@ -54,6 +55,13 @@ const daysOfWeek = [
 ] as const;
 
 type TabType = 'hours' | 'report-cards' | 'waitlist' | 'marketing' | 'templates';
+
+const waitlistTab = {
+  id: 'waitlist' as TabType,
+  label: 'Waitlist',
+  icon: MessageSquare,
+  description: 'Waitlist configuration',
+};
 
 export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
   const [activeTab, setActiveTab] = useState<TabType>('hours');
@@ -123,12 +131,7 @@ export function SettingsClient({ initialBusinessHours }: SettingsClientProps) {
       icon: FileText,
       description: 'Report card settings',
     },
-    {
-      id: 'waitlist' as TabType,
-      label: 'Waitlist',
-      icon: MessageSquare,
-      description: 'Waitlist configuration',
-    },
+    ...(config.features.waitlistEnabled ? [waitlistTab] : []),
     {
       id: 'marketing' as TabType,
       label: 'Marketing',

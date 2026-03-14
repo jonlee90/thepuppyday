@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
+import { waitlistDisabledResponse } from '@/lib/waitlist-guard';
 import type { WaitlistEntry } from '@/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -105,6 +106,9 @@ function generateTrendData(
  * Fetch waitlist performance and conversion metrics
  */
 export async function GET(request: NextRequest) {
+  const guard = waitlistDisabledResponse();
+  if (guard) return guard;
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const start = searchParams.get('start');

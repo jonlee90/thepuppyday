@@ -11,6 +11,7 @@ import { DateRangeSelector, DateRangePreset } from './DateRangeSelector';
 import { KPIGrid } from './KPIGrid';
 import { ExportMenu } from './ExportMenu';
 import { AnalyticsErrorBoundary } from './AnalyticsErrorBoundary';
+import { config } from '@/lib/config';
 
 // Loading skeleton for chart components
 const ChartSkeleton = () => (
@@ -272,12 +273,14 @@ export default function AnalyticsDashboard() {
       </AnalyticsErrorBoundary>
 
       {/* Waitlist */}
-      <AnalyticsErrorBoundary sectionName="Waitlist Performance">
-        <div className="card bg-white shadow-md p-6">
-          <h2 className="text-xl font-bold text-[#434E54] mb-4">Waitlist Performance</h2>
-          <WaitlistAnalytics dateRange={dateRange} />
-        </div>
-      </AnalyticsErrorBoundary>
+      {config.features.waitlistEnabled && (
+        <AnalyticsErrorBoundary sectionName="Waitlist Performance">
+          <div className="card bg-white shadow-md p-6">
+            <h2 className="text-xl font-bold text-[#434E54] mb-4">Waitlist Performance</h2>
+            <WaitlistAnalytics dateRange={dateRange} />
+          </div>
+        </AnalyticsErrorBoundary>
+      )}
 
       {/* Marketing */}
       <AnalyticsErrorBoundary sectionName="Marketing">
