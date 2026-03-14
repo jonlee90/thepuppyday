@@ -6,7 +6,7 @@
  * from the site_content table with caching and fallback support.
  */
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import type { HeroContent, SeoSettings, BusinessInfo } from '@/types/settings';
 
 // Default values based on business info from CLAUDE.md
@@ -66,7 +66,7 @@ export interface SiteContent {
  */
 export async function getSiteContent(): Promise<SiteContent> {
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = createServiceRoleClient();
 
     // Fetch all site content sections
     const { data: siteContent, error } = (await (supabase as any)

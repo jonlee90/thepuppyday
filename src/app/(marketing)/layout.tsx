@@ -10,7 +10,7 @@ import { BookingModalProvider } from '@/components/booking';
 import { StickyBookingButton } from '@/components/marketing/StickyBookingButton';
 import { HashRedirect } from '@/components/marketing/HashRedirect';
 import { getBusinessInfo } from '@/lib/site-content';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { summarizeBusinessHours } from '@/lib/utils/business-hours';
 
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export default async function MarketingLayout({
 }) {
   const [businessInfo, supabase] = await Promise.all([
     getBusinessInfo(),
-    createServerSupabaseClient(),
+    Promise.resolve(createServiceRoleClient()),
   ]);
 
   const { data: settings } = await (supabase as any).from('settings').select('value').eq('key', 'business_hours').single();
