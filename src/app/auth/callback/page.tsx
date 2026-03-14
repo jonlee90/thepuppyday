@@ -5,56 +5,72 @@
  * Handles Supabase implicit-flow tokens delivered via hash fragment.
  * Used by: invite links, magic links, OAuth redirects.
  *
- * Hash fragment tokens (#access_token=...&type=invite) are only readable
- * in the browser, so this must be a client component.
+ * The Supabase client auto-processes hash tokens and clears the hash,
+ * so we capture the type immediately before it's gone, then listen for
+ * the auth state change to confirm session is established.
  */
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+
+// Capture hash params immediately — Supabase clears the hash on init
+const initialHashParams = typeof window !== 'undefined'
+  ? new URLSearchParams(window.location.hash.substring(1))
+  : new URLSearchParams();
 
 function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const handled = useRef(false);
 
   useEffect(() => {
+    if (handled.current) return;
+
     const supabase = createClient();
     const next = searchParams.get('next') || '/dashboard';
+    const type = initialHashParams.get('type');
 
-    // Parse hash fragment manually (not accessible via Next.js server-side)
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
+    // Supabase auto-sets session from hash — listen for it
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (handled.current) return;
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session) {
+        handled.current = true;
+        subscription.unsubscribe();
 
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    const type = params.get('type');
-
-    if (accessToken && refreshToken) {
-      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).then(({ error }) => {
-        if (error) {
-          console.error('[AuthCallback] Failed to set session:', error.message);
-          router.replace('/login?error=invalid_link');
-          return;
-        }
-
-        // Invite links — send to set-password page so user can create their password
         if (type === 'invite') {
           router.replace('/reset-password');
-          return;
-        }
-
-        router.replace(next);
-      });
-    } else {
-      // No tokens in hash — check if there's already a valid session
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          router.replace(next);
         } else {
-          router.replace('/login?error=invalid_link');
+          router.replace(next);
         }
-      });
-    }
+      }
+    });
+
+    // Fallback: if already signed in (session exists before event fires)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (handled.current || !session) return;
+      handled.current = true;
+      subscription.unsubscribe();
+
+      if (type === 'invite') {
+        router.replace('/reset-password');
+      } else {
+        router.replace(next);
+      }
+    });
+
+    // Timeout fallback — if nothing happens after 5s, redirect to login
+    const timeout = setTimeout(() => {
+      if (handled.current) return;
+      handled.current = true;
+      subscription.unsubscribe();
+      router.replace('/login?error=invalid_link');
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [router, searchParams]);
 
   return (
