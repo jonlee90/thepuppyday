@@ -61,7 +61,7 @@ export function LivePreview({
     const content = renderContent(htmlContent);
     if (!emailShell) return content;
     return emailShell
-      .replace('{{BASE_URL}}', window.location.origin)
+      .replace('{{BASE_URL}}', process.env.NEXT_PUBLIC_APP_URL ?? '')
       .replace('{{MOOD_BANNER}}', '')
       .replace('{{CONTENT}}', content)
       .replace('{{UNSUBSCRIBE_LINK}}', '#');

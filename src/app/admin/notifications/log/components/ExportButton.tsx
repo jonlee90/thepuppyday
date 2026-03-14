@@ -8,7 +8,8 @@
 import { useState } from 'react';
 import { Download, Loader2 } from 'lucide-react';
 import type { NotificationLogListItem, NotificationLogFilters } from '@/types/notification-log';
-import { generateCSV, generateCSVFilename, downloadCSV } from '../utils';
+import { generateCSV, generateCSVFilename } from '../utils';
+import { downloadCSV } from '@/lib/utils/csv-export';
 
 interface ExportButtonProps {
   logs: NotificationLogListItem[];

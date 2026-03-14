@@ -73,11 +73,6 @@ export default function NotificationCenterPage() {
       console.error('[Notification Center] Error fetching notifications:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load notifications';
       setError(errorMessage);
-
-      // Show user-friendly error toast if available
-      if (typeof window !== 'undefined') {
-        // Toast notification would go here if implemented
-      }
     } finally {
       setLoading(false);
     }
