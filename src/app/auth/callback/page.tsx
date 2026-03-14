@@ -30,9 +30,6 @@ function AuthCallbackInner() {
 
     async function handleCallback() {
       if (accessToken && refreshToken) {
-        // Clear any stale session first
-        await supabase.auth.signOut({ scope: 'local' });
-
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
