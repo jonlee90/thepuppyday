@@ -103,6 +103,9 @@ export default function AnalyticsDashboard() {
   const [customerLoading, setCustomerLoading] = useState(true);
   const [customerError, setCustomerError] = useState<string | null>(null);
 
+  // Loyalty program enabled state
+  const [loyaltyEnabled, setLoyaltyEnabled] = useState<boolean>(true);
+
   useEffect(() => {
     const controller = new AbortController();
     const fetchCustomerData = async () => {
@@ -127,6 +130,19 @@ export default function AnalyticsDashboard() {
     fetchCustomerData();
     return () => controller.abort();
   }, [dateRange]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/admin/settings/loyalty', { signal: controller.signal })
+      .then((res) => res.ok ? res.json() : null)
+      .then((result) => {
+        if (result?.data?.is_enabled !== undefined) {
+          setLoyaltyEnabled(result.data.is_enabled);
+        }
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   const handleDateRangeChange = (range: DateRange, preset: DateRangePreset) => {
     setDateRange(range);
@@ -237,13 +253,15 @@ export default function AnalyticsDashboard() {
         </div>
       </AnalyticsErrorBoundary>
 
-      {/* Loyalty */}
-      <AnalyticsErrorBoundary sectionName="Loyalty Analytics">
-        <div className="card bg-white shadow-md p-6">
-          <h2 className="text-xl font-bold text-[#434E54] mb-4">Loyalty Program</h2>
-          <LoyaltyAnalytics dateRange={dateRange} />
-        </div>
-      </AnalyticsErrorBoundary>
+      {/* Loyalty — only shown when loyalty program is enabled */}
+      {loyaltyEnabled && (
+        <AnalyticsErrorBoundary sectionName="Loyalty Analytics">
+          <div className="card bg-white shadow-md p-6">
+            <h2 className="text-xl font-bold text-[#434E54] mb-4">Loyalty Program</h2>
+            <LoyaltyAnalytics dateRange={dateRange} />
+          </div>
+        </AnalyticsErrorBoundary>
+      )}
 
       {/* Report Cards */}
       <AnalyticsErrorBoundary sectionName="Report Card Performance">

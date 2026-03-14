@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { TemplateVariable } from '@/types/template';
 import { Eye, Edit2 } from 'lucide-react';
 
@@ -31,6 +31,15 @@ export function LivePreview({
   });
 
   const [editMode, setEditMode] = useState(false);
+  const [emailShell, setEmailShell] = useState<string | null>(null);
+
+  // Fetch the base email shell once for wrapping HTML previews
+  useEffect(() => {
+    fetch('/api/admin/notifications/templates/email-shell')
+      .then((r) => (r.ok ? r.text() : null))
+      .then((html) => { if (html) setEmailShell(html); })
+      .catch(() => {});
+  }, []);
 
   // Replace variables in content
   const renderContent = useCallback((content: string) => {
@@ -47,10 +56,16 @@ export function LivePreview({
     [subject, renderContent]
   );
 
-  const renderedHtml = useMemo(
-    () => (htmlContent ? renderContent(htmlContent) : ''),
-    [htmlContent, renderContent]
-  );
+  const renderedHtml = useMemo(() => {
+    if (!htmlContent) return '';
+    const content = renderContent(htmlContent);
+    if (!emailShell) return content;
+    return emailShell
+      .replace('{{BASE_URL}}', window.location.origin)
+      .replace('{{MOOD_BANNER}}', '')
+      .replace('{{CONTENT}}', content)
+      .replace('{{UNSUBSCRIBE_LINK}}', '#');
+  }, [htmlContent, renderContent, emailShell]);
 
   const renderedText = useMemo(
     () => (textContent ? renderContent(textContent) : ''),

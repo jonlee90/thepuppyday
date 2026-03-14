@@ -57,6 +57,9 @@ export interface BookingState {
   // Session tracking
   lastActivityTimestamp: number;
 
+  // Admin: send confirmation email
+  sendNotification: boolean;
+
   // Booking result
   bookingId: string | null;
   bookingReference: string | null;
@@ -95,6 +98,9 @@ export interface BookingActions {
   // Admin/Walk-in: Customer and groomer selection
   setSelectedCustomerId: (customerId: string | null) => void;
   setSelectedGroomerId: (groomerId: string | null) => void;
+
+  // Admin: send confirmation email
+  setSendNotification: (value: boolean) => void;
 
   // Booking result
   setBookingResult: (id: string, reference: string) => void;
@@ -137,6 +143,7 @@ const initialState: BookingState = {
   addonsTotal: 0,
   totalPrice: 0,
   lastActivityTimestamp: Date.now(),
+  sendNotification: false,
   bookingId: null,
   bookingReference: null,
 };
@@ -309,6 +316,11 @@ export const useBookingStore = create<BookingStore>()(
           selectedGroomerId: groomerId,
           lastActivityTimestamp: Date.now(),
         });
+      },
+
+      // Admin: send confirmation email
+      setSendNotification: (value: boolean) => {
+        set({ sendNotification: value, lastActivityTimestamp: Date.now() });
       },
 
       // Booking result

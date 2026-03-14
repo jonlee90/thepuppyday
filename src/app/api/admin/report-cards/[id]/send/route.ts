@@ -135,6 +135,12 @@ export async function POST(request: Request, { params }: RouteParams) {
         );
       }
 
+      // Mark as sent immediately so duplicate sends are blocked
+      await (serviceClient as any)
+        .from('report_cards')
+        .update({ sent_at: new Date().toISOString() })
+        .eq('id', reportCard.id);
+
       // Dispatch notification in background (non-blocking)
       after(async () => {
         try {
@@ -142,10 +148,11 @@ export async function POST(request: Request, { params }: RouteParams) {
             '@/lib/notifications/triggers'
           );
 
-          const result = await triggerReportCardCompletion(supabase, {
+          const result = await triggerReportCardCompletion(serviceClient, {
             reportCardId: reportCard.id,
             appointmentId: reportCard.appointment_id,
             customerId: appointment.customer.id,
+            customerName: appointment.customer.first_name || appointment.customer.email,
             customerEmail: appointment.customer.email,
             customerPhone: appointment.customer.phone,
             petName: appointment.pet.name,

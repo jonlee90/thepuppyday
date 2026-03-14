@@ -311,7 +311,8 @@ const CreateAppointmentSchema = z.object({
     last_name: z.string().min(1).max(100),
     // Email is optional for walk-in customers
     email: z.string().email().trim().toLowerCase().optional().or(z.literal('')),
-    phone: z.string().min(10),
+    // Phone required for new customers (used for lookup/creation); optional when id is provided
+    phone: z.union([z.string().min(10), z.literal('')]).optional().default(''),
     isNew: z.boolean().optional(), // Track if this is a new customer from walk-in
   }),
   pet: z.object({

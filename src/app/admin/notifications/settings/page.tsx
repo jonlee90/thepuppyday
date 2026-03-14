@@ -132,13 +132,19 @@ export default function NotificationSettingsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {settings.map((setting) => (
-                  <NotificationSettingCard
-                    key={setting.notification_type}
-                    setting={setting}
-                    onUpdateSetting={handleUpdateSetting}
-                  />
-                ))}
+                {[...settings]
+                  .sort((a, b) => {
+                    const aEnabled = a.email_enabled || a.sms_enabled ? 1 : 0;
+                    const bEnabled = b.email_enabled || b.sms_enabled ? 1 : 0;
+                    return bEnabled - aEnabled;
+                  })
+                  .map((setting) => (
+                    <NotificationSettingCard
+                      key={setting.notification_type}
+                      setting={setting}
+                      onUpdateSetting={handleUpdateSetting}
+                    />
+                  ))}
               </div>
             )}
           </>

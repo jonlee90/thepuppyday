@@ -149,7 +149,7 @@ export async function POST(request: Request) {
       .select(
         `
         *,
-        customer:users!customer_id(id, first_name, last_name, phone),
+        customer:users!customer_id(id, first_name, last_name, email, phone),
         pet:pets!pet_id(id, name),
         service:services!service_id(id, name)
       `
@@ -173,17 +173,20 @@ export async function POST(request: Request) {
     );
 
     for (const entry of entries) {
-      if (!entry.customer?.phone) {
-        console.warn(`No phone number for customer ${entry.customer_id}`);
+      if (!entry.customer?.phone && !(entry.customer as any)?.email) {
+        console.warn(`No phone or email for customer ${entry.customer_id}`);
         notificationsFailed++;
         continue;
       }
 
       try {
+        const customer = entry.customer as { id: string; first_name: string; last_name: string; email?: string; phone: string | null };
         const result = await triggerWaitlistNotification(supabase, {
           waitlistEntryId: entry.id,
           customerId: entry.customer_id,
-          customerPhone: entry.customer.phone,
+          customerPhone: customer.phone,
+          customerEmail: customer.email || undefined,
+          customerName: `${customer.first_name} ${customer.last_name}`,
           petName: entry.pet?.name || 'your pet',
           availableDate: appointment_date,
           availableTime: appointment_time,
@@ -191,7 +194,7 @@ export async function POST(request: Request) {
           expirationHours: response_window_hours,
         });
 
-        if (result.smsSent) {
+        if (result.smsSent || result.emailSent) {
           notificationsSent++;
           // Note: waitlist entry is updated inside triggerWaitlistNotification
         } else if (result.skipped) {

@@ -46,6 +46,8 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
     setGuestInfo,
     selectedGroomerId,
     setSelectedGroomerId,
+    sendNotification,
+    setSendNotification,
     setStep,
     nextStep,
     prevStep,
@@ -154,7 +156,7 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
         appointment_date: selectedDate,
         appointment_time: selectedTimeSlot,
         payment_status: 'pending' as const,
-        send_notification: false, // Don't send notifications for manually created appointments
+        send_notification: sendNotification,
       };
 
       const response = await fetch('/api/admin/appointments', {
@@ -326,6 +328,22 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
             onChange={setSelectedGroomerId}
           />
         </div>
+      )}
+
+      {/* Send confirmation email checkbox (Admin mode only) */}
+      {adminMode && (
+        <label className="flex items-center gap-3 cursor-pointer bg-white rounded-xl border border-[#434E54]/20 p-4">
+          <input
+            type="checkbox"
+            checked={sendNotification}
+            onChange={(e) => setSendNotification(e.target.checked)}
+            className="checkbox checkbox-sm border-[#434E54]/30 [--chkbg:#434E54] [--chkfg:white]"
+          />
+          <div>
+            <span className="text-sm font-medium text-[#434E54]">Send confirmation email</span>
+            <p className="text-xs text-[#434E54]/60 mt-0.5">Customer will receive a booking confirmation email</p>
+          </div>
+        </label>
       )}
 
       {/* Add-ons Selection */}

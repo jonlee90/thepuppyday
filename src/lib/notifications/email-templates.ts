@@ -1,6 +1,6 @@
 /**
- * Phase 8: Email Templates for The Puppy Day Notification System
- * Beautiful, responsive HTML templates with The Puppy Day branding
+ * Phase 8: Email Templates for Puppy Day Notification System
+ * Beautiful, responsive HTML templates with Puppy Day branding
  *
  * Design System: Clean & Elegant Professional
  * Colors: Background #F8EEE5, Primary #434E54, Cards #FFFFFF
@@ -14,11 +14,18 @@ import {
   escapeHtml,
   wrapEmailContent,
   createCard,
-  createButton,
+  createUrgencyBox,
   createContentBox,
   createAlert,
   createInfoRow,
   createImage,
+  createPetHero,
+  createPrimaryCTA,
+  createSecondaryCTA,
+  createDangerCTA,
+  createTimeComparison,
+  createDivider,
+  createTip,
 } from './email-base';
 
 // ============================================================================
@@ -99,14 +106,18 @@ export interface WaitlistNotificationData {
 
 function generateBookingConfirmationContent(data: BookingConfirmationData): string {
   return createCard(`
+    ${createPetHero(data.pet_name, 'Grooming Booked')}
+
     <h2 style="color: #434E54; margin: 0 0 8px 0;">Booking Confirmed!</h2>
     <p style="color: #434E54; margin: 0 0 24px 0;">Hi ${escapeHtml(data.customer_name)}, we're excited to pamper ${escapeHtml(data.pet_name)}!</p>
+
+    ${createDivider()}
 
     ${createContentBox(`
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         ${createInfoRow('Pet', data.pet_name)}
         ${createInfoRow('Service', data.service_name)}
-        ${createInfoRow('Date & Time', `${escapeHtml(data.appointment_date)} at ${escapeHtml(data.appointment_time)}`)}
+        ${createInfoRow('Date & Time', `${data.appointment_date} at ${data.appointment_time}`)}
         <tr>
           <td style="padding: 8px 0; border-top: 2px solid #EAE0D5; padding-top: 16px; margin-top: 8px;">
             <span style="color: #434E54; font-size: 14px;">Total</span><br>
@@ -126,13 +137,13 @@ function generateBookingConfirmationContent(data: BookingConfirmationData): stri
       We can't wait to see ${escapeHtml(data.pet_name)}! Please arrive a few minutes early and bring any special instructions or concerns you may have.
     </p>
 
-    ${createButton('Call Us: (657) 252-2903', 'tel:+16572522903')}
+    ${createPrimaryCTA('Call Us: (657) 252-2903', 'tel:+16572522903')}
   `);
 }
 
 function generateBookingConfirmationText(data: BookingConfirmationData): string {
   return `
-BOOKING CONFIRMED - The Puppy Day
+BOOKING CONFIRMED - Puppy Day
 
 Hi ${escapeHtml(data.customer_name)},
 
@@ -162,7 +173,7 @@ Monday-Saturday, 9:00 AM - 5:00 PM
 export function createBookingConfirmationEmail(data: BookingConfirmationData): EmailTemplate {
   const subject = `Booking Confirmed: ${escapeHtml(data.pet_name)}'s Grooming Appointment`;
   const content = generateBookingConfirmationContent(data);
-  const { html } = wrapEmailContent(content);
+  const { html } = wrapEmailContent(content, { mood: 'celebration' });
   const text = generateBookingConfirmationText(data);
 
   return { html, text, subject };
@@ -174,10 +185,7 @@ export function createBookingConfirmationEmail(data: BookingConfirmationData): E
 
 function generateReportCardContent(data: ReportCardData): string {
   return createCard(`
-    <h2 style="color: #434E54; margin: 0 0 8px 0;">${escapeHtml(data.pet_name)}'s Report Card is Ready!</h2>
-    <p style="color: #434E54; margin: 0 0 24px 0;">
-      Your pup had a wonderful grooming session! Check out the amazing transformation.
-    </p>
+    ${createPetHero(data.pet_name, 'Looking Fresh')}
 
     ${data.before_image_url && data.after_image_url ? `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 24px 0;">
@@ -199,7 +207,12 @@ function generateReportCardContent(data: ReportCardData): string {
     </table>
     ` : ''}
 
-    ${createButton('View Full Report Card', data.report_card_link)}
+    <h2 style="color: #434E54; margin: 0 0 8px 0;">${escapeHtml(data.pet_name)}'s Report Card is Ready!</h2>
+    <p style="color: #434E54; margin: 0 0 24px 0;">
+      Your pup had a wonderful grooming session! Check out the amazing transformation.
+    </p>
+
+    ${createPrimaryCTA('View Full Report Card', data.report_card_link)}
 
     ${createAlert(`
       <p style="color: #434E54; margin: 0 0 12px 0; font-size: 16px; font-weight: 500; text-align: center;">
@@ -211,8 +224,8 @@ function generateReportCardContent(data: ReportCardData): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td align="center">
-            <a href="${process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL || 'https://g.page/r/CbbCwxWs-HjiEAE'}" class="button" style="background-color: #434E54; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block; font-size: 15px;">
-              Leave a Google Review
+            <a href="https://www.yelp.com/writeareview/biz/puppy-day-la-mirada" class="button" style="background-color: #D32323; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block; font-size: 15px;">
+              Leave a Review on Yelp
             </a>
           </td>
         </tr>
@@ -223,7 +236,7 @@ function generateReportCardContent(data: ReportCardData): string {
 
 function generateReportCardText(data: ReportCardData): string {
   return `
-${escapeHtml(data.pet_name).toUpperCase()}'S REPORT CARD IS READY! - The Puppy Day
+${escapeHtml(data.pet_name).toUpperCase()}'S REPORT CARD IS READY! - Puppy Day
 
 Your pup had a wonderful grooming session! Check out the amazing transformation.
 
@@ -231,7 +244,9 @@ VIEW REPORT CARD:
 ${escapeHtml(data.report_card_link)}
 
 LOVED OUR SERVICE?
-We'd be so grateful if you could share your experience with other pet parents! Leave us a Google review to help others discover our grooming services.
+We'd be so grateful if you could share your experience with other pet parents!
+
+Leave a Review on Yelp: https://www.yelp.com/writeareview/biz/puppy-day-la-mirada
 
 Thank you for trusting us with ${escapeHtml(data.pet_name)}!
 
@@ -246,7 +261,7 @@ Monday-Saturday, 9:00 AM - 5:00 PM
 export function createReportCardEmail(data: ReportCardData): EmailTemplate {
   const subject = `${escapeHtml(data.pet_name)}'s Report Card is Ready!`;
   const content = generateReportCardContent(data);
-  const { html } = wrapEmailContent(content);
+  const { html } = wrapEmailContent(content, { mood: 'celebration', moodTitle: 'Looking Fresh!' });
   const text = generateReportCardText(data);
 
   return { html, text, subject };
@@ -258,6 +273,8 @@ export function createReportCardEmail(data: ReportCardData): EmailTemplate {
 
 function generateRetentionReminderContent(data: RetentionReminderData): string {
   return createCard(`
+    ${createPetHero(data.pet_name, 'Time for a Trim')}
+
     <h2 style="color: #434E54; margin: 0 0 8px 0;">Time for ${escapeHtml(data.pet_name)}'s Next Grooming!</h2>
     <p style="color: #434E54; margin: 0 0 24px 0; font-size: 15px;">
       It's been ${String(data.weeks_since_last)} weeks since ${escapeHtml(data.pet_name)}'s last grooming session.
@@ -271,7 +288,7 @@ function generateRetentionReminderContent(data: RetentionReminderData): string {
       <p style="color: #434E54; margin: 0 0 20px 0; font-size: 14px; text-align: center;">
         Schedule now to ensure your preferred time slot
       </p>
-      ${createButton('Book Appointment', data.booking_url)}
+      ${createPrimaryCTA('Book Appointment', data.booking_url)}
     `)}
 
     ${createAlert(`
@@ -284,6 +301,8 @@ function generateRetentionReminderContent(data: RetentionReminderData): string {
       </ul>
     `, 'success')}
 
+    ${createTip('Regular grooming every 6-8 weeks keeps coats healthy and prevents painful matting')}
+
     <p style="color: #434E54; margin: 24px 0 0 0; font-size: 14px; text-align: center;">
       Questions? Call us at <a href="tel:+16572522903" style="color: #434E54; font-weight: 500;">(657) 252-2903</a>
     </p>
@@ -292,7 +311,7 @@ function generateRetentionReminderContent(data: RetentionReminderData): string {
 
 function generateRetentionReminderText(data: RetentionReminderData): string {
   return `
-TIME FOR ${escapeHtml(data.pet_name).toUpperCase()}'S NEXT GROOMING - The Puppy Day
+TIME FOR ${escapeHtml(data.pet_name).toUpperCase()}'S NEXT GROOMING - Puppy Day
 
 It's been ${String(data.weeks_since_last)} weeks since ${escapeHtml(data.pet_name)}'s last grooming session.
 
@@ -322,7 +341,7 @@ Monday-Saturday, 9:00 AM - 5:00 PM
 export function createRetentionReminderEmail(data: RetentionReminderData): EmailTemplate {
   const subject = `Time for ${escapeHtml(data.pet_name)}'s Next Grooming Session`;
   const content = generateRetentionReminderContent(data);
-  const { html } = wrapEmailContent(content);
+  const { html } = wrapEmailContent(content, { mood: 'reminder' });
   const text = generateRetentionReminderText(data);
 
   return { html, text, subject };
@@ -359,7 +378,7 @@ function generatePaymentFailedContent(data: PaymentFailedData): string {
       Please update your payment method or retry the payment to continue enjoying uninterrupted service.
     </p>
 
-    ${createButton('Update Payment Method', data.retry_link)}
+    ${createDangerCTA('Update Payment Method', data.retry_link)}
 
     <div style="background-color: #F9FAFB; border-radius: 8px; padding: 16px; text-align: center; margin-top: 24px;">
       <p style="color: #434E54; margin: 0; font-size: 14px;">
@@ -373,7 +392,7 @@ function generatePaymentFailedContent(data: PaymentFailedData): string {
 
 function generatePaymentFailedText(data: PaymentFailedData): string {
   return `
-PAYMENT ISSUE - The Puppy Day
+PAYMENT ISSUE - Puppy Day
 
 We were unable to process your recent payment. Don't worry—this happens occasionally and is usually easy to resolve.
 
@@ -403,7 +422,7 @@ Monday-Saturday, 9:00 AM - 5:00 PM
 export function createPaymentFailedEmail(data: PaymentFailedData): EmailTemplate {
   const subject = 'Payment Issue for Your Puppy Day Account';
   const content = generatePaymentFailedContent(data);
-  const { html } = wrapEmailContent(content);
+  const { html } = wrapEmailContent(content, { mood: 'warning' });
   const text = generatePaymentFailedText(data);
 
   return { html, text, subject };
@@ -447,7 +466,7 @@ function generatePaymentReminderContent(data: PaymentReminderData): string {
 
 function generatePaymentReminderText(data: PaymentReminderData): string {
   return `
-UPCOMING PAYMENT REMINDER - The Puppy Day
+UPCOMING PAYMENT REMINDER - Puppy Day
 
 This is a friendly reminder that your membership payment will be processed soon.
 
@@ -471,7 +490,7 @@ Monday-Saturday, 9:00 AM - 5:00 PM
 export function createPaymentReminderEmail(data: PaymentReminderData): EmailTemplate {
   const subject = 'Upcoming Payment for Your Puppy Day Membership';
   const content = generatePaymentReminderContent(data);
-  const { html } = wrapEmailContent(content);
+  const { html } = wrapEmailContent(content, { mood: 'info' });
   const text = generatePaymentReminderText(data);
 
   return { html, text, subject };
@@ -515,7 +534,7 @@ function generatePaymentSuccessContent(data: PaymentSuccessData): string {
 
 function generatePaymentSuccessText(data: PaymentSuccessData): string {
   return `
-PAYMENT RECEIVED - The Puppy Day
+PAYMENT RECEIVED - Puppy Day
 
 Thank you for your payment!
 
@@ -539,7 +558,7 @@ Monday-Saturday, 9:00 AM - 5:00 PM
 export function createPaymentSuccessEmail(data: PaymentSuccessData): EmailTemplate {
   const subject = 'Payment Received - Thank You!';
   const content = generatePaymentSuccessContent(data);
-  const { html } = wrapEmailContent(content);
+  const { html } = wrapEmailContent(content, { mood: 'success' });
   const text = generatePaymentSuccessText(data);
 
   return { html, text, subject };
@@ -577,15 +596,7 @@ function generatePaymentFinalNoticeContent(data: PaymentFinalNoticeData): string
       </table>
     `)}
 
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 24px 0;">
-      <tr>
-        <td align="center">
-          <a href="${data.retry_link}" class="button" style="background-color: #EF4444; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; display: inline-block; font-weight: 600;">
-            Update Payment Method Now
-          </a>
-        </td>
-      </tr>
-    </table>
+    ${createDangerCTA('Update Payment Method Now', data.retry_link)}
 
     <div style="background-color: #F9FAFB; border-radius: 8px; padding: 20px;">
       <p style="color: #434E54; margin: 0 0 12px 0; font-weight: 600;">What happens if payment is not received:</p>
@@ -609,7 +620,7 @@ function generatePaymentFinalNoticeContent(data: PaymentFinalNoticeData): string
 
 function generatePaymentFinalNoticeText(data: PaymentFinalNoticeData): string {
   return `
-FINAL PAYMENT NOTICE - The Puppy Day
+FINAL PAYMENT NOTICE - Puppy Day
 
 IMMEDIATE ACTION REQUIRED
 
@@ -644,8 +655,475 @@ Monday-Saturday, 9:00 AM - 5:00 PM
 export function createPaymentFinalNoticeEmail(data: PaymentFinalNoticeData): EmailTemplate {
   const subject = 'Important: Final Payment Notice';
   const content = generatePaymentFinalNoticeContent(data);
-  const { html } = wrapEmailContent(content);
+  const { html } = wrapEmailContent(content, { mood: 'warning' });
   const text = generatePaymentFinalNoticeText(data);
+
+  return { html, text, subject };
+}
+
+// ============================================================================
+// NEW DATA INTERFACES (Tasks 0043-0048)
+// ============================================================================
+
+export interface AppointmentReminderEmailData {
+  customer_name: string;
+  pet_name: string;
+  service_name: string;
+  appointment_date: string; // "Saturday, March 15, 2026"
+  appointment_time: string; // "10:00 AM"
+}
+
+export interface AppointmentCancelledEmailData {
+  customer_name: string;
+  pet_name: string;
+  service_name: string;
+  appointment_date: string;
+  appointment_time: string;
+  cancellation_reason?: string;
+  cancelled_by: 'customer' | 'admin';
+  rebook_url: string;
+}
+
+export interface AppointmentRescheduledEmailData {
+  customer_name: string;
+  pet_name: string;
+  service_name: string;
+  original_date: string;
+  original_time: string;
+  new_date: string;
+  new_time: string;
+}
+
+export interface ReviewRequestEmailData {
+  customer_name: string;
+  pet_name: string;
+  service_name: string;
+  review_url: string;
+  rebook_url: string;
+}
+
+export interface WaitlistAddedEmailData {
+  customer_name: string;
+  pet_name: string;
+  service_name: string;
+  requested_date: string;
+  time_preference: string;
+  position: number;
+}
+
+export interface WaitlistAvailableEmailData {
+  customer_name: string;
+  pet_name: string;
+  available_date: string;
+  available_time: string;
+  claim_link: string;
+  expiration_hours: number;
+}
+
+// ============================================================================
+// 8. APPOINTMENT REMINDER EMAIL
+// ============================================================================
+
+function generateAppointmentReminderContent(data: AppointmentReminderEmailData): string {
+  return createCard(`
+    ${createPetHero(data.pet_name, 'Appointment Tomorrow')}
+
+    <h2 style="color: #434E54; margin: 0 0 8px 0;">See You Tomorrow!</h2>
+    <p style="color: #434E54; margin: 0 0 24px 0;">
+      Hi ${escapeHtml(data.customer_name)}, just a friendly reminder that ${escapeHtml(data.pet_name)}'s grooming appointment is tomorrow!
+    </p>
+
+    ${createContentBox(`
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        ${createInfoRow('Pet', data.pet_name)}
+        ${createInfoRow('Service', data.service_name)}
+        ${createInfoRow('Date', data.appointment_date)}
+        ${createInfoRow('Time', data.appointment_time)}
+      </table>
+    `)}
+
+    ${createAlert(`
+      <p style="margin: 0; color: #434E54; font-size: 14px;">
+        <strong>Arrival Tips:</strong> Please arrive 5-10 minutes early. If you need to cancel, please call us at least 24 hours in advance.
+      </p>
+    `, 'info')}
+
+    ${createPrimaryCTA('Call Us: (657) 252-2903', 'tel:+16572522903')}
+
+    ${createTip('Arrive 5 minutes early for a stress-free check-in')}
+  `);
+}
+
+function generateAppointmentReminderText(data: AppointmentReminderEmailData): string {
+  return `
+APPOINTMENT REMINDER - Puppy Day
+
+Hi ${escapeHtml(data.customer_name)},
+
+Just a friendly reminder that ${escapeHtml(data.pet_name)}'s grooming appointment is tomorrow!
+
+APPOINTMENT DETAILS:
+Pet: ${escapeHtml(data.pet_name)}
+Service: ${escapeHtml(data.service_name)}
+Date: ${escapeHtml(data.appointment_date)}
+Time: ${escapeHtml(data.appointment_time)}
+
+Please arrive 5-10 minutes early. If you need to cancel, please call us at least 24 hours in advance.
+
+Questions? Call us at (657) 252-2903
+
+---
+Puppy Day
+14936 Leffingwell Rd, La Mirada, CA 90638
+(657) 252-2903 | puppyday14936@gmail.com
+Monday-Saturday, 9:00 AM - 5:00 PM
+  `.trim();
+}
+
+export function createAppointmentReminderEmail(data: AppointmentReminderEmailData): EmailTemplate {
+  const subject = `${escapeHtml(data.pet_name)}'s Grooming Appointment Tomorrow`;
+  const content = generateAppointmentReminderContent(data);
+  const { html } = wrapEmailContent(content, { mood: 'reminder' });
+  const text = generateAppointmentReminderText(data);
+
+  return { html, text, subject };
+}
+
+// ============================================================================
+// 9. APPOINTMENT CANCELLED EMAIL
+// ============================================================================
+
+function getCancellationMessage(data: AppointmentCancelledEmailData): string {
+  return data.cancelled_by === 'admin'
+    ? `We're sorry, but we've had to cancel ${escapeHtml(data.pet_name)}'s appointment. Please accept our apologies for any inconvenience.`
+    : `Your appointment has been cancelled as requested.`;
+}
+
+function generateAppointmentCancelledContent(data: AppointmentCancelledEmailData): string {
+  return createCard(`
+    ${createPetHero(data.pet_name, 'Appointment Cancelled')}
+
+    <h2 style="color: #434E54; margin: 0 0 8px 0;">Your Appointment Has Been Cancelled</h2>
+    <p style="color: #434E54; margin: 0 0 24px 0;">
+      Hi ${escapeHtml(data.customer_name)}, ${getCancellationMessage(data)}
+    </p>
+
+    ${data.cancellation_reason ? createAlert(`
+      <p style="margin: 0 0 4px 0; font-weight: 600; color: #434E54; font-size: 14px;">Reason:</p>
+      <p style="margin: 0; color: #434E54; font-size: 14px;">${escapeHtml(data.cancellation_reason)}</p>
+    `, 'warning') : ''}
+
+    ${createContentBox(`
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        ${createInfoRow('Pet', data.pet_name)}
+        ${createInfoRow('Service', data.service_name)}
+        ${createInfoRow('Original Date', data.appointment_date)}
+        ${createInfoRow('Original Time', data.appointment_time)}
+      </table>
+    `)}
+
+    <p style="color: #434E54; margin: 0 0 24px 0; font-size: 15px;">
+      We'd love to see ${escapeHtml(data.pet_name)} again soon! Book a new appointment at your convenience.
+    </p>
+
+    ${createPrimaryCTA('Book a New Appointment', data.rebook_url)}
+  `);
+}
+
+function generateAppointmentCancelledText(data: AppointmentCancelledEmailData): string {
+  return `
+APPOINTMENT CANCELLED - Puppy Day
+
+Hi ${escapeHtml(data.customer_name)},
+
+${getCancellationMessage(data)}
+
+${data.cancellation_reason ? `REASON:\n${escapeHtml(data.cancellation_reason)}\n` : ''}
+CANCELLED APPOINTMENT:
+Pet: ${escapeHtml(data.pet_name)}
+Service: ${escapeHtml(data.service_name)}
+Original Date: ${escapeHtml(data.appointment_date)}
+Original Time: ${escapeHtml(data.appointment_time)}
+
+We'd love to see ${escapeHtml(data.pet_name)} again soon! Book a new appointment:
+${escapeHtml(data.rebook_url)}
+
+Questions? Call us at (657) 252-2903
+
+---
+Puppy Day
+14936 Leffingwell Rd, La Mirada, CA 90638
+(657) 252-2903 | puppyday14936@gmail.com
+Monday-Saturday, 9:00 AM - 5:00 PM
+  `.trim();
+}
+
+export function createAppointmentCancelledEmail(data: AppointmentCancelledEmailData): EmailTemplate {
+  const subject = `${escapeHtml(data.pet_name)}'s Appointment Has Been Cancelled`;
+  const content = generateAppointmentCancelledContent(data);
+  const { html } = wrapEmailContent(content, { mood: 'info' });
+  const text = generateAppointmentCancelledText(data);
+
+  return { html, text, subject };
+}
+
+// ============================================================================
+// 10. APPOINTMENT RESCHEDULED EMAIL
+// ============================================================================
+
+function generateAppointmentRescheduledContent(data: AppointmentRescheduledEmailData): string {
+  return createCard(`
+    <h2 style="color: #434E54; margin: 0 0 8px 0;">Your Appointment Has Been Rescheduled</h2>
+    <p style="color: #434E54; margin: 0 0 24px 0;">
+      Hi ${escapeHtml(data.customer_name)}, ${escapeHtml(data.pet_name)}'s grooming appointment has been moved to a new time.
+    </p>
+
+    ${createTimeComparison(data.original_date, data.original_time, data.new_date, data.new_time)}
+
+    ${createContentBox(`
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        ${createInfoRow('Pet', data.pet_name)}
+        ${createInfoRow('Service', data.service_name)}
+      </table>
+    `)}
+
+    ${createPrimaryCTA('Questions? Call Us', 'tel:+16572522903')}
+  `);
+}
+
+function generateAppointmentRescheduledText(data: AppointmentRescheduledEmailData): string {
+  return `
+APPOINTMENT RESCHEDULED - Puppy Day
+
+Hi ${escapeHtml(data.customer_name)},
+
+${escapeHtml(data.pet_name)}'s grooming appointment has been moved to a new time.
+
+PREVIOUS DATE: ${escapeHtml(data.original_date)} at ${escapeHtml(data.original_time)}
+NEW DATE: ${escapeHtml(data.new_date)} at ${escapeHtml(data.new_time)}
+
+SERVICE: ${escapeHtml(data.service_name)}
+PET: ${escapeHtml(data.pet_name)}
+
+If you have any questions, please call us at (657) 252-2903.
+
+---
+Puppy Day
+14936 Leffingwell Rd, La Mirada, CA 90638
+(657) 252-2903 | puppyday14936@gmail.com
+Monday-Saturday, 9:00 AM - 5:00 PM
+  `.trim();
+}
+
+export function createAppointmentRescheduledEmail(data: AppointmentRescheduledEmailData): EmailTemplate {
+  const subject = `${escapeHtml(data.pet_name)}'s Appointment Has Been Rescheduled`;
+  const content = generateAppointmentRescheduledContent(data);
+  const { html } = wrapEmailContent(content, { mood: 'info' });
+  const text = generateAppointmentRescheduledText(data);
+
+  return { html, text, subject };
+}
+
+// ============================================================================
+// 11. REVIEW REQUEST EMAIL
+// ============================================================================
+
+function generateReviewRequestContent(data: ReviewRequestEmailData): string {
+  return createCard(`
+    ${createPetHero(data.pet_name, 'Thanks for Visiting')}
+
+    <div style="text-align: center; margin: 0 0 24px 0;">
+      <h2 style="color: #434E54; margin: 0 0 8px 0;">We'd Love Your Feedback!</h2>
+      <p style="color: #434E54; margin: 0; font-size: 15px;">
+        Thank you for trusting us with ${escapeHtml(data.pet_name)}. We hope ${escapeHtml(data.pet_name)} is feeling fresh and fabulous!
+      </p>
+    </div>
+
+    <p style="color: #434E54; margin: 0 0 24px 0; font-size: 15px; text-align: center;">
+      If you enjoyed ${escapeHtml(data.pet_name)}'s grooming session, we'd be incredibly grateful if you could share your experience. Your review helps other pet parents discover us!
+    </p>
+
+    ${createPrimaryCTA('Leave a Google Review', data.review_url)}
+
+    <div style="margin: 20px 0;">
+      ${createSecondaryCTA('Book Next Visit', data.rebook_url)}
+    </div>
+
+    <p style="color: #434E54; margin: 24px 0 0 0; font-size: 13px; text-align: center; opacity: 0.7;">
+      Thank you for being a valued part of Puppy Day family!
+    </p>
+  `);
+}
+
+function generateReviewRequestText(data: ReviewRequestEmailData): string {
+  return `
+WE'D LOVE YOUR FEEDBACK! - Puppy Day
+
+Hi ${escapeHtml(data.customer_name)},
+
+Thank you for trusting us with ${escapeHtml(data.pet_name)}. We hope ${escapeHtml(data.pet_name)} is feeling fresh and fabulous!
+
+If you enjoyed ${escapeHtml(data.pet_name)}'s grooming session, we'd be incredibly grateful if you could leave us a Google review. Your review helps other pet parents discover us!
+
+Leave a Google Review:
+${escapeHtml(data.review_url)}
+
+Book Next Visit:
+${escapeHtml(data.rebook_url)}
+
+Thank you for being a valued part of Puppy Day family!
+
+---
+Puppy Day
+14936 Leffingwell Rd, La Mirada, CA 90638
+(657) 252-2903 | puppyday14936@gmail.com
+Monday-Saturday, 9:00 AM - 5:00 PM
+  `.trim();
+}
+
+export function createReviewRequestEmail(data: ReviewRequestEmailData): EmailTemplate {
+  const subject = `How Was ${escapeHtml(data.pet_name)}'s Grooming Experience?`;
+  const content = generateReviewRequestContent(data);
+  const { html } = wrapEmailContent(content, { mood: 'celebration' });
+  const text = generateReviewRequestText(data);
+
+  return { html, text, subject };
+}
+
+// ============================================================================
+// 12. WAITLIST ADDED EMAIL
+// ============================================================================
+
+function generateWaitlistAddedContent(data: WaitlistAddedEmailData): string {
+  const timeLabel = data.time_preference.charAt(0).toUpperCase() + data.time_preference.slice(1);
+
+  return createCard(`
+    <h2 style="color: #434E54; margin: 0 0 8px 0;">You're on the Waitlist!</h2>
+    <p style="color: #434E54; margin: 0 0 24px 0;">
+      Hi ${escapeHtml(data.customer_name)}, ${escapeHtml(data.pet_name)} has been added to the waitlist for ${escapeHtml(data.service_name)}.
+    </p>
+
+    ${createContentBox(`
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        ${createInfoRow('Pet', data.pet_name)}
+        ${createInfoRow('Service', data.service_name)}
+        ${createInfoRow('Requested Date', data.requested_date)}
+        ${createInfoRow('Time Preference', timeLabel === 'Any' ? 'Any Time' : timeLabel)}
+        ${createInfoRow('Queue Position', `#${String(data.position)}`)}
+      </table>
+    `)}
+
+    ${createAlert(`
+      <p style="margin: 0 0 8px 0; font-weight: 600; color: #434E54; font-size: 14px;">How it works:</p>
+      <p style="margin: 0; color: #434E54; font-size: 14px;">
+        We'll notify you by email and text when a spot opens. You'll have 2 hours to claim the slot before it's offered to the next person in line.
+      </p>
+    `, 'info')}
+
+    ${createPrimaryCTA('Call Us: (657) 252-2903', 'tel:+16572522903')}
+  `);
+}
+
+function generateWaitlistAddedText(data: WaitlistAddedEmailData): string {
+  const timeLabel = data.time_preference.charAt(0).toUpperCase() + data.time_preference.slice(1);
+
+  return `
+YOU'RE ON THE WAITLIST! - Puppy Day
+
+Hi ${escapeHtml(data.customer_name)},
+
+${escapeHtml(data.pet_name)} has been added to the waitlist for ${escapeHtml(data.service_name)}.
+
+WAITLIST DETAILS:
+Pet: ${escapeHtml(data.pet_name)}
+Service: ${escapeHtml(data.service_name)}
+Requested Date: ${escapeHtml(data.requested_date)}
+Time Preference: ${timeLabel === 'Any' ? 'Any Time' : timeLabel}
+Queue Position: #${String(data.position)}
+
+HOW IT WORKS:
+We'll notify you by email and text when a spot opens. You'll have 2 hours to claim the slot before it's offered to the next person in line.
+
+Questions? Call us at (657) 252-2903
+
+---
+Puppy Day
+14936 Leffingwell Rd, La Mirada, CA 90638
+(657) 252-2903 | puppyday14936@gmail.com
+Monday-Saturday, 9:00 AM - 5:00 PM
+  `.trim();
+}
+
+export function createWaitlistAddedEmail(data: WaitlistAddedEmailData): EmailTemplate {
+  const subject = `${escapeHtml(data.pet_name)} is on the Waitlist!`;
+  const content = generateWaitlistAddedContent(data);
+  const { html } = wrapEmailContent(content, { mood: 'info' });
+  const text = generateWaitlistAddedText(data);
+
+  return { html, text, subject };
+}
+
+// ============================================================================
+// 13. WAITLIST AVAILABLE EMAIL
+// ============================================================================
+
+function generateWaitlistAvailableContent(data: WaitlistAvailableEmailData): string {
+  const urgencyContent = `
+    <h2 style="color: #434E54; margin: 0 0 16px 0;">A Spot Just Opened Up!</h2>
+    <p style="color: #434E54; margin: 0 0 20px 0; font-size: 15px;">
+      Great news, ${escapeHtml(data.customer_name)}! A grooming slot is available for ${escapeHtml(data.pet_name)}.
+    </p>
+    ${createPrimaryCTA('Claim Your Spot Now', data.claim_link)}
+  `;
+
+  return createCard(`
+    ${createUrgencyBox(urgencyContent, `Expires in ${String(data.expiration_hours)} hours — act fast!`)}
+
+    ${createContentBox(`
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        ${createInfoRow('Available Date', data.available_date)}
+        ${createInfoRow('Available Time', data.available_time)}
+        ${createInfoRow('Pet', data.pet_name)}
+      </table>
+    `)}
+
+    <p style="color: #434E54; margin: 16px 0 0 0; font-size: 14px; text-align: center;">
+      Questions? Call us at <a href="tel:+16572522903" style="color: #434E54; font-weight: 500;">(657) 252-2903</a>
+    </p>
+  `);
+}
+
+function generateWaitlistAvailableText(data: WaitlistAvailableEmailData): string {
+  return `
+A SPOT OPENED UP FOR ${escapeHtml(data.pet_name).toUpperCase()}! - Puppy Day
+
+Great news, ${escapeHtml(data.customer_name)}! A grooming slot is available.
+
+AVAILABLE SLOT:
+Date: ${escapeHtml(data.available_date)}
+Time: ${escapeHtml(data.available_time)}
+Pet: ${escapeHtml(data.pet_name)}
+
+CLAIM YOUR SPOT NOW (expires in ${String(data.expiration_hours)} hours):
+${escapeHtml(data.claim_link)}
+
+Act fast! This slot will be offered to the next person if not claimed in ${String(data.expiration_hours)} hours.
+
+Questions? Call us at (657) 252-2903
+
+---
+Puppy Day
+14936 Leffingwell Rd, La Mirada, CA 90638
+(657) 252-2903 | puppyday14936@gmail.com
+Monday-Saturday, 9:00 AM - 5:00 PM
+  `.trim();
+}
+
+export function createWaitlistAvailableEmail(data: WaitlistAvailableEmailData): EmailTemplate {
+  const subject = `A Spot Opened Up for ${escapeHtml(data.pet_name)}!`;
+  const content = generateWaitlistAvailableContent(data);
+  const { html } = wrapEmailContent(content, { mood: 'urgent' });
+  const text = generateWaitlistAvailableText(data);
 
   return { html, text, subject };
 }
@@ -703,6 +1181,35 @@ export function createRetentionReminderSms(data: RetentionReminderData): string 
   return `Time for ${escapeHtml(data.pet_name)}'s grooming! ${String(data.weeks_since_last)} weeks since last visit. Book: ${escapeHtml(data.booking_url)} - Puppy Day`;
 }
 
+/**
+ * SMS reminder for appointment (using AppointmentReminderEmailData)
+ * Named with "FromEmail" suffix to avoid conflict with existing createAppointmentReminderSms
+ */
+export function createAppointmentReminderSmsFromEmail(data: AppointmentReminderEmailData): string {
+  return `Reminder: ${escapeHtml(data.pet_name)}'s ${escapeHtml(data.service_name)} tomorrow at ${escapeHtml(data.appointment_time)}. Puppy Day (657) 252-2903`;
+}
+
+/**
+ * SMS sent when appointment is cancelled
+ */
+export function createAppointmentCancelledSms(data: { pet_name: string; appointment_date: string; rebook_url: string }): string {
+  return `Your appt for ${escapeHtml(data.pet_name)} on ${escapeHtml(data.appointment_date)} was cancelled. To rebook: ${escapeHtml(data.rebook_url)} - Puppy Day`;
+}
+
+/**
+ * SMS sent when appointment is rescheduled
+ */
+export function createAppointmentRescheduledSms(data: { pet_name: string; new_date: string; new_time: string }): string {
+  return `Rescheduled: ${escapeHtml(data.pet_name)}'s appt moved to ${escapeHtml(data.new_date)} at ${escapeHtml(data.new_time)}. Questions? (657) 252-2903 - Puppy Day`;
+}
+
+/**
+ * SMS sent when customer joins waitlist
+ */
+export function createWaitlistAddedSms(data: { pet_name: string; service_name: string; requested_date: string; position: number }): string {
+  return `${escapeHtml(data.pet_name)} is #${String(data.position)} on the waitlist for ${escapeHtml(data.service_name)} on ${escapeHtml(data.requested_date)}. We'll text you when a spot opens! - Puppy Day`;
+}
+
 // ============================================================================
 // EXPORT ALL TEMPLATE GENERATORS
 // ============================================================================
@@ -715,6 +1222,12 @@ export const emailTemplates = {
   paymentReminder: createPaymentReminderEmail,
   paymentSuccess: createPaymentSuccessEmail,
   paymentFinalNotice: createPaymentFinalNoticeEmail,
+  appointmentReminder: createAppointmentReminderEmail,
+  appointmentCancelled: createAppointmentCancelledEmail,
+  appointmentRescheduled: createAppointmentRescheduledEmail,
+  reviewRequest: createReviewRequestEmail,
+  waitlistAdded: createWaitlistAddedEmail,
+  waitlistAvailable: createWaitlistAvailableEmail,
 };
 
 export const smsTemplates = {
@@ -725,4 +1238,8 @@ export const smsTemplates = {
   bookingConfirmation: createBookingConfirmationSms,
   reportCard: createReportCardSms,
   retentionReminder: createRetentionReminderSms,
+  appointmentReminderFromEmail: createAppointmentReminderSmsFromEmail,
+  appointmentCancelled: createAppointmentCancelledSms,
+  appointmentRescheduled: createAppointmentRescheduledSms,
+  waitlistAdded: createWaitlistAddedSms,
 };

@@ -22,7 +22,6 @@ import {
   X,
   LogOut,
   BarChart3,
-  Megaphone,
   Clock,
   Bell,
   FileText,
@@ -75,12 +74,6 @@ const navItems: NavItem[] = [
     label: 'Staff',
     href: '/admin/staff',
     icon: UserCog,
-    ownerOnly: true,
-  },
-  {
-    label: 'Campaigns',
-    href: '/admin/marketing/campaigns',
-    icon: Megaphone,
     ownerOnly: true,
   },
   {

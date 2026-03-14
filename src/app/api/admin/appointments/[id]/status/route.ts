@@ -7,7 +7,6 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { isTransitionAllowed } from '@/lib/admin/appointment-status';
-import { sendAppointmentNotification } from '@/lib/admin/notifications';
 import type { AppointmentStatus, Appointment, User, Pet, Service } from '@/types/database';
 
 interface RouteParams {
@@ -154,27 +153,37 @@ export async function POST(
               );
             }
           }
-          // Use legacy notification for other statuses (confirmed, cancelled, completed)
-          else if (newStatus === 'confirmed' || newStatus === 'cancelled' || newStatus === 'completed') {
-            await sendAppointmentNotification(
-              supabase,
-              {
-                appointmentId: id,
-                customerId: appointment.customer_id,
-                customerName: `${customer.first_name} ${customer.last_name}`,
-                customerEmail: customer.email,
-                customerPhone: customer.phone,
-                petName: pet.name,
-                serviceName: service.name,
-                scheduledAt: appointment.scheduled_at,
-                status: newStatus,
-                cancellationReason,
-              },
-              {
-                sendEmail,
-                sendSms,
-              }
-            );
+          // Use trigger functions for confirmed and cancelled statuses
+          else if (newStatus === 'confirmed') {
+            const { triggerBookingConfirmation } = await import('@/lib/notifications/triggers');
+            const totalPrice = (appointment as any).total_price ?? 0;
+            await triggerBookingConfirmation(supabase, {
+              appointmentId: id,
+              customerId: appointment.customer_id,
+              customerName: `${customer.first_name} ${customer.last_name}`,
+              customerEmail: customer.email,
+              customerPhone: customer.phone,
+              petName: pet.name,
+              serviceName: service.name,
+              scheduledAt: appointment.scheduled_at,
+              totalPrice,
+            });
+          } else if (newStatus === 'cancelled') {
+            const { triggerAppointmentCancelled } = await import('@/lib/notifications/triggers');
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+            await triggerAppointmentCancelled(supabase, {
+              appointmentId: id,
+              customerId: appointment.customer_id,
+              customerName: `${customer.first_name} ${customer.last_name}`,
+              customerEmail: customer.email,
+              customerPhone: customer.phone,
+              petName: pet.name,
+              serviceName: service.name,
+              scheduledAt: appointment.scheduled_at,
+              cancellationReason,
+              cancelledBy: 'admin',
+              rebookUrl: `${baseUrl}/booking`,
+            });
           }
         }
       }
@@ -276,7 +285,7 @@ export async function POST(
                 '@/lib/notifications/triggers'
               );
 
-              const statusResult = await triggerAppointmentStatus(supabase, {
+              const statusResult = await triggerAppointmentStatus(serviceClient, {
                 appointmentId: id,
                 customerId: appointment.customer_id,
                 customerPhone: customer.phone,
@@ -288,28 +297,39 @@ export async function POST(
               if (!statusResult.success && !statusResult.skipped) {
                 console.error('[Admin API] Status notification failed:', statusResult.errors);
               }
+
             }
-            // Use legacy notification for other statuses (confirmed, cancelled)
-            else if (newStatus === 'confirmed' || newStatus === 'cancelled') {
-              await sendAppointmentNotification(
-                supabase,
-                {
-                  appointmentId: id,
-                  customerId: appointment.customer_id,
-                  customerName: `${customer.first_name} ${customer.last_name}`,
-                  customerEmail: customer.email,
-                  customerPhone: customer.phone,
-                  petName: pet.name,
-                  serviceName: service.name,
-                  scheduledAt: appointment.scheduled_at,
-                  status: newStatus,
-                  cancellationReason,
-                },
-                {
-                  sendEmail,
-                  sendSms,
-                }
-              );
+            // Use trigger functions for confirmed and cancelled statuses
+            else if (newStatus === 'confirmed') {
+              const { triggerBookingConfirmation } = await import('@/lib/notifications/triggers');
+              const totalPrice = (appointment as any).total_price ?? 0;
+              await triggerBookingConfirmation(serviceClient, {
+                appointmentId: id,
+                customerId: appointment.customer_id,
+                customerName: `${customer.first_name} ${customer.last_name}`,
+                customerEmail: customer.email,
+                customerPhone: customer.phone,
+                petName: pet.name,
+                serviceName: service.name,
+                scheduledAt: appointment.scheduled_at,
+                totalPrice,
+              });
+            } else if (newStatus === 'cancelled') {
+              const { triggerAppointmentCancelled } = await import('@/lib/notifications/triggers');
+              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+              await triggerAppointmentCancelled(serviceClient, {
+                appointmentId: id,
+                customerId: appointment.customer_id,
+                customerName: `${customer.first_name} ${customer.last_name}`,
+                customerEmail: customer.email,
+                customerPhone: customer.phone,
+                petName: pet.name,
+                serviceName: service.name,
+                scheduledAt: appointment.scheduled_at,
+                cancellationReason,
+                cancelledBy: 'admin',
+                rebookUrl: `${baseUrl}/booking`,
+              });
             }
           }
         } catch (notifError) {

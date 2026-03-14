@@ -7,8 +7,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { NotificationResult } from '../types';
 import { sendNotification } from '../index';
 import {
-  createWaitlistNotificationSms,
+  createWaitlistAvailableEmail,
   type WaitlistNotificationData,
+  type WaitlistAvailableEmailData,
 } from '../email-templates';
 import { format } from 'date-fns';
 
@@ -20,6 +21,10 @@ export interface WaitlistNotificationTriggerData {
   waitlistEntryId: string;
   customerId: string;
   customerPhone: string | null;
+  /** Optional email address — when provided, email is dispatched alongside SMS */
+  customerEmail?: string;
+  /** Optional customer name — used in email greeting when customerEmail is provided */
+  customerName?: string;
   petName: string;
   availableDate: string; // ISO date string
   availableTime: string; // Time string (e.g., "10:00")
@@ -31,7 +36,9 @@ export interface WaitlistNotificationTriggerData {
 export interface WaitlistNotificationTriggerResult {
   success: boolean;
   smsSent: boolean;
+  emailSent: boolean;
   smsResult?: NotificationResult;
+  emailResult?: NotificationResult;
   skipped: boolean;
   skipReason?: string;
   errors: string[];
@@ -75,20 +82,23 @@ export async function triggerWaitlistNotification(
 ): Promise<WaitlistNotificationTriggerResult> {
   const errors: string[] = [];
   let smsSent = false;
+  let emailSent = false;
   let smsResult: NotificationResult | undefined;
+  let emailResult: NotificationResult | undefined;
 
   console.log(
     `[WaitlistNotification] Triggering notification for waitlist entry ${data.waitlistEntryId}`
   );
 
-  // Check if phone number is available
-  if (!data.customerPhone) {
-    console.log('[WaitlistNotification] Skipping - no phone number available');
+  // Check if we have at least one channel available
+  if (!data.customerPhone && !data.customerEmail) {
+    console.log('[WaitlistNotification] Skipping - no phone or email available');
     return {
       success: true,
       smsSent: false,
+      emailSent: false,
       skipped: true,
-      skipReason: 'No phone number available',
+      skipReason: 'No phone number or email available',
       errors: [],
     };
   }
@@ -99,53 +109,117 @@ export async function triggerWaitlistNotification(
   // Format date and time for template
   const formattedDate = format(new Date(data.availableDate), 'M/d');
   const formattedTime = data.availableTime;
+  const expirationHours = data.expirationHours || DEFAULT_EXPIRATION_HOURS;
 
-  const templateData: WaitlistNotificationData = {
+  const smsTemplateData: WaitlistNotificationData = {
     available_date: formattedDate,
     available_time: formattedTime,
     claim_link: claimLink,
   };
 
-  // Send SMS notification
-  try {
-    console.log(
-      `[WaitlistNotification] Sending SMS to ${data.customerPhone} for slot ${formattedDate} at ${formattedTime}`
+  // Build notification promises for parallel dispatch
+  const notificationPromises: Promise<void>[] = [];
+
+  // SMS notification (if phone available)
+  if (data.customerPhone) {
+    notificationPromises.push(
+      (async () => {
+        try {
+          console.log(
+            `[WaitlistNotification] Sending SMS to ${data.customerPhone} for slot ${formattedDate} at ${formattedTime}`
+          );
+
+          smsResult = await sendNotification(supabase, {
+            type: 'waitlist_slot_available',
+            channel: 'sms',
+            recipient: data.customerPhone!,
+            templateData: smsTemplateData,
+            userId: data.customerId,
+          });
+
+          if (smsResult.success) {
+            smsSent = true;
+            console.log(
+              `[WaitlistNotification] SMS sent successfully (log ID: ${smsResult.logId})`
+            );
+          } else {
+            errors.push(`SMS failed: ${smsResult.error}`);
+            console.error(`[WaitlistNotification] SMS failed: ${smsResult.error}`);
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`SMS error: ${errorMessage}`);
+          console.error('[WaitlistNotification] SMS exception:', error);
+        }
+      })()
     );
+  }
 
-    smsResult = await sendNotification(supabase, {
-      type: 'waitlist_slot_available',
-      channel: 'sms',
-      recipient: data.customerPhone,
-      templateData,
-      userId: data.customerId,
-    });
+  // Email notification (if email available)
+  if (data.customerEmail) {
+    notificationPromises.push(
+      (async () => {
+        try {
+          console.log(
+            `[WaitlistNotification] Sending email to ${data.customerEmail}`
+          );
 
-    if (smsResult.success) {
-      smsSent = true;
-      console.log(
-        `[WaitlistNotification] ✅ SMS sent successfully (log ID: ${smsResult.logId})`
-      );
+          const emailTemplateData: WaitlistAvailableEmailData = {
+            customer_name: data.customerName || 'Valued Customer',
+            pet_name: data.petName,
+            available_date: formattedDate,
+            available_time: formattedTime,
+            claim_link: claimLink,
+            expiration_hours: expirationHours,
+          };
 
-      // Update waitlist entry status
-      await updateWaitlistEntryStatus(
-        supabase,
-        data.waitlistEntryId,
-        data.expirationHours || DEFAULT_EXPIRATION_HOURS
-      );
-    } else {
-      errors.push(`SMS failed: ${smsResult.error}`);
-      console.error(`[WaitlistNotification] ❌ SMS failed: ${smsResult.error}`);
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    errors.push(`SMS error: ${errorMessage}`);
-    console.error('[WaitlistNotification] SMS exception:', error);
+          const emailContent = createWaitlistAvailableEmail(emailTemplateData);
+
+          emailResult = await sendNotification(supabase, {
+            type: 'waitlist_available',
+            channel: 'email',
+            recipient: data.customerEmail,
+            templateData: {
+              ...emailTemplateData,
+              _preRenderedHtml: emailContent.html,
+              _preRenderedText: emailContent.text,
+              _preRenderedSubject: emailContent.subject,
+            },
+            userId: data.customerId,
+          });
+
+          if (emailResult.success) {
+            emailSent = true;
+            console.log(
+              `[WaitlistNotification] Email sent successfully (log ID: ${emailResult.logId})`
+            );
+          } else {
+            errors.push(`Email failed: ${emailResult.error}`);
+            console.error(`[WaitlistNotification] Email failed: ${emailResult.error}`);
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`Email error: ${errorMessage}`);
+          console.error('[WaitlistNotification] Email exception:', error);
+        }
+      })()
+    );
+  }
+
+  // Wait for all notifications to complete in parallel
+  await Promise.all(notificationPromises);
+
+  // Update waitlist entry status if at least one notification succeeded
+  if (smsSent || emailSent) {
+    await updateWaitlistEntryStatus(supabase, data.waitlistEntryId, expirationHours);
   }
 
   return {
-    success: smsSent,
+    success: smsSent || emailSent,
     smsSent,
+    emailSent,
     smsResult,
+    emailResult,
     skipped: false,
     errors,
   };
@@ -269,7 +343,7 @@ export async function triggerWaitlistNotificationBatch(
     results.push(...notificationResults);
 
     // Calculate summary
-    const sent = results.filter((r) => r.result.smsSent).length;
+    const sent = results.filter((r) => r.result.smsSent || r.result.emailSent).length;
     const failed = results.filter((r) => !r.result.success && !r.result.skipped).length;
     const skipped = results.filter((r) => r.result.skipped).length;
 

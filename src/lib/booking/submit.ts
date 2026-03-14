@@ -294,7 +294,7 @@ async function submitAdminAppointment(
     appointment_time: selectedTimeSlot,
     notes: null,
     payment_status: 'pending',
-    send_notification: true,
+    send_notification: bookingStore.sendNotification,
     source: 'admin',
   };
 

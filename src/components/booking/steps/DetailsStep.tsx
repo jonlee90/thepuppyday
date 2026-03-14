@@ -375,6 +375,15 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
           {/* Login Form */}
           {viewMode === 'login' && (
             <div className="space-y-3 p-4 bg-white rounded-xl border border-[#E5E5E5]">
+              <div className="text-center">
+                <button
+                  onClick={() => setViewMode('register')}
+                  className="text-sm text-[#434E54] hover:underline"
+                >
+                  Don&apos;t have an account? <span className="font-semibold">Register</span>
+                </button>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-[#434E54] mb-2">
                   Email <span className="text-[#EF4444]">*</span>
@@ -424,21 +433,21 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
                   </>
                 )}
               </button>
-
-              <div className="text-center">
-                <button
-                  onClick={() => setViewMode('register')}
-                  className="text-sm text-[#434E54] hover:underline"
-                >
-                  Don&apos;t have an account? <span className="font-semibold">Register</span>
-                </button>
-              </div>
             </div>
           )}
 
           {/* Register Form */}
           {viewMode === 'register' && (
             <div className="space-y-3 p-4 bg-white rounded-xl border border-[#E5E5E5]">
+              <div className="text-center">
+                <button
+                  onClick={() => setViewMode('login')}
+                  className="text-sm text-[#434E54] hover:underline"
+                >
+                  Already have an account? <span className="font-semibold">Log In</span>
+                </button>
+              </div>
+
               {renderNewCustomerFormFields()}
 
               <button
@@ -458,15 +467,6 @@ export function DetailsStep({ mode = 'customer', section }: DetailsStepProps) {
                   </>
                 )}
               </button>
-
-              <div className="text-center">
-                <button
-                  onClick={() => setViewMode('login')}
-                  className="text-sm text-[#434E54] hover:underline"
-                >
-                  Already have an account? <span className="font-semibold">Log In</span>
-                </button>
-              </div>
             </div>
           )}
 

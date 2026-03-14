@@ -165,13 +165,13 @@ export function getNotificationTypeLabel(type: string): string {
     // Actual DB notification types
     booking_confirmation: 'Booking Confirmation',
     appointment_reminder: 'Appointment Reminder',
+    appointment_rescheduled: 'Appointment Rescheduled',
+    review_request: 'Review Request',
     payment_failed: 'Payment Failed',
     payment_reminder: 'Payment Reminder',
     payment_success: 'Payment Success',
     report_card_ready: 'Report Card Ready',
     retention_reminder: 'Retention Reminder',
-    status_checked_in: 'Checked In',
-    status_ready: 'Ready for Pickup',
     waitlist_available: 'Waitlist Available',
     // Legacy/additional types
     appointment_confirmed: 'Appointment Confirmed',

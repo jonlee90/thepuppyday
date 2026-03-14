@@ -59,12 +59,20 @@ export default function TemplatesPage() {
       filtered = filtered.filter((t) => t.channel === filters.channel);
     }
 
-    // Status filter
+    // Status filter — a template is effectively active only if both is_active and channel_enabled
     if (filters.status !== 'all') {
-      filtered = filtered.filter((t) =>
-        filters.status === 'active' ? t.is_active : !t.is_active
-      );
+      filtered = filtered.filter((t) => {
+        const effectivelyActive = t.is_active && t.channel_enabled;
+        return filters.status === 'active' ? effectivelyActive : !effectivelyActive;
+      });
     }
+
+    // Sort: effectively active templates first, disabled at the bottom
+    filtered.sort((a, b) => {
+      const aActive = a.is_active && a.channel_enabled ? 1 : 0;
+      const bActive = b.is_active && b.channel_enabled ? 1 : 0;
+      return bActive - aActive;
+    });
 
     return filtered;
   }, [templates, filters]);

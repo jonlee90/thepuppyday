@@ -1,8 +1,8 @@
 # The Puppy Day - Master Architecture Documentation
 
-> **Version**: 1.5
-> **Last Updated**: 2026-03-10
-> **Status**: Production-Ready (Phases 1-6, 8-9, 11 Complete | Admin Dashboard Redesign Complete | Phase 7 Pending | Phase 10 In Progress)
+> **Version**: 1.6
+> **Last Updated**: 2026-03-14
+> **Status**: Production-Ready (Phases 1-6, 8-9, 11 Complete | Admin Dashboard Redesign Complete | Notification Templates Redesign In Progress | Phase 7 Pending | Phase 10 In Progress)
 
 ## Table of Contents
 
@@ -62,7 +62,10 @@
 | 9 | Admin Settings | Completed | Business settings, staff management, site content, banners |
 | 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), AdminButton component (done), AppointmentDetailModal redesign (done), settings hierarchy reorganization (done), custom swimlane calendar with overlap layout (done), StaffForm edit data loading fix (done), comprehensive testing pending |
 | 11 | Calendar Error Recovery | Completed | Retry queue, error recovery UI, quota tracking, auto-pause system |
+| SEO | Multi-Page SEO Architecture | Completed | Blog infrastructure with SEO articles, location-based `/dog-grooming/[city]` pages, individual `/services/[slug]` pages, standalone about/contact/gallery/reviews/faq/privacy/terms/accessibility pages, renamed `/areas` to `/dog-grooming` for keyword ranking |
+| PWA | Progressive Web App | Completed | Serwist/Turbopack PWA integration, service worker, offline support |
 | F | Admin Dashboard Redesign | Completed | Replaced DashboardStats/TodayAppointments/PendingAppointments with RevenueOverview, DashboardTimeline, ProductivityWidget, WaitlistWidget, PendingActionsWidget; useDashboardData hook; revenue-overview API endpoint; QuickAccess removed; PendingActionsWidget moved full-width above grid |
+| NT | Notification Templates Redesign | In Progress | Email mood system (celebration/reminder/urgent/info/warning/success), HTML email base redesign with charcoal header and gold accents, 7 reusable component functions, pill-style CTAs, all 13 email templates updated with mood banners and pet hero sections, 5 new notification triggers |
 
 ---
 
@@ -153,6 +156,13 @@
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | **Swiper** | 12.0.3 | Modern touch slider for image galleries |
+
+### Progressive Web App
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **@serwist/turbopack** | ^9.5.6 | PWA service worker integration for Next.js 16 with Turbopack |
+| **serwist** | ^9.5.6 | Service worker runtime and caching strategies |
 
 ### Testing
 
@@ -1039,6 +1049,26 @@ interface NotificationSettings {
   updated_at: string;
 }
 ```
+
+**Active Notification Types** (post-migration `20260314_cleanup_unused_notification_types.sql`):
+
+| Type | Email | SMS | Description |
+|------|-------|-----|-------------|
+| `booking_confirmation` | Yes | Yes | Appointment booked confirmation |
+| `appointment_reminder` | Yes | Yes | Reminder before appointment |
+| `appointment_cancelled` | Yes | No | Appointment cancelled |
+| `appointment_rescheduled` | Yes | Yes | Appointment rescheduled |
+| `review_request` | Yes | No | Post-appointment review request |
+| `waitlist_added` | Yes | Yes | Added to waitlist confirmation |
+| `waitlist_available` | Yes | Yes | Waitlist slot opened |
+| `report_card_ready` | Yes | Yes | Grooming report card available |
+| `retention_reminder` | Yes | Yes | Re-booking reminder |
+| `payment_failed` | Yes | No | Payment failure notice |
+| `payment_reminder` | Yes | No | Payment due reminder |
+| `payment_success` | Yes | No | Payment confirmed |
+| `payment_final_notice` | Yes | No | Final payment warning |
+
+**Removed types** (migration `20260314_cleanup_unused_notification_types.sql`): `status_checked_in`, `status_in_progress`, `status_completed`, `status_ready`, `membership_activated`, `membership_renewed`, `membership_expiring`, `membership_cancelled`
 
 #### 24. `notification_template_history` Table
 Version history for notification templates (read-only audit trail).

@@ -4,7 +4,7 @@
 > **Status**: Phases 5, 6, 8, 9, 11 Complete | Phase 7 Pending (Payments) | Admin Dashboard Redesign Complete
 > **Base Path**: `admin/`
 > **Authentication**: Required (admin or groomer role)
-> **Last Updated**: 2026-03-10
+> **Last Updated**: 2026-03-14
 
 ## Overview
 
@@ -190,8 +190,9 @@ Create/edit grooming report cards with before/after photos, groomer notes, and h
 - Account activation status
 
 **Customer Profile** (`/admin/customers/[id]`):
-- Personal information, pets, appointment history
+- Personal information, pets (with inline edit via PetEditModal), appointment history
 - Customer flags/notes, account activation controls
+- Pet CRUD via `/api/admin/customers/[id]/pets` (GET) and `/api/admin/customers/[id]/pets/[petId]` (PATCH)
 
 ---
 

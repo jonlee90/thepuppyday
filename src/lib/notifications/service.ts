@@ -18,6 +18,7 @@ import type {
   RetryConfig,
 } from './types';
 import { createNotificationQueries } from './query-helpers';
+import { wrapEmailContent } from './email-base';
 import { classifyError, calculateRetryTimestamp, DEFAULT_RETRY_CONFIG } from './errors';
 import { createRetryManager } from './retry-manager';
 
@@ -392,7 +393,7 @@ export class DefaultNotificationService implements NotificationService {
       : undefined;
 
     const html = template.html_template
-      ? this.templateEngine.render(template.html_template, data)
+      ? wrapEmailContent(this.templateEngine.render(template.html_template, data)).html
       : undefined;
 
     const text = this.templateEngine.render(template.text_template, data);

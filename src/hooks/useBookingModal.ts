@@ -4,13 +4,23 @@
  */
 
 import { create } from 'zustand';
+import type { Pet } from '@/types/database';
 
 export type BookingModalMode = 'customer' | 'admin' | 'walkin';
+
+export interface PreSelectedCustomerInfo {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
 
 export interface BookingModalOptions {
   mode: BookingModalMode;
   preSelectedServiceId?: string;
   preSelectedCustomerId?: string;
+  preSelectedCustomerInfo?: PreSelectedCustomerInfo;
+  preSelectedPet?: Pet;
   initialStep?: number;
   onSuccess?: (appointmentId: string) => void;
 }
@@ -20,6 +30,8 @@ interface BookingModalState {
   mode: BookingModalMode;
   preSelectedServiceId: string | null;
   preSelectedCustomerId: string | null;
+  preSelectedCustomerInfo: PreSelectedCustomerInfo | null;
+  preSelectedPet: Pet | null;
   initialStep: number;
   onSuccessCallback: ((appointmentId: string) => void) | null;
   canClose: boolean; // False during submission
@@ -40,6 +52,8 @@ export const useBookingModalStore = create<BookingModalStore>((set, get) => ({
   mode: 'customer',
   preSelectedServiceId: null,
   preSelectedCustomerId: null,
+  preSelectedCustomerInfo: null,
+  preSelectedPet: null,
   initialStep: 0,
   onSuccessCallback: null,
   canClose: true,
@@ -51,6 +65,8 @@ export const useBookingModalStore = create<BookingModalStore>((set, get) => ({
       mode: options.mode,
       preSelectedServiceId: options.preSelectedServiceId || null,
       preSelectedCustomerId: options.preSelectedCustomerId || null,
+      preSelectedCustomerInfo: options.preSelectedCustomerInfo || null,
+      preSelectedPet: options.preSelectedPet || null,
       initialStep: options.initialStep ?? 0,
       onSuccessCallback: options.onSuccess || null,
       canClose: true,
@@ -64,6 +80,8 @@ export const useBookingModalStore = create<BookingModalStore>((set, get) => ({
         isOpen: false,
         preSelectedServiceId: null,
         preSelectedCustomerId: null,
+        preSelectedCustomerInfo: null,
+        preSelectedPet: null,
         onSuccessCallback: null,
       });
     }
@@ -92,6 +110,9 @@ export function useBookingModal() {
     mode: store.mode,
     preSelectedServiceId: store.preSelectedServiceId,
     preSelectedCustomerId: store.preSelectedCustomerId,
+    preSelectedCustomerInfo: store.preSelectedCustomerInfo,
+    preSelectedPet: store.preSelectedPet,
+    initialStep: store.initialStep,
     canClose: store.canClose,
     open: store.openModal,
     close: store.closeModal,

@@ -288,7 +288,7 @@ export function useAuth(): UseAuthReturn {
 
       try {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: `${window.location.origin}/api/auth/callback?next=/reset-password`,
         });
         return { error: error || null };
       } catch (error) {
