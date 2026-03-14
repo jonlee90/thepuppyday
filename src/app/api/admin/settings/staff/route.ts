@@ -389,6 +389,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Send invitation email so staff member can set up their account
+    const { error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
+      data: { first_name, last_name, role },
+    });
+
+    if (inviteError) {
+      console.error('[Staff API] Failed to send invite email:', inviteError);
+      // Don't fail the request — user row was created, just log the error
+    }
 
     // Log audit entry (non-blocking)
     after(() => logSettingsChange(
