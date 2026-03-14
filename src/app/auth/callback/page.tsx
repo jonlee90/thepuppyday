@@ -5,19 +5,20 @@
  * Handles Supabase implicit-flow tokens delivered via hash fragment.
  * Used by: invite links, magic links, OAuth redirects.
  *
- * The Supabase client auto-processes hash tokens and clears the hash,
- * so we capture the type immediately before it's gone, then listen for
- * the auth state change to confirm session is established.
+ * Flow:
+ * 1. Capture hash params before Supabase clears them
+ * 2. Sign out any stale session (prevents old JWT conflicts)
+ * 3. Explicitly set the new session from hash tokens
+ * 4. Redirect based on type (invite → reset-password, else → next)
  */
 
 import { useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-// Capture hash params immediately — Supabase clears the hash on init
-const initialHashParams = typeof window !== 'undefined'
-  ? new URLSearchParams(window.location.hash.substring(1))
-  : new URLSearchParams();
+// Capture hash params immediately — Supabase may clear the hash on init
+const initialHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
+const initialHashParams = new URLSearchParams(initialHash);
 
 function AuthCallbackInner() {
   const router = useRouter();
@@ -26,51 +27,53 @@ function AuthCallbackInner() {
 
   useEffect(() => {
     if (handled.current) return;
+    handled.current = true;
 
     const supabase = createClient();
     const next = searchParams.get('next') || '/dashboard';
     const type = initialHashParams.get('type');
+    const accessToken = initialHashParams.get('access_token');
+    const refreshToken = initialHashParams.get('refresh_token');
 
-    // Supabase auto-sets session from hash — listen for it
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (handled.current) return;
-      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session) {
-        handled.current = true;
-        subscription.unsubscribe();
+    const redirect = (destination: string) => {
+      router.replace(destination);
+    };
+
+    async function handleCallback() {
+      // If we have tokens in the hash, explicitly set the session
+      // Sign out first to clear any stale session from localStorage
+      if (accessToken && refreshToken) {
+        await supabase.auth.signOut({ scope: 'local' });
+
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (error) {
+          console.error('[AuthCallback] Failed to set session:', error.message);
+          redirect('/login?error=invalid_link');
+          return;
+        }
 
         if (type === 'invite') {
-          router.replace('/reset-password');
+          redirect('/reset-password');
         } else {
-          router.replace(next);
+          redirect(next);
         }
+        return;
       }
-    });
 
-    // Fallback: if already signed in (session exists before event fires)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (handled.current || !session) return;
-      handled.current = true;
-      subscription.unsubscribe();
-
-      if (type === 'invite') {
-        router.replace('/reset-password');
+      // No hash tokens — check for existing session (e.g. PKCE flow)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        redirect(next);
       } else {
-        router.replace(next);
+        redirect('/login?error=invalid_link');
       }
-    });
+    }
 
-    // Timeout fallback — if nothing happens after 5s, redirect to login
-    const timeout = setTimeout(() => {
-      if (handled.current) return;
-      handled.current = true;
-      subscription.unsubscribe();
-      router.replace('/login?error=invalid_link');
-    }, 5000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
+    handleCallback();
   }, [router, searchParams]);
 
   return (
