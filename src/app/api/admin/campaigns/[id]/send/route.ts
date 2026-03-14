@@ -4,6 +4,8 @@
  * Task 0046: Send campaign to audience
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

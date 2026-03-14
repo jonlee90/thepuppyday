@@ -4,6 +4,8 @@
  * Task 0010: Return connection status and metadata
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { AppSupabaseClient } from '@/lib/supabase/server';

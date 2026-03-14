@@ -16,6 +16,8 @@ export const metadata: Metadata = {
  * Admin dashboard for creating, viewing, and managing marketing campaigns.
  * Supports email, SMS, and multi-channel campaigns with customer segmentation.
  */
+
+export const dynamic = 'force-dynamic';
 export default async function CampaignsPage() {
   const supabase = await createServerSupabaseClient();
 

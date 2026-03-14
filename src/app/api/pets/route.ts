@@ -4,6 +4,8 @@
  * POST /api/pets - Create a new pet profile
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { petFormSchema } from '@/lib/booking/validation';

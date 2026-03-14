@@ -5,6 +5,8 @@
  * DELETE /api/admin/settings/staff/[id] - Soft delete staff member (set is_active=false)
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

@@ -3,6 +3,8 @@
  * Receives push notifications from Google Calendar when events change
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, type AppSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { processWebhookNotification } from '@/lib/calendar/webhook/processor';

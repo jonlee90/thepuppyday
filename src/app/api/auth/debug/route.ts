@@ -3,6 +3,8 @@
  * Access at: http://localhost:3001/api/auth/debug
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 

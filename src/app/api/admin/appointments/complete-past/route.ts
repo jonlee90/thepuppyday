@@ -3,6 +3,8 @@
  * POST /api/admin/appointments/complete-past
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 

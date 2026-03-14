@@ -6,6 +6,8 @@
  * PUT /api/admin/settings/loyalty/referral - Update referral program settings
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

@@ -4,6 +4,8 @@
  * Called daily by Vercel Cron or external scheduler
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { renewExpiringWebhooks } from '@/lib/calendar/webhook/renewal';

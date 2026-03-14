@@ -7,6 +7,8 @@
  * Related data (pets, appointments, flags) is fetched only for the current page.
  */
 
+export const dynamic = 'force-dynamic';
+
 /* eslint-disable @typescript-eslint/no-explicit-any -- Supabase/mock client type compat */
 
 import { NextRequest, NextResponse } from 'next/server';

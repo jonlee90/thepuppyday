@@ -3,6 +3,8 @@
  * PATCH /api/customer/profile - Update profile info (name, phone)
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { z } from 'zod';

@@ -10,6 +10,8 @@
  * - Header: Authorization: Bearer <CRON_SECRET>
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { processBreedReminders } from '@/lib/admin/breed-reminder-scheduler';

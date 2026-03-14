@@ -2,6 +2,8 @@
  * GET /api/services - Fetch active grooming services with size-based pricing
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 

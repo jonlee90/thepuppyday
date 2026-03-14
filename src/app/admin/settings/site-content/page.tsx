@@ -5,6 +5,8 @@
  * Server Component - Fetches initial settings and renders client component
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { SiteContentClient } from './client';

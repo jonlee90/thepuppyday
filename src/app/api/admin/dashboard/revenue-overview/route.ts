@@ -7,6 +7,8 @@
  * createServiceRoleClient() for data queries (bypasses RLS).
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { createServerSupabaseClient } from '@/lib/supabase/server';

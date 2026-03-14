@@ -4,6 +4,8 @@
  * Task 0031: Execute calendar event import
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import type { AppSupabaseClient } from '@/lib/supabase/server';

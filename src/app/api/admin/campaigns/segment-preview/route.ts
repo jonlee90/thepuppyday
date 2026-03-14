@@ -7,6 +7,8 @@ import type { SegmentCriteria, SegmentPreview } from '@/types/marketing';
  * POST /api/admin/campaigns/segment-preview
  * Preview the audience for a campaign based on segment criteria
  */
+
+export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();

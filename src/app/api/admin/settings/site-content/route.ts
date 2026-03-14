@@ -4,6 +4,8 @@
  * PUT /api/admin/settings/site-content - Update a specific site content section
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

@@ -2,6 +2,8 @@
  * POST /api/waitlist - Add customer to waitlist for a date/service
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { z } from 'zod';

@@ -4,6 +4,8 @@
  * Returns calendar sync status for multiple appointments
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { AppSupabaseClient } from '@/lib/supabase/server';

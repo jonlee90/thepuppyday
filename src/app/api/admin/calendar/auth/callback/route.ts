@@ -4,6 +4,8 @@
  * Task 0008: Process OAuth callback and store tokens
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { exchangeCodeForTokens } from '@/lib/calendar/oauth';

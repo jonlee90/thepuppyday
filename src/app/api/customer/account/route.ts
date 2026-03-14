@@ -3,6 +3,8 @@
  * DELETE /api/customer/account - Delete the authenticated user's account
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 

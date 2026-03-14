@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { AddOnsClient } from './AddOnsClient';
 import type { Addon } from '@/types/database';

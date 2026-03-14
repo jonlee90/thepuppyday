@@ -4,6 +4,8 @@
  * Task 0214: Integration with Booking Flow
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { BookingSettings } from '@/types/settings';

@@ -5,6 +5,8 @@
  * Task 0192: Loyalty settings API routes
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';

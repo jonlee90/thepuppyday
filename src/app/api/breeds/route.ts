@@ -2,6 +2,8 @@
  * GET /api/breeds - Fetch all dog breeds
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 

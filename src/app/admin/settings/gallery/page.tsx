@@ -3,6 +3,8 @@
  * Upload, edit, and manage gallery images
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { GalleryGrid } from '@/components/admin/gallery/GalleryGrid';
 

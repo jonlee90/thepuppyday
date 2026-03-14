@@ -5,6 +5,9 @@
  * Responsive layout with desktop sidebar (>=1024px) and mobile bottom tabs/header (<1024px)
  */
 
+// All admin pages require cookies for auth — opt out of static rendering globally
+export const dynamic = 'force-dynamic';
+
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
 import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';

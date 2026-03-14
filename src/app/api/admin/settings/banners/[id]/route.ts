@@ -7,6 +7,8 @@
  * DELETE /api/admin/settings/banners/[id] - Delete banner (soft-delete if has analytics)
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

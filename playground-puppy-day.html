@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Puppy Day — Architecture & Design Playground</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --surface2: #1c2a4a;
+    --border: #2a3a5c;
+    --text: #e0e0e0;
+    --text-dim: #8892a4;
+    --accent: #4ECDC4;
+    --accent-dim: #3aada5;
+    --primary: #434E54;
+    --cream: #F8EEE5;
+    --cream2: #EAE0D5;
+    --charcoal: #434E54;
+    --warm: #D4A574;
+    --error: #FF6B6B;
+    --success: #6BCB77;
+    --warning: #FFB347;
+    --info: #74B9FF;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+
+  /* Top tab bar */
+  .tab-bar { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .tab { padding: 10px 24px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-dim); border-bottom: 2px solid transparent; transition: all .2s; user-select: none; }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Main layout */
+  .main { display: flex; height: calc(100vh - 42px); }
+  .sidebar { width: 320px; min-width: 320px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .sidebar-scroll { flex: 1; overflow-y: auto; padding: 16px; }
+  .canvas-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .canvas-wrap { flex: 1; position: relative; overflow: hidden; }
+  .prompt-area { background: var(--surface); border-top: 1px solid var(--border); padding: 12px 16px; max-height: 180px; overflow-y: auto; }
+
+  /* Sidebar controls */
+  .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent); margin: 16px 0 8px; }
+  .section-title:first-child { margin-top: 0; }
+
+  .control-group { margin-bottom: 12px; }
+  .control-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .control-label span { color: var(--accent); font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; }
+
+  input[type="range"] { width: 100%; accent-color: var(--accent); height: 4px; background: var(--border); border-radius: 2px; -webkit-appearance: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+
+  .toggle-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; font-size: 13px; }
+  .toggle-row input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; }
+
+  .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .preset-btn { padding: 6px 10px; font-size: 11px; font-weight: 600; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); cursor: pointer; transition: all .15s; text-align: center; }
+  .preset-btn:hover { border-color: var(--accent); color: var(--text); }
+  .preset-btn.active { border-color: var(--accent); background: rgba(78,205,196,.1); color: var(--accent); }
+
+  .color-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .color-swatch { width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--border); cursor: pointer; position: relative; overflow: hidden; }
+  .color-swatch input[type="color"] { position: absolute; inset: -4px; width: 32px; height: 32px; opacity: 0; cursor: pointer; }
+  .color-name { font-size: 12px; flex: 1; }
+  .color-hex { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: var(--text-dim); }
+
+  /* Code Map Canvas */
+  svg.map { width: 100%; height: 100%; }
+  .node-rect { rx: 8; ry: 8; stroke-width: 1.5; cursor: pointer; transition: all .15s; }
+  .node-rect:hover { stroke-width: 2.5; filter: brightness(1.1); }
+  .node-rect.commented { stroke-width: 2.5; stroke-dasharray: none; }
+  .node-label { font-size: 11px; font-weight: 700; fill: #1a1a2e; pointer-events: none; }
+  .node-sub { font-size: 8.5px; fill: #555; pointer-events: none; font-family: 'SF Mono', 'Fira Code', monospace; }
+  .conn-line { fill: none; stroke-width: 1.5; }
+  .conn-label { font-size: 9px; fill: var(--text-dim); }
+
+  /* Legend */
+  .legend { position: absolute; bottom: 12px; left: 12px; background: rgba(22,33,62,.92); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 11px; backdrop-filter: blur(8px); }
+  .legend-title { font-weight: 700; margin-bottom: 6px; color: var(--accent); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+  .legend-line { width: 20px; height: 2px; }
+
+  /* Zoom controls */
+  .zoom-controls { position: absolute; top: 12px; right: 12px; display: flex; gap: 4px; }
+  .zoom-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); cursor: pointer; font-size: 16px; font-weight: 700; }
+  .zoom-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Design Preview */
+  .design-preview { display: none; width: 100%; height: 100%; overflow: auto; padding: 40px; background: #ffffff; }
+  .design-preview.active { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 24px; }
+
+  .preview-context-toggle { position: absolute; top: 12px; right: 12px; display: flex; gap: 4px; z-index: 5; }
+  .ctx-btn { padding: 4px 10px; font-size: 11px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--text-dim); cursor: pointer; }
+  .ctx-btn.active { background: var(--accent); color: #1a1a2e; border-color: var(--accent); }
+
+  /* Prompt */
+  .prompt-text { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.6; color: var(--text-dim); white-space: pre-wrap; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; padding: 4px 12px; font-size: 11px; font-weight: 600; background: var(--accent); color: #1a1a2e; border: none; border-radius: 4px; cursor: pointer; transition: all .15s; }
+  .copy-btn:hover { background: var(--accent-dim); }
+  .copy-btn.copied { background: var(--success); }
+  .prompt-area { position: relative; }
+
+  /* Comment modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; width: 380px; max-width: 90vw; }
+  .modal h3 { font-size: 14px; margin-bottom: 4px; }
+  .modal .modal-sub { font-size: 11px; color: var(--text-dim); font-family: monospace; margin-bottom: 12px; }
+  .modal textarea { width: 100%; height: 80px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 8px; font-size: 13px; resize: vertical; font-family: inherit; }
+  .modal textarea:focus { outline: none; border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+  .modal-actions button { padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); }
+  .modal-actions .btn-save { background: var(--accent); color: #1a1a2e; border-color: var(--accent); }
+  .modal-actions .btn-cancel { background: transparent; color: var(--text-dim); }
+
+  /* Comments list */
+  .comment-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; position: relative; }
+  .comment-item .comment-target { font-size: 11px; font-weight: 600; color: var(--accent); }
+  .comment-item .comment-text { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .comment-item .comment-delete { position: absolute; top: 6px; right: 6px; background: none; border: none; color: var(--error); cursor: pointer; font-size: 14px; opacity: .5; }
+  .comment-item .comment-delete:hover { opacity: 1; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab('map')">Architecture Map</div>
+  <div class="tab" onclick="switchTab('design')">Design Explorer</div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-scroll">
+      <!-- MAP CONTROLS -->
+      <div id="map-controls">
+        <div class="section-title">View Presets</div>
+        <div class="preset-grid">
+          <div class="preset-btn active" data-preset="full" onclick="applyPreset('full')">Full System</div>
+          <div class="preset-btn" data-preset="booking" onclick="applyPreset('booking')">Booking Flow</div>
+          <div class="preset-btn" data-preset="notifications" onclick="applyPreset('notifications')">Notifications</div>
+          <div class="preset-btn" data-preset="admin" onclick="applyPreset('admin')">Admin Panel</div>
+          <div class="preset-btn" data-preset="data" onclick="applyPreset('data')">Data Flow</div>
+          <div class="preset-btn" data-preset="calendar" onclick="applyPreset('calendar')">Calendar Sync</div>
+        </div>
+
+        <div class="section-title">Layers</div>
+        <label class="toggle-row"><input type="checkbox" checked data-layer="pages" onchange="toggleLayer('pages', this.checked)"> Pages &amp; Routes</label>
+        <label class="toggle-row"><input type="checkbox" checked data-layer="components" onchange="toggleLayer('components', this.checked)"> Components</label>
+        <label class="toggle-row"><input type="checkbox" checked data-layer="api" onchange="toggleLayer('api', this.checked)"> API Routes</label>
+        <label class="toggle-row"><input type="checkbox" checked data-layer="services" onchange="toggleLayer('services', this.checked)"> Services &amp; Libs</label>
+        <label class="toggle-row"><input type="checkbox" checked data-layer="hooks" onchange="toggleLayer('hooks', this.checked)"> Hooks &amp; State</label>
+        <label class="toggle-row"><input type="checkbox" checked data-layer="external" onchange="toggleLayer('external', this.checked)"> External Services</label>
+
+        <div class="section-title">Connection Types</div>
+        <label class="toggle-row"><input type="checkbox" checked data-conn="data" onchange="toggleConn('data', this.checked)"><span style="color:#3b82f6">&#9679;</span> Data Flow</label>
+        <label class="toggle-row"><input type="checkbox" checked data-conn="renders" onchange="toggleConn('renders', this.checked)"><span style="color:#a78bfa">&#9679;</span> Renders</label>
+        <label class="toggle-row"><input type="checkbox" checked data-conn="calls" onchange="toggleConn('calls', this.checked)"><span style="color:#10b981">&#9679;</span> API Calls</label>
+        <label class="toggle-row"><input type="checkbox" checked data-conn="uses" onchange="toggleConn('uses', this.checked)"><span style="color:#f97316">&#9679;</span> Uses/Imports</label>
+        <label class="toggle-row"><input type="checkbox" checked data-conn="external" onchange="toggleConn('external', this.checked)"><span style="color:#ef4444">&#9679;</span> External</label>
+
+        <div class="section-title">Comments (<span id="comment-count">0</span>)</div>
+        <div id="comments-list"><div style="font-size:12px;color:var(--text-dim);padding:4px 0">Click a node to add feedback</div></div>
+      </div>
+
+      <!-- DESIGN CONTROLS -->
+      <div id="design-controls" style="display:none">
+        <div class="section-title">Presets</div>
+        <div class="preset-grid">
+          <div class="preset-btn active" data-dpreset="default" onclick="applyDesignPreset('default')">Default</div>
+          <div class="preset-btn" data-dpreset="soft" onclick="applyDesignPreset('soft')">Soft &amp; Airy</div>
+          <div class="preset-btn" data-dpreset="compact" onclick="applyDesignPreset('compact')">Compact</div>
+          <div class="preset-btn" data-dpreset="bold" onclick="applyDesignPreset('bold')">Bold</div>
+          <div class="preset-btn" data-dpreset="minimal" onclick="applyDesignPreset('minimal')">Minimal</div>
+          <div class="preset-btn" data-dpreset="playful" onclick="applyDesignPreset('playful')">Playful</div>
+        </div>
+
+        <div class="section-title">Colors</div>
+        <div class="color-row" data-color="primary">
+          <div class="color-swatch" style="background:#434E54"><input type="color" value="#434E54" onchange="updateDesignColor('primary', this.value)"></div>
+          <div class="color-name">Primary</div>
+          <div class="color-hex" id="hex-primary">#434E54</div>
+        </div>
+        <div class="color-row" data-color="background">
+          <div class="color-swatch" style="background:#F8EEE5"><input type="color" value="#F8EEE5" onchange="updateDesignColor('background', this.value)"></div>
+          <div class="color-name">Background</div>
+          <div class="color-hex" id="hex-background">#F8EEE5</div>
+        </div>
+        <div class="color-row" data-color="secondary">
+          <div class="color-swatch" style="background:#EAE0D5"><input type="color" value="#EAE0D5" onchange="updateDesignColor('secondary', this.value)"></div>
+          <div class="color-name">Secondary</div>
+          <div class="color-hex" id="hex-secondary">#EAE0D5</div>
+        </div>
+        <div class="color-row" data-color="accent">
+          <div class="color-swatch" style="background:#4ECDC4"><input type="color" value="#4ECDC4" onchange="updateDesignColor('accent', this.value)"></div>
+          <div class="color-name">Accent</div>
+          <div class="color-hex" id="hex-accent">#4ECDC4</div>
+        </div>
+        <div class="color-row" data-color="warm">
+          <div class="color-swatch" style="background:#D4A574"><input type="color" value="#D4A574" onchange="updateDesignColor('warm', this.value)"></div>
+          <div class="color-name">Warm Accent</div>
+          <div class="color-hex" id="hex-warm">#D4A574</div>
+        </div>
+
+        <div class="section-title">Spacing</div>
+        <div class="control-group">
+          <div class="control-label">Card Padding <span id="val-padding">24px</span></div>
+          <input type="range" min="8" max="48" value="24" data-key="padding" oninput="updateDesign('padding', this.value)">
+        </div>
+        <div class="control-group">
+          <div class="control-label">Border Radius <span id="val-radius">12px</span></div>
+          <input type="range" min="0" max="32" value="12" data-key="radius" oninput="updateDesign('radius', this.value)">
+        </div>
+        <div class="control-group">
+          <div class="control-label">Accent Strip Height <span id="val-accent-strip">4px</span></div>
+          <input type="range" min="0" max="12" value="4" data-key="accentStrip" oninput="updateDesign('accentStrip', this.value)">
+        </div>
+
+        <div class="section-title">Shadows</div>
+        <div class="control-group">
+          <div class="control-label">Shadow Depth <span id="val-shadow-y">4px</span></div>
+          <input type="range" min="0" max="24" value="4" data-key="shadowY" oninput="updateDesign('shadowY', this.value)">
+        </div>
+        <div class="control-group">
+          <div class="control-label">Shadow Blur <span id="val-shadow-blur">12px</span></div>
+          <input type="range" min="0" max="48" value="12" data-key="shadowBlur" oninput="updateDesign('shadowBlur', this.value)">
+        </div>
+        <div class="control-group">
+          <div class="control-label">Shadow Opacity <span id="val-shadow-opacity">0.08</span></div>
+          <input type="range" min="0" max="40" value="8" data-key="shadowOpacity" oninput="updateDesign('shadowOpacity', this.value)">
+        </div>
+
+        <div class="section-title">Typography</div>
+        <div class="control-group">
+          <div class="control-label">Heading Size <span id="val-heading">20px</span></div>
+          <input type="range" min="14" max="36" value="20" data-key="headingSize" oninput="updateDesign('headingSize', this.value)">
+        </div>
+        <div class="control-group">
+          <div class="control-label">Body Size <span id="val-body">14px</span></div>
+          <input type="range" min="11" max="20" value="14" data-key="bodySize" oninput="updateDesign('bodySize', this.value)">
+        </div>
+        <div class="control-group">
+          <div class="control-label">Line Height <span id="val-line-height">1.5</span></div>
+          <input type="range" min="10" max="25" value="15" data-key="lineHeight" oninput="updateDesign('lineHeight', this.value)">
+        </div>
+
+        <div class="section-title">Elements</div>
+        <div class="control-group">
+          <div class="control-label">Button Radius <span id="val-btn-radius">8px</span></div>
+          <input type="range" min="0" max="24" value="8" data-key="btnRadius" oninput="updateDesign('btnRadius', this.value)">
+        </div>
+        <div class="control-group">
+          <div class="control-label">Button Padding <span id="val-btn-padding">10px 20px</span></div>
+          <input type="range" min="4" max="20" value="10" data-key="btnPadding" oninput="updateDesign('btnPadding', this.value)">
+        </div>
+        <div class="control-group">
+          <div class="control-label">Input Radius <span id="val-input-radius">8px</span></div>
+          <input type="range" min="0" max="20" value="8" data-key="inputRadius" oninput="updateDesign('inputRadius', this.value)">
+        </div>
+        <label class="toggle-row"><input type="checkbox" checked data-dkey="showAccentStrip" onchange="updateDesign('showAccentStrip', this.checked)"> Show Accent Strip</label>
+        <label class="toggle-row"><input type="checkbox" checked data-dkey="showAvatar" onchange="updateDesign('showAvatar', this.checked)"> Show Avatar</label>
+        <label class="toggle-row"><input type="checkbox" checked data-dkey="showBadge" onchange="updateDesign('showBadge', this.checked)"> Show Status Badge</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="canvas-area">
+    <div class="canvas-wrap">
+      <!-- Code Map SVG -->
+      <svg id="map-svg" class="map" viewBox="0 0 1200 800">
+        <defs>
+          <marker id="arrow-data" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/></marker>
+          <marker id="arrow-renders" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#a78bfa"/></marker>
+          <marker id="arrow-calls" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#10b981"/></marker>
+          <marker id="arrow-uses" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#f97316"/></marker>
+          <marker id="arrow-external" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#ef4444"/></marker>
+        </defs>
+        <g id="map-connections"></g>
+        <g id="map-nodes"></g>
+      </svg>
+
+      <!-- Design Preview -->
+      <div id="design-preview" class="design-preview">
+        <div class="preview-context-toggle">
+          <button class="ctx-btn" onclick="setPreviewBg('cream')">Cream BG</button>
+          <button class="ctx-btn active" onclick="setPreviewBg('white')">White BG</button>
+          <button class="ctx-btn" onclick="setPreviewBg('dark')">Dark BG</button>
+        </div>
+        <div id="preview-container"></div>
+      </div>
+
+      <!-- Legend (map) -->
+      <div id="map-legend" class="legend">
+        <div class="legend-title">Layers</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#dbeafe"></div> Pages</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e0e7ff"></div> Components</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fef3c7"></div> API Routes</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#dcfce7"></div> Services</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f3e8ff"></div> Hooks/State</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fce7f3"></div> External</div>
+        <div class="legend-title" style="margin-top:8px">Connections</div>
+        <div class="legend-item"><div class="legend-line" style="background:#3b82f6"></div> Data Flow</div>
+        <div class="legend-item"><div class="legend-line" style="background:#a78bfa"></div> Renders</div>
+        <div class="legend-item"><div class="legend-line" style="background:#10b981"></div> API Calls</div>
+        <div class="legend-item"><div class="legend-line" style="background:none;border-top:2px dashed #f97316;height:0"></div> Uses</div>
+        <div class="legend-item"><div class="legend-line" style="background:#ef4444"></div> External</div>
+      </div>
+
+      <!-- Zoom controls -->
+      <div class="zoom-controls" id="zoom-controls">
+        <button class="zoom-btn" onclick="zoom(1.2)">+</button>
+        <button class="zoom-btn" onclick="zoom(0.8)">&minus;</button>
+        <button class="zoom-btn" onclick="resetZoom()" style="font-size:11px">&#8962;</button>
+      </div>
+    </div>
+
+    <div class="prompt-area">
+      <button class="copy-btn" onclick="copyPrompt()">Copy Prompt</button>
+      <div class="prompt-text" id="prompt-output">Click components to add comments, or adjust design controls to generate a prompt.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Comment Modal -->
+<div class="modal-overlay" id="comment-modal">
+  <div class="modal">
+    <h3 id="modal-title">Component</h3>
+    <div class="modal-sub" id="modal-sub">path</div>
+    <textarea id="modal-textarea" placeholder="What changes would you like for this component?"></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveComment()">Save Comment</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───
+const state = {
+  tab: 'map',
+  layers: { pages: true, components: true, api: true, services: true, hooks: true, external: true },
+  connTypes: { data: true, renders: true, calls: true, uses: true, external: true },
+  comments: [],
+  zoom: 1,
+  panX: 0, panY: 0,
+  activePreset: 'full',
+  design: {
+    primary: '#434E54', background: '#F8EEE5', secondary: '#EAE0D5', accent: '#4ECDC4', warm: '#D4A574',
+    padding: 24, radius: 12, accentStrip: 4,
+    shadowY: 4, shadowBlur: 12, shadowOpacity: 0.08,
+    headingSize: 20, bodySize: 14, lineHeight: 1.5,
+    btnRadius: 8, btnPadding: 10, inputRadius: 8,
+    showAccentStrip: true, showAvatar: true, showBadge: true
+  },
+  designPreset: 'default',
+  previewBg: 'white',
+  modalNode: null
+};
+
+// ─── ARCHITECTURE DATA ───
+const nodes = [
+  { id: 'marketing', label: 'Marketing Home', sub: 'app/(marketing)/page.tsx', x: 60, y: 40, w: 135, h: 42, layer: 'pages', color: '#dbeafe' },
+  { id: 'admin-dash', label: 'Admin Dashboard', sub: 'app/admin/dashboard/', x: 220, y: 40, w: 140, h: 42, layer: 'pages', color: '#dbeafe' },
+  { id: 'admin-appts', label: 'Appointments', sub: 'app/admin/appointments/', x: 385, y: 40, w: 125, h: 42, layer: 'pages', color: '#dbeafe' },
+  { id: 'admin-notif', label: 'Notifications', sub: 'app/admin/notifications/', x: 535, y: 40, w: 125, h: 42, layer: 'pages', color: '#dbeafe' },
+  { id: 'customer-portal', label: 'Customer Portal', sub: 'app/(customer)/', x: 685, y: 40, w: 130, h: 42, layer: 'pages', color: '#dbeafe' },
+  { id: 'login', label: 'Login / Auth', sub: 'app/(auth)/login/', x: 840, y: 40, w: 115, h: 42, layer: 'pages', color: '#dbeafe' },
+  { id: 'booking-modal', label: 'BookingModal', sub: 'components/booking/BookingModal.tsx', x: 60, y: 130, w: 130, h: 42, layer: 'components', color: '#e0e7ff' },
+  { id: 'booking-wizard', label: 'BookingWizard', sub: 'components/booking/BookingWizard.tsx', x: 210, y: 130, w: 130, h: 42, layer: 'components', color: '#e0e7ff' },
+  { id: 'swimlane-cal', label: 'SwimLane Calendar', sub: 'admin/appointments/calendar/', x: 360, y: 130, w: 145, h: 42, layer: 'components', color: '#e0e7ff' },
+  { id: 'analytics-dash', label: 'AnalyticsDashboard', sub: 'admin/analytics/', x: 525, y: 130, w: 150, h: 42, layer: 'components', color: '#e0e7ff' },
+  { id: 'template-editor', label: 'TemplateEditor', sub: 'admin/notifications/templates/', x: 695, y: 130, w: 135, h: 42, layer: 'components', color: '#e0e7ff' },
+  { id: 'report-card-form', label: 'ReportCardForm', sub: 'admin/report-cards/', x: 850, y: 130, w: 130, h: 42, layer: 'components', color: '#e0e7ff' },
+  { id: 'customer-profile', label: 'CustomerProfile', sub: 'admin/customers/', x: 1000, y: 130, w: 135, h: 42, layer: 'components', color: '#e0e7ff' },
+  { id: 'service-step', label: 'ServiceStep', sub: 'booking/steps/ServiceStep.tsx', x: 60, y: 210, w: 110, h: 38, layer: 'components', color: '#e0e7ff' },
+  { id: 'datetime-step', label: 'DateTimeStep', sub: 'booking/steps/DateTimeStep.tsx', x: 185, y: 210, w: 115, h: 38, layer: 'components', color: '#e0e7ff' },
+  { id: 'details-step', label: 'DetailsStep', sub: 'booking/steps/DetailsStep.tsx', x: 315, y: 210, w: 110, h: 38, layer: 'components', color: '#e0e7ff' },
+  { id: 'review-step', label: 'ReviewStep', sub: 'booking/steps/ReviewStep.tsx', x: 440, y: 210, w: 110, h: 38, layer: 'components', color: '#e0e7ff' },
+  { id: 'api-appointments', label: 'Appointments API', sub: 'api/admin/appointments/', x: 60, y: 310, w: 140, h: 42, layer: 'api', color: '#fef3c7' },
+  { id: 'api-customers', label: 'Customers API', sub: 'api/admin/customers/', x: 220, y: 310, w: 130, h: 42, layer: 'api', color: '#fef3c7' },
+  { id: 'api-notifications', label: 'Notifications API', sub: 'api/admin/notifications/', x: 370, y: 310, w: 145, h: 42, layer: 'api', color: '#fef3c7' },
+  { id: 'api-templates', label: 'Templates API', sub: 'api/admin/notifications/templates/', x: 535, y: 310, w: 130, h: 42, layer: 'api', color: '#fef3c7' },
+  { id: 'api-report-cards', label: 'Report Cards API', sub: 'api/admin/report-cards/', x: 685, y: 310, w: 140, h: 42, layer: 'api', color: '#fef3c7' },
+  { id: 'api-calendar', label: 'Calendar API', sub: 'api/admin/calendar/', x: 845, y: 310, w: 120, h: 42, layer: 'api', color: '#fef3c7' },
+  { id: 'api-analytics', label: 'Analytics API', sub: 'api/admin/analytics/', x: 985, y: 310, w: 120, h: 42, layer: 'api', color: '#fef3c7' },
+  { id: 'notif-service', label: 'NotificationService', sub: 'lib/notifications/service.ts', x: 60, y: 420, w: 155, h: 42, layer: 'services', color: '#dcfce7' },
+  { id: 'email-templates', label: 'Email Templates', sub: 'lib/notifications/email-templates.ts', x: 235, y: 420, w: 135, h: 42, layer: 'services', color: '#dcfce7' },
+  { id: 'template-engine', label: 'Template Engine', sub: 'lib/notifications/template-engine.ts', x: 390, y: 420, w: 135, h: 42, layer: 'services', color: '#dcfce7' },
+  { id: 'calendar-sync', label: 'Calendar Sync', sub: 'lib/calendar/sync/index.ts', x: 545, y: 420, w: 125, h: 42, layer: 'services', color: '#dcfce7' },
+  { id: 'calendar-oauth', label: 'Calendar OAuth', sub: 'lib/calendar/oauth.ts', x: 690, y: 420, w: 125, h: 42, layer: 'services', color: '#dcfce7' },
+  { id: 'booking-engine', label: 'Booking Engine', sub: 'lib/booking/index.ts', x: 835, y: 420, w: 125, h: 42, layer: 'services', color: '#dcfce7' },
+  { id: 'supabase-server', label: 'Supabase Client', sub: 'lib/supabase/server.ts', x: 980, y: 420, w: 130, h: 42, layer: 'services', color: '#dcfce7' },
+  { id: 'trigger-booking', label: 'Booking Trigger', sub: 'triggers/booking-confirmation.ts', x: 60, y: 510, w: 130, h: 38, layer: 'services', color: '#dcfce7' },
+  { id: 'trigger-reminder', label: 'Reminder Trigger', sub: 'triggers/appointment-reminder.ts', x: 210, y: 510, w: 130, h: 38, layer: 'services', color: '#dcfce7' },
+  { id: 'trigger-report', label: 'Report Card Trigger', sub: 'triggers/report-card-completion.ts', x: 360, y: 510, w: 145, h: 38, layer: 'services', color: '#dcfce7' },
+  { id: 'trigger-waitlist', label: 'Waitlist Trigger', sub: 'triggers/waitlist-notification.ts', x: 525, y: 510, w: 130, h: 38, layer: 'services', color: '#dcfce7' },
+  { id: 'use-auth', label: 'useAuth', sub: 'hooks/use-auth.ts', x: 60, y: 600, w: 100, h: 38, layer: 'hooks', color: '#f3e8ff' },
+  { id: 'use-booking-modal', label: 'useBookingModal', sub: 'hooks/useBookingModal.ts', x: 180, y: 600, w: 130, h: 38, layer: 'hooks', color: '#f3e8ff' },
+  { id: 'use-toast', label: 'useToast', sub: 'hooks/use-toast.ts', x: 330, y: 600, w: 100, h: 38, layer: 'hooks', color: '#f3e8ff' },
+  { id: 'booking-store', label: 'Booking Store', sub: 'stores/bookingStore.ts', x: 450, y: 600, w: 120, h: 38, layer: 'hooks', color: '#f3e8ff' },
+  { id: 'supabase', label: 'Supabase (DB)', sub: 'PostgreSQL + Auth + Storage', x: 60, y: 700, w: 140, h: 42, layer: 'external', color: '#fce7f3' },
+  { id: 'resend', label: 'Resend', sub: 'Email delivery', x: 220, y: 700, w: 100, h: 42, layer: 'external', color: '#fce7f3' },
+  { id: 'twilio', label: 'Twilio', sub: 'SMS delivery', x: 340, y: 700, w: 100, h: 42, layer: 'external', color: '#fce7f3' },
+  { id: 'google-cal', label: 'Google Calendar', sub: 'Calendar API v3', x: 460, y: 700, w: 140, h: 42, layer: 'external', color: '#fce7f3' },
+  { id: 'stripe', label: 'Stripe', sub: 'Payments (Phase 7)', x: 620, y: 700, w: 100, h: 42, layer: 'external', color: '#fce7f3' },
+];
+
+const connections = [
+  { from: 'marketing', to: 'booking-modal', type: 'renders', label: 'opens' },
+  { from: 'admin-dash', to: 'booking-modal', type: 'renders', label: 'walk-in' },
+  { from: 'admin-appts', to: 'swimlane-cal', type: 'renders' },
+  { from: 'admin-appts', to: 'booking-modal', type: 'renders', label: 'create' },
+  { from: 'admin-notif', to: 'template-editor', type: 'renders' },
+  { from: 'admin-dash', to: 'analytics-dash', type: 'renders' },
+  { from: 'booking-modal', to: 'booking-wizard', type: 'renders' },
+  { from: 'booking-wizard', to: 'service-step', type: 'renders' },
+  { from: 'booking-wizard', to: 'datetime-step', type: 'renders' },
+  { from: 'booking-wizard', to: 'details-step', type: 'renders' },
+  { from: 'booking-wizard', to: 'review-step', type: 'renders' },
+  { from: 'booking-wizard', to: 'api-appointments', type: 'calls', label: 'POST' },
+  { from: 'datetime-step', to: 'api-appointments', type: 'calls', label: 'availability' },
+  { from: 'swimlane-cal', to: 'api-appointments', type: 'calls', label: 'GET' },
+  { from: 'template-editor', to: 'api-templates', type: 'calls', label: 'PATCH' },
+  { from: 'analytics-dash', to: 'api-analytics', type: 'calls', label: 'GET' },
+  { from: 'report-card-form', to: 'api-report-cards', type: 'calls', label: 'POST' },
+  { from: 'customer-profile', to: 'api-customers', type: 'calls', label: 'GET' },
+  { from: 'api-appointments', to: 'booking-engine', type: 'uses' },
+  { from: 'api-appointments', to: 'notif-service', type: 'uses', label: 'notify' },
+  { from: 'api-appointments', to: 'calendar-sync', type: 'uses', label: 'sync' },
+  { from: 'api-notifications', to: 'notif-service', type: 'uses' },
+  { from: 'api-templates', to: 'template-engine', type: 'uses' },
+  { from: 'api-report-cards', to: 'notif-service', type: 'uses', label: 'send' },
+  { from: 'api-calendar', to: 'calendar-sync', type: 'uses' },
+  { from: 'api-calendar', to: 'calendar-oauth', type: 'uses' },
+  { from: 'notif-service', to: 'email-templates', type: 'uses' },
+  { from: 'notif-service', to: 'template-engine', type: 'uses' },
+  { from: 'notif-service', to: 'trigger-booking', type: 'data' },
+  { from: 'notif-service', to: 'trigger-reminder', type: 'data' },
+  { from: 'notif-service', to: 'trigger-report', type: 'data' },
+  { from: 'notif-service', to: 'trigger-waitlist', type: 'data' },
+  { from: 'calendar-sync', to: 'calendar-oauth', type: 'uses' },
+  { from: 'api-appointments', to: 'supabase-server', type: 'uses' },
+  { from: 'api-customers', to: 'supabase-server', type: 'uses' },
+  { from: 'api-notifications', to: 'supabase-server', type: 'uses' },
+  { from: 'api-analytics', to: 'supabase-server', type: 'uses' },
+  { from: 'supabase-server', to: 'supabase', type: 'external', label: 'PostgreSQL' },
+  { from: 'notif-service', to: 'resend', type: 'external', label: 'email' },
+  { from: 'notif-service', to: 'twilio', type: 'external', label: 'SMS' },
+  { from: 'calendar-sync', to: 'google-cal', type: 'external', label: 'REST' },
+  { from: 'use-booking-modal', to: 'booking-modal', type: 'data', label: 'state' },
+  { from: 'booking-store', to: 'booking-wizard', type: 'data', label: 'form data' },
+  { from: 'use-auth', to: 'login', type: 'data', label: 'session' },
+  { from: 'use-auth', to: 'details-step', type: 'data', label: 'user' },
+];
+
+const connColors = { data: '#3b82f6', renders: '#a78bfa', calls: '#10b981', uses: '#f97316', external: '#ef4444' };
+const connDash = { data: '', renders: '', calls: '6,3', uses: '8,4', external: '' };
+
+const presets = {
+  full: { layers: { pages: true, components: true, api: true, services: true, hooks: true, external: true } },
+  booking: { layers: { pages: true, components: true, api: true, services: true, hooks: true, external: false }, highlight: ['marketing', 'booking-modal', 'booking-wizard', 'service-step', 'datetime-step', 'details-step', 'review-step', 'api-appointments', 'booking-engine', 'use-booking-modal', 'booking-store', 'use-auth'] },
+  notifications: { layers: { pages: true, components: true, api: true, services: true, hooks: false, external: true }, highlight: ['admin-notif', 'template-editor', 'api-notifications', 'api-templates', 'notif-service', 'email-templates', 'template-engine', 'trigger-booking', 'trigger-reminder', 'trigger-report', 'trigger-waitlist', 'resend', 'twilio'] },
+  admin: { layers: { pages: true, components: true, api: true, services: false, hooks: false, external: false }, highlight: ['admin-dash', 'admin-appts', 'admin-notif', 'swimlane-cal', 'analytics-dash', 'template-editor', 'report-card-form', 'customer-profile', 'api-appointments', 'api-customers', 'api-notifications', 'api-analytics'] },
+  data: { layers: { pages: false, components: false, api: true, services: true, hooks: false, external: true }, highlight: ['api-appointments', 'api-customers', 'api-notifications', 'api-analytics', 'api-report-cards', 'api-calendar', 'supabase-server', 'notif-service', 'calendar-sync', 'booking-engine', 'supabase', 'resend', 'twilio', 'google-cal'] },
+  calendar: { layers: { pages: true, components: true, api: true, services: true, hooks: false, external: true }, highlight: ['admin-appts', 'swimlane-cal', 'api-calendar', 'api-appointments', 'calendar-sync', 'calendar-oauth', 'google-cal'] }
+};
+
+// ─── RENDERING HELPERS ───
+const svgNS = 'http://www.w3.org/2000/svg';
+function createSVG(tag, attrs) {
+  const el = document.createElementNS(svgNS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+let currentHighlight = null;
+
+function getNodeCenter(node) {
+  return { x: node.x + node.w / 2, y: node.y + node.h / 2 };
+}
+
+function renderMap() {
+  const nodesG = document.getElementById('map-nodes');
+  const connsG = document.getElementById('map-connections');
+  // Clear using DOM methods
+  while (nodesG.firstChild) nodesG.removeChild(nodesG.firstChild);
+  while (connsG.firstChild) connsG.removeChild(connsG.firstChild);
+
+  // Draw connections
+  connections.forEach(function(conn) {
+    if (!state.connTypes[conn.type]) return;
+    var fromNode = nodes.find(function(n) { return n.id === conn.from; });
+    var toNode = nodes.find(function(n) { return n.id === conn.to; });
+    if (!fromNode || !toNode) return;
+    if (!state.layers[fromNode.layer] || !state.layers[toNode.layer]) return;
+
+    var from = getNodeCenter(fromNode);
+    var to = getNodeCenter(toNode);
+    var midY = (from.y + to.y) / 2;
+
+    var path = createSVG('path', {
+      d: 'M ' + from.x + ' ' + from.y + ' C ' + from.x + ' ' + midY + ', ' + to.x + ' ' + midY + ', ' + to.x + ' ' + to.y,
+      class: 'conn-line',
+      stroke: connColors[conn.type],
+      'marker-end': 'url(#arrow-' + conn.type + ')',
+      opacity: (!currentHighlight || (currentHighlight.indexOf(conn.from) >= 0 && currentHighlight.indexOf(conn.to) >= 0)) ? '0.6' : '0.1'
+    });
+    if (connDash[conn.type]) path.setAttribute('stroke-dasharray', connDash[conn.type]);
+    connsG.appendChild(path);
+
+    if (conn.label) {
+      var text = createSVG('text', {
+        x: String((from.x + to.x) / 2),
+        y: String(midY - 4),
+        class: 'conn-label',
+        'text-anchor': 'middle',
+        opacity: (!currentHighlight || (currentHighlight.indexOf(conn.from) >= 0 && currentHighlight.indexOf(conn.to) >= 0)) ? '0.7' : '0.1'
+      });
+      text.textContent = conn.label;
+      connsG.appendChild(text);
+    }
+  });
+
+  // Draw nodes
+  nodes.forEach(function(node) {
+    if (!state.layers[node.layer]) return;
+
+    var g = createSVG('g', {});
+    var isHighlighted = !currentHighlight || currentHighlight.indexOf(node.id) >= 0;
+    var hasComment = state.comments.some(function(c) { return c.target === node.id; });
+
+    var rect = createSVG('rect', {
+      x: String(node.x), y: String(node.y), width: String(node.w), height: String(node.h),
+      fill: node.color,
+      stroke: hasComment ? '#4ECDC4' : '#666',
+      class: 'node-rect' + (hasComment ? ' commented' : ''),
+      opacity: isHighlighted ? '1' : '0.2'
+    });
+    rect.addEventListener('click', (function(n) { return function() { openModal(n); }; })(node));
+    g.appendChild(rect);
+
+    if (hasComment) {
+      g.appendChild(createSVG('circle', {
+        cx: String(node.x + node.w - 6), cy: String(node.y + 6), r: '5', fill: '#4ECDC4', style: 'pointer-events:none'
+      }));
+    }
+
+    var title = createSVG('text', {
+      x: String(node.x + 8), y: String(node.y + 17), class: 'node-label', opacity: isHighlighted ? '1' : '0.3'
+    });
+    title.textContent = node.label;
+    g.appendChild(title);
+
+    var sub = createSVG('text', {
+      x: String(node.x + 8), y: String(node.y + 30), class: 'node-sub', opacity: isHighlighted ? '0.7' : '0.15'
+    });
+    var maxChars = Math.floor((node.w - 16) / 5);
+    sub.textContent = node.sub.length > maxChars ? node.sub.slice(0, maxChars - 2) + '\u2026' : node.sub;
+    g.appendChild(sub);
+
+    nodesG.appendChild(g);
+  });
+
+  updateTransform();
+  updatePrompt();
+}
+
+function updateTransform() {
+  var t = 'translate(' + state.panX + ', ' + state.panY + ') scale(' + state.zoom + ')';
+  document.getElementById('map-nodes').setAttribute('transform', t);
+  document.getElementById('map-connections').setAttribute('transform', t);
+}
+
+// Pan & zoom
+var isPanning = false, panStartX = 0, panStartY = 0;
+document.getElementById('map-svg').addEventListener('mousedown', function(e) {
+  if (e.target.tagName === 'svg' || e.target.tagName === 'SVG') {
+    isPanning = true;
+    panStartX = e.clientX - state.panX;
+    panStartY = e.clientY - state.panY;
+  }
+});
+document.addEventListener('mousemove', function(e) {
+  if (isPanning) {
+    state.panX = e.clientX - panStartX;
+    state.panY = e.clientY - panStartY;
+    updateTransform();
+  }
+});
+document.addEventListener('mouseup', function() { isPanning = false; });
+document.getElementById('map-svg').addEventListener('wheel', function(e) {
+  e.preventDefault();
+  var factor = e.deltaY > 0 ? 0.95 : 1.05;
+  state.zoom = Math.max(0.3, Math.min(3, state.zoom * factor));
+  updateTransform();
+}, { passive: false });
+
+function zoom(factor) { state.zoom = Math.max(0.3, Math.min(3, state.zoom * factor)); updateTransform(); }
+function resetZoom() { state.zoom = 1; state.panX = 0; state.panY = 0; updateTransform(); }
+
+// ─── MAP CONTROLS ───
+function toggleLayer(layer, checked) { state.layers[layer] = checked; renderMap(); }
+function toggleConn(type, checked) { state.connTypes[type] = checked; renderMap(); }
+
+function applyPreset(name) {
+  var preset = presets[name];
+  state.activePreset = name;
+  Object.keys(preset.layers).forEach(function(k) { state.layers[k] = preset.layers[k]; });
+  currentHighlight = preset.highlight || null;
+
+  document.querySelectorAll('[data-layer]').forEach(function(cb) {
+    cb.checked = state.layers[cb.getAttribute('data-layer')];
+  });
+  document.querySelectorAll('#map-controls .preset-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-preset') === name);
+  });
+  resetZoom();
+  renderMap();
+}
+
+// ─── COMMENTS ───
+function openModal(node) {
+  state.modalNode = node;
+  document.getElementById('modal-title').textContent = node.label;
+  document.getElementById('modal-sub').textContent = 'src/' + node.sub;
+  var existing = state.comments.find(function(c) { return c.target === node.id; });
+  document.getElementById('modal-textarea').value = existing ? existing.text : '';
+  document.getElementById('comment-modal').classList.add('show');
+  setTimeout(function() { document.getElementById('modal-textarea').focus(); }, 50);
+}
+
+function closeModal() {
+  document.getElementById('comment-modal').classList.remove('show');
+  state.modalNode = null;
+}
+
+function saveComment() {
+  var text = document.getElementById('modal-textarea').value.trim();
+  if (!text || !state.modalNode) { closeModal(); return; }
+  var existingIdx = -1;
+  state.comments.forEach(function(c, i) { if (c.target === state.modalNode.id) existingIdx = i; });
+  if (existingIdx >= 0) {
+    state.comments[existingIdx].text = text;
+  } else {
+    state.comments.push({ id: Date.now(), target: state.modalNode.id, targetLabel: state.modalNode.label, targetFile: state.modalNode.sub, text: text });
+  }
+  closeModal();
+  renderCommentsList();
+  renderMap();
+}
+
+function deleteComment(id) {
+  state.comments = state.comments.filter(function(c) { return c.id !== id; });
+  renderCommentsList();
+  renderMap();
+}
+
+function renderCommentsList() {
+  document.getElementById('comment-count').textContent = String(state.comments.length);
+  var list = document.getElementById('comments-list');
+  while (list.firstChild) list.removeChild(list.firstChild);
+
+  if (state.comments.length === 0) {
+    var hint = document.createElement('div');
+    hint.style.cssText = 'font-size:12px;color:var(--text-dim);padding:4px 0';
+    hint.textContent = 'Click a node to add feedback';
+    list.appendChild(hint);
+    return;
+  }
+
+  state.comments.forEach(function(c) {
+    var item = document.createElement('div');
+    item.className = 'comment-item';
+
+    var target = document.createElement('div');
+    target.className = 'comment-target';
+    target.textContent = c.targetLabel;
+    item.appendChild(target);
+
+    var text = document.createElement('div');
+    text.className = 'comment-text';
+    text.textContent = c.text.length > 60 ? c.text.slice(0, 60) + '\u2026' : c.text;
+    item.appendChild(text);
+
+    var del = document.createElement('button');
+    del.className = 'comment-delete';
+    del.textContent = '\u00D7';
+    del.addEventListener('click', (function(cid) { return function() { deleteComment(cid); }; })(c.id));
+    item.appendChild(del);
+
+    list.appendChild(item);
+  });
+}
+
+// ─── DESIGN STATE ───
+var DESIGN_DEFAULTS = {
+  primary: '#434E54', background: '#F8EEE5', secondary: '#EAE0D5', accent: '#4ECDC4', warm: '#D4A574',
+  padding: 24, radius: 12, accentStrip: 4, shadowY: 4, shadowBlur: 12, shadowOpacity: 0.08,
+  headingSize: 20, bodySize: 14, lineHeight: 1.5, btnRadius: 8, btnPadding: 10, inputRadius: 8,
+  showAccentStrip: true, showAvatar: true, showBadge: true
+};
+
+var designPresets = {
+  default: Object.assign({}, DESIGN_DEFAULTS),
+  soft: Object.assign({}, DESIGN_DEFAULTS, { padding: 32, radius: 20, shadowY: 8, shadowBlur: 32, shadowOpacity: 0.06, headingSize: 22, bodySize: 15, lineHeight: 1.7, btnRadius: 14, btnPadding: 12, inputRadius: 12, accentStrip: 6 }),
+  compact: Object.assign({}, DESIGN_DEFAULTS, { padding: 14, radius: 6, shadowY: 2, shadowBlur: 6, shadowOpacity: 0.1, headingSize: 16, bodySize: 13, lineHeight: 1.35, btnRadius: 4, btnPadding: 6, inputRadius: 4, accentStrip: 2 }),
+  bold: Object.assign({}, DESIGN_DEFAULTS, { padding: 28, radius: 16, shadowY: 6, shadowBlur: 20, shadowOpacity: 0.15, headingSize: 26, bodySize: 15, btnRadius: 10, btnPadding: 14, accentStrip: 6, primary: '#2d363b', accent: '#3cb8b0' }),
+  minimal: Object.assign({}, DESIGN_DEFAULTS, { padding: 20, radius: 4, shadowY: 0, shadowBlur: 0, shadowOpacity: 0, headingSize: 18, bodySize: 14, btnRadius: 4, btnPadding: 8, inputRadius: 4, accentStrip: 0, showAccentStrip: false, showBadge: false }),
+  playful: Object.assign({}, DESIGN_DEFAULTS, { padding: 28, radius: 24, shadowY: 6, shadowBlur: 24, shadowOpacity: 0.1, headingSize: 22, bodySize: 15, lineHeight: 1.6, btnRadius: 20, btnPadding: 12, inputRadius: 14, accentStrip: 8, accent: '#FF6B8A', warm: '#FFB347' })
+};
+
+function updateDesign(key, value) {
+  if (typeof value === 'boolean') {
+    state.design[key] = value;
+  } else {
+    var num = parseFloat(value);
+    if (key === 'shadowOpacity') state.design[key] = num / 100;
+    else if (key === 'lineHeight') state.design[key] = num / 10;
+    else state.design[key] = num;
+  }
+  updateDesignLabels();
+  renderDesignPreview();
+  updatePrompt();
+}
+
+function updateDesignColor(key, value) {
+  state.design[key] = value;
+  document.getElementById('hex-' + key).textContent = value;
+  var row = document.querySelector('[data-color="' + key + '"] .color-swatch');
+  if (row) row.style.background = value;
+  renderDesignPreview();
+  updatePrompt();
+}
+
+function updateDesignLabels() {
+  var d = state.design;
+  document.getElementById('val-padding').textContent = d.padding + 'px';
+  document.getElementById('val-radius').textContent = d.radius + 'px';
+  document.getElementById('val-accent-strip').textContent = d.accentStrip + 'px';
+  document.getElementById('val-shadow-y').textContent = d.shadowY + 'px';
+  document.getElementById('val-shadow-blur').textContent = d.shadowBlur + 'px';
+  document.getElementById('val-shadow-opacity').textContent = d.shadowOpacity.toFixed(2);
+  document.getElementById('val-heading').textContent = d.headingSize + 'px';
+  document.getElementById('val-body').textContent = d.bodySize + 'px';
+  document.getElementById('val-line-height').textContent = d.lineHeight.toFixed(1);
+  document.getElementById('val-btn-radius').textContent = d.btnRadius + 'px';
+  document.getElementById('val-btn-padding').textContent = d.btnPadding + 'px ' + (d.btnPadding * 2) + 'px';
+  document.getElementById('val-input-radius').textContent = d.inputRadius + 'px';
+}
+
+function applyDesignPreset(name) {
+  state.designPreset = name;
+  state.design = Object.assign({}, designPresets[name]);
+
+  document.querySelectorAll('#design-controls input[type="range"]').forEach(function(slider) {
+    var key = slider.getAttribute('data-key');
+    if (key) {
+      if (key === 'shadowOpacity') slider.value = state.design[key] * 100;
+      else if (key === 'lineHeight') slider.value = state.design[key] * 10;
+      else slider.value = state.design[key];
+    }
+  });
+
+  document.querySelectorAll('#design-controls input[type="checkbox"]').forEach(function(cb) {
+    var key = cb.getAttribute('data-dkey');
+    if (key) cb.checked = state.design[key];
+  });
+
+  ['primary', 'background', 'secondary', 'accent', 'warm'].forEach(function(key) {
+    document.getElementById('hex-' + key).textContent = state.design[key];
+    var row = document.querySelector('[data-color="' + key + '"]');
+    if (row) {
+      row.querySelector('.color-swatch').style.background = state.design[key];
+      row.querySelector('input[type="color"]').value = state.design[key];
+    }
+  });
+
+  document.querySelectorAll('#design-controls .preset-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-dpreset') === name);
+  });
+
+  updateDesignLabels();
+  renderDesignPreview();
+  updatePrompt();
+}
+
+function setPreviewBg(mode) {
+  state.previewBg = mode;
+  var preview = document.getElementById('design-preview');
+  if (mode === 'cream') preview.style.background = state.design.background;
+  else if (mode === 'white') preview.style.background = '#ffffff';
+  else preview.style.background = '#1a1a2e';
+  document.querySelectorAll('.ctx-btn').forEach(function(b) { b.classList.toggle('active', b.textContent.toLowerCase().indexOf(mode) >= 0); });
+}
+
+function renderDesignPreview() {
+  var d = state.design;
+  var shadow = d.shadowBlur > 0 ? '0 ' + d.shadowY + 'px ' + d.shadowBlur + 'px rgba(0,0,0,' + d.shadowOpacity + ')' : 'none';
+  var container = document.getElementById('preview-container');
+
+  // Clear
+  while (container.firstChild) container.removeChild(container.firstChild);
+
+  // Card
+  var card = document.createElement('div');
+  card.style.cssText = 'width:380px;background:white;border-radius:' + d.radius + 'px;box-shadow:' + shadow + ';overflow:hidden;';
+
+  if (d.showAccentStrip) {
+    var strip = document.createElement('div');
+    strip.style.cssText = 'height:' + d.accentStrip + 'px;background:' + d.warm;
+    card.appendChild(strip);
+  }
+
+  var body = document.createElement('div');
+  body.style.cssText = 'padding:' + d.padding + 'px;display:flex;flex-direction:column;gap:10px;';
+
+  // Header row
+  var headerRow = document.createElement('div');
+  headerRow.style.cssText = 'display:flex;align-items:center;gap:12px;';
+
+  if (d.showAvatar) {
+    var avatar = document.createElement('div');
+    avatar.style.cssText = 'width:42px;height:42px;background:' + d.accent + ';border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;';
+    avatar.textContent = '\uD83D\uDC3E';
+    headerRow.appendChild(avatar);
+  }
+
+  var headerText = document.createElement('div');
+  headerText.style.flex = '1';
+  var h = document.createElement('div');
+  h.style.cssText = 'font-size:' + d.headingSize + 'px;color:' + d.primary + ';font-family:system-ui;font-weight:700;';
+  h.textContent = "Bella's Grooming";
+  headerText.appendChild(h);
+  var sub = document.createElement('div');
+  sub.style.cssText = 'font-size:' + (d.bodySize - 2) + 'px;color:#888;';
+  sub.textContent = 'Premium Package \u00B7 March 15';
+  headerText.appendChild(sub);
+  headerRow.appendChild(headerText);
+
+  if (d.showBadge) {
+    var badge = document.createElement('span');
+    badge.style.cssText = 'background:#dcfce7;color:#16a34a;padding:4px 10px;border-radius:' + d.btnRadius + 'px;font-weight:600;font-size:12px;white-space:nowrap;';
+    badge.textContent = '\u2713 Confirmed';
+    headerRow.appendChild(badge);
+  }
+  body.appendChild(headerRow);
+
+  // Description
+  var desc = document.createElement('p');
+  desc.style.cssText = 'font-size:' + d.bodySize + 'px;color:#555;line-height:' + d.lineHeight + ';font-family:system-ui;margin:0;';
+  desc.textContent = 'Full grooming session including bath, haircut, nail trim, and ear cleaning for your Goldendoodle.';
+  body.appendChild(desc);
+
+  // Stats row
+  var statsRow = document.createElement('div');
+  statsRow.style.cssText = 'display:flex;gap:' + (d.padding / 3) + 'px;padding:' + (d.padding * 0.6) + 'px;background:' + d.secondary + ';border-radius:' + (d.radius * 0.6) + 'px;';
+  [['$85', 'Price'], ['2:00 PM', 'Time'], ['45 min', 'Duration']].forEach(function(item, i) {
+    if (i > 0) {
+      var divider = document.createElement('div');
+      divider.style.cssText = 'width:1px;background:' + d.primary + '15;';
+      statsRow.appendChild(divider);
+    }
+    var stat = document.createElement('div');
+    stat.style.cssText = 'flex:1;text-align:center;';
+    var val = document.createElement('div');
+    val.style.cssText = 'font-size:18px;font-weight:700;color:' + d.primary + ';';
+    val.textContent = item[0];
+    stat.appendChild(val);
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#888;';
+    lbl.textContent = item[1];
+    stat.appendChild(lbl);
+    statsRow.appendChild(stat);
+  });
+  body.appendChild(statsRow);
+
+  // Buttons
+  var btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px;margin-top:4px;';
+
+  var btn1 = document.createElement('button');
+  btn1.style.cssText = 'flex:1;padding:' + d.btnPadding + 'px ' + (d.btnPadding * 2) + 'px;border-radius:' + d.btnRadius + 'px;background:' + d.primary + ';color:white;font-size:' + d.bodySize + 'px;border:none;cursor:pointer;font-weight:600;';
+  btn1.textContent = 'Reschedule';
+  btnRow.appendChild(btn1);
+
+  var btn2 = document.createElement('button');
+  btn2.style.cssText = 'flex:1;padding:' + d.btnPadding + 'px ' + (d.btnPadding * 2) + 'px;border-radius:' + d.btnRadius + 'px;background:transparent;border:1.5px solid ' + d.primary + '30;color:' + d.primary + ';font-size:' + d.bodySize + 'px;cursor:pointer;font-weight:600;';
+  btn2.textContent = 'Cancel';
+  btnRow.appendChild(btn2);
+  body.appendChild(btnRow);
+
+  card.appendChild(body);
+  container.appendChild(card);
+
+  // Bottom row
+  var bottomRow = document.createElement('div');
+  bottomRow.style.cssText = 'display:flex;gap:16px;width:380px;';
+
+  // Pet card
+  var petCard = document.createElement('div');
+  petCard.style.cssText = 'flex:1;background:white;border-radius:' + d.radius + 'px;box-shadow:' + shadow + ';padding:' + (d.padding * 0.75) + 'px;text-align:center;';
+  var petIcon = document.createElement('div');
+  petIcon.style.cssText = 'font-size:24px;margin-bottom:4px;';
+  petIcon.textContent = '\uD83D\uDC15';
+  petCard.appendChild(petIcon);
+  var petName = document.createElement('div');
+  petName.style.cssText = 'font-size:' + d.bodySize + 'px;font-weight:700;color:' + d.primary + ';';
+  petName.textContent = 'Bella';
+  petCard.appendChild(petName);
+  var petBreed = document.createElement('div');
+  petBreed.style.cssText = 'font-size:' + (d.bodySize - 2) + 'px;color:#888;';
+  petBreed.textContent = 'Goldendoodle';
+  petCard.appendChild(petBreed);
+  bottomRow.appendChild(petCard);
+
+  // Search card
+  var searchCard = document.createElement('div');
+  searchCard.style.cssText = 'flex:1;background:white;border-radius:' + d.radius + 'px;box-shadow:' + shadow + ';padding:' + (d.padding * 0.75) + 'px;';
+  var searchLabel = document.createElement('div');
+  searchLabel.style.cssText = 'font-size:' + (d.bodySize - 2) + 'px;color:#888;margin-bottom:6px;';
+  searchLabel.textContent = 'Search';
+  searchCard.appendChild(searchLabel);
+  var input = document.createElement('input');
+  input.style.cssText = 'width:100%;padding:' + (d.btnPadding * 0.8) + 'px;border-radius:' + d.inputRadius + 'px;border:1px solid ' + d.primary + '30;font-size:' + d.bodySize + 'px;font-family:system-ui;background:#fafafa;outline:none;';
+  input.placeholder = 'Find customer\u2026';
+  input.disabled = true;
+  searchCard.appendChild(input);
+  bottomRow.appendChild(searchCard);
+
+  container.appendChild(bottomRow);
+}
+
+// ─── TAB SWITCHING ───
+function switchTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('active', t.textContent.toLowerCase().indexOf(tab) >= 0); });
+
+  document.getElementById('map-controls').style.display = tab === 'map' ? 'block' : 'none';
+  document.getElementById('design-controls').style.display = tab === 'design' ? 'block' : 'none';
+  document.getElementById('map-svg').style.display = tab === 'map' ? 'block' : 'none';
+  document.getElementById('map-legend').style.display = tab === 'map' ? 'block' : 'none';
+  document.getElementById('zoom-controls').style.display = tab === 'map' ? 'flex' : 'none';
+
+  var designPreview = document.getElementById('design-preview');
+  if (tab === 'design') {
+    designPreview.classList.add('active');
+    renderDesignPreview();
+  } else {
+    designPreview.classList.remove('active');
+  }
+  updatePrompt();
+}
+
+// ─── PROMPT GENERATION ───
+function updatePrompt() {
+  var parts = [];
+
+  if (state.tab === 'map') {
+    var layerNames = { pages: 'Pages', components: 'Components', api: 'API Routes', services: 'Services', hooks: 'Hooks & State', external: 'External Services' };
+    var visibleLayers = Object.keys(state.layers).filter(function(k) { return state.layers[k]; });
+    if (visibleLayers.length < 6) {
+      parts.push('This is The Puppy Day architecture, focusing on: ' + visibleLayers.map(function(l) { return layerNames[l]; }).join(', ') + '.');
+    } else {
+      parts.push('This is The Puppy Day full system architecture.');
+    }
+
+    if (state.activePreset !== 'full') {
+      var presetNames = { booking: 'booking flow', notifications: 'notification system', admin: 'admin panel', data: 'data layer', calendar: 'Google Calendar sync' };
+      parts.push('Currently viewing the ' + presetNames[state.activePreset] + ' subsystem.');
+    }
+
+    if (state.comments.length > 0) {
+      parts.push('\nFeedback on specific components:\n');
+      state.comments.forEach(function(c) {
+        parts.push('**' + c.targetLabel + '** (src/' + c.targetFile + '):\n' + c.text + '\n');
+      });
+    } else {
+      parts.push('\nClick on any component node to add architectural feedback or change requests.');
+    }
+  } else {
+    var d = state.design;
+    var diffs = [];
+
+    if (d.primary !== DESIGN_DEFAULTS.primary) diffs.push('primary color to ' + d.primary);
+    if (d.background !== DESIGN_DEFAULTS.background) diffs.push('background to ' + d.background);
+    if (d.secondary !== DESIGN_DEFAULTS.secondary) diffs.push('secondary to ' + d.secondary);
+    if (d.accent !== DESIGN_DEFAULTS.accent) diffs.push('accent color to ' + d.accent);
+    if (d.warm !== DESIGN_DEFAULTS.warm) diffs.push('warm accent to ' + d.warm);
+    if (d.radius !== DESIGN_DEFAULTS.radius) {
+      var tw = d.radius <= 4 ? 'sm' : d.radius <= 8 ? 'lg' : d.radius <= 16 ? 'xl' : '2xl';
+      diffs.push('border-radius of ' + d.radius + 'px (Tailwind: rounded-' + tw + ')');
+    }
+    if (d.padding !== DESIGN_DEFAULTS.padding) diffs.push(d.padding + 'px card padding (' + (d.padding < 16 ? 'compact' : d.padding > 28 ? 'spacious' : 'moderate') + ')');
+    if (d.accentStrip !== DESIGN_DEFAULTS.accentStrip) diffs.push('accent strip height of ' + d.accentStrip + 'px');
+    if (!d.showAccentStrip && DESIGN_DEFAULTS.showAccentStrip) diffs.push('remove the accent strip from cards');
+    if (d.shadowBlur !== DESIGN_DEFAULTS.shadowBlur || d.shadowY !== DESIGN_DEFAULTS.shadowY) {
+      if (d.shadowBlur === 0 && d.shadowY === 0) diffs.push('flat/no shadow');
+      else if (d.shadowBlur > 24) diffs.push('a pronounced, elevated shadow (0 ' + d.shadowY + 'px ' + d.shadowBlur + 'px rgba(0,0,0,' + d.shadowOpacity.toFixed(2) + '))');
+      else if (d.shadowBlur > 0) diffs.push('a ' + (d.shadowBlur <= 8 ? 'subtle' : 'medium') + ' shadow');
+    }
+    if (d.headingSize !== DESIGN_DEFAULTS.headingSize) diffs.push('heading size of ' + d.headingSize + 'px');
+    if (d.bodySize !== DESIGN_DEFAULTS.bodySize) diffs.push('body text at ' + d.bodySize + 'px');
+    if (d.lineHeight !== DESIGN_DEFAULTS.lineHeight) diffs.push('line-height of ' + d.lineHeight.toFixed(1));
+    if (d.btnRadius !== DESIGN_DEFAULTS.btnRadius) diffs.push('button border-radius of ' + d.btnRadius + 'px');
+    if (d.inputRadius !== DESIGN_DEFAULTS.inputRadius) diffs.push('input border-radius of ' + d.inputRadius + 'px');
+
+    if (diffs.length === 0) {
+      parts.push('The Puppy Day design system is using its default values: warm cream (#F8EEE5) background, charcoal (#434E54) primary, 12px border-radius, soft shadow-md, Nunito headings + Inter body text.\n\nAdjust the controls to explore variations and generate a prompt.');
+    } else {
+      parts.push('Update The Puppy Day design system to use ' + diffs.join(', ') + '.');
+      parts.push('\nApply these changes across all card components, modals, and form elements using Tailwind CSS 4 + DaisyUI 5 classes.');
+    }
+
+    if (state.designPreset !== 'default') {
+      var presetDescs = {
+        soft: 'Emphasize a soft, airy feel with generous whitespace and diffused shadows.',
+        compact: 'Optimize for information density with tight spacing and minimal chrome.',
+        bold: 'Make a stronger visual impact with deeper colors and heavier shadows.',
+        minimal: 'Strip away decorative elements for a clean, modern, flat appearance.',
+        playful: 'Add warmth and playfulness with rounded corners and vibrant accent colors.'
+      };
+      parts.push('\nDesign direction: ' + presetDescs[state.designPreset]);
+    }
+  }
+
+  document.getElementById('prompt-output').textContent = parts.join('\n');
+}
+
+function copyPrompt() {
+  var text = document.getElementById('prompt-output').textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = 'Copy Prompt'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && e.metaKey && document.getElementById('comment-modal').classList.contains('show')) saveComment();
+});
+
+// ─── INIT ───
+renderCommentsList();
+renderMap();
+updateDesignLabels();
+</script>
+</body>
+</html>

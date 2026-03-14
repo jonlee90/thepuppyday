@@ -3,6 +3,8 @@
  * Server Component that fetches services data and passes to client components
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { ServicesClient } from './ServicesClient';
 import type { Service, ServicePrice } from '@/types/database';

@@ -4,6 +4,8 @@
  * Task 0056: Pre-warm analytics cache with common date ranges
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { clearExpiredCache } from '@/lib/admin/analytics-cache';

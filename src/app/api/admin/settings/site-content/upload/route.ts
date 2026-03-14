@@ -3,6 +3,8 @@
  * POST /api/admin/settings/site-content/upload - Upload hero image to Supabase Storage
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

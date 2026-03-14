@@ -7,6 +7,8 @@
  * Tasks 0192-0201: Complete loyalty program configuration
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import Link from 'next/link';

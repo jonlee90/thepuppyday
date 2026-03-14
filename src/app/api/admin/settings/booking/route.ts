@@ -5,6 +5,8 @@
  * Task 0180: Booking settings API routes
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse, after } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

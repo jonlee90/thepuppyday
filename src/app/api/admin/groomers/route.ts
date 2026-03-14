@@ -4,6 +4,8 @@
  * Returns all users with 'admin' or 'groomer' roles for assignment to appointments
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

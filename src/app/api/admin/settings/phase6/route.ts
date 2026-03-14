@@ -3,6 +3,8 @@
  * Manages Phase 6 settings (Report Cards, Waitlist, Marketing)
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

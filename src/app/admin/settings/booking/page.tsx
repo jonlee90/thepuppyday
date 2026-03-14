@@ -6,6 +6,8 @@
  * them to the client wrapper, eliminating duplicate API requests.
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import Link from 'next/link';

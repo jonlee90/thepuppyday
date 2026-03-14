@@ -4,6 +4,8 @@
  * Task 0007: Initiate OAuth flow for Google Calendar integration
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

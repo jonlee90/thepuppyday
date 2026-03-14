@@ -4,6 +4,8 @@
  * Task 0009: Disconnect calendar and revoke OAuth tokens
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

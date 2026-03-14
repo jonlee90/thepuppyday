@@ -4,6 +4,8 @@
  * Returns the base email HTML template for client-side preview wrapping.
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { readFileSync } from 'fs';
 import { join } from 'path';

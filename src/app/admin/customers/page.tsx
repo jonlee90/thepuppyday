@@ -7,6 +7,8 @@
  * is handled by CustomerTable via /api/admin/customers.
  */
 
+export const dynamic = 'force-dynamic';
+
 import { Suspense } from 'react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';

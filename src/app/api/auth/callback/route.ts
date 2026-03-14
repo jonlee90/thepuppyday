@@ -5,6 +5,8 @@
  *   - Email confirmation links (redirects to /dashboard)
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 

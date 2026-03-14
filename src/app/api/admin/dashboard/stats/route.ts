@@ -3,6 +3,8 @@
  * Returns aggregated statistics for today's dashboard
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { NextResponse } from 'next/server';

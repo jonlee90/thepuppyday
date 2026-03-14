@@ -3,6 +3,8 @@
  * Returns today's appointments with full details
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { NextResponse } from 'next/server';

@@ -4,6 +4,8 @@
  * POST /api/webhooks/appointment-completed
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { scheduleReportCardNotification } from '@/lib/admin/report-card-scheduler';

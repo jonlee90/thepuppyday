@@ -4,6 +4,8 @@
  * Server Component that fetches appointment data
  */
 
+export const dynamic = 'force-dynamic';
+
 import { notFound } from 'next/navigation';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { ReportCardForm } from '@/components/admin/report-cards/ReportCardForm';

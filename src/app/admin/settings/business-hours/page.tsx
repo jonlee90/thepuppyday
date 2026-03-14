@@ -3,6 +3,8 @@
  * Server Component that fetches settings data and passes to client components
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { SettingsClient } from './SettingsClient';
 

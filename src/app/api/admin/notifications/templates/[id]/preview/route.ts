@@ -3,6 +3,8 @@
  * POST /api/admin/notifications/templates/[id]/preview - Preview rendered template
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
