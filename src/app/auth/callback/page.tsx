@@ -4,26 +4,18 @@
  * Auth Callback Page (client-side)
  * Handles Supabase implicit-flow tokens delivered via hash fragment.
  * Used by: invite links, magic links, OAuth redirects.
- *
- * Flow:
- * 1. Capture hash params before Supabase clears them
- * 2. Sign out any stale session (prevents old JWT conflicts)
- * 3. Explicitly set the new session from hash tokens
- * 4. Redirect based on type (invite → reset-password, else → next)
  */
 
 import { useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-// Capture hash params immediately — Supabase may clear the hash on init
-const initialHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
-const initialHashParams = new URLSearchParams(initialHash);
-
 function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const handled = useRef(false);
+  // Capture hash on first render (before Supabase clears it)
+  const hashRef = useRef(typeof window !== 'undefined' ? window.location.hash.substring(1) : '');
 
   useEffect(() => {
     if (handled.current) return;
@@ -31,18 +23,14 @@ function AuthCallbackInner() {
 
     const supabase = createClient();
     const next = searchParams.get('next') || '/dashboard';
-    const type = initialHashParams.get('type');
-    const accessToken = initialHashParams.get('access_token');
-    const refreshToken = initialHashParams.get('refresh_token');
-
-    const redirect = (destination: string) => {
-      router.replace(destination);
-    };
+    const hashParams = new URLSearchParams(hashRef.current);
+    const type = hashParams.get('type');
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
 
     async function handleCallback() {
-      // If we have tokens in the hash, explicitly set the session
-      // Sign out first to clear any stale session from localStorage
       if (accessToken && refreshToken) {
+        // Clear any stale session first
         await supabase.auth.signOut({ scope: 'local' });
 
         const { error } = await supabase.auth.setSession({
@@ -52,24 +40,24 @@ function AuthCallbackInner() {
 
         if (error) {
           console.error('[AuthCallback] Failed to set session:', error.message);
-          redirect('/login?error=invalid_link');
+          router.replace('/login?error=invalid_link');
           return;
         }
 
         if (type === 'invite') {
-          redirect('/reset-password');
+          router.replace('/reset-password');
         } else {
-          redirect(next);
+          router.replace(next);
         }
         return;
       }
 
-      // No hash tokens — check for existing session (e.g. PKCE flow)
+      // No hash tokens — check for existing session
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        redirect(next);
+        router.replace(next);
       } else {
-        redirect('/login?error=invalid_link');
+        router.replace('/login?error=invalid_link');
       }
     }
 
