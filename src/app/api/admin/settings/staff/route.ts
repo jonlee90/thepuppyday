@@ -314,7 +314,7 @@ export async function POST(request: NextRequest) {
 
     const { email, first_name, last_name, phone, role } = validation.data;
 
-    // Check if email already exists
+    // Check if email already exists in auth or public.users
     const { data: existingUser } = await (serviceClient as any)
       .from('users')
       .select('id')
@@ -349,7 +349,6 @@ export async function POST(request: NextRequest) {
 
       store.insert('users', newStaff);
 
-
       // Log audit entry (non-blocking)
       after(() => logSettingsChange(
         supabase,
@@ -366,37 +365,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Production Supabase insert
-    const { data: newStaff, error: insertError } = await (serviceClient as any)
-      .from('users')
-      .insert({
-        email,
-        first_name,
-        last_name,
-        phone: phone || null,
-        role,
-        avatar_url: null,
-        preferences: {},
-      })
-      .select()
-      .single();
+    // Step 1: Send invite — this creates the auth.users entry and triggers
+    // handle_new_user which inserts the public.users row automatically.
+    // We must do this BEFORE any public.users insert to avoid unique email conflict.
+    const { data: inviteData, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
+      data: { first_name, last_name, role },
+    });
 
-    if (insertError) {
-      console.error('[Staff API] Error creating staff:', insertError);
+    if (inviteError || !inviteData?.user) {
+      console.error('[Staff API] Failed to send invite:', inviteError);
       return NextResponse.json(
-        { error: 'Failed to create staff member' },
+        { error: 'Failed to send invitation email' },
         { status: 500 }
       );
     }
 
-    // Send invitation email so staff member can set up their account
-    const { error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
-      data: { first_name, last_name, role },
-    });
+    const authUserId = inviteData.user.id;
 
-    if (inviteError) {
-      console.error('[Staff API] Failed to send invite email:', inviteError);
-      // Don't fail the request — user row was created, just log the error
+    // Step 2: Update the public.users row created by the trigger with correct role/phone/name
+    const { data: newStaff, error: updateError } = await (serviceClient as any)
+      .from('users')
+      .update({
+        first_name,
+        last_name,
+        phone: phone || null,
+        role,
+      })
+      .eq('id', authUserId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('[Staff API] Error updating staff profile:', updateError);
+      // Auth user was created — return partial success
+      return NextResponse.json(
+        { data: { id: authUserId, email, first_name, last_name, phone: phone || null, role } },
+        { status: 201 }
+      );
     }
 
     // Log audit entry (non-blocking)
@@ -404,7 +409,7 @@ export async function POST(request: NextRequest) {
       supabase,
       adminUser.id,
       'staff',
-      `staff.${newStaff.id}`,
+      `staff.${authUserId}`,
       null,
       { email, first_name, last_name, phone, role }
     ));
