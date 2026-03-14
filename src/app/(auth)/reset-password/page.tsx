@@ -35,22 +35,45 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const supabase = createClient();
 
-    // Detect if coming from an invite link
-    const hash = window.location.hash.substring(1);
-    const hashParams = new URLSearchParams(hash);
-    if (hashParams.get('type') === 'invite') {
-      setIsInvite(true);
-    }
-
-    // Check if we have a valid authenticated user from the email link
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
+    // Use onAuthStateChange to wait for session to fully hydrate
+    // (getUser() can fire before the session from a redirect is ready)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        // Detect invite via user metadata set during invite
+        const meta = session.user.user_metadata;
+        if (meta?.role === 'admin' || meta?.role === 'groomer') {
+          setIsInvite(true);
+        }
         setIsValidToken(true);
-      } else {
-        setError('Invalid or expired reset link. Please request a new one.');
+        subscription.unsubscribe();
       }
     });
-  }, []);
+
+    // Also check immediately in case session is already present
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const meta = session.user.user_metadata;
+        if (meta?.role === 'admin' || meta?.role === 'groomer') {
+          setIsInvite(true);
+        }
+        setIsValidToken(true);
+        subscription.unsubscribe();
+      }
+    });
+
+    // Timeout fallback — show error if no session after 4s
+    const timeout = setTimeout(() => {
+      if (!isValidToken) {
+        setError('Invalid or expired reset link. Please request a new one.');
+        subscription.unsubscribe();
+      }
+    }, 4000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     setError(null);
