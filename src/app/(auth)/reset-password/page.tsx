@@ -5,7 +5,7 @@
  * This page is accessed via the email link sent from forgot-password
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,20 +31,26 @@ export default function ResetPasswordPage() {
     resolver: zodResolver(resetPasswordSchema),
   });
 
+  const validated = useRef(false);
+
   // Verify the reset token on mount
   useEffect(() => {
     const supabase = createClient();
 
+    const markValid = (session: { user: { user_metadata?: Record<string, string> } }) => {
+      if (validated.current) return;
+      validated.current = true;
+      const meta = session.user.user_metadata;
+      if (meta?.role === 'admin' || meta?.role === 'groomer') {
+        setIsInvite(true);
+      }
+      setIsValidToken(true);
+    };
+
     // Use onAuthStateChange to wait for session to fully hydrate
-    // (getUser() can fire before the session from a redirect is ready)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        // Detect invite via user metadata set during invite
-        const meta = session.user.user_metadata;
-        if (meta?.role === 'admin' || meta?.role === 'groomer') {
-          setIsInvite(true);
-        }
-        setIsValidToken(true);
+        markValid(session);
         subscription.unsubscribe();
       }
     });
@@ -52,22 +58,18 @@ export default function ResetPasswordPage() {
     // Also check immediately in case session is already present
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const meta = session.user.user_metadata;
-        if (meta?.role === 'admin' || meta?.role === 'groomer') {
-          setIsInvite(true);
-        }
-        setIsValidToken(true);
+        markValid(session);
         subscription.unsubscribe();
       }
     });
 
-    // Timeout fallback — show error if no session after 4s
+    // Timeout fallback — show error if no session after 5s
     const timeout = setTimeout(() => {
-      if (!isValidToken) {
+      if (!validated.current) {
         setError('Invalid or expired reset link. Please request a new one.');
         subscription.unsubscribe();
       }
-    }, 4000);
+    }, 5000);
 
     return () => {
       subscription.unsubscribe();
