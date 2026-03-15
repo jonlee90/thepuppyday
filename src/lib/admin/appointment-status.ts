@@ -29,6 +29,14 @@ export const ALLOWED_TRANSITIONS: StatusTransition[] = [
   },
   {
     from: 'pending',
+    to: 'no_show',
+    label: 'No Show',
+    requiresConfirmation: true,
+    isDestructive: true,
+    description: 'Customer did not show up',
+  },
+  {
+    from: 'pending',
     to: 'cancelled',
     label: 'Cancel',
     requiresConfirmation: true,
@@ -39,6 +47,14 @@ export const ALLOWED_TRANSITIONS: StatusTransition[] = [
   // From confirmed
   {
     from: 'confirmed',
+    to: 'checked_in',
+    label: 'Check In',
+    requiresConfirmation: false,
+    isDestructive: false,
+    description: 'Customer has arrived',
+  },
+  {
+    from: 'confirmed',
     to: 'in_progress',
     label: 'Start Service',
     requiresConfirmation: false,
@@ -47,6 +63,32 @@ export const ALLOWED_TRANSITIONS: StatusTransition[] = [
   },
   {
     from: 'confirmed',
+    to: 'no_show',
+    label: 'No Show',
+    requiresConfirmation: true,
+    isDestructive: true,
+    description: 'Customer did not show up',
+  },
+  {
+    from: 'confirmed',
+    to: 'cancelled',
+    label: 'Cancel',
+    requiresConfirmation: true,
+    isDestructive: true,
+    description: 'Cancel this appointment',
+  },
+
+  // From checked_in
+  {
+    from: 'checked_in',
+    to: 'in_progress',
+    label: 'Start Service',
+    requiresConfirmation: false,
+    isDestructive: false,
+    description: 'Begin grooming service',
+  },
+  {
+    from: 'checked_in',
     to: 'cancelled',
     label: 'Cancel',
     requiresConfirmation: true,
