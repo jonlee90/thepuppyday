@@ -5,7 +5,7 @@
  * Uses Next.js Link for page navigation with pathname-based active state
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,54 +27,12 @@ const navLinks = [
 
 export function Header({ hoursText }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
   const { user, isAuthenticated } = useAuthStore();
   const pathname = usePathname();
 
-  const SCROLL_THRESHOLD = 10;
-
-  const updateHeader = useCallback(() => {
-    const currentScrollY = window.scrollY;
-    const delta = currentScrollY - lastScrollY.current;
-
-    if (Math.abs(delta) >= SCROLL_THRESHOLD) {
-      if (delta > 0 && currentScrollY > 160) {
-        setIsHeaderVisible(false);
-        setMobileMenuOpen(false);
-      } else if (delta < 0) {
-        setIsHeaderVisible(true);
-      }
-      lastScrollY.current = currentScrollY;
-    }
-
-    if (currentScrollY <= 0) {
-      setIsHeaderVisible(true);
-      lastScrollY.current = 0;
-    }
-
-    ticking.current = false;
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!ticking.current) {
-        requestAnimationFrame(updateHeader);
-        ticking.current = true;
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [updateHeader]);
-
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out will-change-transform"
-      style={{
-        transform: isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)',
-      }}
+      className="fixed top-0 left-0 right-0 z-50"
     >
       <AddressBar />
       <div className="transition-all duration-300 bg-white shadow-md backdrop-blur-sm">

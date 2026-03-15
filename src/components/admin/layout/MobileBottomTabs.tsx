@@ -32,10 +32,10 @@ export function MobileBottomTabs() {
       href: '/admin/appointments',
     },
     {
-      id: 'analytics' as const,
-      label: 'Analytics',
-      icon: BarChart2,
-      href: '/admin/analytics',
+      id: 'customers' as const,
+      label: 'Customers',
+      icon: Users,
+      href: '/admin/customers',
     },
     {
       id: 'walkin' as const,
@@ -50,10 +50,10 @@ export function MobileBottomTabs() {
       href: '/admin/waitlist',
     },
     {
-      id: 'customers' as const,
-      label: 'Customers',
-      icon: Users,
-      href: '/admin/customers',
+      id: 'analytics' as const,
+      label: 'Analytics',
+      icon: BarChart2,
+      href: '/admin/analytics',
     },
     {
       id: 'more' as const,

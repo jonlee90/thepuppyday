@@ -28,9 +28,7 @@ export function StatusTransitionButton({
 }: StatusTransitionButtonProps) {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
-  const [sendNotification, setSendNotification] = useState(false);
   const [sendEmail, setSendEmail] = useState(true);
-  const [sendSms, setSendSms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,9 +47,8 @@ export function StatusTransitionButton({
     try {
       const body: any = {
         status: transition.to,
-        sendNotification,
+        sendNotification: sendEmail,
         sendEmail,
-        sendSms,
       };
 
       if (transition.to === 'cancelled' && cancellationReason) {
@@ -131,7 +128,7 @@ export function StatusTransitionButton({
               </div>
             )}
 
-            {/* Notification Options */}
+            {/* Email Notification */}
             {(transition.to === 'confirmed' ||
               transition.to === 'cancelled' ||
               transition.to === 'completed') && (
@@ -139,38 +136,15 @@ export function StatusTransitionButton({
                 <label className="label cursor-pointer justify-start gap-3">
                   <input
                     type="checkbox"
-                    checked={sendNotification}
-                    onChange={(e) => setSendNotification(e.target.checked)}
+                    checked={sendEmail}
+                    onChange={(e) => setSendEmail(e.target.checked)}
                     className="checkbox checkbox-primary"
                   />
                   <span className="label-text text-[#434E54] font-medium">
                     <Send className="w-4 h-4 inline-block mr-2" />
-                    Send Notification
+                    Send Email Notification
                   </span>
                 </label>
-
-                {sendNotification && (
-                  <div className="ml-8 space-y-2">
-                    <label className="label cursor-pointer justify-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={sendEmail}
-                        onChange={(e) => setSendEmail(e.target.checked)}
-                        className="checkbox checkbox-sm"
-                      />
-                      <span className="label-text text-[#6B7280]">Email</span>
-                    </label>
-                    <label className="label cursor-pointer justify-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={sendSms}
-                        onChange={(e) => setSendSms(e.target.checked)}
-                        className="checkbox checkbox-sm"
-                      />
-                      <span className="label-text text-[#6B7280]">SMS</span>
-                    </label>
-                  </div>
-                )}
               </div>
             )}
 

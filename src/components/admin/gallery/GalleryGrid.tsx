@@ -122,7 +122,11 @@ export function GalleryGrid({ initialImages = [] }: GalleryGridProps) {
   const [editImageId, setEditImageId] = useState<string | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })

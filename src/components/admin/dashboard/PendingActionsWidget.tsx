@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { CheckCircle, PawPrint } from 'lucide-react';
+import { AppointmentDetailModal } from '@/components/admin/appointments/AppointmentDetailModal';
 import { toast } from '@/hooks/use-toast';
 import { formatTime } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -41,6 +42,10 @@ export function PendingActionsWidget({
   // Local copy so we can remove entries optimistically after confirm
   const [localPending, setLocalPending] = useState<Appointment[]>(pending);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  // Detail modal state
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Keep local state in sync when the prop updates from outside (e.g., refetch)
   useEffect(() => {
@@ -165,7 +170,11 @@ export function PendingActionsWidget({
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, ease: 'easeOut', delay: index * 0.06 }}
-                className="py-3 flex items-center justify-between gap-4"
+                className="py-3 flex items-center justify-between gap-4 cursor-pointer hover:bg-[#FFFBF7] -mx-2 px-2 rounded-lg transition-colors"
+                onClick={() => {
+                  setSelectedAppointmentId(appt.id);
+                  setIsModalOpen(true);
+                }}
               >
                 <div className="min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-0.5">
                   <div className="min-w-0">
@@ -185,7 +194,7 @@ export function PendingActionsWidget({
                   </div>
                 </div>
                 <button
-                  onClick={() => handleConfirm(appt.id)}
+                  onClick={(e) => { e.stopPropagation(); handleConfirm(appt.id); }}
                   disabled={isConfirming}
                   className="btn btn-sm bg-[#434E54] hover:bg-[#363F44] text-white border-none flex-shrink-0 disabled:opacity-60 min-w-[88px]"
                   aria-label={`Confirm appointment for ${customerName}`}
@@ -215,6 +224,19 @@ export function PendingActionsWidget({
           View all {pending.length} pending appointments
         </Link>
       )}
+
+      {/* Appointment Detail Modal */}
+      <AppointmentDetailModal
+        appointmentId={selectedAppointmentId}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedAppointmentId(null);
+        }}
+        onUpdate={() => {
+          onStatusUpdate?.();
+        }}
+      />
     </div>
   );
 }
