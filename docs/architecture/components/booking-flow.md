@@ -16,9 +16,9 @@ The booking widget is a unified multi-step modal that guides users through the a
 **Key Features**:
 - Single unified modal component for all booking types
 - Mode-aware step flows and UI
-- Consolidated `DetailsStep` replaces separate CustomerStep and PetStep
+- `CustomerStep` and `PetStep` are separate components (previously a single `DetailsStep`)
 - Integrated add-ons in review step (no separate add-ons step)
-- PriceSummary sidebar on review step (desktop) and fixed bottom bar (mobile)
+- PriceSummary sidebar on review step (desktop only — no mobile bottom bar)
 - Session persistence via Zustand with sessionStorage
 - 30-minute session timeout with auto-reset
 
@@ -32,9 +32,9 @@ Used on the marketing page for public bookings via sticky "Book Reservation" but
 | Step | Component | Description |
 |------|-----------|-------------|
 | 0 | `ServiceStep` | Select grooming service |
-| 1 | `DateTimeStep` | Choose appointment date/time (hourly slots) |
-| 2 | `DetailsStep` (section="customer") | Login or register account |
-| 3 | `DetailsStep` (section="pet") | Select or create pet profile |
+| 1 | `CustomerStep` (mode="customer") | Guest info, login, or create account |
+| 2 | `PetStep` (mode="customer") | Select or create pet profile |
+| 3 | `DateTimeStep` | Choose appointment date/time (hourly slots) |
 | 4 | `ReviewStep` | Review booking **with integrated add-ons selection** |
 | 5 | `ConfirmationStep` | Success message |
 
@@ -46,9 +46,9 @@ Used in `/admin/appointments` for creating appointments.
 | Step | Component | Description |
 |------|-----------|-------------|
 | 0 | `ServiceStep` | Select grooming service |
-| 1 | `DateTimeStep` | Choose appointment date/time (hourly slots) |
-| 2 | `DetailsStep` (mode="admin", section="customer") | Search/create customer (form always visible) |
-| 3 | `DetailsStep` (mode="admin", section="pet") | Select customer's pet or create new |
+| 1 | `CustomerStep` (mode="admin") | Search/create customer |
+| 2 | `PetStep` (mode="admin") | Select customer's pet or create new |
+| 3 | `DateTimeStep` | Choose appointment date/time (hourly slots) |
 | 4 | `ReviewStep` (adminMode) | Review appointment **with integrated add-ons selection** |
 | 5 | `ConfirmationStep` | Appointment created |
 
@@ -58,8 +58,8 @@ Used in `/admin/dashboard` for immediate walk-in appointments.
 | Step | Component | Description |
 |------|-----------|-------------|
 | 0 | `ServiceStep` | Select grooming service |
-| 1 | `DetailsStep` (mode="walkin", section="customer") | Search/create customer (form always visible) |
-| 2 | `DetailsStep` (mode="walkin", section="pet") | Select customer's pet or create new |
+| 1 | `CustomerStep` (mode="walkin") | Search/create customer (form always visible) |
+| 2 | `PetStep` (mode="walkin") | Select customer's pet or create new |
 | 3 | `WalkinReviewStep` | Review **with integrated add-ons** |
 | 4 | `ConfirmationStep` | Walk-in confirmed |
 
@@ -86,14 +86,14 @@ interface BookingModalProps {
 ```
 
 **Responsive Sizing**:
-- **Desktop/Tablet**: Centered modal `max-w-[1000px] xl:max-w-[1200px]` - optimized for larger screens
-- **Mobile**: Bottom sheet (95vh, slides up from bottom)
+- **Desktop/Tablet**: Centered modal `max-w-[960px] xl:max-w-[1100px]` - optimized for larger screens
+- **Mobile**: Bottom sheet (92vh, slides up from bottom with drag-to-dismiss)
 - **Features**: Focus trap, escape key handling, body scroll lock
 
 **Related files**:
-- `BookingModalHeader.tsx` - Modal header with title and close button
-- `BookingModalFooter.tsx` - Modal footer with navigation buttons
-- `BookingModalProgress.tsx` - Step progress indicator within modal
+- `BookingModalHeader.tsx` - Modal header with step title and close button (mobile: no step counter)
+- `BookingModalFooter.tsx` - Modal footer with Back and Continue buttons (mobile: `fixed` positioned at bottom)
+- `BookingModalProgress.tsx` - Step progress indicator (mobile: progress bar + step counter centered + step label right; desktop: numbered circles with labels)
 - `BookingModalProvider.tsx` - Context provider for modal state
 - `BookingModalTrigger.tsx` - Trigger component to open modal
 
@@ -107,6 +107,8 @@ interface BookingWizardProps {
   preSelectedServiceId?: string;
   embedded?: boolean; // Hide header/progress when in modal
   mode?: BookingModalMode; // Affects step order
+  stepContinueRef?: MutableRefObject<(() => Promise<boolean>) | null>;
+  onStepCanContinueChange?: (override: boolean | null) => void;
 }
 ```
 
@@ -117,31 +119,31 @@ const renderStep = () => {
   if (mode === 'walkin') {
     switch (currentStep) {
       case 0: return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
-      case 1: return <DetailsStep mode="walkin" section="customer" />;
-      case 2: return <DetailsStep mode="walkin" section="pet" />;
+      case 1: return <CustomerStep ref={customerStepRef} mode="walkin" onCanContinueChange={onStepCanContinueChange} />;
+      case 2: return <PetStep ref={petStepRef} mode="walkin" onCanContinueChange={onStepCanContinueChange} />;
       case 3: return <WalkinReviewStep customerId={selectedCustomerId} />;
       case 4: return <ConfirmationStep />;
     }
   }
 
-  // Admin mode: Service -> DateTime -> Customer -> Pet -> Review -> Confirmation
+  // Admin mode: Service -> Customer -> Pet -> DateTime -> Review -> Confirmation
   if (mode === 'admin') {
     switch (currentStep) {
       case 0: return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
-      case 1: return <DateTimeStep />;
-      case 2: return <DetailsStep mode="admin" section="customer" />;
-      case 3: return <DetailsStep mode="admin" section="pet" />;
+      case 1: return <CustomerStep ref={customerStepRef} mode="admin" onCanContinueChange={onStepCanContinueChange} />;
+      case 2: return <PetStep ref={petStepRef} mode="admin" onCanContinueChange={onStepCanContinueChange} />;
+      case 3: return <DateTimeStep />;
       case 4: return <ReviewStep adminMode={true} customerId={selectedCustomerId} />;
       case 5: return <ConfirmationStep />;
     }
   }
 
-  // Customer mode: Service -> DateTime -> Customer -> Pet -> Review -> Confirmation
+  // Customer mode: Service -> Customer -> Pet -> DateTime -> Review -> Confirmation
   switch (currentStep) {
     case 0: return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
-    case 1: return <DateTimeStep />;
-    case 2: return <DetailsStep mode="customer" section="customer" />;
-    case 3: return <DetailsStep mode="customer" section="pet" />;
+    case 1: return <CustomerStep ref={customerStepRef} mode="customer" onCanContinueChange={onStepCanContinueChange} />;
+    case 2: return <PetStep ref={petStepRef} mode="customer" onCanContinueChange={onStepCanContinueChange} />;
+    case 3: return <DateTimeStep />;
     case 4: return <ReviewStep />;
     case 5: return <ConfirmationStep />;
   }
@@ -150,7 +152,7 @@ const renderStep = () => {
 
 **PriceSummary Sidebar**: The wizard conditionally renders a `PriceSummary` component in a sidebar layout on the Review step:
 - **Desktop/Tablet** (`md:` and up): Sticky sidebar in a 3-column grid (2 cols step content + 1 col sidebar)
-- **Mobile**: Fixed bottom bar showing total price and add-on count
+- **Mobile**: Not shown — no mobile price summary bar
 - Only visible on the Review step (step 4 for customer/admin, step 3 for walkin)
 
 **Session Expiry**: On mount, checks `isSessionExpired()` and calls `reset()` if the 30-minute timeout has elapsed.
@@ -216,60 +218,61 @@ interface ServiceCardProps {
 
 ---
 
-### DetailsStep (`steps/DetailsStep.tsx`)
+### CustomerStep (`steps/CustomerStep.tsx`)
 
-**Purpose**: Consolidated customer + pet details step that replaces the former separate `CustomerStep` and `PetStep` components.
+**Purpose**: Handles customer identification for the booking wizard. Extracted from the former `DetailsStep` component.
 
 **Props**:
 ```typescript
-interface DetailsStepProps {
+interface CustomerStepProps {
   mode?: BookingModalMode; // 'customer' | 'admin' | 'walkin'
-  section?: 'customer' | 'pet';
+  onCanContinueChange?: (override: boolean | null) => void;
 }
 ```
 
-The `section` prop determines which section to render:
-- `section="customer"` - Renders only the customer section
-- `section="pet"` - Renders only the pet section
-- No section - Renders both with progressive disclosure (legacy combined mode)
+Uses `forwardRef` with `CustomerStepHandle` (`{ onContinue: () => Promise<boolean> }`) for the footer's continue logic.
 
-**Customer Section - Customer Mode**:
-- **Login View**: Email + password fields with "Log In" button
-- **Register View**: First name, last name, email, phone fields with "Continue" button
-- **Toggle**: Links to switch between login/register views
+**Customer Mode — 3 View States**:
+- **`guest`** (default): First name, last name, email, phone, address, city, ZIP fields (no password)
+- **`createAccount`**: Same fields as guest, plus password + confirm password fields
+- **`login`**: Email + password fields only
+- Toggle buttons at top switch between `createAccount` and `login`; a "continue as guest" link returns to `guest`
 - **Authenticated**: Shows green confirmation card with user info (UserCheck icon)
 
-**Customer Section - Admin/Walk-in Mode**:
+**Admin/Walk-in Mode**:
 - **Search Bar**: Search existing customers by name, email, or phone (debounced 300ms)
 - **Search Results**: Radio list of matching customers with selection
 - **OR Divider**: Visual separator between search and create
-- **Create Form**: Always visible below search with "Use This Customer" button
+- **Create Form**: Always visible below search
 - **Selected Display**: Green confirmation card showing selected customer
 
-**Pet Section**:
+**Features**:
+- Duplicate email detection via API check (admin/walkin only)
+- Form validation using Zod schema (`guestInfoSchema`)
+- Phone number masking via `usePhoneMask` hook
+- `onContinue` imperative handle validates and saves state; returns `false` to block navigation on error
+
+---
+
+### PetStep (`steps/PetStep.tsx`)
+
+**Purpose**: Handles pet selection or creation for the booking wizard. Extracted from the former `DetailsStep` component.
+
+**Props**:
+```typescript
+interface PetStepProps {
+  mode?: BookingModalMode; // 'customer' | 'admin' | 'walkin'
+  onCanContinueChange?: (override: boolean | null) => void;
+}
+```
+
+Uses `forwardRef` with `PetStepHandle` (`{ onContinue: () => Promise<boolean> }`) for the footer's continue logic.
+
+**Features**:
 - Loads pets for the effective owner (authenticated user or selected customer)
 - Shows existing pets as `PetCard` components with selection
 - `AddPetCard` to open `PetForm` for creating new pet
-- New pet data banner when pet form has been submitted
 - Loading skeleton and error states with retry
-
-**Form Validation**:
-```typescript
-const isFormComplete =
-  newCustomerForm.first_name.trim() !== '' &&
-  newCustomerForm.last_name.trim() !== '' &&
-  newCustomerForm.email.trim() !== '' &&
-  newCustomerForm.phone.trim() !== '' &&
-  Object.keys(formErrors).length === 0 &&
-  !duplicateEmailError;
-```
-
-**Features**:
-- Duplicate email detection via API check
-- Form validation using Zod schema (`guestInfoSchema`)
-- Phone number masking via `usePhoneMask` hook
-- Progressive disclosure: pet section appears after customer is set (in combined mode)
-- Auto-show pet form for new customers or customers with no pets
 
 ---
 
@@ -498,8 +501,7 @@ const MAX_STEP: Record<BookingModalMode, number> = {
 
 The following components were removed during prior refactors:
 
-- `src/components/booking/steps/CustomerStep.tsx` (replaced by `DetailsStep` with `section="customer"`)
-- `src/components/booking/steps/PetStep.tsx` (replaced by `DetailsStep` with `section="pet"`)
+- `src/components/booking/steps/DetailsStep.tsx` (replaced by separate `CustomerStep.tsx` and `PetStep.tsx`)
 - `src/components/admin/appointments/WalkInModal.tsx` (replaced by unified BookingModal)
 - `src/components/admin/appointments/ManualAppointmentModal.tsx` (replaced by unified BookingModal)
 - `src/components/admin/appointments/steps/*.tsx` (all duplicate step components)
@@ -518,5 +520,5 @@ The following components were removed during prior refactors:
 
 ---
 
-**Last Updated**: 2026-03-07 by Claude Code
-**Changes**: Documented useMemo optimization on ServiceStep bookableServices filter.
+**Last Updated**: 2026-03-14 by Claude Code
+**Changes**: Replaced DetailsStep references with separate CustomerStep and PetStep; updated step order tables (Customer now before DateTime in all modes); updated BookingModal sizing; updated PriceSummary mobile note; added users table is_active/created_by_admin/activated_at columns; corrected Deleted Components list.

@@ -1,6 +1,6 @@
 # The Puppy Day - Master Architecture Documentation
 
-> **Version**: 1.6
+> **Version**: 1.7
 > **Last Updated**: 2026-03-14
 > **Status**: Production-Ready (Phases 1-6, 8-9, 11 Complete | Admin Dashboard Redesign Complete | Notification Templates Redesign In Progress | Phase 7 Pending | Phase 10 In Progress)
 
@@ -456,7 +456,8 @@ thepuppyday/
 │   │   │   └── steps/              # Booking wizard steps
 │   │   │       ├── ServiceStep.tsx
 │   │   │       ├── DateTimeStep.tsx
-│   │   │       ├── DetailsStep.tsx  # Consolidated customer/pet details
+│   │   │       ├── CustomerStep.tsx # Customer identification step
+│   │   │       ├── PetStep.tsx      # Pet selection/creation step
 │   │   │       ├── AddonsStep.tsx
 │   │   │       ├── ReviewStep.tsx
 │   │   │       ├── WalkinReviewStep.tsx
@@ -608,6 +609,9 @@ interface User {
   address: string | null;          // Street address
   city: string | null;             // City
   zip: string | null;              // ZIP code
+  is_active: boolean;              // Soft delete / account active flag
+  created_by_admin: boolean;       // Whether account was created by an admin
+  activated_at: string | null;     // When account was first activated
   created_at: string | null;
   updated_at: string | null;
 }
