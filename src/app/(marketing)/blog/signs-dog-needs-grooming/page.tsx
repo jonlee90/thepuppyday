@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { SchemaOrg } from '@/components/common/SchemaOrg';
 import { BlogPostLayout } from '@/components/marketing/BlogPostLayout';
@@ -70,6 +71,17 @@ export default async function SignsDogNeedsGroomingPage() {
         relatedPosts={relatedPosts}
         phone={businessInfo.phone}
       >
+        <div className="rounded-2xl overflow-hidden mb-6 shadow-md">
+          <Image
+            src="/images/blog/signs-dog-needs-grooming.jpg"
+            alt="Bulldog peeking over the edge of a grooming tub at Puppy Day in La Mirada"
+            width={900}
+            height={900}
+            className="w-full object-cover"
+            priority
+          />
+        </div>
+
         <p>
           Most of the dogs I see at Puppy Day don&apos;t come in because their owners planned ahead.
           They come in because something finally tipped them off. Maybe the coat started smelling

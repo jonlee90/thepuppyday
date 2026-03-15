@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { SchemaOrg } from '@/components/common/SchemaOrg';
 import { BlogPostLayout } from '@/components/marketing/BlogPostLayout';
@@ -70,6 +71,17 @@ export default async function GoldendoodleGroomingGuidePage() {
         relatedPosts={relatedPosts}
         phone={businessInfo.phone}
       >
+        <div className="rounded-2xl overflow-hidden mb-6 shadow-md">
+          <Image
+            src="/images/blog/goldendoodle-grooming-guide.jpg"
+            alt="Freshly groomed doodle mix standing on grooming table at Puppy Day in La Mirada"
+            width={900}
+            height={900}
+            className="w-full object-cover"
+            priority
+          />
+        </div>
+
         <p>
           Goldendoodles make up about a third of my daily schedule at this point. I&apos;m not
           exaggerating. Goldendoodle grooming has become such a big part of what we do at Puppy Day

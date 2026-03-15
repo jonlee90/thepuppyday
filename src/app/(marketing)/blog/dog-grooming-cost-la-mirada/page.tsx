@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { SchemaOrg } from '@/components/common/SchemaOrg';
 import { BlogPostLayout } from '@/components/marketing/BlogPostLayout';
@@ -70,6 +71,17 @@ export default async function DogGroomingCostPage() {
         relatedPosts={relatedPosts}
         phone={businessInfo.phone}
       >
+        <div className="rounded-2xl overflow-hidden mb-6 shadow-md">
+          <Image
+            src="/images/blog/dog-grooming-cost-la-mirada.jpg"
+            alt="Happy Corgis at Puppy Day grooming salon in La Mirada"
+            width={900}
+            height={900}
+            className="w-full object-cover"
+            priority
+          />
+        </div>
+
         <p>
           I&apos;ve been grooming dogs in La Mirada for over a decade now, and the single most
           common question I get from new clients walking through our door at Puppy Day is about
