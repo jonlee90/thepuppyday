@@ -58,6 +58,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme="light">
+      <head>
+        <link rel="preconnect" href="https://jajbtwgbhrkvgxvvruaa.supabase.co" />
+      </head>
       <body suppressHydrationWarning className={`${bricolage.variable} ${dmSans.variable} antialiased`}>
         {/* Skip to content link for keyboard navigation */}
         <a

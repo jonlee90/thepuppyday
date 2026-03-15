@@ -31,6 +31,7 @@ export function HeroSection({ heroContent }: HeroSectionProps) {
           alt="The Puppy Day salon lobby"
           fill
           priority={true}
+          quality={75}
           enableBlur={false}
           className="object-cover"
           sizes="100vw"
