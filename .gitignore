@@ -42,7 +42,24 @@ lighthouse-*.json
 analyze-lighthouse.js
 nul
 
+# Claude Code / AI tooling — never commit
+.claude/
+.cursor/
+.windsurf/
+.aider*
 .playwright-mcp/
-.claude\settings.json
+
+# OS / editor artifacts
+.DS_Store
+.idea/
+.vscode/settings.json
+
+# Secrets & credentials
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
+*-credentials.json
 
 # Serwist service worker build output (generated in .next/ by turbopack, no public artifacts)
