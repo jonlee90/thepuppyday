@@ -373,7 +373,7 @@ export async function POST(request: NextRequest) {
       : (process.env.NEXT_PUBLIC_SITE_URL || 'https://thepuppyday.com');
     const { data: inviteData, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
       data: { first_name, last_name, role },
-      redirectTo: `${siteUrl}/auth/callback?next=/admin`,
+      redirectTo: `${siteUrl}/api/auth/callback?next=/reset-password&type=invite`,
     });
 
     if (inviteError || !inviteData?.user) {

@@ -342,16 +342,28 @@ export interface ResetTemplatesRequest {
 /**
  * Blocked date entry for calendar
  */
+export interface BlockedHourRange {
+  start: string; // "HH:MM" format (24-hour)
+  end: string;   // "HH:MM" format (24-hour)
+}
+
 export interface BlockedDate {
   date: string; // ISO date string
   end_date?: string | null; // For multi-day blocks
   reason: string;
+  blocked_hours?: BlockedHourRange[]; // Optional: block specific hours instead of entire day
 }
+
+const BlockedHourRangeSchema = z.object({
+  start: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/),
+  end: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/),
+});
 
 export const BlockedDateSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   reason: z.string().min(1).max(200),
+  blocked_hours: z.array(BlockedHourRangeSchema).optional(),
 });
 
 /**

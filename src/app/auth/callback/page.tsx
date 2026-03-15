@@ -42,7 +42,8 @@ function AuthCallbackInner() {
         }
 
         if (type === 'invite') {
-          router.replace('/reset-password');
+          await new Promise(r => setTimeout(r, 500));
+          router.replace('/reset-password?type=invite');
         } else {
           router.replace(next);
         }

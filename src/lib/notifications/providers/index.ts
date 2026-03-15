@@ -130,17 +130,36 @@ export function getSMSProvider(): SMSProvider {
     smsProviderInstance = getMockTwilioProvider();
   } else {
     if (!TwilioProvider) {
-      throw new Error(
-        'TwilioProvider not available. Make sure production provider is implemented and SDK is installed.'
+      console.warn(
+        '[Provider Factory] TwilioProvider not available — SMS will be unavailable'
       );
+      return getNoopSMSProvider();
     }
 
-    console.log('[Provider Factory] Using TwilioProvider for SMS (production)');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    smsProviderInstance = new (TwilioProvider as any)() as SMSProvider;
+    try {
+      console.log('[Provider Factory] Using TwilioProvider for SMS (production)');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      smsProviderInstance = new (TwilioProvider as any)() as SMSProvider;
+    } catch (error) {
+      console.warn('[Provider Factory] TwilioProvider failed to initialize — SMS will be unavailable:', error);
+      return getNoopSMSProvider();
+    }
   }
 
   return smsProviderInstance;
+}
+
+/**
+ * No-op SMS provider returned when Twilio is unavailable
+ * Prevents SMS init failures from blocking email notifications
+ */
+function getNoopSMSProvider(): SMSProvider {
+  return {
+    send: async () => ({
+      success: false,
+      error: 'SMS provider not configured',
+    }),
+  } as SMSProvider;
 }
 
 /**

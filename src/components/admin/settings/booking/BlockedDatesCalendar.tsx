@@ -32,6 +32,7 @@ interface BlockedDatesCalendarProps {
 
 interface DateState {
   isBlocked: boolean;
+  isPartiallyBlocked: boolean;
   reason?: string;
   appointmentCount?: number;
   isToday: boolean;
@@ -142,14 +143,25 @@ export function BlockedDatesCalendar({
     setCurrentYear(today.getFullYear());
   };
 
-  // Check if a date is blocked
+  // Check if a date is fully blocked (entire day)
   const isDateBlocked = (dateStr: string): boolean => {
     return blockedDates.some((blocked) => {
       if (blocked.end_date) {
-        // Check if date is within range
         return dateStr >= blocked.date && dateStr <= blocked.end_date;
       }
+      // Single date with blocked_hours = partial, not fully blocked
+      if (blocked.blocked_hours && blocked.blocked_hours.length > 0) {
+        return false;
+      }
       return blocked.date === dateStr;
+    });
+  };
+
+  // Check if a date is partially blocked (specific hours only)
+  const isDatePartiallyBlocked = (dateStr: string): boolean => {
+    return blockedDates.some((blocked) => {
+      if (blocked.end_date) return false;
+      return blocked.date === dateStr && blocked.blocked_hours && blocked.blocked_hours.length > 0;
     });
   };
 
@@ -173,6 +185,7 @@ export function BlockedDatesCalendar({
 
     return {
       isBlocked: isDateBlocked(dateStr),
+      isPartiallyBlocked: isDatePartiallyBlocked(dateStr),
       reason: getBlockedReason(dateStr),
       appointmentCount: appointmentCounts[dateStr],
       isToday,
@@ -367,6 +380,10 @@ export function BlockedDatesCalendar({
       return 'bg-gray-200 text-gray-700'; // Blocked
     }
 
+    if (state.isPartiallyBlocked) {
+      return 'bg-orange-100 text-orange-700'; // Partially blocked (specific hours)
+    }
+
     if (state.appointmentCount && state.appointmentCount > 0) {
       return 'bg-blue-100 text-blue-700'; // Has appointments
     }
@@ -471,7 +488,7 @@ export function BlockedDatesCalendar({
 
         {/* Legend */}
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-green-50 border border-green-200 rounded"></div>
               <span className="text-[#6B7280]">Available</span>
@@ -479,6 +496,10 @@ export function BlockedDatesCalendar({
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-blue-100 border border-blue-200 rounded"></div>
               <span className="text-[#6B7280]">Has Appointments</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-orange-100 border border-orange-200 rounded"></div>
+              <span className="text-[#6B7280]">Partial Block</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-gray-200 border border-gray-300 rounded"></div>

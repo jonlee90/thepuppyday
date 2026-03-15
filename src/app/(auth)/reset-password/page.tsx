@@ -5,8 +5,8 @@
  * This page is accessed via the email link sent from forgot-password
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
@@ -16,8 +16,9 @@ import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validatio
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-export default function ResetPasswordPage() {
+function ResetPasswordInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isValidToken, setIsValidToken] = useState(false);
@@ -33,49 +34,26 @@ export default function ResetPasswordPage() {
 
   const validated = useRef(false);
 
-  // Verify the reset token on mount
+  // Verify session on mount — cookies are already set by server callback
   useEffect(() => {
+    if (validated.current) return;
+    validated.current = true;
+
+    const typeParam = searchParams.get('type');
     const supabase = createClient();
 
-    const markValid = (session: { user: { user_metadata?: Record<string, string> } }) => {
-      if (validated.current) return;
-      validated.current = true;
-      const meta = session.user.user_metadata;
-      if (meta?.role === 'admin' || meta?.role === 'groomer') {
-        setIsInvite(true);
-      }
-      setIsValidToken(true);
-    };
-
-    // Use onAuthStateChange to wait for session to fully hydrate
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        markValid(session);
-        subscription.unsubscribe();
-      }
-    });
-
-    // Also check immediately in case session is already present
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        markValid(session);
-        subscription.unsubscribe();
-      }
-    });
-
-    // Timeout fallback — show error if no session after 5s
-    const timeout = setTimeout(() => {
-      if (!validated.current) {
+    supabase.auth.getUser().then(({ data: { user }, error: userError }) => {
+      if (user && !userError) {
+        const meta = user.user_metadata;
+        if (typeParam === 'invite' || meta?.role === 'admin' || meta?.role === 'groomer') {
+          setIsInvite(true);
+        }
+        setIsValidToken(true);
+      } else {
         setError('Invalid or expired reset link. Please request a new one.');
-        subscription.unsubscribe();
       }
-    }, 5000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    });
+  }, [searchParams]);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     setError(null);
@@ -207,5 +185,13 @@ export default function ResetPasswordPage() {
         </form>
       </div>
     </motion.div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordInner />
+    </Suspense>
   );
 }

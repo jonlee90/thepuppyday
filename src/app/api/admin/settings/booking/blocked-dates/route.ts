@@ -17,6 +17,11 @@ import { z, type ZodIssue } from 'zod';
 /**
  * Validation schemas
  */
+const BlockedHourRangeInputSchema = z.object({
+  start: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, 'Start time must be in HH:MM format'),
+  end: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, 'End time must be in HH:MM format'),
+});
+
 const BlockedDateInputSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
   end_date: z
@@ -25,6 +30,7 @@ const BlockedDateInputSchema = z.object({
     .nullable()
     .optional(),
   reason: z.string().max(200, 'Reason must be 200 characters or less').optional().default(''),
+  blocked_hours: z.array(BlockedHourRangeInputSchema).optional(),
   force: z.boolean().optional().default(false), // Force block despite conflicts
 }).refine(
   (data) => {
@@ -148,7 +154,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { date, end_date, reason, force } = parseResult.data;
+    const { date, end_date, reason, blocked_hours, force } = parseResult.data;
 
     // Check for existing appointments in the date range (unless force is true)
     if (!force) {
@@ -239,6 +245,7 @@ export async function POST(request: Request) {
       date,
       end_date: end_date || null,
       reason: reason || '',
+      ...(blocked_hours && blocked_hours.length > 0 ? { blocked_hours } : {}),
     };
 
     const updatedBlockedDates = [...oldBlockedDates, newBlockedDate];

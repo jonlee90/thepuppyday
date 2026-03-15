@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/dashboard';
+  const type = searchParams.get('type');
 
   if (code) {
     const supabase = await createServerSupabaseClient();
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       const url = request.nextUrl.clone();
       url.pathname = next;
-      url.search = '';
+      url.search = type ? `?type=${type}` : '';
       return NextResponse.redirect(url);
     }
 

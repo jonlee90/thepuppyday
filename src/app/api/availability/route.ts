@@ -50,9 +50,15 @@ function convertToLegacyFormat(newFormatHours: any): BusinessHours {
 }
 
 /**
- * Check if a date falls within any blocked date range
+ * Check if a date falls within any blocked date range.
+ * Returns `partial: true` with `blocked_hours` when only specific hours are blocked.
  */
-function isDateBlocked(date: string, blockedDates: BlockedDate[]): { blocked: boolean; reason?: string } {
+function isDateBlocked(date: string, blockedDates: BlockedDate[]): {
+  blocked: boolean;
+  partial?: boolean;
+  blocked_hours?: Array<{ start: string; end: string }>;
+  reason?: string;
+} {
   const checkDate = new Date(date + 'T00:00:00');
 
   for (const blocked of blockedDates) {
@@ -62,6 +68,15 @@ function isDateBlocked(date: string, blockedDates: BlockedDate[]): { blocked: bo
       : new Date(blocked.date + 'T23:59:59');
 
     if (checkDate >= startDate && checkDate <= endDate) {
+      // If this blocked entry has specific hours, it's a partial block
+      if (blocked.blocked_hours && blocked.blocked_hours.length > 0 && !blocked.end_date) {
+        return {
+          blocked: false,
+          partial: true,
+          blocked_hours: blocked.blocked_hours,
+          reason: blocked.reason,
+        };
+      }
       return { blocked: true, reason: blocked.reason };
     }
   }
@@ -178,6 +193,9 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    // Collect blocked hours for partial blocks
+    const blockedHoursForDate = blockedCheck.partial ? blockedCheck.blocked_hours : undefined;
+
     // Check if business is closed on this day (from business hours)
     if (!dayHours.is_open) {
       return NextResponse.json({
@@ -223,7 +241,8 @@ export async function GET(req: NextRequest) {
       effectiveDuration,
       appointments || [],
       businessHours,
-      bookingSettings
+      bookingSettings,
+      blockedHoursForDate
     );
 
     // Get waitlist counts for unavailable slots (only when waitlist is enabled)

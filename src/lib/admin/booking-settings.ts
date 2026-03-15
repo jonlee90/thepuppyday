@@ -64,13 +64,17 @@ export function isDateBlocked(
   // Check specific blocked dates
   for (const blocked of blockedDates) {
     if (blocked.end_date) {
-      // Date range
+      // Date range (always full-day block)
       if (date >= blocked.date && date <= blocked.end_date) {
         return true;
       }
     } else {
-      // Single date
+      // Single date — skip if it only has blocked_hours (partial block)
       if (date === blocked.date) {
+        if (blocked.blocked_hours && blocked.blocked_hours.length > 0) {
+          // Partial block: not fully blocked
+          continue;
+        }
         return true;
       }
     }

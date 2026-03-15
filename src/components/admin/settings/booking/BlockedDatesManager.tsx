@@ -13,10 +13,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Plus, Trash2, AlertTriangle, X } from 'lucide-react';
+import { Calendar, Plus, Trash2, AlertTriangle, X, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { BlockedDate } from '@/types/settings';
+import type { BlockedDate, BlockedHourRange } from '@/types/settings';
 
 interface ConflictResponse {
   error: string;
@@ -54,6 +54,8 @@ export function BlockedDatesManager({
   const [conflictData, setConflictData] = useState<ConflictResponse | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [dateToDelete, setDateToDelete] = useState<string | null>(null);
+  const [useBlockedHours, setUseBlockedHours] = useState(false);
+  const [blockedHourRanges, setBlockedHourRanges] = useState<BlockedHourRange[]>([{ start: '09:00', end: '12:00' }]);
 
   // Notify parent of loading state changes
   useEffect(() => {
@@ -87,6 +89,8 @@ export function BlockedDatesManager({
     setFormDate('');
     setFormEndDate('');
     setFormReason('');
+    setUseBlockedHours(false);
+    setBlockedHourRanges([{ start: '09:00', end: '12:00' }]);
     setShowAddModal(true);
   };
 
@@ -96,6 +100,8 @@ export function BlockedDatesManager({
     setFormDate('');
     setFormEndDate('');
     setFormReason('');
+    setUseBlockedHours(false);
+    setBlockedHourRanges([{ start: '09:00', end: '12:00' }]);
     setConflictData(null);
   };
 
@@ -111,12 +117,17 @@ export function BlockedDatesManager({
 
     setIsLoading(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         date: formDate,
         end_date: isRange ? formEndDate : null,
         reason: formReason || '',
         force: forceBlock,
       };
+
+      // Only include blocked_hours for single date blocks
+      if (!isRange && useBlockedHours && blockedHourRanges.length > 0) {
+        payload.blocked_hours = blockedHourRanges;
+      }
 
       const response = await fetch('/api/admin/settings/booking/blocked-dates', {
         method: 'POST',
@@ -270,7 +281,19 @@ export function BlockedDatesManager({
               <tbody>
                 {sortedBlockedDates.map((blockedDate) => (
                   <tr key={blockedDate.date} className="hover:bg-[#FFFBF7]">
-                    <td className="text-[#434E54] font-medium">{getDateRangeText(blockedDate)}</td>
+                    <td className="text-[#434E54] font-medium">
+                      {getDateRangeText(blockedDate)}
+                      {blockedDate.blocked_hours && blockedDate.blocked_hours.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {blockedDate.blocked_hours.map((range, i) => (
+                            <span key={i} className="inline-flex items-center gap-1 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                              <Clock className="w-3 h-3" />
+                              {range.start} - {range.end}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </td>
                     <td className="text-[#6B7280]">
                       {blockedDate.reason || <span className="text-[#9CA3AF] italic">No reason provided</span>}
                     </td>
@@ -341,6 +364,78 @@ export function BlockedDatesManager({
                       className="input input-bordered w-full bg-white border-gray-200 focus:border-[#434E54] focus:outline-none"
                       min={formDate || new Date().toISOString().split('T')[0]}
                     />
+                  </div>
+                )}
+
+                {/* Block Specific Hours (single date only) */}
+                {!isRange && (
+                  <div>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useBlockedHours}
+                        onChange={(e) => setUseBlockedHours(e.target.checked)}
+                        className="checkbox checkbox-sm border-[#434E54]/30 [--chkbg:#434E54]"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-[#434E54]/60" />
+                        <span className="text-sm font-medium text-[#434E54]">Block specific hours only</span>
+                      </div>
+                    </label>
+
+                    <AnimatePresence>
+                      {useBlockedHours && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-3 space-y-2">
+                            {blockedHourRanges.map((range, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <input
+                                  type="time"
+                                  value={range.start}
+                                  onChange={(e) => {
+                                    const updated = [...blockedHourRanges];
+                                    updated[index] = { ...updated[index], start: e.target.value };
+                                    setBlockedHourRanges(updated);
+                                  }}
+                                  className="input input-bordered input-sm bg-white border-gray-200 focus:border-[#434E54] focus:outline-none flex-1"
+                                />
+                                <span className="text-sm text-[#6B7280]">to</span>
+                                <input
+                                  type="time"
+                                  value={range.end}
+                                  onChange={(e) => {
+                                    const updated = [...blockedHourRanges];
+                                    updated[index] = { ...updated[index], end: e.target.value };
+                                    setBlockedHourRanges(updated);
+                                  }}
+                                  className="input input-bordered input-sm bg-white border-gray-200 focus:border-[#434E54] focus:outline-none flex-1"
+                                />
+                                {blockedHourRanges.length > 1 && (
+                                  <button
+                                    onClick={() => setBlockedHourRanges(blockedHourRanges.filter((_, i) => i !== index))}
+                                    className="btn btn-ghost btn-xs btn-circle text-red-500"
+                                    aria-label="Remove time range"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => setBlockedHourRanges([...blockedHourRanges, { start: '13:00', end: '17:00' }])}
+                              className="text-xs text-[#434E54] hover:underline mt-1"
+                            >
+                              + Add another time range
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 )}
 

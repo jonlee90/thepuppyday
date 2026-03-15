@@ -142,7 +142,8 @@ export function getAvailableSlots(
   serviceDuration: number,
   existingAppointments: Appointment[],
   businessHours: BusinessHours,
-  bookingSettings?: BookingSettings
+  bookingSettings?: BookingSettings,
+  blockedHours?: Array<{ start: string; end: string }>
 ): TimeSlot[] {
   const dateObj = new Date(date + 'T00:00:00');
   const dayName = getDayName(dateObj);
@@ -212,10 +213,25 @@ export function getAvailableSlots(
         date
       );
 
+      // Check if slot overlaps with any blocked hour range
+      let blockedByHours = false;
+      if (isAvailable && blockedHours && blockedHours.length > 0) {
+        const slotStartMin = timeToMinutes(slotTime);
+        const slotEndMin = slotStartMin + serviceDuration;
+        for (const range of blockedHours) {
+          const rangeStartMin = timeToMinutes(range.start);
+          const rangeEndMin = timeToMinutes(range.end);
+          if (slotStartMin < rangeEndMin && slotEndMin > rangeStartMin) {
+            blockedByHours = true;
+            break;
+          }
+        }
+      }
+
       return {
         time: slotTime,
-        available: isAvailable,
-        waitlistCount: isAvailable ? undefined : 0, // TODO: Count actual waitlist entries
+        available: isAvailable && !blockedByHours,
+        waitlistCount: isAvailable && !blockedByHours ? undefined : 0,
       };
     });
 
