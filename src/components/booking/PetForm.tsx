@@ -9,6 +9,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { petFormSchema, type PetFormData } from '@/lib/booking/validation';
 import { getSizeLabel, getServicePriceForSize, formatCurrency } from '@/lib/booking/pricing';
+import { fetchBreedsOnce, getCachedBreeds } from '@/lib/cache/breedsCache';
 import type { Breed, PetSize, ServiceWithPrices } from '@/types/database';
 
 export interface PetFormHandle {
@@ -31,7 +32,7 @@ export const PetForm = forwardRef<PetFormHandle, PetFormProps>(function PetForm(
   { onSubmit, onCancel, initialData, selectedService, hideActions },
   ref
 ) {
-  const [breeds, setBreeds] = useState<Breed[]>([]);
+  const [breeds, setBreeds] = useState<Breed[]>(() => getCachedBreeds() ?? []);
 
   const {
     register,
@@ -70,22 +71,16 @@ export const PetForm = forwardRef<PetFormHandle, PetFormProps>(function PetForm(
       }),
   }), [handleSubmit, onSubmit]);
 
-  // Load breeds on mount
+  // Load breeds on mount — uses shared cache to avoid duplicate fetches
   useEffect(() => {
-    const loadBreeds = async () => {
-      try {
-        const response = await fetch('/api/breeds');
-        if (response.ok) {
-          const data = await response.json();
-          setBreeds(data.breeds || []);
-        } else {
-          console.error('Failed to load breeds:', response.statusText);
-        }
-      } catch (error) {
-        console.error('Error loading breeds:', error);
-      }
-    };
-    loadBreeds();
+    const cached = getCachedBreeds();
+    if (cached) { setBreeds(cached); return; }
+
+    let cancelled = false;
+    fetchBreedsOnce()
+      .then((data) => { if (!cancelled) setBreeds(data); })
+      .catch((err) => { console.error('Error loading breeds:', err); });
+    return () => { cancelled = true; };
   }, []);
 
   // Clear custom breed when selecting from dropdown

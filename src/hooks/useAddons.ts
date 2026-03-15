@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getMockStore } from '@/mocks/supabase/store';
 import { config } from '@/lib/config';
+import { fetchBreedsOnce, getCachedBreeds, clearBreedsCache as clearBreedsCacheShared } from '@/lib/cache/breedsCache';
 import type { Addon, Breed } from '@/types/database';
 
 export interface UseAddonsReturn {
@@ -17,8 +18,57 @@ export interface UseAddonsReturn {
   getUpsellAddons: (breedId: string | null) => Addon[];
 }
 
+// Module-level cache for addons (breeds shared via breedsCache module) —
+// prevents duplicate /api/addons fetches when multiple components mount simultaneously.
+let _addonsCache: Addon[] | null = null;
+let _addonsFetchPromise: Promise<Addon[]> | null = null;
+
+/** Clear the addons and breeds caches (e.g. after admin creates/updates/deletes an addon) */
+export function clearAddonsCache() {
+  _addonsCache = null;
+  _addonsFetchPromise = null;
+  clearBreedsCacheShared();
+}
+
+async function fetchAddonsOnce(): Promise<Addon[]> {
+  if (_addonsCache) return _addonsCache;
+  if (_addonsFetchPromise) return _addonsFetchPromise;
+
+  _addonsFetchPromise = (async () => {
+    if (config.useMocks) {
+      const store = getMockStore();
+      const addonsData = store.select('addons', {
+        column: 'is_active',
+        value: true,
+        order: { column: 'display_order', ascending: true },
+      }) as unknown as Addon[];
+      _addonsCache = addonsData;
+      // Warm the shared breeds cache in mock mode too
+      await fetchBreedsOnce();
+      return addonsData;
+    } else {
+      // Fetch addons + breeds in parallel; breeds populates the shared cache
+      const [addonsResponse] = await Promise.all([
+        fetch('/api/addons'),
+        fetchBreedsOnce(),
+      ]);
+      if (!addonsResponse.ok) throw new Error(`Failed to fetch add-ons: ${addonsResponse.statusText}`);
+      const addonsJson = await addonsResponse.json();
+      const addonsData: Addon[] = addonsJson.addons || [];
+      _addonsCache = addonsData;
+      return addonsData;
+    }
+  })().finally(() => {
+    _addonsFetchPromise = null;
+  });
+
+  return _addonsFetchPromise;
+}
+
 /**
- * Fetch active add-ons and provide upsell filtering
+ * Fetch active add-ons and provide upsell filtering.
+ * Results are cached at module scope — only one network request is made
+ * regardless of how many components call this hook simultaneously.
  *
  * @returns {UseAddonsReturn} Add-ons data with loading, error states, and upsell filtering
  *
@@ -41,76 +91,38 @@ export interface UseAddonsReturn {
  * ```
  */
 export function useAddons(): UseAddonsReturn {
-  const [addons, setAddons] = useState<Addon[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [addons, setAddons] = useState<Addon[]>(() => _addonsCache ?? []);
+  const [isLoading, setIsLoading] = useState(!_addonsCache);
   const [error, setError] = useState<Error | null>(null);
-  const [breeds, setBreeds] = useState<Breed[]>([]);
+  const [breeds, setBreeds] = useState<Breed[]>(() => getCachedBreeds() ?? []);
 
   useEffect(() => {
-    const fetchAddons = async () => {
-      console.log('[useAddons] Starting fetch...');
-      setIsLoading(true);
-      setError(null);
+    if (_addonsCache && getCachedBreeds()) return; // Already cached
 
-      try {
-        if (config.useMocks) {
-          console.log('[useAddons] Using mock mode');
-          // Fetch from mock store
-          const store = getMockStore();
+    let cancelled = false;
+    console.log('[useAddons] Starting fetch...');
 
-          // Get active add-ons
-          const addonsData = store.select('addons', {
-            column: 'is_active',
-            value: true,
-            order: { column: 'display_order', ascending: true },
-          }) as unknown as Addon[];
-
-          // Also fetch breeds for matching
-          const breedsData = store.select('breeds') as unknown as Breed[];
-
-          console.log('[useAddons] Mock addons loaded:', addonsData.length);
-          console.log('[useAddons] Mock breeds loaded:', breedsData.length);
+    fetchAddonsOnce()
+      .then((addonsData) => {
+        if (!cancelled) {
           setAddons(addonsData);
+          // Breeds are populated in the shared cache by fetchAddonsOnce
+          const breedsData = getCachedBreeds() ?? [];
           setBreeds(breedsData);
-        } else {
-          console.log('[useAddons] Using real Supabase via API routes');
-
-          // Fetch addons from API
-          console.log('[useAddons] Fetching from /api/addons...');
-          const addonsResponse = await fetch('/api/addons');
-          if (!addonsResponse.ok) {
-            throw new Error(`Failed to fetch add-ons: ${addonsResponse.statusText}`);
-          }
-          const addonsJson = await addonsResponse.json();
-          console.log('[useAddons] Addons response:', addonsJson);
-
-          // Fetch breeds from API for upsell matching
-          console.log('[useAddons] Fetching from /api/breeds...');
-          const breedsResponse = await fetch('/api/breeds');
-          if (!breedsResponse.ok) {
-            throw new Error(`Failed to fetch breeds: ${breedsResponse.statusText}`);
-          }
-          const breedsJson = await breedsResponse.json();
-          console.log('[useAddons] Breeds response:', breedsJson);
-
-          const addonsData = addonsJson.addons || [];
-          const breedsData = breedsJson.breeds || [];
-
-          console.log('[useAddons] Addons loaded:', addonsData.length);
-          console.log('[useAddons] Breeds loaded:', breedsData.length);
-          setAddons(addonsData);
-          setBreeds(breedsData);
+          console.log('[useAddons] Loaded:', addonsData.length, 'addons,', breedsData.length, 'breeds');
         }
-      } catch (err) {
-        console.error('[useAddons] Error fetching data:', err);
-        setError(err instanceof Error ? err : new Error('Unknown error'));
-      } finally {
-        console.log('[useAddons] Fetch complete, setting loading to false');
-        setIsLoading(false);
-      }
-    };
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('[useAddons] Error fetching data:', err);
+          setError(err instanceof Error ? err : new Error('Unknown error'));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
 
-    fetchAddons();
+    return () => { cancelled = true; };
   }, []);
 
   /**
@@ -122,19 +134,14 @@ export function useAddons(): UseAddonsReturn {
   const getUpsellAddons = useCallback(
     (breedId: string | null): Addon[] => {
       if (!breedId) {
-        // Return add-ons with no breed restrictions
         return addons.filter((addon) => addon.upsell_breeds.length === 0);
       }
 
-      // Find the breed name
       const breed = breeds.find((b) => b.id === breedId);
       if (!breed) {
         return addons.filter((addon) => addon.upsell_breeds.length === 0);
       }
 
-      // Filter add-ons that either:
-      // 1. Have no breed restrictions, OR
-      // 2. Include this breed in their upsell_breeds list
       return addons.filter(
         (addon) =>
           addon.upsell_breeds.length === 0 ||

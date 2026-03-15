@@ -773,7 +773,28 @@ interface AppointmentAddon {
 }
 ```
 
-#### 9. `waitlist` Table
+#### 9. `appointment_price_adjustments` Table
+Manual price adjustments applied to appointments by admins (surcharges, discounts, credits).
+
+```typescript
+interface AppointmentPriceAdjustment {
+  id: string;              // UUID
+  appointment_id: string;  // Foreign key -> appointments.id (CASCADE DELETE)
+  label: string;           // Display label (e.g. "Holiday surcharge", "Loyalty discount")
+  amount: number;          // Positive = surcharge, negative = discount (NUMERIC 10,2)
+  note: string | null;     // Optional internal note
+  created_by: string;      // Foreign key -> users.id (admin who applied it)
+  created_at: string;      // TIMESTAMPTZ
+}
+```
+
+**Index**: `idx_price_adjustments_appointment_id` on `appointment_id`
+**RLS**: Admin-only (`is_admin()` USING + WITH CHECK)
+**API Route**: `GET|POST|DELETE /api/admin/appointments/[id]/adjustments`
+- POST adds an adjustment and recalculates `appointments.total_price`
+- DELETE removes an adjustment by `?adjustmentId=` and recalculates `total_price`
+
+#### 10. `waitlist` Table
 Waitlist entries for fully-booked time slots.
 
 ```typescript

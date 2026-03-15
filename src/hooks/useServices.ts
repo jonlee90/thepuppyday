@@ -7,7 +7,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getMockStore } from '@/mocks/supabase/store';
-import { createClient } from '@/lib/supabase/client';
 import { config } from '@/lib/config';
 import type { Service, ServicePrice, ServiceWithPrices } from '@/types/database';
 
@@ -18,8 +17,55 @@ export interface UseServicesReturn {
   getServiceById: (id: string) => ServiceWithPrices | undefined;
 }
 
+// Module-level cache shared across all hook instances — prevents duplicate
+// /api/services fetches when multiple components mount simultaneously.
+let _servicesCache: ServiceWithPrices[] | null = null;
+let _servicesFetchPromise: Promise<ServiceWithPrices[]> | null = null;
+
+/** Clear the services cache (e.g. after admin creates/updates/deletes a service) */
+export function clearServicesCache() {
+  _servicesCache = null;
+  _servicesFetchPromise = null;
+}
+
+async function fetchServicesOnce(): Promise<ServiceWithPrices[]> {
+  if (_servicesCache) return _servicesCache;
+  if (_servicesFetchPromise) return _servicesFetchPromise;
+
+  _servicesFetchPromise = (async () => {
+    if (config.useMocks) {
+      const store = getMockStore();
+      const servicesData = store.select('services', {
+        column: 'is_active',
+        value: true,
+        order: { column: 'display_order', ascending: true },
+      }) as unknown as Service[];
+      const allPrices = store.select('service_prices') as unknown as ServicePrice[];
+      const result: ServiceWithPrices[] = servicesData.map((service) => ({
+        ...service,
+        prices: allPrices.filter((price) => price.service_id === service.id),
+      }));
+      _servicesCache = result;
+      return result;
+    } else {
+      const response = await fetch('/api/services');
+      if (!response.ok) throw new Error(`Failed to fetch services: ${response.statusText}`);
+      const data = await response.json();
+      const result: ServiceWithPrices[] = data.services || [];
+      _servicesCache = result;
+      return result;
+    }
+  })().finally(() => {
+    _servicesFetchPromise = null;
+  });
+
+  return _servicesFetchPromise;
+}
+
 /**
- * Fetch active services with their size-based prices
+ * Fetch active services with their size-based prices.
+ * Results are cached at module scope — only one network request is made
+ * regardless of how many components call this hook simultaneously.
  *
  * @returns {UseServicesReturn} Services data with loading and error states
  *
@@ -40,62 +86,34 @@ export interface UseServicesReturn {
  * ```
  */
 export function useServices(): UseServicesReturn {
-  const [services, setServices] = useState<ServiceWithPrices[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [services, setServices] = useState<ServiceWithPrices[]>(() => _servicesCache ?? []);
+  const [isLoading, setIsLoading] = useState(!_servicesCache);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const fetchServices = async () => {
-      console.log('[useServices] Starting fetch, useMocks:', config.useMocks);
-      setIsLoading(true);
-      setError(null);
+    if (_servicesCache) return; // Already cached, nothing to do
 
-      try {
-        if (config.useMocks) {
-          // Fetch from mock store
-          const store = getMockStore();
+    let cancelled = false;
+    console.log('[useServices] Starting fetch, useMocks:', config.useMocks);
 
-          // Get active services
-          const servicesData = store.select('services', {
-            column: 'is_active',
-            value: true,
-            order: { column: 'display_order', ascending: true },
-          }) as unknown as Service[];
-
-          // Get all service prices
-          const allPrices = store.select('service_prices') as unknown as ServicePrice[];
-
-          // Combine services with their prices
-          const servicesWithPrices: ServiceWithPrices[] = servicesData.map((service) => ({
-            ...service,
-            prices: allPrices.filter((price) => price.service_id === service.id),
-          }));
-
-          setServices(servicesWithPrices);
-        } else {
-          // Fetch from API endpoint
-          console.log('[useServices] Fetching from API...');
-          const response = await fetch('/api/services');
-
-          if (!response.ok) {
-            throw new Error(`Failed to fetch services: ${response.statusText}`);
-          }
-
-          const data = await response.json();
-          console.log('[useServices] API response:', data);
-
-          setServices(data.services || []);
-          console.log('[useServices] Setting services:', data.services?.length || 0);
+    fetchServicesOnce()
+      .then((result) => {
+        if (!cancelled) {
+          setServices(result);
+          console.log('[useServices] Setting services:', result.length);
         }
-      } catch (err) {
-        console.error('Failed to fetch services:', err);
-        setError(err instanceof Error ? err : new Error('Unknown error'));
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('Failed to fetch services:', err);
+          setError(err instanceof Error ? err : new Error('Unknown error'));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
 
-    fetchServices();
+    return () => { cancelled = true; };
   }, []);
 
   /**

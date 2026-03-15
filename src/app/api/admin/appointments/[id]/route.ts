@@ -124,6 +124,10 @@ export async function GET(
         addons:appointment_addons(
           *,
           addon:addons(*)
+        ),
+        price_adjustments:appointment_price_adjustments(
+          *,
+          creator:users!created_by(first_name, last_name)
         )
       `
       )
@@ -469,6 +473,10 @@ export async function PUT(
         addons:appointment_addons(
           *,
           addon:addons(*)
+        ),
+        price_adjustments:appointment_price_adjustments(
+          *,
+          creator:users!created_by(first_name, last_name)
         )
       `)
       .eq('id', id)

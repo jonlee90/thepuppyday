@@ -178,6 +178,11 @@ export default async function MarketingPage() {
       {/* Latest from Our Blog */}
       <BlogSection
         posts={[...BLOG_POSTS]
+          .filter(({ slug }) => [
+            'dog-grooming-cost-la-mirada',
+            'goldendoodle-grooming-guide',
+            'signs-dog-needs-grooming',
+          ].includes(slug))
           .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
           .slice(0, 3)
           .map(({ slug, title, excerpt, readTime, publishDate }) => ({

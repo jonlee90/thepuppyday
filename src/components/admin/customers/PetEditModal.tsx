@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { createFocusTrap } from '@/lib/accessibility/focus';
 import { getSizeShortLabel, getSizeLabel } from '@/lib/booking/pricing';
+import { fetchBreedsOnce, getCachedBreeds } from '@/lib/cache/breedsCache';
 import type { PetSize } from '@/types/database';
 import type { PetWithBreed } from './PetCard';
 
@@ -73,13 +74,14 @@ export function PetEditModal({ pet, customerId, isOpen, onClose, onSaved }: PetE
     }
   }, [isOpen, pet]);
 
-  // Fetch breeds list
+  // Fetch breeds list — uses shared cache to avoid duplicate fetches
   useEffect(() => {
     if (!isOpen || breedMode !== 'known') return;
+    const cached = getCachedBreeds();
+    if (cached) { setBreeds(cached); return; }
     setBreedsLoading(true);
-    fetch('/api/breeds')
-      .then((r) => r.json())
-      .then((d) => setBreeds(Array.isArray(d.data) ? d.data : []))
+    fetchBreedsOnce()
+      .then((data) => setBreeds(data))
       .catch(() => setBreeds([]))
       .finally(() => setBreedsLoading(false));
   }, [isOpen, breedMode]);

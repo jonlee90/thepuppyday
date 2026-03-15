@@ -12,6 +12,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   X,
   User,
@@ -29,13 +30,15 @@ import {
   Save,
   XCircle,
   PawPrint,
+  Trash2,
+  Plus,
 } from 'lucide-react';
 import { getAllowedTransitions, isTerminalStatus, isAppointmentInPast } from '@/lib/admin/appointment-status';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StatusTransitionButton } from './StatusTransitionButton';
 import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { toast } from '@/hooks/use-toast';
-import type { Appointment, CustomerFlag, Service, Addon, Pet, ServicePrice } from '@/types/database';
+import type { Appointment, CustomerFlag, Service, Addon, Pet, ServicePrice, AppointmentPriceAdjustment } from '@/types/database';
 import type { User as UserType, PetSize } from '@/types/database';
 import { getSizeLabel } from '@/lib/booking/pricing';
 
@@ -68,6 +71,7 @@ interface AppointmentDetail extends Appointment {
     addon: Addon | null;
   }>;
   customer_flags?: CustomerFlag[];
+  price_adjustments?: AppointmentPriceAdjustment[];
 }
 
 export function AppointmentDetailModal({
@@ -105,6 +109,11 @@ export function AppointmentDetailModal({
   const [services, setServices] = useState<(Service & { prices?: ServicePrice[] })[]>([]);
   const [addons, setAddons] = useState<Addon[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
+
+  // Price adjustment state
+  const [adjForm, setAdjForm] = useState({ label: '', amount: '', isDiscount: false, note: '' });
+  const [savingAdj, setSavingAdj] = useState(false);
+  const [showAdjForm, setShowAdjForm] = useState(false);
 
   // Fetch appointment details, groomers, and report card in parallel
   useEffect(() => {
@@ -417,12 +426,57 @@ export function AppointmentDetailModal({
     }
   };
 
+  const handleDeleteAdjustment = async (adjustmentId: string) => {
+    if (!appointment) return;
+    try {
+      const res = await fetch(
+        `/api/admin/appointments/${appointment.id}/adjustments?adjustmentId=${adjustmentId}`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await fetchAppointmentDetails();
+      toast.success('Adjustment removed');
+    } catch (err) {
+      console.error('[AppointmentDetailModal] delete adjustment error:', err);
+      toast.error('Failed to remove adjustment');
+    }
+  };
+
+  const handleAddAdjustment = async () => {
+    if (!appointment) return;
+    if (!adjForm.label.trim()) { toast.error('Label is required'); return; }
+    const parsedAmount = parseFloat(adjForm.amount);
+    if (!adjForm.amount || isNaN(parsedAmount) || parsedAmount <= 0) { toast.error('Enter a valid amount'); return; }
+
+    const finalAmount = adjForm.isDiscount ? -Math.abs(parsedAmount) : Math.abs(parsedAmount);
+    setSavingAdj(true);
+    try {
+      const res = await fetch(`/api/admin/appointments/${appointment.id}/adjustments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: adjForm.label.trim(), amount: finalAmount, note: adjForm.note.trim() || undefined }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await fetchAppointmentDetails();
+      setAdjForm({ label: '', amount: '', isDiscount: false, note: '' });
+      setShowAdjForm(false);
+      toast.success('Adjustment added');
+    } catch (err) {
+      console.error('[AppointmentDetailModal] add adjustment error:', err);
+      toast.error('Failed to add adjustment');
+    } finally {
+      setSavingAdj(false);
+    }
+  };
+
   const handleClose = () => {
     setAppointment(null);
     setError('');
     setEditingNotes(false);
     setIsEditing(false);
     setPendingGroomerId(null);
+    setShowAdjForm(false);
+    setAdjForm({ label: '', amount: '', isDiscount: false, note: '' });
     onClose();
   };
 
@@ -439,7 +493,8 @@ export function AppointmentDetailModal({
     (p: any) => p.size === appointment.pet?.size
   )?.price || 0;
   const addonsTotal = appointment?.addons?.reduce((sum: number, a: any) => sum + a.price, 0) || 0;
-  const total = basePrice + addonsTotal;
+  const adjustmentsTotal = appointment?.price_adjustments?.reduce((sum, a) => sum + a.amount, 0) ?? 0;
+  const total = basePrice + addonsTotal + adjustmentsTotal;
 
   // Determine the current groomer select value (pending or current)
   const groomerSelectValue = pendingGroomerId !== null
@@ -730,6 +785,7 @@ export function AppointmentDetailModal({
 
               {/* Edit Mode OR View Mode Details */}
               {isEditing ? (
+                <>
                 <div className="bg-white rounded-lg p-3 border-2 border-[#434E54]">
                   <div className="flex items-center gap-2 mb-3">
                     <Edit2 className="w-4 h-4 text-[#434E54]" />
@@ -836,6 +892,115 @@ export function AppointmentDetailModal({
                     </div>
                   </div>
                 </div>
+
+                {/* Price Adjustments - Edit Mode */}
+                <div className="bg-white rounded-lg p-4 border border-[#E5E5E5]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <DollarSign className="w-4 h-4 text-[#434E54]" />
+                    <h4 className="text-sm font-semibold text-[#434E54]">Price Adjustments</h4>
+                  </div>
+
+                  {/* Existing adjustments list with delete */}
+                  <AnimatePresence initial={false}>
+                    {(appointment?.price_adjustments ?? []).map((adj, index) => (
+                      <motion.div
+                        key={adj.id}
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="group flex justify-between items-center text-sm py-1.5 border-b border-[#F0EAE0] last:border-0"
+                      >
+                        <div>
+                          <span className="text-[#434E54]">{adj.label}</span>
+                          {adj.note && <div className="text-[10px] text-[#9CA3AF]">{adj.note}</div>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={adj.amount < 0 ? 'text-green-600' : 'text-[#434E54]'}>
+                            {adj.amount < 0 ? `-$${Math.abs(adj.amount).toFixed(2)}` : `+$${adj.amount.toFixed(2)}`}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteAdjustment(adj.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-red-400 hover:text-red-600"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+
+                  {/* Toggle add form */}
+                  {!showAdjForm ? (
+                    <button
+                      onClick={() => setShowAdjForm(true)}
+                      className="mt-2 flex items-center gap-1.5 text-xs text-[#434E54]/60 hover:text-[#434E54] transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add adjustment
+                    </button>
+                  ) : (
+                    <div className="mt-3 pt-3 border-t border-[#F0EAE0] space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Label (e.g. Matted coat surcharge)"
+                        value={adjForm.label}
+                        onChange={e => setAdjForm(f => ({ ...f, label: e.target.value }))}
+                        className="px-3 py-2 rounded-lg border border-[#434E54]/20 focus:ring-2 focus:ring-[#434E54]/30 focus:outline-none text-sm w-full"
+                      />
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          placeholder="0.00"
+                          value={adjForm.amount}
+                          onChange={e => setAdjForm(f => ({ ...f, amount: e.target.value }))}
+                          className="px-3 py-2 rounded-lg border border-[#434E54]/20 focus:ring-2 focus:ring-[#434E54]/30 focus:outline-none text-sm w-32"
+                        />
+                        <div className="flex rounded-lg overflow-hidden border border-[#434E54]/20 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setAdjForm(f => ({ ...f, isDiscount: false }))}
+                            className={`px-3 py-2 transition-colors ${!adjForm.isDiscount ? 'bg-[#434E54] text-white' : 'text-[#434E54]/60 hover:bg-[#F0EAE0]'}`}
+                          >
+                            + Surcharge
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAdjForm(f => ({ ...f, isDiscount: true }))}
+                            className={`px-3 py-2 transition-colors ${adjForm.isDiscount ? 'bg-green-600 text-white' : 'text-[#434E54]/60 hover:bg-[#F0EAE0]'}`}
+                          >
+                            − Discount
+                          </button>
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Note (optional)"
+                        value={adjForm.note}
+                        onChange={e => setAdjForm(f => ({ ...f, note: e.target.value }))}
+                        className="px-3 py-2 rounded-lg border border-[#434E54]/20 focus:ring-2 focus:ring-[#434E54]/30 focus:outline-none text-sm w-full"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAddAdjustment}
+                          disabled={savingAdj}
+                          className="px-3 py-1.5 bg-[#434E54] text-white rounded-lg text-xs hover:bg-[#434E54]/90 disabled:opacity-50"
+                        >
+                          {savingAdj ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={() => { setShowAdjForm(false); setAdjForm({ label: '', amount: '', isDiscount: false, note: '' }); }}
+                          className="px-3 py-1.5 text-[#434E54]/60 hover:text-[#434E54] rounded-lg text-xs"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                </>
               ) : (
                 <>
                   {/* Notes & Add-ons - View Mode Only */}
@@ -934,6 +1099,33 @@ export function AppointmentDetailModal({
                     </>
                   ) : (
                     <div className="text-[10px] text-[#9CA3AF] italic pl-2">No extras added</div>
+                  )}
+
+                  {/* Adjustments Section */}
+                  {appointment.price_adjustments && appointment.price_adjustments.length > 0 && (
+                    <div className="pt-1 border-t border-dashed border-[#E5E5E5]/50">
+                      <div className="text-[10px] font-medium text-[#6B7280] uppercase tracking-wide mb-1">Adjustments</div>
+                      <AnimatePresence initial={false}>
+                        {appointment.price_adjustments.map((adj, index) => (
+                          <motion.div
+                            key={adj.id}
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="flex justify-between items-start text-sm py-0.5"
+                          >
+                            <span className="text-[#6B7280]">{adj.label}</span>
+                            <div className="text-right">
+                              <span className={adj.amount < 0 ? 'text-green-600' : 'text-[#434E54]'}>
+                                {adj.amount < 0 ? `-$${Math.abs(adj.amount).toFixed(2)}` : `+$${adj.amount.toFixed(2)}`}
+                              </span>
+                              {adj.note && <div className="text-[10px] text-[#9CA3AF]">{adj.note}</div>}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
                   )}
 
                   {/* Total - highlighted */}

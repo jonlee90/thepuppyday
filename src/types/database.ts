@@ -239,6 +239,7 @@ export interface Appointment extends BaseEntity {
   service?: Service;
   groomer?: User;
   addons?: AppointmentAddon[];
+  price_adjustments?: AppointmentPriceAdjustment[];
   report_card?: ReportCard;
   created_by_admin?: User;
 }
@@ -249,6 +250,17 @@ export interface AppointmentAddon {
   addon_id: string;
   price: number;
   addon?: Addon;
+}
+
+export interface AppointmentPriceAdjustment {
+  id: string;
+  appointment_id: string;
+  label: string;
+  amount: number;
+  note: string | null;
+  created_by: string;
+  created_at: string;
+  creator?: { first_name: string; last_name: string };
 }
 
 export interface CreateAppointmentInput {
@@ -563,6 +575,7 @@ export interface TableMap {
   addons: Addon;
   appointments: Appointment;
   appointment_addons: AppointmentAddon;
+  appointment_price_adjustments: AppointmentPriceAdjustment;
   waitlist: WaitlistEntry;
   report_cards: ReportCard;
   reviews: import('@/types/review').Review;
