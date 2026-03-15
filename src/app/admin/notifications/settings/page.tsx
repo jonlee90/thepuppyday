@@ -49,19 +49,17 @@ export default function NotificationSettingsPage() {
 
   const handleUpdateSetting = async (
     notificationType: string,
-    channel: 'email' | 'sms',
+    channel: 'email',
     enabled: boolean
   ) => {
     try {
-      const channelField = channel === 'email' ? 'email_enabled' : 'sms_enabled';
-
       const response = await fetch(`/api/admin/notifications/settings/${notificationType}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          [channelField]: enabled,
+          email_enabled: enabled,
         }),
       });
 
@@ -79,10 +77,9 @@ export default function NotificationSettingsPage() {
       );
 
       // Show success toast
-      const channelLabel = channel === 'email' ? 'Email' : 'SMS';
       const statusLabel = enabled ? 'enabled' : 'disabled';
       const typeLabel = getNotificationTypeLabel(notificationType);
-      toast.success(`${channelLabel} notifications ${statusLabel} for ${typeLabel}`);
+      toast.success(`Email notifications ${statusLabel} for ${typeLabel}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update settings';
       toast.error(message);
@@ -134,8 +131,8 @@ export default function NotificationSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[...settings]
                   .sort((a, b) => {
-                    const aEnabled = a.email_enabled || a.sms_enabled ? 1 : 0;
-                    const bEnabled = b.email_enabled || b.sms_enabled ? 1 : 0;
+                    const aEnabled = a.email_enabled ? 1 : 0;
+                    const bEnabled = b.email_enabled ? 1 : 0;
                     return bEnabled - aEnabled;
                   })
                   .map((setting) => (

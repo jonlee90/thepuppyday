@@ -111,32 +111,6 @@ export interface EmailProvider {
   send(params: EmailParams): Promise<EmailResult>;
 }
 
-/**
- * SMS provider parameters
- */
-export interface SMSParams {
-  to: string; // Recipient phone number (E.164 format)
-  from?: string; // Sender phone number (optional, uses default)
-  body: string; // Message content
-}
-
-/**
- * SMS send result
- */
-export interface SMSResult {
-  success: boolean;
-  messageId?: string; // Provider SID/message ID
-  segmentCount?: number; // Number of SMS segments
-  error?: string;
-}
-
-/**
- * SMS provider interface
- */
-export interface SMSProvider {
-  send(params: SMSParams): Promise<SMSResult>;
-}
-
 // ============================================================================
 // TEMPLATE TYPES
 // ============================================================================
@@ -180,10 +154,8 @@ export interface NotificationTemplate {
 export interface RenderedTemplate {
   subject?: string; // For email
   html?: string; // For email
-  text: string; // For SMS or email plain text
-  characterCount: number; // For SMS length validation
-  segmentCount?: number; // SMS segments (160 chars each)
-  warnings?: string[]; // Any warnings (e.g., "Over 160 characters")
+  text: string; // Plain text fallback for email
+  warnings?: string[];
 }
 
 /**
@@ -263,9 +235,7 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
 export interface NotificationSettings {
   notificationType: string;
   emailEnabled: boolean;
-  smsEnabled: boolean;
   emailTemplateId?: string;
-  smsTemplateId?: string;
   scheduleCron?: string; // Cron expression
   scheduleEnabled: boolean;
   maxRetries: number;
@@ -326,7 +296,6 @@ export interface NotificationMetrics {
   clickRate: number; // Percentage
   byChannel: {
     email: ChannelMetrics;
-    sms: ChannelMetrics;
   };
   byType: Record<string, TypeMetrics>;
   timeline: TimelineData[];
@@ -347,7 +316,6 @@ export interface ChannelMetrics {
   clicked: number;
   deliveryRate: number;
   clickRate: number;
-  costDollars?: number; // For SMS
 }
 
 /**
@@ -397,18 +365,6 @@ export interface TemplateEngine {
     requiredVariables: TemplateVariable[]
   ): TemplateValidationResult;
 
-  /**
-   * Calculate character count with max variable lengths
-   */
-  calculateCharacterCount(
-    template: string,
-    variables: TemplateVariable[]
-  ): number;
-
-  /**
-   * Calculate SMS segment count
-   */
-  calculateSegmentCount(text: string): number;
 }
 
 /**

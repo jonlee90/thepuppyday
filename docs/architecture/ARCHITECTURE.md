@@ -42,7 +42,7 @@
 2. **Customer Booking System** - Multi-step booking wizard with size-based pricing, real-time availability, and waitlist
 3. **Customer Portal** - Self-service dashboard for managing appointments, pets, profiles, and viewing report cards
 4. **Admin Panel** - Complete business management including appointments, customers, services, analytics, and notifications
-5. **Notification System** - Multi-channel (Email/SMS) notifications with template management and customer preferences
+5. **Notification System** - Email notifications with template management and customer preferences
 6. **Google Calendar Integration** - Bidirectional sync with error recovery, retry queue, and quota tracking
 7. **Payment Processing** - Stripe integration for deposits, full payments, tips, and refunds (Phase 7)
 8. **Loyalty Program** - Punch-card based rewards system with referral program
@@ -58,7 +58,7 @@
 | 5 | Admin Panel Core | Completed | Dashboard, appointments, customers, services, gallery |
 | 6 | Admin Panel Advanced | Completed | Analytics, marketing campaigns, admin appointment management with CSV import and walk-in appointments |
 | 7 | Payments & Memberships | Pending | Stripe integration, memberships, loyalty program |
-| 8 | Notifications | Completed | Templates, triggers, preferences, email/SMS providers, unsubscribe system |
+| 8 | Notifications | Completed | Templates, triggers, preferences, email provider, unsubscribe system |
 | 9 | Admin Settings | Completed | Business settings, staff management, site content, banners |
 | 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), AdminButton component (done), AppointmentDetailModal redesign (done), settings hierarchy reorganization (done), custom swimlane calendar with overlap layout (done), StaffForm edit data loading fix (done), comprehensive testing pending |
 | 11 | Calendar Error Recovery | Completed | Retry queue, error recovery UI, quota tracking, auto-pause system |
@@ -105,7 +105,6 @@
 |---------|---------|---------|
 | **Stripe** | (Pending Phase 7) | Payment processing for deposits, full payments, tips, refunds |
 | **Resend** | 6.9.3 | Transactional email delivery for notifications (from: `noreply@thepuppyday.com`) |
-| **Twilio** | 5.12.2 | SMS delivery for appointment reminders and notifications |
 
 ### State Management & Forms
 
@@ -478,7 +477,7 @@ thepuppyday/
 │   │   │   ├── service.ts          # DefaultNotificationService
 │   │   │   ├── types.ts            # TypeScript interfaces
 │   │   │   ├── database-types.ts   # Notification table types
-│   │   │   ├── providers/          # Email/SMS providers
+│   │   │   ├── providers/          # Email providers
 │   │   │   ├── template-engine.ts  # Template rendering
 │   │   │   ├── logger.ts           # Notification logging
 │   │   │   ├── preferences.ts      # Customer preferences
@@ -488,7 +487,6 @@ thepuppyday/
 │   │   │   └── query-helpers.ts    # Database query helpers
 │   │   ├── calendar/               # Google Calendar integration
 │   │   ├── resend/                 # Resend email client & provider
-│   │   ├── twilio/                 # Twilio SMS client
 │   │   ├── stripe/                 # Stripe utilities (Phase 7)
 │   │   ├── auth/                   # Auth utilities
 │   │   ├── loyalty/                # Loyalty program logic
@@ -984,7 +982,7 @@ interface NotificationLog {
   id: string;                      // UUID
   customer_id: string | null;      // Foreign key -> users.id
   type: string;                    // Notification type (e.g., "appointment_reminder")
-  channel: string | null;          // 'email' | 'sms'
+  channel: string | null;          // 'email'
   recipient: string;               // Email or phone number
   subject: string | null;          // Email subject
   content: string | null;          // Message content
@@ -1014,7 +1012,7 @@ interface NotificationTemplate {
   description: string | null;
   type: string;                    // notification_type (e.g., 'booking_confirmation')
   trigger_event: string;           // (e.g., 'appointment_created')
-  channel: string;                 // 'email' | 'sms'
+  channel: string;                 // 'email'
   subject_template: string | null; // For email only
   html_template: string | null;    // For email only
   text_template: string;           // For SMS or email plain text
@@ -1035,9 +1033,8 @@ Per-type notification configuration.
 interface NotificationSettings {
   notification_type: string;       // Primary key
   email_enabled: boolean;
-  sms_enabled: boolean;
+
   email_template_id: string | null;
-  sms_template_id: string | null;
   schedule_cron: string | null;
   schedule_enabled: boolean;
   max_retries: number;
@@ -1052,21 +1049,21 @@ interface NotificationSettings {
 
 **Active Notification Types** (post-migration `20260314_cleanup_unused_notification_types.sql`):
 
-| Type | Email | SMS | Description |
-|------|-------|-----|-------------|
-| `booking_confirmation` | Yes | Yes | Appointment booked confirmation |
-| `appointment_reminder` | Yes | Yes | Reminder before appointment |
-| `appointment_cancelled` | Yes | No | Appointment cancelled |
-| `appointment_rescheduled` | Yes | Yes | Appointment rescheduled |
-| `review_request` | Yes | No | Post-appointment review request |
-| `waitlist_added` | Yes | Yes | Added to waitlist confirmation |
-| `waitlist_available` | Yes | Yes | Waitlist slot opened |
-| `report_card_ready` | Yes | Yes | Grooming report card available |
-| `retention_reminder` | Yes | Yes | Re-booking reminder |
-| `payment_failed` | Yes | No | Payment failure notice |
-| `payment_reminder` | Yes | No | Payment due reminder |
-| `payment_success` | Yes | No | Payment confirmed |
-| `payment_final_notice` | Yes | No | Final payment warning |
+| Type | Email | Description |
+|------|-------|-------------|
+| `booking_confirmation` | Yes | Appointment booked confirmation |
+| `appointment_reminder` | Yes | Reminder before appointment |
+| `appointment_cancelled` | Yes | Appointment cancelled |
+| `appointment_rescheduled` | Yes | Appointment rescheduled |
+| `review_request` | Yes | Post-appointment review request |
+| `waitlist_added` | Yes | Added to waitlist confirmation |
+| `waitlist_available` | Yes | Waitlist slot opened |
+| `report_card_ready` | Yes | Grooming report card available |
+| `retention_reminder` | Yes | Re-booking reminder |
+| `payment_failed` | Yes | Payment failure notice |
+| `payment_reminder` | Yes | Payment due reminder |
+| `payment_success` | Yes | Payment confirmed |
+| `payment_final_notice` | Yes | Final payment warning |
 
 **Removed types** (migration `20260314_cleanup_unused_notification_types.sql`): `status_checked_in`, `status_in_progress`, `status_completed`, `status_ready`, `membership_activated`, `membership_renewed`, `membership_expiring`, `membership_cancelled`
 
@@ -1605,7 +1602,6 @@ HMAC-SHA256 signed tokens with expiration for email unsubscribe links.
 | Method | Path | Purpose |
 |--------|------|---------|
 | POST | `/api/webhooks/appointment-completed` | Post-completion processing |
-| POST | `/api/webhooks/twilio/incoming` | Twilio incoming SMS |
 
 ---
 
@@ -1627,7 +1623,7 @@ Detailed documentation for each module is available in separate files:
 
 ### Services
 - [Supabase Service](./services/supabase.md) - Client setup, RLS, migrations, real-time
-- [Notification Service](./services/notifications.md) - Email/SMS providers, templates, preferences
+- [Notification Service](./services/notifications.md) - Email provider, templates, preferences
 - [Payment Service](./services/payments.md) - Stripe integration (Phase 7)
 
 ---
@@ -1644,7 +1640,7 @@ NEXT_PUBLIC_USE_MOCKS=true
 
 **Features**:
 - In-memory database (no Supabase required)
-- Mock Resend, Twilio services
+- Mock Resend service
 - Seeded test data (users, services, pets, appointments, etc.)
 - Fast development iteration
 
@@ -1743,11 +1739,6 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 # Resend (Email)
 RESEND_API_KEY=re_...
 
-# Twilio (SMS)
-TWILIO_ACCOUNT_SID=AC...
-TWILIO_AUTH_TOKEN=...
-TWILIO_PHONE_NUMBER=+1...
-
 # Google Calendar (OAuth)
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
@@ -1782,12 +1773,6 @@ export const config = {
 
   resend: {
     apiKey: process.env.RESEND_API_KEY ?? '',
-  },
-
-  twilio: {
-    accountSid: process.env.TWILIO_ACCOUNT_SID ?? '',
-    authToken: process.env.TWILIO_AUTH_TOKEN ?? '',
-    phoneNumber: process.env.TWILIO_PHONE_NUMBER ?? '',
   },
 
   app: {

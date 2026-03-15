@@ -1,6 +1,6 @@
 /**
  * Phase 8: Notification System Template Engine
- * Implements template rendering, validation, and SMS optimization
+ * Implements template rendering and validation
  */
 
 import type {
@@ -10,21 +10,6 @@ import type {
   RenderedTemplate,
   BusinessContext,
 } from './types';
-
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
-/**
- * SMS segment length constants (GSM 7-bit encoding)
- */
-const SMS_SINGLE_SEGMENT_LENGTH = 160;
-const SMS_MULTI_SEGMENT_LENGTH = 153;
-
-/**
- * URL shortening placeholder length (approximate)
- */
-const SHORTENED_URL_LENGTH = 23;
 
 /**
  * Default business context
@@ -122,65 +107,6 @@ export class HandlebarsTemplateEngine implements TemplateEngine {
     };
   }
 
-  /**
-   * Calculate character count with max variable lengths
-   */
-  calculateCharacterCount(
-    template: string,
-    variables: TemplateVariable[]
-  ): number {
-    let maxLength = template.length;
-
-    // Replace each variable placeholder with its maximum length
-    const placeholderRegex = /\{\{([^}]+)\}\}/g;
-    let match;
-
-    while ((match = placeholderRegex.exec(template)) !== null) {
-      const placeholder = match[0];
-      const variablePath = match[1].trim();
-      const baseName = variablePath.split('.')[0];
-
-      // Find the variable definition
-      const variable = variables.find((v) => v.name === baseName);
-
-      if (variable?.maxLength) {
-        // Calculate difference: maxLength - placeholder length
-        const lengthDiff = variable.maxLength - placeholder.length;
-        maxLength += lengthDiff;
-      }
-    }
-
-    // Detect URLs and replace with shortened length
-    const urlRegex = /https?:\/\/[^\s]+/g;
-    const urls = template.match(urlRegex) || [];
-
-    for (const url of urls) {
-      if (url.length > SHORTENED_URL_LENGTH) {
-        maxLength -= (url.length - SHORTENED_URL_LENGTH);
-      }
-    }
-
-    return maxLength;
-  }
-
-  /**
-   * Calculate SMS segment count
-   */
-  calculateSegmentCount(text: string): number {
-    const length = text.length;
-
-    if (length === 0) {
-      return 0;
-    }
-
-    if (length <= SMS_SINGLE_SEGMENT_LENGTH) {
-      return 1;
-    }
-
-    // Multi-segment messages use 153 characters per segment
-    return Math.ceil(length / SMS_MULTI_SEGMENT_LENGTH);
-  }
-
   // ============================================================================
   // HELPER METHODS
   // ============================================================================
@@ -267,22 +193,10 @@ export function renderTemplateWithMetadata(
 
   const text = engine.render(textTemplate, data, businessContext);
 
-  const characterCount = text.length;
-  const segmentCount = engine.calculateSegmentCount(text);
-  const warnings: string[] = [];
-
-  // Add warnings for long SMS
-  if (characterCount > SMS_SINGLE_SEGMENT_LENGTH) {
-    warnings.push(`Message is ${characterCount} characters (${segmentCount} SMS segments)`);
-  }
-
   return {
     subject,
     html,
     text,
-    characterCount,
-    segmentCount,
-    warnings: warnings.length > 0 ? warnings : undefined,
   };
 }
 
@@ -302,39 +216,3 @@ export function escapeHtml(text: string): string {
   return text.replace(/[&<>"'/]/g, (char) => htmlEscapeMap[char] || char);
 }
 
-/**
- * Detect and shorten URLs in text (placeholder for actual URL shortening service)
- */
-export function detectAndShortenUrls(text: string): string {
-  const urlRegex = /https?:\/\/[^\s]+/g;
-
-  return text.replace(urlRegex, (url) => {
-    // In production, this would call a URL shortening service (e.g., Bitly)
-    // For now, return placeholder indicating URL would be shortened
-    if (url.length > SHORTENED_URL_LENGTH) {
-      return `[SHORT_URL:${url.substring(0, 20)}...]`;
-    }
-    return url;
-  });
-}
-
-/**
- * Calculate maximum possible SMS length for a template
- */
-export function calculateMaxSmsLength(
-  template: string,
-  variables: TemplateVariable[]
-): { maxLength: number; wouldExceedSingleSegment: boolean; estimatedSegments: number } {
-  const engine = createTemplateEngine();
-  const maxLength = engine.calculateCharacterCount(template, variables);
-  const wouldExceedSingleSegment = maxLength > SMS_SINGLE_SEGMENT_LENGTH;
-  const estimatedSegments = engine.calculateSegmentCount(
-    'x'.repeat(maxLength) // Simulate worst-case scenario
-  );
-
-  return {
-    maxLength,
-    wouldExceedSingleSegment,
-    estimatedSegments,
-  };
-}

@@ -5,11 +5,10 @@ import { TemplateVariable } from '@/types/template';
 import { Eye, Edit2 } from 'lucide-react';
 
 interface LivePreviewProps {
-  channel: 'email' | 'sms';
+  channel: 'email';
   subject?: string;
   htmlContent?: string;
   textContent?: string;
-  smsContent?: string;
   variables: TemplateVariable[];
 }
 
@@ -18,7 +17,6 @@ export function LivePreview({
   subject,
   htmlContent,
   textContent,
-  smsContent,
   variables,
 }: LivePreviewProps) {
   // Initialize sample data from example values
@@ -72,11 +70,6 @@ export function LivePreview({
     [textContent, renderContent]
   );
 
-  const renderedSms = useMemo(
-    () => (smsContent ? renderContent(smsContent) : ''),
-    [smsContent, renderContent]
-  );
-
   const handleSampleDataChange = (variableName: string, value: string) => {
     setSampleData((prev) => ({
       ...prev,
@@ -87,11 +80,7 @@ export function LivePreview({
   return (
     <div className="bg-white rounded-2xl shadow-md overflow-hidden">
       {/* Accent Strip */}
-      <div className={`h-1.5 bg-gradient-to-r ${
-        channel === 'email'
-          ? 'from-[#434E54] to-[#5A6870]'
-          : 'from-[#D4A574] to-[#E8C5A0]'
-      }`} />
+      <div className="h-1.5 bg-gradient-to-r from-[#434E54] to-[#5A6870]" />
 
       {/* Header */}
       <div className="px-6 pt-5 pb-4">
@@ -140,10 +129,7 @@ export function LivePreview({
             ))}
           </div>
         ) : (
-          <>
-            {/* Email Preview */}
-            {channel === 'email' && (
-              <div className="space-y-6">
+          <div className="space-y-6">
                 {/* Subject Line */}
                 {subject && (
                   <div>
@@ -187,36 +173,6 @@ export function LivePreview({
                   </div>
                 )}
               </div>
-            )}
-
-            {/* SMS Preview */}
-            {channel === 'sms' && (
-              <div>
-                <label className="block text-sm font-medium text-[#434E54] mb-2">
-                  SMS Message
-                </label>
-                <div className="bg-[#EAE0D5]/20 rounded-2xl p-6 border border-[#F0EAE0]">
-                  {/* Phone mockup */}
-                  <div className="max-w-sm mx-auto bg-white rounded-[2rem] shadow-lg p-5 border border-[#F0EAE0]">
-                    {/* Notch */}
-                    <div className="w-24 h-1.5 bg-[#EAE0D5] rounded-full mx-auto mb-4" />
-                    <div className="bg-[#434E54] text-white rounded-2xl rounded-bl-sm p-4">
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{renderedSms}</p>
-                    </div>
-                    <p className="text-xs text-[#9CA3AF] mt-2">
-                      {new Date().toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-[#6B7280] mt-2 text-center">
-                  Preview shows how message will appear on customer&apos;s device
-                </p>
-              </div>
-            )}
-          </>
         )}
       </div>
     </div>

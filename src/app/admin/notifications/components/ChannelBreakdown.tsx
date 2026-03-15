@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import { Mail, MessageSquare } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import type { NotificationsByChannel } from '@/types/notifications-dashboard';
 
 interface ChannelBreakdownProps {
@@ -16,13 +16,6 @@ export const ChannelBreakdown = memo(function ChannelBreakdown({ data }: Channel
       stats: data.email,
       color: '#434E54',
       bgColor: '#EAE0D5',
-    },
-    {
-      name: 'SMS',
-      icon: MessageSquare,
-      stats: data.sms,
-      color: '#5A6670',
-      bgColor: '#D1D5DB',
     },
   ];
 

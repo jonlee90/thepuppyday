@@ -3,8 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { NotificationTemplate } from '@/types/template';
 import { VariableInserter } from '../../../components/VariableInserter';
-import { SmsCharacterCounter } from './SmsCharacterCounter';
-import { Save, Loader2, Mail, Code, FileText, MessageSquare, Type } from 'lucide-react';
+import { Save, Loader2, Mail, Code, FileText, Type } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface TemplateEditorProps {
@@ -13,14 +12,12 @@ interface TemplateEditorProps {
     subject_template?: string;
     html_template?: string;
     text_template?: string;
-    sms_template?: string;
     change_reason: string;
   }) => Promise<void>;
   onContentChange: (content: {
     subject?: string;
     html_template?: string;
     text_template?: string;
-    sms_template?: string;
   }) => void;
 }
 
@@ -28,7 +25,6 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
   const [subject, setSubject] = useState(template.subject_template || '');
   const [htmlTemplate, setHtmlTemplate] = useState(template.html_template || '');
   const [textTemplate, setTextTemplate] = useState(template.text_template || '');
-  const [smsTemplate, setSmsTemplate] = useState(template.sms_template || '');
   const [changeReason, setChangeReason] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -36,17 +32,14 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
   const subjectRef = useRef<HTMLInputElement>(null);
   const htmlRef = useRef<HTMLTextAreaElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
-  const smsRef = useRef<HTMLTextAreaElement>(null);
-
   // Track changes with useMemo
   const hasChanges = useMemo(() => {
     return (
       subject !== (template.subject_template || '') ||
       htmlTemplate !== (template.html_template || '') ||
-      textTemplate !== (template.text_template || '') ||
-      smsTemplate !== (template.sms_template || '')
+      textTemplate !== (template.text_template || '')
     );
-  }, [subject, htmlTemplate, textTemplate, smsTemplate, template]);
+  }, [subject, htmlTemplate, textTemplate, template]);
 
   // Notify parent of content changes for preview
   useEffect(() => {
@@ -54,11 +47,10 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
       subject,
       html_template: htmlTemplate,
       text_template: textTemplate,
-      sms_template: smsTemplate,
     });
-  }, [subject, htmlTemplate, textTemplate, smsTemplate, onContentChange]);
+  }, [subject, htmlTemplate, textTemplate, onContentChange]);
 
-  const handleInsertVariable = (variable: string, field: 'subject' | 'html' | 'text' | 'sms') => {
+  const handleInsertVariable = (variable: string, field: 'subject' | 'html' | 'text') => {
     let ref: HTMLInputElement | HTMLTextAreaElement | null = null;
     let currentValue = '';
     let setValue: (value: string) => void = () => {};
@@ -78,11 +70,6 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
         ref = textRef.current;
         currentValue = textTemplate;
         setValue = setTextTemplate;
-        break;
-      case 'sms':
-        ref = smsRef.current;
-        currentValue = smsTemplate;
-        setValue = setSmsTemplate;
         break;
     }
 
@@ -115,17 +102,14 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
     }
 
     // Validation
-    if (template.channel === 'email' && !subject.trim()) {
+    if (!subject.trim()) {
       toast.error('Subject line is required');
       return;
     }
 
     // Check required variables
     const requiredVars = template.variables.filter((v) => v.required);
-    const content =
-      template.channel === 'email'
-        ? `${subject} ${htmlTemplate} ${textTemplate}`
-        : smsTemplate;
+    const content = `${subject} ${htmlTemplate} ${textTemplate}`;
 
     for (const variable of requiredVars) {
       if (!content.includes(`{{${variable.name}}}`)) {
@@ -138,15 +122,9 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
       setSaving(true);
 
       await onSave({
-        ...(template.channel === 'email'
-          ? {
-              subject_template: subject,
-              html_template: htmlTemplate,
-              text_template: textTemplate,
-            }
-          : {
-              sms_template: smsTemplate,
-            }),
+        subject_template: subject,
+        html_template: htmlTemplate,
+        text_template: textTemplate,
         change_reason: changeReason,
       });
 
@@ -185,8 +163,6 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
       </div>
 
       {/* Email Template Fields */}
-      {template.channel === 'email' && (
-        <>
           {/* Subject Line */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -272,42 +248,6 @@ export function TemplateEditor({ template, onSave, onContentChange }: TemplateEd
               Plain text fallback for email clients that don&apos;t support HTML.
             </p>
           </div>
-        </>
-      )}
-
-      {/* SMS Template Fields */}
-      {template.channel === 'sms' && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-3.5 h-3.5 text-[#434E54]/40" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#434E54]/40">
-                SMS Message
-              </span>
-              <span className="text-[#D4A574]">*</span>
-            </div>
-            <VariableInserter
-              variables={template.variables}
-              onInsert={(variable) => handleInsertVariable(variable, 'sms')}
-            />
-          </div>
-          <textarea
-            ref={smsRef}
-            value={smsTemplate}
-            onChange={(e) => setSmsTemplate(e.target.value)}
-            placeholder="Enter SMS message..."
-            className="w-full py-2.5 px-4 rounded-lg border border-[#434E54]/20 bg-white
-                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/30
-                     focus:border-[#434E54] placeholder:text-gray-400 resize-none"
-            rows={6}
-          />
-
-          {/* Character Counter */}
-          <div className="mt-4">
-            <SmsCharacterCounter content={smsTemplate} variables={template.variables} />
-          </div>
-        </div>
-      )}
 
       {/* Available Variables Reference */}
       <div className="bg-[#EAE0D5]/30 rounded-xl p-5 border border-[#F0EAE0]">

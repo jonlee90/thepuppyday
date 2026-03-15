@@ -1,6 +1,6 @@
 /**
  * Appointment notification utilities
- * Handles email and SMS notifications for appointment status changes
+ * Handles email notifications for appointment status changes
  */
 
 import type { AppointmentStatus, NotificationLog, User } from '@/types/database';
@@ -9,7 +9,6 @@ import { format } from 'date-fns';
 
 export interface NotificationOptions {
   sendEmail?: boolean;
-  sendSms?: boolean;
 }
 
 export interface AppointmentNotificationData {
@@ -31,7 +30,7 @@ export interface AppointmentNotificationData {
 export async function sendAppointmentNotification(
   supabase: AppSupabaseClient,
   data: AppointmentNotificationData,
-  options: NotificationOptions = { sendEmail: true, sendSms: false }
+  options: NotificationOptions = { sendEmail: true }
 ): Promise<{ success: boolean; errors: string[] }> {
   const errors: string[] = [];
 
@@ -41,25 +40,12 @@ export async function sendAppointmentNotification(
     return { success: false, errors };
   }
 
-  // Validate customer phone for SMS notifications
-  if (options.sendSms && !data.customerPhone) {
-    errors.push('Customer phone number not available');
-  }
-
   try {
     // Send email notification
     if (options.sendEmail) {
       const emailResult = await sendEmailNotification(supabase, data);
       if (!emailResult.success) {
         errors.push(emailResult.error || 'Email notification failed');
-      }
-    }
-
-    // Send SMS notification
-    if (options.sendSms && data.customerPhone) {
-      const smsResult = await sendSmsNotification(supabase, data);
-      if (!smsResult.success) {
-        errors.push(smsResult.error || 'SMS notification failed');
       }
     }
 
@@ -130,65 +116,6 @@ async function sendEmailNotification(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Email failed',
-    };
-  }
-}
-
-/**
- * Send SMS notification
- */
-async function sendSmsNotification(
-  supabase: AppSupabaseClient,
-  data: AppointmentNotificationData
-): Promise<{ success: boolean; error?: string }> {
-  const content = getSmsContent(data);
-
-  try {
-    // Log notification attempt
-    const logEntry: Partial<NotificationLog> = {
-      customer_id: data.customerId,
-      type: `appointment_${data.status}`,
-      channel: 'sms',
-      recipient: data.customerPhone!,
-      subject: null,
-      content,
-      status: 'pending',
-      error_message: null,
-      sent_at: null,
-    };
-
-    // In mock mode, we just log to the database
-    if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
-      const mockResult = await (supabase as any)
-        .from('notifications_log')
-        .insert(logEntry)
-        .select()
-        .single();
-
-      if (mockResult.error) {
-        throw mockResult.error;
-      }
-
-      // Update log entry as sent
-      await (supabase as any)
-        .from('notifications_log')
-        .update({
-          status: 'sent',
-          sent_at: new Date().toISOString(),
-        })
-        .eq('id', mockResult.data.id);
-
-      return { success: true };
-    }
-
-    // In production, use Twilio
-    // TODO: Implement actual SMS sending with Twilio
-    return { success: true };
-  } catch (error) {
-    console.error('[Notifications] SMS error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'SMS failed',
     };
   }
 }
@@ -282,28 +209,6 @@ The Puppy Day Team`,
 }
 
 /**
- * Get SMS content based on appointment status
- */
-function getSmsContent(data: AppointmentNotificationData): string {
-  const formattedDate = format(new Date(data.scheduledAt), 'M/d/yy');
-  const formattedTime = format(new Date(data.scheduledAt), 'h:mm a');
-
-  switch (data.status) {
-    case 'confirmed':
-      return `The Puppy Day: Your appointment for ${data.petName} is confirmed on ${formattedDate} at ${formattedTime}. See you soon!`;
-
-    case 'cancelled':
-      return `The Puppy Day: Your appointment for ${data.petName} on ${formattedDate} has been cancelled. Call (657) 252-2903 to reschedule.`;
-
-    case 'completed':
-      return `The Puppy Day: Thank you for visiting! We hope ${data.petName} enjoyed their grooming. We'd love your feedback!`;
-
-    default:
-      return `The Puppy Day: Your appointment for ${data.petName} has been updated. Call (657) 252-2903 for details.`;
-  }
-}
-
-/**
  * Validate email address
  */
 function isValidEmail(email: string): boolean {
@@ -319,10 +224,3 @@ export function hasEmailNotificationsEnabled(user: User): boolean {
   return prefs?.email_appointment_reminders !== false;
 }
 
-/**
- * Check if customer has SMS notifications enabled
- */
-export function hasSmsNotificationsEnabled(user: User): boolean {
-  const prefs = user.preferences as any;
-  return prefs?.sms_appointment_reminders === true;
-}

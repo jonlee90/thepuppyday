@@ -1129,88 +1129,6 @@ export function createWaitlistAvailableEmail(data: WaitlistAvailableEmailData): 
 }
 
 // ============================================================================
-// SMS TEMPLATES
-// ============================================================================
-
-/**
- * SMS reminder sent 24 hours before appointment
- */
-export function createAppointmentReminderSms(data: AppointmentReminderData): string {
-  return `Reminder: ${escapeHtml(data.pet_name)}'s grooming tomorrow at ${escapeHtml(data.appointment_time)}. Puppy Day (657) 252-2903`;
-}
-
-/**
- * SMS sent when pet is checked in
- */
-export function createCheckedInSms(data: AppointmentStatusData): string {
-  return `We've got ${escapeHtml(data.pet_name)}! They're settling in nicely. We'll text when ready for pickup. - Puppy Day`;
-}
-
-/**
- * SMS sent when pet is ready for pickup
- */
-export function createReadyForPickupSms(data: AppointmentStatusData): string {
-  return `${escapeHtml(data.pet_name)} is ready for pickup! Looking fresh & fabulous! Puppy Day, 14936 Leffingwell Rd. (657) 252-2903`;
-}
-
-/**
- * SMS sent when waitlisted slot becomes available
- */
-export function createWaitlistNotificationSms(data: WaitlistNotificationData): string {
-  return `Puppy Day: Spot open ${escapeHtml(data.available_date)} at ${escapeHtml(data.available_time)}! Claim now (2hr exp): ${escapeHtml(data.claim_link)}`;
-}
-
-/**
- * SMS version of booking confirmation
- */
-export function createBookingConfirmationSms(data: BookingConfirmationData): string {
-  return `Confirmed! ${escapeHtml(data.pet_name)} ${escapeHtml(data.appointment_date)} ${escapeHtml(data.appointment_time)}. ${escapeHtml(data.total_price)}. Puppy Day (657) 252-2903`;
-}
-
-/**
- * SMS version of report card notification
- */
-export function createReportCardSms(data: ReportCardData): string {
-  return `${escapeHtml(data.pet_name)}'s report card ready with before/after photos! ${escapeHtml(data.report_card_link)} - Puppy Day`;
-}
-
-/**
- * SMS version of retention reminder
- */
-export function createRetentionReminderSms(data: RetentionReminderData): string {
-  return `Time for ${escapeHtml(data.pet_name)}'s grooming! ${String(data.weeks_since_last)} weeks since last visit. Book: ${escapeHtml(data.booking_url)} - Puppy Day`;
-}
-
-/**
- * SMS reminder for appointment (using AppointmentReminderEmailData)
- * Named with "FromEmail" suffix to avoid conflict with existing createAppointmentReminderSms
- */
-export function createAppointmentReminderSmsFromEmail(data: AppointmentReminderEmailData): string {
-  return `Reminder: ${escapeHtml(data.pet_name)}'s ${escapeHtml(data.service_name)} tomorrow at ${escapeHtml(data.appointment_time)}. Puppy Day (657) 252-2903`;
-}
-
-/**
- * SMS sent when appointment is cancelled
- */
-export function createAppointmentCancelledSms(data: { pet_name: string; appointment_date: string; rebook_url: string }): string {
-  return `Your appt for ${escapeHtml(data.pet_name)} on ${escapeHtml(data.appointment_date)} was cancelled. To rebook: ${escapeHtml(data.rebook_url)} - Puppy Day`;
-}
-
-/**
- * SMS sent when appointment is rescheduled
- */
-export function createAppointmentRescheduledSms(data: { pet_name: string; new_date: string; new_time: string }): string {
-  return `Rescheduled: ${escapeHtml(data.pet_name)}'s appt moved to ${escapeHtml(data.new_date)} at ${escapeHtml(data.new_time)}. Questions? (657) 252-2903 - Puppy Day`;
-}
-
-/**
- * SMS sent when customer joins waitlist
- */
-export function createWaitlistAddedSms(data: { pet_name: string; service_name: string; requested_date: string; position: number }): string {
-  return `${escapeHtml(data.pet_name)} is #${String(data.position)} on the waitlist for ${escapeHtml(data.service_name)} on ${escapeHtml(data.requested_date)}. We'll text you when a spot opens! - Puppy Day`;
-}
-
-// ============================================================================
 // EXPORT ALL TEMPLATE GENERATORS
 // ============================================================================
 
@@ -1228,18 +1146,4 @@ export const emailTemplates = {
   reviewRequest: createReviewRequestEmail,
   waitlistAdded: createWaitlistAddedEmail,
   waitlistAvailable: createWaitlistAvailableEmail,
-};
-
-export const smsTemplates = {
-  appointmentReminder: createAppointmentReminderSms,
-  checkedIn: createCheckedInSms,
-  readyForPickup: createReadyForPickupSms,
-  waitlistNotification: createWaitlistNotificationSms,
-  bookingConfirmation: createBookingConfirmationSms,
-  reportCard: createReportCardSms,
-  retentionReminder: createRetentionReminderSms,
-  appointmentReminderFromEmail: createAppointmentReminderSmsFromEmail,
-  appointmentCancelled: createAppointmentCancelledSms,
-  appointmentRescheduled: createAppointmentRescheduledSms,
-  waitlistAdded: createWaitlistAddedSms,
 };

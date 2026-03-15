@@ -3,13 +3,11 @@
  * Environment-based provider selection (mock vs production)
  */
 
-import type { EmailProvider, SMSProvider } from '../types';
+import type { EmailProvider } from '../types';
 import { getMockResendProvider } from '../../../mocks/resend/provider';
-import { getMockTwilioProvider } from '../../../mocks/twilio/provider';
 
 // Production providers - will be imported conditionally
 let ResendProvider: unknown;
-let TwilioProvider: unknown;
 
 // Try to import production providers if available
 try {
@@ -25,22 +23,6 @@ try {
     console.debug('[Provider Factory] Resend provider module not found, skipping');
   } else {
     console.error('[Provider Factory] Failed to load Resend provider:', error);
-  }
-}
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const twilioModule = require('../../twilio/provider');
-  TwilioProvider = twilioModule.TwilioProvider;
-} catch (error: unknown) {
-  if (
-    error instanceof Error &&
-    'code' in error &&
-    (error as NodeJS.ErrnoException).code === 'MODULE_NOT_FOUND'
-  ) {
-    console.debug('[Provider Factory] Twilio provider module not found, skipping');
-  } else {
-    console.error('[Provider Factory] Failed to load Twilio provider:', error);
   }
 }
 
@@ -107,74 +89,11 @@ export function resetEmailProvider(): void {
   emailProviderInstance = null;
 }
 
-// ============================================================================
-// SMS PROVIDER FACTORY
-// ============================================================================
-
-let smsProviderInstance: SMSProvider | null = null;
-
-/**
- * Get the appropriate SMS provider based on environment configuration
- * Returns MockTwilioProvider if NEXT_PUBLIC_USE_MOCKS=true, otherwise TwilioProvider
- */
-export function getSMSProvider(): SMSProvider {
-  // Return cached instance if available
-  if (smsProviderInstance) {
-    return smsProviderInstance;
-  }
-
-  const useMocks = shouldUseMocks();
-
-  if (useMocks) {
-    console.log('[Provider Factory] Using MockTwilioProvider for SMS');
-    smsProviderInstance = getMockTwilioProvider();
-  } else {
-    if (!TwilioProvider) {
-      console.warn(
-        '[Provider Factory] TwilioProvider not available — SMS will be unavailable'
-      );
-      return getNoopSMSProvider();
-    }
-
-    try {
-      console.log('[Provider Factory] Using TwilioProvider for SMS (production)');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      smsProviderInstance = new (TwilioProvider as any)() as SMSProvider;
-    } catch (error) {
-      console.warn('[Provider Factory] TwilioProvider failed to initialize — SMS will be unavailable:', error);
-      return getNoopSMSProvider();
-    }
-  }
-
-  return smsProviderInstance;
-}
-
-/**
- * No-op SMS provider returned when Twilio is unavailable
- * Prevents SMS init failures from blocking email notifications
- */
-function getNoopSMSProvider(): SMSProvider {
-  return {
-    send: async () => ({
-      success: false,
-      error: 'SMS provider not configured',
-    }),
-  } as SMSProvider;
-}
-
-/**
- * Reset the SMS provider instance (for testing)
- */
-export function resetSMSProvider(): void {
-  smsProviderInstance = null;
-}
-
 /**
  * Reset all provider instances (for testing)
  */
 export function resetAllProviders(): void {
   resetEmailProvider();
-  resetSMSProvider();
 }
 
 /**

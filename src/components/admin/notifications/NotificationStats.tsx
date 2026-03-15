@@ -5,7 +5,7 @@
  * Task 0065: Display KPI cards showing notification summary statistics
  */
 
-import { Send, TrendingUp, MousePointer, DollarSign } from 'lucide-react';
+import { Send, TrendingUp, MousePointer, AlertTriangle } from 'lucide-react';
 import type { NotificationStats as StatsData } from '@/types/notifications';
 
 interface NotificationStatsProps {
@@ -45,7 +45,7 @@ export function NotificationStats({ stats, loading }: NotificationStatsProps) {
               {stats.totalSent.toLocaleString()}
             </p>
             <p className="text-xs text-gray-500">
-              {stats.emailCount} emails, {stats.smsCount} SMS
+              {stats.emailCount} emails
             </p>
           </div>
           <Send className="w-8 h-8 text-blue-500 opacity-50" />
@@ -84,17 +84,17 @@ export function NotificationStats({ stats, loading }: NotificationStatsProps) {
         </div>
       </div>
 
-      {/* Total Cost (SMS) */}
+      {/* Failed */}
       <div className="card bg-white shadow-sm hover:shadow-md transition-shadow p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Total Cost</p>
-            <p className="text-3xl font-bold text-[#434E54] mb-2">
-              ${stats.totalCostDollars.toFixed(2)}
+            <p className="text-sm font-medium text-gray-600 mb-1">Failed</p>
+            <p className="text-3xl font-bold text-red-600 mb-2">
+              {stats.totalFailed.toLocaleString()}
             </p>
-            <p className="text-xs text-gray-500">{stats.totalFailed} failed</p>
+            <p className="text-xs text-gray-500">notifications failed</p>
           </div>
-          <DollarSign className="w-8 h-8 text-gray-500 opacity-50" />
+          <AlertTriangle className="w-8 h-8 text-red-500 opacity-50" />
         </div>
       </div>
     </div>

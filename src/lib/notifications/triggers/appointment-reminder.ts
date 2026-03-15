@@ -8,7 +8,6 @@ import type { NotificationResult } from '../types';
 import { sendNotification } from '../index';
 import {
   createAppointmentReminderEmail,
-  createAppointmentReminderSmsFromEmail,
   type AppointmentReminderEmailData,
 } from '../email-templates';
 import { format } from 'date-fns';
@@ -31,9 +30,7 @@ export interface AppointmentReminderTriggerData {
 export interface AppointmentReminderTriggerResult {
   success: boolean;
   emailSent: boolean;
-  smsSent: boolean;
   emailResult?: NotificationResult;
-  smsResult?: NotificationResult;
   errors: string[];
 }
 
@@ -55,9 +52,7 @@ export async function triggerAppointmentReminder(
 ): Promise<AppointmentReminderTriggerResult> {
   const errors: string[] = [];
   let emailSent = false;
-  let smsSent = false;
   let emailResult: NotificationResult | undefined;
-  let smsResult: NotificationResult | undefined;
 
   console.log(
     `[AppointmentReminder] Triggering reminder for appointment ${data.appointmentId}`
@@ -78,92 +73,44 @@ export async function triggerAppointmentReminder(
   // Generate pre-rendered email content for providers that need it
   const emailContent = createAppointmentReminderEmail(templateData);
 
-  // Dispatch email and SMS in parallel
-  const notificationPromises: Promise<void>[] = [];
+  // Send email notification
+  try {
+    console.log(`[AppointmentReminder] Sending email to ${data.customerEmail}`);
 
-  // Email notification
-  notificationPromises.push(
-    (async () => {
-      try {
-        console.log(`[AppointmentReminder] Sending email to ${data.customerEmail}`);
+    emailResult = await sendNotification(supabase, {
+      type: 'appointment_reminder',
+      channel: 'email',
+      recipient: data.customerEmail,
+      templateData: {
+        ...templateData,
+        _preRenderedHtml: emailContent.html,
+        _preRenderedText: emailContent.text,
+        _preRenderedSubject: emailContent.subject,
+      },
+      userId: data.customerId,
+    });
 
-        emailResult = await sendNotification(supabase, {
-          type: 'appointment_reminder',
-          channel: 'email',
-          recipient: data.customerEmail,
-          templateData: {
-            ...templateData,
-            _preRenderedHtml: emailContent.html,
-            _preRenderedText: emailContent.text,
-            _preRenderedSubject: emailContent.subject,
-          },
-          userId: data.customerId,
-        });
-
-        if (emailResult.success) {
-          emailSent = true;
-          console.log(
-            `[AppointmentReminder] Email sent successfully (log ID: ${emailResult.logId})`
-          );
-        } else {
-          errors.push(`Email failed: ${emailResult.error}`);
-          console.error(`[AppointmentReminder] Email failed: ${emailResult.error}`);
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        errors.push(`Email error: ${errorMessage}`);
-        console.error('[AppointmentReminder] Email exception:', error);
-      }
-    })()
-  );
-
-  // SMS notification (if phone available)
-  if (data.customerPhone) {
-    notificationPromises.push(
-      (async () => {
-        try {
-          console.log(`[AppointmentReminder] Sending SMS to ${data.customerPhone}`);
-
-          const smsText = createAppointmentReminderSmsFromEmail(templateData);
-
-          smsResult = await sendNotification(supabase, {
-            type: 'appointment_reminder',
-            channel: 'sms',
-            recipient: data.customerPhone!,
-            templateData: { ...templateData, _preRenderedText: smsText },
-            userId: data.customerId,
-          });
-
-          if (smsResult.success) {
-            smsSent = true;
-            console.log(
-              `[AppointmentReminder] SMS sent successfully (log ID: ${smsResult.logId})`
-            );
-          } else {
-            errors.push(`SMS failed: ${smsResult.error}`);
-            console.error(`[AppointmentReminder] SMS failed: ${smsResult.error}`);
-          }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          errors.push(`SMS error: ${errorMessage}`);
-          console.error('[AppointmentReminder] SMS exception:', error);
-        }
-      })()
-    );
-  } else {
-    console.log('[AppointmentReminder] Skipping SMS - no phone number provided');
+    if (emailResult.success) {
+      emailSent = true;
+      console.log(
+        `[AppointmentReminder] Email sent successfully (log ID: ${emailResult.logId})`
+      );
+    } else {
+      errors.push(`Email failed: ${emailResult.error}`);
+      console.error(`[AppointmentReminder] Email failed: ${emailResult.error}`);
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    errors.push(`Email error: ${errorMessage}`);
+    console.error('[AppointmentReminder] Email exception:', error);
   }
 
-  await Promise.all(notificationPromises);
-
-  const success = emailSent || smsSent;
+  const success = emailSent;
 
   return {
     success,
     emailSent,
-    smsSent,
     emailResult,
-    smsResult,
     errors,
   };
 }

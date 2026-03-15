@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface TestNotificationModalProps {
   templateId: string;
-  channel: 'email' | 'sms';
+  channel: 'email';
   variables: TemplateVariable[];
   isOpen: boolean;
   onClose: () => void;
@@ -43,7 +43,7 @@ export function TestNotificationModal({
 
   const handleSend = async () => {
     if (!recipient) {
-      toast.error(`Please enter a ${channel === 'email' ? 'email address' : 'phone number'}`);
+      toast.error('Please enter an email address');
       return;
     }
 
@@ -55,9 +55,7 @@ export function TestNotificationModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...(channel === 'email'
-            ? { recipient_email: recipient }
-            : { recipient_phone: recipient }),
+          recipient_email: recipient,
           sample_data: sampleData,
         }),
       });
@@ -210,24 +208,20 @@ export function TestNotificationModal({
               {/* Recipient Input */}
               <div>
                 <label className="block text-sm font-medium text-[#434E54] mb-2">
-                  Recipient {channel === 'email' ? 'Email' : 'Phone Number'}
+                  Recipient Email
                   <span className="text-[#D4A574] ml-1">*</span>
                 </label>
                 <input
-                  type={channel === 'email' ? 'email' : 'tel'}
+                  type="email"
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
-                  placeholder={
-                    channel === 'email' ? 'example@email.com' : '+1 (555) 123-4567'
-                  }
+                  placeholder="example@email.com"
                   className="w-full py-2.5 px-4 rounded-lg border border-[#434E54]/20 bg-white
                            focus:outline-none focus:ring-2 focus:ring-[#434E54]/30
                            focus:border-[#434E54] placeholder:text-gray-400"
                 />
                 <p className="text-xs text-[#6B7280] mt-1">
-                  {channel === 'email'
-                    ? 'Enter the email address to receive the test'
-                    : 'Enter the phone number to receive the test (include country code)'}
+                  Enter the email address to receive the test
                 </p>
               </div>
 

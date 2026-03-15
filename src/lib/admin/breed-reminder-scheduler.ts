@@ -1,7 +1,6 @@
 /**
  * Breed-based Grooming Reminder Scheduler
  * Task 0037: Automated breed-based grooming reminders for retention marketing
- * Task 0038: Updated to use new SMS and Email notification templates
  *
  * Runs daily at 9 AM to send grooming reminders based on breed frequency.
  * Sends reminders 7 days before the pet is due for grooming.
@@ -103,9 +102,8 @@ export async function processBreedReminders(
         // Check customer notification preferences
         const customerPrefs = pet.customer.preferences as NotificationPreferences | Record<string, unknown>;
         const emailEnabled = 'email_promotional' in customerPrefs ? customerPrefs.email_promotional !== false : true;
-        const smsEnabled = 'sms_promotional' in customerPrefs ? customerPrefs.sms_promotional === true : false;
 
-        if (!emailEnabled && !smsEnabled) {
+        if (!emailEnabled) {
           console.log(`[Breed Reminder Scheduler] Skipping pet ${pet.name} - customer opted out of promotional notifications`);
           stats.skipped_count++;
           continue;
@@ -120,7 +118,6 @@ export async function processBreedReminders(
           pet,
           trackingId,
           emailEnabled,
-          smsEnabled,
           attemptCount + 1
         );
 
@@ -366,14 +363,13 @@ async function getRecentAttemptCount(
 }
 
 /**
- * Send breed reminder notification using new templates (Task 0038)
+ * Send breed reminder notification via email
  */
 async function sendBreedReminder(
   supabase: AppSupabaseClient,
   pet: EligiblePet,
   trackingId: string,
   emailEnabled: boolean,
-  smsEnabled: boolean,
   attemptCount: number
 ): Promise<{ success: boolean; error?: string }> {
   try {
@@ -393,10 +389,6 @@ async function sendBreedReminder(
       ? await import('@/mocks/resend/breed-reminder-email')
       : await import('@/lib/resend/breed-reminder-email');
 
-    const { sendBreedReminderSMS } = USE_MOCKS
-      ? await import('@/mocks/twilio/breed-reminder-sms')
-      : await import('@/lib/twilio/breed-reminder-sms');
-
     // Send email notification if enabled
     if (emailEnabled && pet.customer.email) {
       try {
@@ -410,43 +402,15 @@ async function sendBreedReminder(
           breedMessage: customBreedMessage || `Based on your pet's breed, regular grooming helps keep them healthy and comfortable.`,
           trackingId,
           bookingUrl,
-          // petPhotoUrl: undefined, // Could fetch from storage if available
         });
 
         if (emailResult.success && emailResult.emailId) {
           console.log(`[Breed Reminder Scheduler] Email sent to ${pet.customer.email}: ${emailResult.emailId}`);
-          // The email template handles logging to notifications_log
         } else {
           console.error(`[Breed Reminder Scheduler] Email failed: ${emailResult.error}`);
         }
       } catch (error) {
         console.error('[Breed Reminder Scheduler] Error sending email:', error);
-      }
-    }
-
-    // Send SMS notification if enabled
-    if (smsEnabled && pet.customer.phone) {
-      try {
-        const smsResult = await sendBreedReminderSMS(supabase, {
-          customerName: pet.customer.first_name,
-          customerPhone: pet.customer.phone,
-          customerId: pet.customer_id,
-          petName: pet.name,
-          petId: pet.id,
-          breedName: pet.breed.name,
-          breedMessage: customBreedMessage,
-          trackingId,
-          bookingUrl,
-        });
-
-        if (smsResult.success && smsResult.messageSid) {
-          console.log(`[Breed Reminder Scheduler] SMS sent to ${pet.customer.phone}: ${smsResult.messageSid}`);
-          // The SMS template handles logging to notifications_log
-        } else {
-          console.error(`[Breed Reminder Scheduler] SMS failed: ${smsResult.error}`);
-        }
-      } catch (error) {
-        console.error('[Breed Reminder Scheduler] Error sending SMS:', error);
       }
     }
 

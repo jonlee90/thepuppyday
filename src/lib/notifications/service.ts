@@ -12,7 +12,6 @@ import type {
   NotificationMetrics,
   RenderedTemplate,
   EmailProvider,
-  SMSProvider,
   TemplateEngine,
   NotificationLogger,
   RetryConfig,
@@ -21,20 +20,6 @@ import { createNotificationQueries } from './query-helpers';
 import { wrapEmailContent } from './email-base';
 import { classifyError, calculateRetryTimestamp, DEFAULT_RETRY_CONFIG } from './errors';
 import { createRetryManager } from './retry-manager';
-
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
-/**
- * Maximum SMS length before truncation/warning (single segment)
- */
-const MAX_SMS_LENGTH = 160;
-
-/**
- * Maximum SMS length for multi-segment messages (each segment)
- */
-const MAX_SMS_SEGMENT_LENGTH = 153;
 
 // ============================================================================
 // DEFAULT NOTIFICATION SERVICE
@@ -47,7 +32,6 @@ const MAX_SMS_SEGMENT_LENGTH = 153;
 export class DefaultNotificationService implements NotificationService {
   private supabase: SupabaseClient;
   private emailProvider: EmailProvider;
-  private smsProvider: SMSProvider;
   private templateEngine: TemplateEngine;
   private logger: NotificationLogger;
   private retryConfig: RetryConfig;
@@ -55,14 +39,12 @@ export class DefaultNotificationService implements NotificationService {
   constructor(
     supabase: SupabaseClient,
     emailProvider: EmailProvider,
-    smsProvider: SMSProvider,
     templateEngine: TemplateEngine,
     logger: NotificationLogger,
     retryConfig: RetryConfig = DEFAULT_RETRY_CONFIG
   ) {
     this.supabase = supabase;
     this.emailProvider = emailProvider;
-    this.smsProvider = smsProvider;
     this.templateEngine = templateEngine;
     this.logger = logger;
     this.retryConfig = retryConfig;
@@ -150,15 +132,6 @@ export class DefaultNotificationService implements NotificationService {
       // Step 4: Render template with provided data
       const rendered = this.renderTemplateFromObject(template, message.templateData);
 
-      // Step 5: Validate SMS length if applicable
-      if (message.channel === 'sms') {
-        const validation = this.validateSMSLength(rendered.text);
-        if (!validation.valid) {
-          console.warn(`[NotificationService] SMS validation warning:`, validation.warning);
-          // Continue anyway, but log the warning
-        }
-      }
-
       // Step 6: Create pending log entry
       const logId = await this.logger.create({
         customerId: message.userId,
@@ -178,11 +151,7 @@ export class DefaultNotificationService implements NotificationService {
       let sendResult: { success: boolean; messageId?: string; error?: string };
 
       try {
-        if (message.channel === 'email') {
-          sendResult = await this.sendEmail(message.recipient, rendered);
-        } else {
-          sendResult = await this.sendSMS(message.recipient, rendered.text);
-        }
+        sendResult = await this.sendEmail(message.recipient, rendered);
       } catch (error) {
         // Provider threw an exception
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -335,14 +304,6 @@ export class DefaultNotificationService implements NotificationService {
             deliveryRate: stats?.email_delivery_rate || 0,
             clickRate: stats?.email_click_rate || 0,
           },
-          sms: {
-            sent: stats?.sms_sent || 0,
-            delivered: stats?.sms_delivered || 0,
-            failed: stats?.sms_failed || 0,
-            clicked: stats?.sms_clicked || 0,
-            deliveryRate: stats?.sms_delivery_rate || 0,
-            clickRate: stats?.sms_click_rate || 0,
-          },
         },
         byType: {},
         timeline: [],
@@ -398,21 +359,10 @@ export class DefaultNotificationService implements NotificationService {
 
     const text = this.templateEngine.render(template.text_template, data);
 
-    const characterCount = text.length;
-    const segmentCount = this.templateEngine.calculateSegmentCount(text);
-
-    const warnings: string[] = [];
-    if (characterCount > MAX_SMS_LENGTH) {
-      warnings.push(`Message is ${characterCount} characters (will use ${segmentCount} segments)`);
-    }
-
     return {
       subject,
       html,
       text,
-      characterCount,
-      segmentCount,
-      warnings: warnings.length > 0 ? warnings : undefined,
     };
   }
 
@@ -435,38 +385,6 @@ export class DefaultNotificationService implements NotificationService {
     });
 
     return result;
-  }
-
-  /**
-   * Send SMS via SMS provider
-   */
-  private async sendSMS(
-    recipient: string,
-    text: string
-  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-    const result = await this.smsProvider.send({
-      to: recipient,
-      body: text,
-    });
-
-    return result;
-  }
-
-  /**
-   * Validate SMS length and return warnings
-   */
-  private validateSMSLength(text: string): { valid: boolean; warning?: string } {
-    const length = text.length;
-
-    if (length <= MAX_SMS_LENGTH) {
-      return { valid: true };
-    }
-
-    const segments = Math.ceil(length / MAX_SMS_SEGMENT_LENGTH);
-    return {
-      valid: true, // Still valid, just a warning
-      warning: `SMS is ${length} characters and will be sent as ${segments} segments`,
-    };
   }
 
   /**
@@ -520,7 +438,6 @@ export class DefaultNotificationService implements NotificationService {
 export function createNotificationService(
   supabase: SupabaseClient,
   emailProvider: EmailProvider,
-  smsProvider: SMSProvider,
   templateEngine: TemplateEngine,
   logger: NotificationLogger,
   retryConfig?: RetryConfig
@@ -528,7 +445,6 @@ export function createNotificationService(
   return new DefaultNotificationService(
     supabase,
     emailProvider,
-    smsProvider,
     templateEngine,
     logger,
     retryConfig

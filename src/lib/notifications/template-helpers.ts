@@ -6,7 +6,6 @@
 
 import {
   emailTemplates,
-  smsTemplates,
   type EmailTemplate,
   type BookingConfirmationData,
   type ReportCardData,
@@ -360,70 +359,6 @@ export function renderEmailTemplate<T extends NotificationType>(
   }
 }
 
-/**
- * Render an SMS template for a specific notification type
- */
-export function renderSmsTemplate<T extends NotificationType>(
-  type: T,
-  data: TemplateDataMap[T]
-): string | null {
-  switch (type) {
-    case 'appointment_reminder':
-      if (!isAppointmentReminderData(data)) {
-        console.error('Invalid data for appointment_reminder SMS template');
-        return null;
-      }
-      return smsTemplates.appointmentReminder(data);
-
-    case 'appointment_checked_in':
-      if (!isAppointmentStatusData(data)) {
-        console.error('Invalid data for appointment_checked_in SMS template');
-        return null;
-      }
-      return smsTemplates.checkedIn(data);
-
-    case 'appointment_ready_for_pickup':
-      if (!isAppointmentStatusData(data)) {
-        console.error('Invalid data for appointment_ready_for_pickup SMS template');
-        return null;
-      }
-      return smsTemplates.readyForPickup(data);
-
-    case 'waitlist_notification':
-      if (!isWaitlistNotificationData(data)) {
-        console.error('Invalid data for waitlist_notification SMS template');
-        return null;
-      }
-      return smsTemplates.waitlistNotification(data);
-
-    case 'booking_confirmation':
-      if (!isBookingConfirmationData(data)) {
-        console.error('Invalid data for booking_confirmation SMS template');
-        return null;
-      }
-      return smsTemplates.bookingConfirmation(data);
-
-    case 'report_card_notification':
-      if (!isReportCardData(data)) {
-        console.error('Invalid data for report_card_notification SMS template');
-        return null;
-      }
-      return smsTemplates.reportCard(data);
-
-    case 'retention_reminder':
-      if (!isRetentionReminderData(data)) {
-        console.error('Invalid data for retention_reminder SMS template');
-        return null;
-      }
-      return smsTemplates.retentionReminder(data);
-
-    default:
-      // These notification types don't have SMS templates
-      console.error(`No SMS template available for notification type: ${type}`);
-      return null;
-  }
-}
-
 // ============================================================================
 // TEMPLATE DATA VALIDATION
 // ============================================================================
@@ -478,59 +413,6 @@ export function validateTemplateData<T extends NotificationType>(
 }
 
 // ============================================================================
-// SMS CHARACTER COUNT HELPERS
-// ============================================================================
-
-/**
- * Calculate SMS segment count (GSM 7-bit encoding)
- */
-export function calculateSmsSegments(text: string): number {
-  const length = text.length;
-
-  if (length === 0) return 0;
-  if (length <= 160) return 1;
-
-  // Multi-segment messages use 153 characters per segment
-  return Math.ceil(length / 153);
-}
-
-/**
- * Check if SMS text fits in a single segment
- */
-export function isSingleSegment(text: string): boolean {
-  return text.length <= 160;
-}
-
-/**
- * Get SMS length info
- */
-export function getSmsLengthInfo(text: string): {
-  length: number;
-  segments: number;
-  remaining: number;
-  isSingleSegment: boolean;
-} {
-  const length = text.length;
-  const segments = calculateSmsSegments(text);
-  const isSingle = isSingleSegment(text);
-
-  let remaining: number;
-  if (isSingle) {
-    remaining = 160 - length;
-  } else {
-    const nextSegmentStart = segments * 153;
-    remaining = nextSegmentStart - length;
-  }
-
-  return {
-    length,
-    segments,
-    remaining,
-    isSingleSegment: isSingle,
-  };
-}
-
-// ============================================================================
 // UNSUBSCRIBE LINK HELPER
 // ============================================================================
 
@@ -559,17 +441,6 @@ export function formatEmailDate(date: Date): string {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric',
-  });
-}
-
-/**
- * Format date for SMS templates (shorter)
- * Example: "Dec 18"
- */
-export function formatSmsDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
     day: 'numeric',
   });
 }
@@ -640,4 +511,4 @@ export function generatePreviewData<T extends NotificationType>(
 // EXPORTS
 // ============================================================================
 
-export { emailTemplates, smsTemplates };
+export { emailTemplates };

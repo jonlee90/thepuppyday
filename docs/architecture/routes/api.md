@@ -54,7 +54,7 @@ src/app/api/
 ├── waitlist/                        # Public waitlist submission
 ├── webhooks/
 │   ├── appointment-completed/       # Internal webhook for appointment completion
-│   └── twilio/incoming/             # Twilio incoming SMS webhook
+
 └── admin/                           # Admin-only endpoints (protected)
     ├── addons/
     ├── analytics/
@@ -114,7 +114,6 @@ src/app/api/
 | Route | Methods | Purpose |
 |-------|---------|---------|
 | `/api/webhooks/appointment-completed` | POST | Internal hook for appointment completion flows |
-| `/api/webhooks/twilio/incoming` | POST | Twilio incoming SMS handler |
 
 ### Cron Job Endpoints
 

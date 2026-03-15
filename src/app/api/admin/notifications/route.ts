@@ -255,7 +255,6 @@ function calculateStats(notifications: NotificationLogRow[]): NotificationStats 
   const totalClicked = notifications.filter((n) => n.clicked_at).length;
   const totalFailed = notifications.filter((n) => n.status === 'failed').length;
   const emailCount = notifications.filter((n) => n.channel === 'email').length;
-  const smsCount = notifications.filter((n) => n.channel === 'sms').length;
 
   const deliveryRate =
     totalSent > 0 ? Math.round((totalDelivered / totalSent) * 100 * 100) / 100 : 0;
@@ -264,11 +263,6 @@ function calculateStats(notifications: NotificationLogRow[]): NotificationStats 
       ? Math.round((totalClicked / totalDelivered) * 100 * 100) / 100
       : 0;
 
-  const totalCostCents = notifications.reduce((sum, n) => {
-    return sum + (n.cost_cents || 0);
-  }, 0);
-  const totalCostDollars = Math.round(totalCostCents) / 100;
-
   return {
     totalSent,
     totalDelivered,
@@ -276,8 +270,6 @@ function calculateStats(notifications: NotificationLogRow[]): NotificationStats 
     totalFailed,
     deliveryRate,
     clickRate,
-    totalCostDollars,
     emailCount,
-    smsCount,
   };
 }

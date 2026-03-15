@@ -8,7 +8,6 @@ import type { NotificationResult } from '../types';
 import { sendNotification } from '../index';
 import {
   createBookingConfirmationEmail,
-  createBookingConfirmationSms,
   type BookingConfirmationData,
 } from '../email-templates';
 import { format } from 'date-fns';
@@ -32,9 +31,7 @@ export interface BookingConfirmationTriggerData {
 export interface BookingConfirmationTriggerResult {
   success: boolean;
   emailSent: boolean;
-  smsSent: boolean;
   emailResult?: NotificationResult;
-  smsResult?: NotificationResult;
   errors: string[];
 }
 
@@ -56,9 +53,7 @@ export async function triggerBookingConfirmation(
 ): Promise<BookingConfirmationTriggerResult> {
   const errors: string[] = [];
   let emailSent = false;
-  let smsSent = false;
   let emailResult: NotificationResult | undefined;
-  let smsResult: NotificationResult | undefined;
 
   console.log(
     `[BookingConfirmation] Triggering booking confirmation for appointment ${data.appointmentId}`
@@ -105,47 +100,13 @@ export async function triggerBookingConfirmation(
     console.error('[BookingConfirmation] Email exception:', error);
   }
 
-  // Send SMS notification if phone number is available
-  if (data.customerPhone) {
-    try {
-      console.log(`[BookingConfirmation] Sending SMS to ${data.customerPhone}`);
-
-      smsResult = await sendNotification(supabase, {
-        type: 'booking_confirmation',
-        channel: 'sms',
-        recipient: data.customerPhone,
-        templateData,
-        userId: data.customerId,
-      });
-
-      if (smsResult.success) {
-        smsSent = true;
-        console.log(
-          `[BookingConfirmation] ✅ SMS sent successfully (log ID: ${smsResult.logId})`
-        );
-      } else {
-        errors.push(`SMS failed: ${smsResult.error}`);
-        console.error(`[BookingConfirmation] ❌ SMS failed: ${smsResult.error}`);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      errors.push(`SMS error: ${errorMessage}`);
-      console.error('[BookingConfirmation] SMS exception:', error);
-    }
-  } else {
-    console.log('[BookingConfirmation] Skipping SMS - no phone number provided');
-  }
-
   // Determine overall success
-  // Success if at least one channel succeeded
-  const success = emailSent || smsSent;
+  const success = emailSent;
 
   return {
     success,
     emailSent,
-    smsSent,
     emailResult,
-    smsResult,
     errors,
   };
 }

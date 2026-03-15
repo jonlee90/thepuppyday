@@ -145,7 +145,6 @@ export function LogFilters({ filters, onFilterChange, onApplyFilters }: LogFilte
           >
             <option value="all">All Channels</option>
             <option value="email">📧 Email</option>
-            <option value="sms">📱 SMS</option>
           </select>
         </div>
 

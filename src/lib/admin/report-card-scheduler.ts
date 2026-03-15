@@ -10,7 +10,6 @@ import { config } from '@/lib/config';
 export interface ReportCardNotificationResult {
   success: boolean;
   emailSent: boolean;
-  smsSent: boolean;
   errors: string[];
 }
 
@@ -27,7 +26,6 @@ export async function scheduleReportCardNotification(
 ): Promise<ReportCardNotificationResult> {
   const errors: string[] = [];
   let emailSent = false;
-  let smsSent = false;
 
   try {
     console.log('[Report Card Scheduler] Processing notification for report card:', reportCardId);
@@ -41,7 +39,7 @@ export async function scheduleReportCardNotification(
 
     if (reportCardResult.error || !reportCardResult.data) {
       errors.push('Report card not found');
-      return { success: false, emailSent: false, smsSent: false, errors };
+      return { success: false, emailSent: false, errors };
     }
 
     const reportCard: ReportCard = reportCardResult.data;
@@ -49,19 +47,19 @@ export async function scheduleReportCardNotification(
     // Skip if dont_send flag is true
     if (reportCard.dont_send) {
       console.log('[Report Card Scheduler] Skipping - dont_send flag is set');
-      return { success: true, emailSent: false, smsSent: false, errors: [] };
+      return { success: true, emailSent: false, errors: [] };
     }
 
     // Skip if is_draft is true
     if (reportCard.is_draft) {
       console.log('[Report Card Scheduler] Skipping - report card is still a draft');
-      return { success: true, emailSent: false, smsSent: false, errors: [] };
+      return { success: true, emailSent: false, errors: [] };
     }
 
     // Skip if already sent
     if (reportCard.sent_at) {
       console.log('[Report Card Scheduler] Skipping - notification already sent');
-      return { success: true, emailSent: false, smsSent: false, errors: [] };
+      return { success: true, emailSent: false, errors: [] };
     }
 
     // Get appointment with customer and pet details
@@ -78,7 +76,7 @@ export async function scheduleReportCardNotification(
 
     if (appointmentResult.error || !appointmentResult.data) {
       errors.push('Appointment not found');
-      return { success: false, emailSent: false, smsSent: false, errors };
+      return { success: false, emailSent: false, errors };
     }
 
     const appointment: Appointment & {
@@ -90,7 +88,6 @@ export async function scheduleReportCardNotification(
     // Check customer notification preferences
     const customerPrefs = appointment.customer.preferences as any;
     const emailEnabled = customerPrefs?.email_report_cards !== false;
-    const smsEnabled = customerPrefs?.sms_report_cards === true;
 
     // Generate public report card URL
     const reportCardUrl = `${config.app.url}/report-card/${reportCardId}`;
@@ -137,49 +134,8 @@ export async function scheduleReportCardNotification(
       }
     }
 
-    // Send SMS notification
-    if (smsEnabled && appointment.customer.phone) {
-      try {
-        const { sendReportCardSMS, logReportCardSms, previewReportCardSms } = await import('@/lib/twilio/report-card-sms');
-
-        const smsResult = await sendReportCardSMS({
-          to: appointment.customer.phone,
-          customerName: appointment.customer.first_name,
-          petName: appointment.pet.name,
-          reportCardUrl,
-        });
-
-        // Log SMS notification to database
-        const messageContent = previewReportCardSms({
-          to: appointment.customer.phone,
-          customerName: appointment.customer.first_name,
-          petName: appointment.pet.name,
-          reportCardUrl,
-        });
-
-        await logReportCardSms(supabase, {
-          customerId: appointment.customer.id,
-          reportCardId,
-          recipient: appointment.customer.phone,
-          content: messageContent,
-          messageSid: smsResult.sid,
-          status: smsResult.error ? 'failed' : 'sent',
-          errorMessage: smsResult.error?.message,
-        });
-
-        if (smsResult.error) {
-          errors.push(`SMS failed: ${smsResult.error.message}`);
-        } else {
-          smsSent = true;
-        }
-      } catch (error) {
-        console.error('[Report Card Scheduler] SMS error:', error);
-        errors.push('SMS sending failed');
-      }
-    }
-
-    // Update report_cards.sent_at timestamp if any notification was sent
-    if (emailSent || smsSent) {
+    // Update report_cards.sent_at timestamp if email was sent
+    if (emailSent) {
       const updateResult = await (supabase as any)
         .from('report_cards')
         .update({
@@ -198,13 +154,12 @@ export async function scheduleReportCardNotification(
     return {
       success: errors.length === 0,
       emailSent,
-      smsSent,
       errors,
     };
   } catch (error) {
     console.error('[Report Card Scheduler] Unexpected error:', error);
     errors.push(error instanceof Error ? error.message : 'Unknown error');
-    return { success: false, emailSent: false, smsSent: false, errors };
+    return { success: false, emailSent: false, errors };
   }
 }
 

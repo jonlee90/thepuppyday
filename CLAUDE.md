@@ -24,7 +24,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Storage**: Supabase Storage
 - **Payments**: Stripe (Phase 7 - pending)
 - **Email**: Resend
-- **SMS**: Twilio
 - **Calendar**: Google Calendar API (bidirectional sync)
 - **Charts**: Chart.js, Recharts
 - **Forms**: React Hook Form + Zod
@@ -85,8 +84,7 @@ src/
 ├── lib/
 │   ├── supabase/        # Supabase client & helpers
 │   ├── stripe/          # Stripe utilities
-│   ├── resend/          # Email utilities
-│   └── twilio/          # SMS utilities
+│   └── resend/          # Email utilities
 ├── mocks/               # Mock service implementations (inactive)
 ├── hooks/               # Custom React hooks
 ├── types/               # TypeScript types

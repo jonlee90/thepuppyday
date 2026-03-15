@@ -357,7 +357,6 @@ export async function sendCampaignNotifications(
 
     // Use notification services (they already handle mock switching internally)
     const { sendEmail } = await import('@/lib/resend/client');
-    const { sendSms } = await import('@/lib/twilio/client');
 
     // Process each audience member
     for (let i = 0; i < audience.length; i++) {
@@ -399,22 +398,6 @@ export async function sendCampaignNotifications(
               result.errors.push(`Email failed for ${customer.email}: ${emailResult.error.message}`);
             } else {
               console.log(`[Campaign Sender] Email sent to ${customer.email}: ${emailResult.id}`);
-            }
-          }
-        }
-
-        // Send SMS if channel includes SMS
-        if ((campaign.channel === 'sms' || campaign.channel === 'both') && customer.phone) {
-          if (messageContent.sms_body) {
-            const smsResult = await sendSms({
-              to: customer.phone,
-              body: replaceVariables(messageContent.sms_body, customer),
-            });
-
-            if (smsResult.error) {
-              result.errors.push(`SMS failed for ${customer.phone}: ${smsResult.error.message}`);
-            } else {
-              console.log(`[Campaign Sender] SMS sent to ${customer.phone}: ${smsResult.sid}`);
             }
           }
         }

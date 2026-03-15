@@ -52,9 +52,7 @@ export interface NotificationStats {
   totalFailed: number;
   deliveryRate: number; // Percentage
   clickRate: number; // Percentage
-  totalCostDollars: number; // For SMS costs
   emailCount: number;
-  smsCount: number;
 }
 
 /**
@@ -146,7 +144,7 @@ export function getNotificationTypeLabel(type: string): string {
  * Get icon for notification channel
  */
 export function getChannelIcon(channel: NotificationChannel): string {
-  return channel === 'email' ? '📧' : '📱';
+  return '📧';
 }
 
 /**

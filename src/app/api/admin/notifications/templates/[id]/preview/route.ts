@@ -89,15 +89,6 @@ export async function POST(
 
     const rendered_text = engine.render(template.text_template, sample_data);
 
-    // Calculate SMS metrics if applicable
-    let character_count: number | undefined;
-    let segment_count: number | undefined;
-
-    if (template.channel === 'sms') {
-      character_count = rendered_text.length;
-      segment_count = engine.calculateSegmentCount(rendered_text);
-    }
-
     // Return preview
     const preview = {
       template_id: template.id,
@@ -106,12 +97,6 @@ export async function POST(
       rendered_subject,
       rendered_html,
       rendered_text,
-      character_count,
-      segment_count,
-      warnings:
-        template.channel === 'sms' && character_count && character_count > 160
-          ? [`Message is ${character_count} characters (will use ${segment_count} segments)`]
-          : undefined,
     };
 
     return NextResponse.json({ preview });

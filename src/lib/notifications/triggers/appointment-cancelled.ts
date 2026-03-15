@@ -8,7 +8,6 @@ import type { NotificationResult } from '../types';
 import { sendNotification } from '../index';
 import {
   createAppointmentCancelledEmail,
-  createAppointmentCancelledSms,
   type AppointmentCancelledEmailData,
 } from '../email-templates';
 import { format } from 'date-fns';
@@ -34,9 +33,7 @@ export interface AppointmentCancelledTriggerData {
 export interface AppointmentCancelledTriggerResult {
   success: boolean;
   emailSent: boolean;
-  smsSent: boolean;
   emailResult?: NotificationResult;
-  smsResult?: NotificationResult;
   errors: string[];
 }
 
@@ -58,9 +55,7 @@ export async function triggerAppointmentCancelled(
 ): Promise<AppointmentCancelledTriggerResult> {
   const errors: string[] = [];
   let emailSent = false;
-  let smsSent = false;
   let emailResult: NotificationResult | undefined;
-  let smsResult: NotificationResult | undefined;
 
   console.log(
     `[AppointmentCancelled] Triggering cancellation notification for appointment ${data.appointmentId}`
@@ -84,96 +79,45 @@ export async function triggerAppointmentCancelled(
 
   // Generate pre-rendered content
   const emailContent = createAppointmentCancelledEmail(templateData);
-  const smsText = createAppointmentCancelledSms({
-    pet_name: data.petName,
-    appointment_date: appointmentDate,
-    rebook_url: rebookUrl,
-  });
 
-  // Dispatch email and SMS in parallel
-  const notificationPromises: Promise<void>[] = [];
+  // Send email notification
+  try {
+    console.log(`[AppointmentCancelled] Sending email to ${data.customerEmail}`);
 
-  // Email notification
-  notificationPromises.push(
-    (async () => {
-      try {
-        console.log(`[AppointmentCancelled] Sending email to ${data.customerEmail}`);
+    emailResult = await sendNotification(supabase, {
+      type: 'appointment_cancelled',
+      channel: 'email',
+      recipient: data.customerEmail,
+      templateData: {
+        ...templateData,
+        _preRenderedHtml: emailContent.html,
+        _preRenderedText: emailContent.text,
+        _preRenderedSubject: emailContent.subject,
+      },
+      userId: data.customerId,
+    });
 
-        emailResult = await sendNotification(supabase, {
-          type: 'appointment_cancelled',
-          channel: 'email',
-          recipient: data.customerEmail,
-          templateData: {
-            ...templateData,
-            _preRenderedHtml: emailContent.html,
-            _preRenderedText: emailContent.text,
-            _preRenderedSubject: emailContent.subject,
-          },
-          userId: data.customerId,
-        });
-
-        if (emailResult.success) {
-          emailSent = true;
-          console.log(
-            `[AppointmentCancelled] Email sent successfully (log ID: ${emailResult.logId})`
-          );
-        } else {
-          errors.push(`Email failed: ${emailResult.error}`);
-          console.error(`[AppointmentCancelled] Email failed: ${emailResult.error}`);
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        errors.push(`Email error: ${errorMessage}`);
-        console.error('[AppointmentCancelled] Email exception:', error);
-      }
-    })()
-  );
-
-  // SMS notification (if phone available)
-  if (data.customerPhone) {
-    notificationPromises.push(
-      (async () => {
-        try {
-          console.log(`[AppointmentCancelled] Sending SMS to ${data.customerPhone}`);
-
-          smsResult = await sendNotification(supabase, {
-            type: 'appointment_cancelled',
-            channel: 'sms',
-            recipient: data.customerPhone!,
-            templateData: { _preRenderedText: smsText },
-            userId: data.customerId,
-          });
-
-          if (smsResult.success) {
-            smsSent = true;
-            console.log(
-              `[AppointmentCancelled] SMS sent successfully (log ID: ${smsResult.logId})`
-            );
-          } else {
-            errors.push(`SMS failed: ${smsResult.error}`);
-            console.error(`[AppointmentCancelled] SMS failed: ${smsResult.error}`);
-          }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          errors.push(`SMS error: ${errorMessage}`);
-          console.error('[AppointmentCancelled] SMS exception:', error);
-        }
-      })()
-    );
-  } else {
-    console.log('[AppointmentCancelled] Skipping SMS - no phone number provided');
+    if (emailResult.success) {
+      emailSent = true;
+      console.log(
+        `[AppointmentCancelled] Email sent successfully (log ID: ${emailResult.logId})`
+      );
+    } else {
+      errors.push(`Email failed: ${emailResult.error}`);
+      console.error(`[AppointmentCancelled] Email failed: ${emailResult.error}`);
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    errors.push(`Email error: ${errorMessage}`);
+    console.error('[AppointmentCancelled] Email exception:', error);
   }
 
-  await Promise.all(notificationPromises);
-
-  const success = emailSent || smsSent;
+  const success = emailSent;
 
   return {
     success,
     emailSent,
-    smsSent,
     emailResult,
-    smsResult,
     errors,
   };
 }

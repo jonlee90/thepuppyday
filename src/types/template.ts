@@ -77,10 +77,3 @@ export interface TemplateUpdateRequest {
   is_active?: boolean;
   change_reason: string;
 }
-
-export interface SmsSegmentInfo {
-  characterCount: number;
-  segmentCount: number;
-  status: 'ok' | 'warning' | 'error';
-  message: string;
-}

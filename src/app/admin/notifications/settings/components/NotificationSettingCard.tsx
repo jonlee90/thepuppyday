@@ -16,7 +16,7 @@ export interface NotificationSettingCardProps {
   setting: NotificationSettingsRow;
   onUpdateSetting: (
     notificationType: string,
-    channel: 'email' | 'sms',
+    channel: 'email',
     enabled: boolean
   ) => Promise<void>;
 }
@@ -24,7 +24,7 @@ export interface NotificationSettingCardProps {
 export function NotificationSettingCard({ setting, onUpdateSetting }: NotificationSettingCardProps) {
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleToggle = async (channel: 'email' | 'sms', enabled: boolean) => {
+  const handleToggle = async (channel: 'email', enabled: boolean) => {
     setIsUpdating(true);
     try {
       await onUpdateSetting(setting.notification_type, channel, enabled);
@@ -58,15 +58,6 @@ export function NotificationSettingCard({ setting, onUpdateSetting }: Notificati
           notificationType={setting.notification_type}
           notificationLabel={getNotificationTypeLabel(setting.notification_type)}
           onToggle={(enabled) => handleToggle('email', enabled)}
-          disabled={isUpdating}
-        />
-
-        <ChannelToggle
-          channel="sms"
-          enabled={setting.sms_enabled}
-          notificationType={setting.notification_type}
-          notificationLabel={getNotificationTypeLabel(setting.notification_type)}
-          onToggle={(enabled) => handleToggle('sms', enabled)}
           disabled={isUpdating}
         />
       </div>

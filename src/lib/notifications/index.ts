@@ -11,7 +11,6 @@ import type {
   RetryConfig,
 } from './types';
 import { getEmailProvider } from './providers/index';
-import { getSMSProvider } from './providers/index';
 import { HandlebarsTemplateEngine } from './template-engine';
 import { createNotificationLogger } from './logger';
 import { createNotificationService } from './service';
@@ -48,7 +47,6 @@ export function getNotificationService(
 
   // Get environment-appropriate providers
   const emailProvider = getEmailProvider();
-  const smsProvider = getSMSProvider();
 
   // Create template engine
   const templateEngine = new HandlebarsTemplateEngine();
@@ -60,7 +58,6 @@ export function getNotificationService(
   notificationServiceInstance = createNotificationService(
     supabase,
     emailProvider,
-    smsProvider,
     templateEngine,
     logger,
     retryConfig || DEFAULT_RETRY_CONFIG
@@ -131,7 +128,7 @@ export {
 } from './errors';
 
 // Export provider factories
-export { getEmailProvider, getSMSProvider, getProviderMode, resetAllProviders } from './providers/index';
+export { getEmailProvider, getProviderMode, resetAllProviders } from './providers/index';
 
 // Export template engine
 export { HandlebarsTemplateEngine } from './template-engine';

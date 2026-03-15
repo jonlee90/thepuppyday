@@ -32,7 +32,6 @@ export interface ReviewRequestTriggerData {
 export interface ReviewRequestTriggerResult {
   success: boolean;
   emailSent: boolean;
-  smsSent: false; // Review requests are email-only
   emailResult?: NotificationResult;
   errors: string[];
 }
@@ -116,7 +115,6 @@ export async function triggerReviewRequest(
   return {
     success: emailSent,
     emailSent,
-    smsSent: false,
     emailResult,
     errors,
   };

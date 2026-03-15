@@ -2,14 +2,14 @@
 
 /**
  * Channel toggle component with optimistic updates
- * Elegant toggle for email/SMS notification channels
+ * Toggle for email notification channel
  */
 
 import { useState, useEffect } from 'react';
-import { Mail, MessageSquare } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 export interface ChannelToggleProps {
-  channel: 'email' | 'sms';
+  channel: 'email';
   enabled: boolean;
   notificationType: string;
   notificationLabel: string;
@@ -58,14 +58,11 @@ export function ChannelToggle({
     }
   };
 
-  const Icon = channel === 'email' ? Mail : MessageSquare;
-  const channelLabel = channel === 'email' ? 'Email' : 'SMS';
-
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <Icon className="w-4 h-4 text-[#6B7280]" aria-hidden="true" />
-        <span className="text-sm font-medium text-[#434E54]">{channelLabel}</span>
+        <Mail className="w-4 h-4 text-[#6B7280]" aria-hidden="true" />
+        <span className="text-sm font-medium text-[#434E54]">Email</span>
       </div>
 
       <div className="flex items-center gap-2">
@@ -79,7 +76,7 @@ export function ChannelToggle({
           checked={localEnabled}
           onChange={handleToggle}
           disabled={disabled || isLoading}
-          aria-label={`Toggle ${channelLabel} notifications for ${notificationLabel}`}
+          aria-label={`Toggle Email notifications for ${notificationLabel}`}
           style={{
             '--tglbg': localEnabled ? '#434E54' : '#E5E5E5',
           } as React.CSSProperties}

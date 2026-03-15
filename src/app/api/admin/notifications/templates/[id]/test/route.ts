@@ -11,7 +11,7 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { isValidUUID } from '@/lib/utils/validation';
 import { createTemplateEngine } from '@/lib/notifications/template-engine';
 import { wrapEmailContent } from '@/lib/notifications/email-base';
-import { getEmailProvider, getSMSProvider } from '@/lib/notifications/providers';
+import { getEmailProvider } from '@/lib/notifications/providers';
 import { createNotificationLogger } from '@/lib/notifications/logger';
 
 interface NotificationTemplate {
@@ -82,36 +82,25 @@ export async function POST(
       );
     }
 
-    // Determine channel (use provided or default to template's channel)
-    const sendChannel: 'email' | 'sms' = channel || template.channel;
+    // Channel is always email
+    const sendChannel: 'email' | 'sms' = 'email';
 
-    // Validate recipient based on channel
-    let recipient: string;
-    if (sendChannel === 'email') {
-      if (!recipient_email) {
-        return NextResponse.json(
-          { error: 'recipient_email is required for email channel' },
-          { status: 400 }
-        );
-      }
-      // Basic email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(recipient_email)) {
-        return NextResponse.json(
-          { error: 'Invalid email address format' },
-          { status: 400 }
-        );
-      }
-      recipient = recipient_email;
-    } else {
-      if (!recipient_phone) {
-        return NextResponse.json(
-          { error: 'recipient_phone is required for SMS channel' },
-          { status: 400 }
-        );
-      }
-      recipient = recipient_phone;
+    // Validate recipient
+    if (!recipient_email) {
+      return NextResponse.json(
+        { error: 'recipient_email is required' },
+        { status: 400 }
+      );
     }
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(recipient_email)) {
+      return NextResponse.json(
+        { error: 'Invalid email address format' },
+        { status: 400 }
+      );
+    }
+    const recipient = recipient_email;
 
     // Create template engine and render templates
     const engine = createTemplateEngine();
@@ -148,25 +137,17 @@ export async function POST(
     let sendResult: { success: boolean; messageId?: string; error?: string };
 
     try {
-      if (sendChannel === 'email') {
-        if (!rendered_subject || !rendered_html) {
-          throw new Error('Email requires subject and HTML content');
-        }
-
-        const emailProvider = getEmailProvider();
-        sendResult = await emailProvider.send({
-          to: recipient,
-          subject: rendered_subject,
-          html: rendered_html,
-          text: rendered_text,
-        });
-      } else {
-        const smsProvider = getSMSProvider();
-        sendResult = await smsProvider.send({
-          to: recipient,
-          body: rendered_text,
-        });
+      if (!rendered_subject || !rendered_html) {
+        throw new Error('Email requires subject and HTML content');
       }
+
+      const emailProvider = getEmailProvider();
+      sendResult = await emailProvider.send({
+        to: recipient,
+        subject: rendered_subject,
+        html: rendered_html,
+        text: rendered_text,
+      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       sendResult = { success: false, error: errorMessage };

@@ -25,9 +25,7 @@ export interface ReportCardCompletionTriggerData {
 export interface ReportCardCompletionTriggerResult {
   success: boolean;
   emailSent: boolean;
-  smsSent: boolean;
   emailResult?: NotificationResult;
-  smsResult?: NotificationResult;
   errors: string[];
 }
 
@@ -49,9 +47,7 @@ export async function triggerReportCardCompletion(
 ): Promise<ReportCardCompletionTriggerResult> {
   const errors: string[] = [];
   let emailSent = false;
-  let smsSent = false;
   let emailResult: NotificationResult | undefined;
-  let smsResult: NotificationResult | undefined;
 
   console.log(
     `[ReportCardCompletion] Triggering report card notification for ${data.reportCardId}`
@@ -97,40 +93,9 @@ export async function triggerReportCardCompletion(
     console.error('[ReportCardCompletion] Email exception:', error);
   }
 
-  // Send SMS notification if phone number is available
-  if (data.customerPhone) {
-    try {
-      console.log(`[ReportCardCompletion] Sending SMS to ${data.customerPhone}`);
-
-      smsResult = await sendNotification(supabase, {
-        type: 'report_card_ready',
-        channel: 'sms',
-        recipient: data.customerPhone,
-        templateData,
-        userId: data.customerId,
-      });
-
-      if (smsResult.success) {
-        smsSent = true;
-        console.log(
-          `[ReportCardCompletion] ✅ SMS sent successfully (log ID: ${smsResult.logId})`
-        );
-      } else {
-        errors.push(`SMS failed: ${smsResult.error}`);
-        console.error(`[ReportCardCompletion] ❌ SMS failed: ${smsResult.error}`);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      errors.push(`SMS error: ${errorMessage}`);
-      console.error('[ReportCardCompletion] SMS exception:', error);
-    }
-  } else {
-    console.log('[ReportCardCompletion] Skipping SMS - no phone number provided');
-  }
-
-  // Update report_cards.sent_at timestamp if any notification was sent
+  // Update report_cards.sent_at timestamp if email was sent
   // Use conditional update to prevent race conditions from overwriting timestamps
-  if (emailSent || smsSent) {
+  if (emailSent) {
     try {
       const { error: updateError } = await supabase
         .from('report_cards')
@@ -156,15 +121,12 @@ export async function triggerReportCardCompletion(
   }
 
   // Determine overall success
-  // Success if at least one channel succeeded
-  const success = emailSent || smsSent;
+  const success = emailSent;
 
   return {
     success,
     emailSent,
-    smsSent,
     emailResult,
-    smsResult,
     errors,
   };
 }

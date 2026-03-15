@@ -3,12 +3,12 @@
 > **Module**: Notification System
 > **Location**: `src/lib/notifications/`
 > **Status**: Completed (Phase 8)
-> **Channels**: Email (Resend), SMS (Twilio)
+> **Channels**: Email (Resend)
 > **Last Updated**: 2026-03-14
 
 ## Overview
 
-Comprehensive multi-channel notification system with template management, customer preferences, retry logic with exponential backoff, and detailed logging. Supports both mock and production providers via environment-based factory.
+Email notification system with template management, customer preferences, retry logic with exponential backoff, and detailed logging. Supports both mock and production providers via environment-based factory.
 
 ---
 
@@ -51,9 +51,6 @@ src/lib/notifications/
 src/lib/resend/
   provider.ts             # ResendProvider (EmailProvider implementation)
   client.ts               # Resend client factory with mock support
-
-src/lib/twilio/
-  provider.ts             # TwilioProvider (SMSProvider implementation)
 ```
 
 ### DefaultNotificationService
@@ -67,7 +64,6 @@ src/lib/twilio/
 constructor(
   supabase: SupabaseClient,
   emailProvider: EmailProvider,
-  smsProvider: SMSProvider,
   templateEngine: TemplateEngine,
   logger: NotificationLogger,
   retryConfig: RetryConfig = DEFAULT_RETRY_CONFIG
@@ -89,10 +85,7 @@ async send(message: NotificationMessage): Promise<NotificationResult> {
   // 4. Render template with provided data
   const rendered = this.renderTemplateFromObject(template, message.templateData);
 
-  // 5. Validate SMS length if applicable
-  if (channel === 'sms') { this.validateSMSLength(rendered.text); }
-
-  // 6. Create pending log entry
+  // 5. Create pending log entry
   const logId = await this.logger.create({
     customerId: message.userId,
     type, channel, recipient,
@@ -103,19 +96,17 @@ async send(message: NotificationMessage): Promise<NotificationResult> {
     isTest: false,
   });
 
-  // 7. Send via appropriate provider
-  const sendResult = channel === 'email'
-    ? await this.sendEmail(recipient, rendered)
-    : await this.sendSMS(recipient, rendered.text);
+  // 6. Send via email provider
+  const sendResult = await this.sendEmail(recipient, rendered);
 
-  // 8. Update log entry with result
+  // 7. Update log entry with result
   await this.logger.update(logId, {
     status: sendResult.success ? 'sent' : 'failed',
     sentAt: sendResult.success ? new Date() : undefined,
     messageId: sendResult.messageId,
   });
 
-  // 9. If failed and transient error, schedule retry via handleSendFailure
+  // 8. If failed and transient error, schedule retry via handleSendFailure
   if (!sendResult.success) {
     await this.handleSendFailure(logId, errorMessage, 0);
   }
@@ -129,7 +120,7 @@ async send(message: NotificationMessage): Promise<NotificationResult> {
 **Factory Function**:
 ```typescript
 export function createNotificationService(
-  supabase, emailProvider, smsProvider, templateEngine, logger, retryConfig?
+  supabase, emailProvider, templateEngine, logger, retryConfig?
 ): NotificationService
 ```
 
@@ -143,8 +134,8 @@ export function createNotificationService(
 ```typescript
 interface NotificationMessage {
   type: string;                    // notification_type from settings
-  channel: NotificationChannel;   // 'email' | 'sms'
-  recipient: string;              // Email address or phone number
+  channel: NotificationChannel;   // 'email'
+  recipient: string;              // Email address
   templateData: Record<string, unknown>;
   userId?: string;                // Optional customer ID for tracking
   priority?: 'low' | 'normal' | 'high';
@@ -156,7 +147,7 @@ interface NotificationMessage {
 ```typescript
 interface NotificationResult {
   success: boolean;
-  messageId?: string;   // Provider message ID (Resend/Twilio)
+  messageId?: string;   // Provider message ID (Resend)
   error?: string;
   logId?: string;       // Database log entry ID
 }
@@ -167,9 +158,8 @@ interface NotificationResult {
 interface RenderedTemplate {
   subject?: string;       // For email
   html?: string;          // For email
-  text: string;           // For SMS or email plain text
+  text: string;           // Email plain text
   characterCount: number;
-  segmentCount?: number;  // SMS segments
   warnings?: string[];
 }
 ```
@@ -180,21 +170,21 @@ interface RenderedTemplate {
 
 ### Active Notification Types
 
-| Type | Email | SMS | Category |
-|------|-------|-----|----------|
-| `booking_confirmation` | Yes | Yes | Transactional |
-| `appointment_reminder` | Yes | Yes | Marketing |
-| `appointment_cancelled` | Yes | No | Transactional |
-| `appointment_rescheduled` | Yes | Yes | Transactional |
-| `review_request` | Yes | No | Marketing |
-| `waitlist_added` | Yes | Yes | Transactional |
-| `waitlist_available` | Yes | Yes | Transactional |
-| `report_card_ready` | Yes | Yes | Transactional |
-| `retention_reminder` | Yes | Yes | Marketing |
-| `payment_failed` | Yes | No | Transactional |
-| `payment_reminder` | Yes | No | Transactional |
-| `payment_success` | Yes | No | Transactional |
-| `payment_final_notice` | Yes | No | Transactional |
+| Type | Email | Category |
+|------|-------|----------|
+| `booking_confirmation` | Yes | Transactional |
+| `appointment_reminder` | Yes | Marketing |
+| `appointment_cancelled` | Yes | Transactional |
+| `appointment_rescheduled` | Yes | Transactional |
+| `review_request` | Yes | Marketing |
+| `waitlist_added` | Yes | Transactional |
+| `waitlist_available` | Yes | Transactional |
+| `report_card_ready` | Yes | Transactional |
+| `retention_reminder` | Yes | Marketing |
+| `payment_failed` | Yes | Transactional |
+| `payment_reminder` | Yes | Transactional |
+| `payment_success` | Yes | Transactional |
+| `payment_final_notice` | Yes | Transactional |
 
 **Transactional** notifications are always sent (cannot be disabled by customer).
 **Marketing** notifications respect customer preferences.
@@ -379,58 +369,6 @@ Uses `config.useMocks` to switch between `createMockResendClient()` and real Res
 
 ---
 
-## SMS Provider (Twilio)
-
-**File**: `src/lib/twilio/provider.ts`
-
-```typescript
-export class TwilioProvider implements SMSProvider {
-  private accountSid: string;
-  private authToken: string;
-  private fromPhone: string;  // Default: '+16572522903'
-  private client: unknown;    // Dynamically imported Twilio SDK
-
-  constructor(accountSid?: string, authToken?: string, fromPhone?: string)
-  // Defaults to TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER env vars
-
-  async send(params: SMSParams): Promise<SMSResult>
-}
-```
-
-**SMSParams** (from `types.ts`):
-```typescript
-interface SMSParams {
-  to: string;     // Recipient phone (E.164 format)
-  from?: string;  // Sender phone (optional)
-  body: string;
-}
-```
-
-**SMSResult**:
-```typescript
-interface SMSResult {
-  success: boolean;
-  messageId?: string;     // Twilio SID
-  segmentCount?: number;
-  error?: string;
-}
-```
-
-**Phone Number Normalization**: Converts formats like `(657) 252-2903` to `+16572522903` (E.164).
-
-**SMS Segment Calculation**: Single segment up to 160 chars; multi-segment at 153 chars per segment.
-
-**Error Handling**: Transforms Twilio error codes (20003, 21211, 21212, 21408, 21610, 30007, 429) into descriptive messages.
-
-**Factory Functions**:
-```typescript
-export function createTwilioProvider(accountSid?, authToken?, fromPhone?): SMSProvider
-export function getTwilioProvider(): TwilioProvider  // Global singleton
-export function resetTwilioProvider(): void          // For testing
-```
-
----
-
 ## Provider Factory
 
 **File**: `src/lib/notifications/providers/index.ts`
@@ -442,15 +380,11 @@ export function getEmailProvider(): EmailProvider
 // Returns MockResendProvider when NEXT_PUBLIC_USE_MOCKS=true
 // Returns ResendProvider (production) otherwise
 
-export function getSMSProvider(): SMSProvider
-// Returns MockTwilioProvider when NEXT_PUBLIC_USE_MOCKS=true
-// Returns TwilioProvider (production) otherwise
-
 export function getProviderMode(): 'mock' | 'production'
 export function resetAllProviders(): void  // For testing
 ```
 
-Production providers are dynamically `require()`-d from `src/lib/resend/provider` and `src/lib/twilio/provider`.
+Production provider is dynamically `require()`-d from `src/lib/resend/provider`.
 
 ---
 
@@ -467,10 +401,10 @@ interface NotificationTemplateRow {
   description: string | null;
   type: string;                     // notification_type
   trigger_event: string;
-  channel: NotificationChannel;     // 'email' | 'sms'
+  channel: NotificationChannel;     // 'email'
   subject_template: string | null;  // Email subject with {{variables}}
   html_template: string | null;     // Email HTML with {{variables}}
-  text_template: string;            // SMS or email plain text with {{variables}}
+  text_template: string;            // Email plain text with {{variables}}
   variables: TemplateVariable[];    // JSONB array of variable definitions
   is_active: boolean;
   version: number;
@@ -657,9 +591,8 @@ interface NotificationLogRow {
 interface NotificationSettingsRow {
   notification_type: string;       // Primary key
   email_enabled: boolean;
-  sms_enabled: boolean;
+
   email_template_id: string | null;
-  sms_template_id: string | null;
   schedule_cron: string | null;
   schedule_enabled: boolean;
   max_retries: number;
@@ -759,7 +692,6 @@ interface NotificationMetrics {
   clickRate: number;
   byChannel: {
     email: ChannelMetrics;
-    sms: ChannelMetrics;
   };
   byType: Record<string, TypeMetrics>;
   timeline: TimelineData[];
