@@ -35,6 +35,19 @@ export async function middleware(request: NextRequest) {
   });
 
   const { pathname } = request.nextUrl;
+
+  // Helper: build redirect URL preserving the original host (not internal proxy port)
+  function redirectTo(path: string, params?: Record<string, string>) {
+    const url = request.nextUrl.clone();
+    url.pathname = path;
+    url.search = '';
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        url.searchParams.set(k, v);
+      }
+    }
+    return NextResponse.redirect(url);
+  }
   const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route));
   const isAdminApiRoute = adminApiRoutes.some((route) => pathname.startsWith(route));
 
@@ -58,27 +71,25 @@ export async function middleware(request: NextRequest) {
     // Check if trying to access auth routes while authenticated
     if (isAuthenticated && authRoutes.some((route) => pathname.startsWith(route))) {
       const redirectPath = userRole === 'admin' || userRole === 'groomer' ? '/admin/dashboard' : '/dashboard';
-      return NextResponse.redirect(new URL(redirectPath, request.url));
+      return redirectTo(redirectPath);
     }
 
     // Check if trying to access protected routes without authentication
     if (!isAuthenticated && protectedRoutes.some((route) => pathname.startsWith(route))) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('returnTo', pathname);
-      return NextResponse.redirect(loginUrl);
+      return redirectTo('/login', { returnTo: pathname });
     }
 
     // Check if trying to access admin routes without admin/staff role
     if (isAdminRoute) {
       if (!isAuthenticated) {
-        const loginUrl = new URL('/login', request.url);
+        const loginUrl = new URL('/login', request.nextUrl.origin);
         loginUrl.searchParams.set('returnTo', pathname);
         return NextResponse.redirect(loginUrl);
       }
 
       if (userRole !== 'admin' && userRole !== 'groomer') {
         // Redirect to customer dashboard if not admin/staff
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+        return redirectTo('/dashboard');
       }
     }
 
@@ -134,7 +145,7 @@ export async function middleware(request: NextRequest) {
     if (dbError) {
       console.error('[Middleware] Database error:', dbError);
       if (isAdminRoute) {
-        return NextResponse.redirect(new URL('/login?error=auth_error', request.url));
+        return redirectTo('/login', { error: 'auth_error' });
       }
       if (isAdminApiRoute) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -149,21 +160,19 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth pages — admins go to /admin/dashboard
   if (isAuthRoute && isAuthenticated) {
     const redirectPath = isPrivileged ? '/admin/dashboard' : '/dashboard';
-    return NextResponse.redirect(new URL(redirectPath, request.url));
+    return redirectTo(redirectPath);
   }
 
   // Redirect unauthenticated users to login
   if (isProtectedRoute && !isAuthenticated) {
-    const redirectUrl = new URL('/login', request.url);
-    redirectUrl.searchParams.set('returnTo', pathname);
-    return NextResponse.redirect(redirectUrl);
+    return redirectTo('/login', { returnTo: pathname });
   }
 
   // Protect admin routes and API routes
   if (isAdminRoute || isAdminApiRoute) {
     if (!user) {
       if (isAdminRoute) {
-        const redirectUrl = new URL('/login', request.url);
+        const redirectUrl = new URL('/login', request.nextUrl.origin);
         redirectUrl.searchParams.set('returnTo', pathname);
         return NextResponse.redirect(redirectUrl);
       }
@@ -175,7 +184,7 @@ export async function middleware(request: NextRequest) {
 
     if (!isPrivileged) {
       if (isAdminRoute) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+        return redirectTo('/dashboard');
       }
       return NextResponse.json(
         { error: 'Forbidden: Admin or staff access required' },
