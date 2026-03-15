@@ -8,6 +8,18 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 import { validateUnsubscribeToken } from '@/lib/notifications/unsubscribe';
 import { disableMarketing, disableNotificationChannel } from '@/lib/notifications/preferences';
 
+function buildRedirect(req: NextRequest, pathname: string, params?: Record<string, string>) {
+  const url = req.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = '';
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      url.searchParams.set(k, v);
+    }
+  }
+  return NextResponse.redirect(url);
+}
+
 /**
  * Process unsubscribe request
  * Validates token, updates preferences, and redirects to confirmation page
@@ -19,14 +31,14 @@ export async function GET(req: NextRequest) {
     const token = searchParams.get('token');
 
     if (!token) {
-      return NextResponse.redirect(new URL('/unsubscribe/error?reason=missing_token', req.url));
+      return buildRedirect(req, '/unsubscribe/error', { reason: 'missing_token' });
     }
 
     // Validate token
     const payload = validateUnsubscribeToken(token);
 
     if (!payload) {
-      return NextResponse.redirect(new URL('/unsubscribe/error?reason=invalid_token', req.url));
+      return buildRedirect(req, '/unsubscribe/error', { reason: 'invalid_token' });
     }
 
     const { userId, notificationType, channel } = payload;
@@ -63,17 +75,13 @@ export async function GET(req: NextRequest) {
 
     if (!result.success) {
       console.error('[Unsubscribe] Failed to update preferences:', result.error);
-      return NextResponse.redirect(new URL('/unsubscribe/error?reason=update_failed', req.url));
+      return buildRedirect(req, '/unsubscribe/error', { reason: 'update_failed' });
     }
 
     // Success - redirect to confirmation page with details
-    const successUrl = new URL('/unsubscribe/success', req.url);
-    successUrl.searchParams.set('type', notificationType);
-    successUrl.searchParams.set('channel', channel);
-
-    return NextResponse.redirect(successUrl);
+    return buildRedirect(req, '/unsubscribe/success', { type: notificationType, channel });
   } catch (error) {
     console.error('[Unsubscribe] Error processing unsubscribe:', error);
-    return NextResponse.redirect(new URL('/unsubscribe/error?reason=server_error', req.url));
+    return buildRedirect(req, '/unsubscribe/error', { reason: 'server_error' });
   }
 }

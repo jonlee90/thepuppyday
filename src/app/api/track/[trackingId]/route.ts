@@ -25,7 +25,7 @@ export async function GET(
     // Validate tracking ID format (should be UUID)
     if (!trackingId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trackingId)) {
       console.warn(`[Tracking] Invalid tracking ID format: ${trackingId}`);
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect((() => { const u = req.nextUrl.clone(); u.pathname = '/'; u.search = ''; return u; })());
     }
 
     const supabase = await createServerSupabaseClient();
@@ -40,12 +40,12 @@ export async function GET(
 
     if (findError) {
       console.error('[Tracking] Error finding notification:', findError);
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect((() => { const u = req.nextUrl.clone(); u.pathname = '/'; u.search = ''; return u; })());
     }
 
     if (!notification) {
       console.warn(`[Tracking] No notification found for tracking ID: ${trackingId}`);
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect((() => { const u = req.nextUrl.clone(); u.pathname = '/'; u.search = ''; return u; })());
     }
 
     // Update clicked_at timestamp if not already set (avoid overwriting first click)
@@ -69,7 +69,9 @@ export async function GET(
     }
 
     // Redirect to booking page with tracking parameter
-    const bookingUrl = new URL('/book', req.url);
+    const bookingUrl = req.nextUrl.clone();
+    bookingUrl.pathname = '/book';
+    bookingUrl.search = '';
     bookingUrl.searchParams.set('tracking_id', trackingId);
 
     // If we have customer_id, we could pre-fill customer info
@@ -81,6 +83,6 @@ export async function GET(
   } catch (error) {
     console.error('[Tracking] Unexpected error:', error);
     // Gracefully redirect to home on any error
-    return NextResponse.redirect(new URL('/', req.url));
+    return NextResponse.redirect((() => { const u = req.nextUrl.clone(); u.pathname = '/'; u.search = ''; return u; })());
   }
 }

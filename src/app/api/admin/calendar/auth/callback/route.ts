@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] OAuth error:', error);
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=oauth_denied',
-        request.url
+        request.nextUrl.origin
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] Missing authorization code');
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=missing_code',
-        request.url
+        request.nextUrl.origin
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] Missing state parameter');
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=invalid_state',
-        request.url
+        request.nextUrl.origin
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] Invalid admin user:', adminId);
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=invalid_user',
-        request.url
+        request.nextUrl.origin
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] User is not admin:', adminUser.role);
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=unauthorized',
-        request.url
+        request.nextUrl.origin
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] Token exchange failed:', error);
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=token_exchange_failed',
-        request.url
+        request.nextUrl.origin
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
       // Redirect to settings page with success status
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&status=connected',
-        request.url
+        request.nextUrl.origin
       );
       return NextResponse.redirect(redirectUrl);
     } catch (error) {
@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
 
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=connection_failed',
-        request.url
+        request.nextUrl.origin
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
 
     const redirectUrl = new URL(
       '/admin/settings?tab=calendar&error=server_error',
-      new URL(request.url)
+      request.nextUrl.origin
     );
     return NextResponse.redirect(redirectUrl);
   }
