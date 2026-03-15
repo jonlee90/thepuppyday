@@ -402,9 +402,9 @@ export function BlockedDatesManager({
                                     updated[index] = { ...updated[index], start: e.target.value };
                                     setBlockedHourRanges(updated);
                                   }}
-                                  className="input input-bordered input-sm bg-white border-gray-200 focus:border-[#434E54] focus:outline-none flex-1"
+                                  className="px-3 py-2 rounded-lg border border-[#434E54]/20 focus:ring-2 focus:ring-[#434E54]/30 focus:outline-none bg-white text-sm min-w-[130px] w-full"
                                 />
-                                <span className="text-sm text-[#6B7280]">to</span>
+                                <span className="text-sm text-[#6B7280] shrink-0">to</span>
                                 <input
                                   type="time"
                                   value={range.end}
@@ -413,7 +413,7 @@ export function BlockedDatesManager({
                                     updated[index] = { ...updated[index], end: e.target.value };
                                     setBlockedHourRanges(updated);
                                   }}
-                                  className="input input-bordered input-sm bg-white border-gray-200 focus:border-[#434E54] focus:outline-none flex-1"
+                                  className="px-3 py-2 rounded-lg border border-[#434E54]/20 focus:ring-2 focus:ring-[#434E54]/30 focus:outline-none bg-white text-sm min-w-[130px] w-full"
                                 />
                                 {blockedHourRanges.length > 1 && (
                                   <button
