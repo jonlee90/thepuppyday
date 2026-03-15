@@ -351,9 +351,6 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Show success toast
-        console.log(`[AppointmentListView] Sync successful: ${data.operation}`);
-
         // Refresh sync status for this appointment
         const statusResponse = await fetch(`/api/admin/appointments/sync-status?ids=${appointmentId}`);
         if (statusResponse.ok) {

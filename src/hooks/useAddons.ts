@@ -100,7 +100,6 @@ export function useAddons(): UseAddonsReturn {
     if (_addonsCache && getCachedBreeds()) return; // Already cached
 
     let cancelled = false;
-    console.log('[useAddons] Starting fetch...');
 
     fetchAddonsOnce()
       .then((addonsData) => {
@@ -109,7 +108,6 @@ export function useAddons(): UseAddonsReturn {
           // Breeds are populated in the shared cache by fetchAddonsOnce
           const breedsData = getCachedBreeds() ?? [];
           setBreeds(breedsData);
-          console.log('[useAddons] Loaded:', addonsData.length, 'addons,', breedsData.length, 'breeds');
         }
       })
       .catch((err) => {

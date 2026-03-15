@@ -73,13 +73,11 @@ export function useAvailability({
   const fetchAvailability = useCallback(async () => {
     // Don't fetch if date or service not selected
     if (!date || !serviceId) {
-      console.log('[useAvailability] Skipping fetch - missing date or serviceId:', { date, serviceId });
       setSlots([]);
       setIsLoading(false);
       return;
     }
 
-    console.log('[useAvailability] Fetching availability:', { date, serviceId, useMocks: config.useMocks });
     setIsLoading(true);
     setError(null);
 
@@ -92,14 +90,12 @@ export function useAvailability({
           const settingsData = await settingsResponse.json();
           settings = settingsData.data;
           setBookingSettings(settings);
-          console.log('[useAvailability] Loaded booking settings:', settings);
         }
       } catch (settingsErr) {
         console.warn('[useAvailability] Failed to load booking settings, using defaults:', settingsErr);
       }
 
       if (config.useMocks) {
-        console.log('[useAvailability] Using mock store');
         // Fetch from mock store
         const store = getMockStore();
 
@@ -131,16 +127,12 @@ export function useAvailability({
           settings || undefined
         );
 
-        console.log('[useAvailability] Mock slots generated:', availableSlots.length);
         setSlots(availableSlots);
       } else {
         // Use API endpoint instead of direct Supabase queries
-        console.log('[useAvailability] Calling /api/availability endpoint');
         const url = `/api/availability?date=${encodeURIComponent(date)}&service_id=${encodeURIComponent(serviceId)}`;
-        console.log('[useAvailability] Request URL:', url);
 
         const response = await fetch(url);
-        console.log('[useAvailability] Response status:', response.status);
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -149,8 +141,6 @@ export function useAvailability({
         }
 
         const data = await response.json();
-        console.log('[useAvailability] Received slots:', data.slots?.length || 0);
-
         setSlots(data.slots || []);
       }
     } catch (err) {
@@ -159,7 +149,6 @@ export function useAvailability({
       setSlots([]);
     } finally {
       setIsLoading(false);
-      console.log('[useAvailability] Fetch complete');
     }
   }, [date, serviceId]);
 

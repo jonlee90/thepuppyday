@@ -234,13 +234,10 @@ export function useDashboardData(): DashboardData {
             filter: `scheduled_at=gte.${todayStart},scheduled_at=lt.${todayEnd}`,
           },
           (_payload: unknown) => {
-            console.log('[useDashboardData] Appointment change detected, refetching...');
             fetchAllRef.current();
           }
         )
         .subscribe((status: string) => {
-          console.log('[useDashboardData] Realtime status:', status);
-
           if (status === 'SUBSCRIBED') {
             setIsConnected(true);
             stopPolling(); // realtime is working, don't need polling

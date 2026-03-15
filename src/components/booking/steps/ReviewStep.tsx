@@ -203,16 +203,6 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
   // Button should always be enabled - clicking it will trigger form validation if needed
   const canConfirm = true;
 
-  // Debug logging
-  console.log('[ReviewStep] State:', {
-    isAuthenticated,
-    hasGuestInfo: guestInfo !== null,
-    canConfirm,
-    isSubmitting,
-    user: user ? { email: user.email } : null,
-    guestInfo: guestInfo ? { email: guestInfo.email } : null
-  });
-
   return (
     <div className="space-y-4">
       {/* Subtitle */}

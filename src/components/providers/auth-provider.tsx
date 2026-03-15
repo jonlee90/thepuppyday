@@ -46,8 +46,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     pathname?.startsWith('/membership') ||
     pathname?.startsWith('/report-cards');
 
-
-    console.log(auth.isLoading, 'auth.isLoading', isProtectedRoute, 'isProtectedRoute');
   // Show loading UI only on protected routes
   if (auth.isLoading && isProtectedRoute) {
     return (

@@ -94,13 +94,11 @@ export function useServices(): UseServicesReturn {
     if (_servicesCache) return; // Already cached, nothing to do
 
     let cancelled = false;
-    console.log('[useServices] Starting fetch, useMocks:', config.useMocks);
 
     fetchServicesOnce()
       .then((result) => {
         if (!cancelled) {
           setServices(result);
-          console.log('[useServices] Setting services:', result.length);
         }
       })
       .catch((err) => {

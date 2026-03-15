@@ -40,16 +40,11 @@ export function useAuth(): UseAuthReturn {
     const supabase = createClient();
 
     const initAuth = async () => {
-      console.log('[Auth] Initializing auth state...');
-
       try {
-        console.log('[Auth] Calling supabase.auth.getUser()...');
-
         // Use getUser() - authenticates against Supabase Auth server (secure)
         const { data: { user }, error: userError } = await supabase.auth.getUser();
 
         if (!mounted) {
-          console.log('[Auth] Component unmounted, skipping state update');
           return;
         }
 
@@ -62,10 +57,7 @@ export function useAuth(): UseAuthReturn {
           return;
         }
 
-        console.log('[Auth] getUser() completed, user:', user?.id || 'none');
-
         if (user) {
-          console.log('[Auth] Fetching user data from users table...');
           // Fetch full user data from users table
           const { data: userData, error: dbError } = await (supabase as any)
             .from('users')
@@ -80,15 +72,11 @@ export function useAuth(): UseAuthReturn {
             return;
           }
 
-          console.log('[Auth] User data fetch completed, success:', !!userData);
-
           if (!mounted) {
-            console.log('[Auth] Component unmounted after user fetch');
             return;
           }
 
           if (userData) {
-            console.log('[Auth] Setting user in store:', userData.email);
             setUser(userData as User);
           } else {
             // User exists in auth but not in users table
@@ -97,7 +85,6 @@ export function useAuth(): UseAuthReturn {
             setUser(null);
           }
         } else {
-          console.log('[Auth] No active session found');
           setUser(null);
         }
       } catch (error) {
@@ -107,7 +94,6 @@ export function useAuth(): UseAuthReturn {
         }
       } finally {
         if (mounted) {
-          console.log('[Auth] Auth initialization complete, setting loading to false');
           setLoading(false);
         }
       }
@@ -118,8 +104,6 @@ export function useAuth(): UseAuthReturn {
       const { data } = supabase.auth.onAuthStateChange(
         async (event) => {
           if (!mounted) return;
-
-          console.log('[Auth] Auth state change event:', event);
 
           if (event === 'SIGNED_OUT') {
             clearAuth();
@@ -161,8 +145,6 @@ export function useAuth(): UseAuthReturn {
       const supabase = createClient();
 
       try {
-        console.log('[Auth] Attempting sign in for:', email);
-
         // Add timeout to prevent infinite hangs
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => reject(new Error('Sign in timeout after 30 seconds')), 30000);
@@ -173,45 +155,29 @@ export function useAuth(): UseAuthReturn {
           password,
         });
 
-        console.log('[Auth] signInWithPassword called, waiting for response...');
-
         const { data, error } = await Promise.race([
           signInPromise,
           timeoutPromise,
         ]) as Awaited<typeof signInPromise>;
-
-        console.log('[Auth] signInWithPassword resolved');
 
         if (error) {
           console.error('[Auth] Sign in error:', error);
           return { error, user: null };
         }
 
-        console.log('[Auth] Sign in successful, user:', data.user?.id);
-
         if (data.user) {
           // Fetch full user data
-          console.log('[Auth] Fetching user data from public.users...');
           const { data: userData, error: userError } = await (supabase as any)
             .from('users')
             .select('*')
             .eq('id', data.user.id)
             .single();
 
-          console.log('[Auth] User data result:', userData, 'Error:', userError);
-
           if (userData) {
             setUser(userData as User);
-            console.log('[Auth] User set in store, role:', userData.role);
             return { error: null, user: userData as User };
           } else if (userError) {
             console.error('[Auth] Failed to fetch user data:', userError);
-            console.error('[Auth] Error details:', {
-              message: userError.message,
-              details: userError.details,
-              hint: userError.hint,
-              code: userError.code,
-            });
             // Sign out if we can't get user data
             await supabase.auth.signOut();
             return {

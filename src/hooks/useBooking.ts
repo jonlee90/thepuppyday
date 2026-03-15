@@ -56,8 +56,6 @@ export function useBooking() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createBooking = useCallback(async (): Promise<BookingResult> => {
-    console.log('[useBooking] Starting booking creation, useMocks:', config.useMocks);
-
     try {
       if (config.useMocks) {
         // Mock booking creation
@@ -179,18 +177,6 @@ export function useBooking() {
       // Set the booking result in the store
       setBookingResult(appointment.id, bookingReference);
 
-      // Log the confirmation (mock email)
-      console.log('📧 Booking confirmation email sent to:', guestInfo?.email || user?.email);
-      console.log('📋 Booking Reference:', bookingReference);
-      console.log('📅 Appointment:', {
-        id: appointment.id,
-        service: selectedService.name,
-        pet: newPetData?.name || selectedPet?.name,
-        date: selectedDate,
-        time: selectedTimeSlot,
-        total: totalPrice,
-      });
-
       return {
         success: true,
         appointmentId: appointment.id,
@@ -219,8 +205,6 @@ export function useBooking() {
   ]);
 
   const createRealBooking = useCallback(async (): Promise<BookingResult> => {
-    console.log('[useBooking] Creating real booking via API');
-
     try {
       if (!selectedService || !selectedDate || !selectedTimeSlot) {
         return { success: false, error: 'Missing booking details' };
@@ -231,8 +215,6 @@ export function useBooking() {
 
       // For guest users, create user account first if we need to create a pet
       if (!isAuthenticated && guestInfo && !petId && newPetData) {
-        console.log('[useBooking] Creating/fetching guest user account...');
-
         const guestUserResponse = await fetch('/api/users/guest', {
           method: 'POST',
           headers: {
@@ -256,14 +238,11 @@ export function useBooking() {
         }
 
         const guestUserData = await guestUserResponse.json();
-        console.log('[useBooking] Guest user data:', guestUserData);
         customerId = guestUserData.user?.id;
       }
 
       // Create pet first if needed
       if (!petId && newPetData) {
-        console.log('[useBooking] Creating new pet...');
-
         const petPayload: any = {
           name: newPetData.name,
           size: newPetData.size,
@@ -299,7 +278,6 @@ export function useBooking() {
         }
 
         const petData = await petResponse.json();
-        console.log('[useBooking] Pet created:', petData);
         petId = petData.pet?.id || petData.id;
       }
 
@@ -341,8 +319,6 @@ export function useBooking() {
         return { success: false, error: 'Customer information required' };
       }
 
-      console.log('[useBooking] Sending request to /api/appointments:', payload);
-
       // Call the API
       const response = await fetch('/api/appointments', {
         method: 'POST',
@@ -351,8 +327,6 @@ export function useBooking() {
         },
         body: JSON.stringify(payload),
       });
-
-      console.log('[useBooking] Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to create booking' }));
@@ -364,7 +338,6 @@ export function useBooking() {
       }
 
       const data = await response.json();
-      console.log('[useBooking] API response:', data);
 
       // Set the booking result in the store
       setBookingResult(data.appointment_id, data.reference);
@@ -430,15 +403,6 @@ export function useBooking() {
           console.error('[useBooking] Waitlist API error:', errorData);
           return false;
         }
-
-        const data = await response.json();
-        console.log('📋 Added to waitlist:', {
-          waitlist_id: data.waitlist_id,
-          position: data.position,
-          date,
-          timePreference,
-          service: selectedService.name,
-        });
 
         return true;
       } catch (error) {

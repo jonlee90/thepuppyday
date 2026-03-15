@@ -41,14 +41,7 @@ export async function getAuthenticatedAdmin(
       error: authError,
     } = await supabase.auth.getUser();
 
-    console.log('[Admin Auth] Auth user result:', {
-      hasUser: !!authUser,
-      userId: authUser?.id,
-      authError: authError?.message
-    });
-
     if (authError || !authUser) {
-      console.log('[Admin Auth] No authenticated user found');
       return null;
     }
 
@@ -60,15 +53,7 @@ export async function getAuthenticatedAdmin(
       .eq('id', authUser.id)
       .single()) as { data: User | null; error: Error | null };
 
-    console.log('[Admin Auth] User data result:', {
-      hasData: !!userData,
-      role: userData?.role,
-      email: userData?.email,
-      userError: userError?.message
-    });
-
     if (userError || !userData) {
-      console.log('[Admin Auth] Failed to fetch user data');
       return null;
     }
 
@@ -76,11 +61,9 @@ export async function getAuthenticatedAdmin(
 
     // Verify user has admin or staff role
     if (!isAdminOrStaff(user.role)) {
-      console.log('[Admin Auth] User does not have admin/staff role:', user.role);
       return null;
     }
 
-    console.log('[Admin Auth] Admin access granted for:', user.email, 'role:', user.role);
     return { user, role: user.role };
   } catch (error) {
     console.error('[Admin Auth] Error getting authenticated admin:', error);
