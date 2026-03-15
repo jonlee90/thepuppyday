@@ -5,6 +5,7 @@
 
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Clock, DollarSign, Scissors, Heart, Sun, Baby, MapPin } from 'lucide-react';
@@ -64,10 +65,21 @@ export function BlogSection({ posts }: BlogSectionProps) {
               >
                 <Link
                   href={`/blog/${post.slug}`}
-                  className="group block bg-white rounded-2xl shadow-md p-6 h-full flex flex-col hover:shadow-lg hover:-translate-y-1 border border-transparent hover:border-[#C67C4E]/30 transition-all duration-200"
+                  className="group block bg-white rounded-2xl shadow-md overflow-hidden h-full flex flex-col hover:shadow-lg hover:-translate-y-1 border border-transparent hover:border-[#C67C4E]/30 transition-all duration-200"
                 >
+                  {/* Hero image */}
+                  <div className="relative w-full h-48 overflow-hidden">
+                    <Image
+                      src={`/images/blog/${post.slug}.jpg`}
+                      alt={post.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                  </div>
+
                   {/* Top row: icon + read time */}
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-4 px-6 pt-5">
                     <IconBox size="sm" rounded="lg">
                       <TopicIcon className="w-4 h-4 text-[#434E54]" />
                     </IconBox>
@@ -78,17 +90,17 @@ export function BlogSection({ posts }: BlogSectionProps) {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-lg font-semibold text-[#434E54] group-hover:text-[#C67C4E] transition-colors duration-200 mb-2 leading-snug">
+                  <h3 className="px-6 text-lg font-semibold text-[#434E54] group-hover:text-[#C67C4E] transition-colors duration-200 mb-2 leading-snug">
                     {post.title}
                   </h3>
 
                   {/* Excerpt */}
-                  <p className="text-sm text-[#6B7280] line-clamp-2 flex-1 leading-relaxed">
+                  <p className="px-6 text-sm text-[#6B7280] line-clamp-2 flex-1 leading-relaxed">
                     {post.excerpt}
                   </p>
 
                   {/* Footer */}
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#F0F0F0]">
+                  <div className="flex items-center justify-between mx-6 mt-4 pt-4 pb-5 border-t border-[#F0F0F0]">
                     <span className="text-xs text-[#6B7280]">{post.publishDate}</span>
                     <span className="inline-flex items-center gap-1 text-sm font-medium text-[#C67C4E]">
                       Read more
