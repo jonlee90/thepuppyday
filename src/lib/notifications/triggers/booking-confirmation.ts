@@ -9,6 +9,7 @@ import { sendNotification } from '../index';
 import {
   createBookingConfirmationEmail,
   type BookingConfirmationData,
+  type BookingConfirmationAddon,
 } from '../email-templates';
 import { format } from 'date-fns';
 
@@ -26,6 +27,7 @@ export interface BookingConfirmationTriggerData {
   serviceName: string;
   scheduledAt: string; // ISO timestamp
   totalPrice: number;
+  addons?: BookingConfirmationAddon[];
 }
 
 export interface BookingConfirmationTriggerResult {
@@ -71,6 +73,7 @@ export async function triggerBookingConfirmation(
     appointment_time: appointmentTime,
     service_name: data.serviceName,
     total_price: totalPrice,
+    addons: data.addons,
   };
 
   // Send email notification

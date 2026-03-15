@@ -754,6 +754,9 @@ export async function POST(request: NextRequest) {
           serviceName: service.name,
           scheduledAt: appointment.scheduled_at,
           totalPrice: appointment.total_price || 0,
+          addons: addons.length > 0
+            ? addons.map((a) => ({ name: a.name, price: a.price }))
+            : undefined,
         });
       } catch (notifError) {
         // Log but do not fail the appointment creation

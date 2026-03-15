@@ -38,6 +38,11 @@ export interface EmailTemplate {
   subject: string;
 }
 
+export interface BookingConfirmationAddon {
+  name: string;
+  price: number;
+}
+
 export interface BookingConfirmationData {
   customer_name: string;
   pet_name: string;
@@ -45,6 +50,7 @@ export interface BookingConfirmationData {
   appointment_time: string;
   service_name: string;
   total_price: string;
+  addons?: BookingConfirmationAddon[];
 }
 
 export interface ReportCardData {
@@ -117,6 +123,9 @@ function generateBookingConfirmationContent(data: BookingConfirmationData): stri
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         ${createInfoRow('Pet', data.pet_name)}
         ${createInfoRow('Service', data.service_name)}
+        ${data.addons && data.addons.length > 0 ? data.addons.map(addon =>
+          createInfoRow('Add-on', `${escapeHtml(addon.name)} — $${addon.price.toFixed(2)}`)
+        ).join('') : ''}
         ${createInfoRow('Date & Time', `${data.appointment_date} at ${data.appointment_time}`)}
         <tr>
           <td style="padding: 8px 0; border-top: 2px solid #EAE0D5; padding-top: 16px; margin-top: 8px;">
@@ -151,7 +160,7 @@ Great news! Your grooming appointment for ${escapeHtml(data.pet_name)} is confir
 
 APPOINTMENT DETAILS:
 Pet: ${escapeHtml(data.pet_name)}
-Service: ${escapeHtml(data.service_name)}
+Service: ${escapeHtml(data.service_name)}${data.addons && data.addons.length > 0 ? '\n' + data.addons.map(a => `Add-on: ${escapeHtml(a.name)} — $${a.price.toFixed(2)}`).join('\n') : ''}
 Date & Time: ${escapeHtml(data.appointment_date)} at ${escapeHtml(data.appointment_time)}
 Total: ${escapeHtml(data.total_price)}
 

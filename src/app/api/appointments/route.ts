@@ -344,6 +344,9 @@ export async function POST(req: NextRequest) {
         serviceName: service.name,
         scheduledAt: appointment.scheduled_at,
         totalPrice: appointment.total_price,
+        addons: validated.addon_ids && validated.addon_ids.length > 0
+          ? (addons ?? []).map((a: { name: string; price: number }) => ({ name: a.name, price: a.price }))
+          : undefined,
       });
 
       if (!notificationResult.success) {
