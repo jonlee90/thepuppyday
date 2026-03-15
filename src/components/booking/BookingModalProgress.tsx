@@ -41,11 +41,17 @@ export function BookingModalProgress({
           />
         </div>
 
-        {/* Current step label */}
-        <div className="flex items-center justify-end mt-1.5">
-          <span className="text-xs font-medium text-[#434E54]">
-            {stepLabels[currentStep]}
+        {/* Step counter (centered) + current step label (right) */}
+        <div className="flex items-center mt-1.5">
+          <div className="flex-1" />
+          <span className="text-xs text-[#434E54]/50">
+            Step {currentStep + 1} of {totalSteps}
           </span>
+          <div className="flex-1 flex justify-end">
+            <span className="text-xs font-medium text-[#434E54]">
+              {stepLabels[currentStep]}
+            </span>
+          </div>
         </div>
       </div>
     );
