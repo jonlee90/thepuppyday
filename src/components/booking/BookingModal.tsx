@@ -78,6 +78,21 @@ export function BookingModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const stepContinueRef = useRef<(() => Promise<boolean>) | null>(null);
+  const [stepCanContinueOverride, setStepCanContinueOverride] = useState<boolean | null>(null);
+
+  // Track which modal variant is visible so only ONE BookingWizard owns stepContinueRef.
+  // Both desktop and mobile wizards are always rendered (CSS hides one), but only the active
+  // one should register step handlers to avoid the inactive wizard's empty form state
+  // overwriting the active wizard's handlers.
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 640 : false
+  );
+  useEffect(() => {
+    const handleResize = () => setIsMobileViewport(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Use props if provided, otherwise use store
   const isOpen = propIsOpen !== undefined ? propIsOpen : modalStore.isOpen;
@@ -235,6 +250,12 @@ export function BookingModal({
       (mode === 'walkin' && currentStep === 3) || // Walk-in: Step 3 is review
       (mode !== 'walkin' && currentStep === 4);   // Customer/Admin: Step 4 is review
 
+    // If step registered a custom continue handler, call it first
+    if (stepContinueRef.current) {
+      const canProceed = await stepContinueRef.current();
+      if (!canProceed) return;
+    }
+
     if (isReviewStep) {
       // Review step - submit booking
       setIsSubmitting(true);
@@ -321,7 +342,9 @@ export function BookingModal({
   }, [prevStep, currentStep, mode, modalStore, setStep]);
 
   // Determine if continue button should be enabled
-  const canContinue = canContinueFromStep(currentStep, bookingStore, mode);
+  // Steps can override via stepCanContinueOverride (e.g. login form ready but store empty)
+  const storeCanContinue = canContinueFromStep(currentStep, bookingStore, mode);
+  const canContinue = stepCanContinueOverride !== null ? stepCanContinueOverride : storeCanContinue;
 
   // Don't render on server
   if (typeof window === 'undefined') return null;
@@ -385,6 +408,8 @@ export function BookingModal({
                     embedded={true}
                     preSelectedServiceId={preSelectedServiceId || undefined}
                     mode={mode}
+                    stepContinueRef={!isMobileViewport ? stepContinueRef : undefined}
+                    onStepCanContinueChange={!isMobileViewport ? setStepCanContinueOverride : undefined}
                   />
                 </div>
               </div>
@@ -461,6 +486,8 @@ export function BookingModal({
                     embedded={true}
                     preSelectedServiceId={preSelectedServiceId || undefined}
                     mode={mode}
+                    stepContinueRef={isMobileViewport ? stepContinueRef : undefined}
+                    onStepCanContinueChange={isMobileViewport ? setStepCanContinueOverride : undefined}
                   />
                 </div>
               </div>

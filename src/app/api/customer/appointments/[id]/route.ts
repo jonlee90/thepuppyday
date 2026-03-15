@@ -260,7 +260,6 @@ export async function DELETE(
       .from('appointments')
       .update({
         status: 'cancelled',
-        cancelled_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', id);

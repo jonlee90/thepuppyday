@@ -187,7 +187,7 @@ export default async function AppointmentDetailPage({ params }: AppointmentDetai
                     )}
                   </div>
                   <p className="font-semibold text-[#434E54]">
-                    ${appointment.base_price || 0}
+                    ${(Number(appointment.total_price || 0) - addons.reduce((sum: number, a: any) => sum + Number(a.price || 0), 0)).toFixed(0)}
                   </p>
                 </div>
 

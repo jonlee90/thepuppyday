@@ -1,8 +1,8 @@
 -- Migration: Replace handle_new_user() with account-linking logic
 --
 -- Three paths (checked in order):
---   1. Phone-based linking — matches CSV-imported profiles by normalized phone
---      + @puppyday.local email + created_by_admin = true
+--   1. Phone-based linking — matches CSV-imported profiles OR inactive guests
+--      by normalized phone
 --   2. Email-based linking — matches guest-booked profiles where
 --      public.users.id does NOT exist in auth.users (orphaned guest)
 --   3. New user path — no match found, creates fresh public.users row
@@ -51,8 +51,11 @@ BEGIN
            v_old_prefs, v_old_created, v_old_address, v_old_city, v_old_zip
       FROM public.users
      WHERE regexp_replace(phone, '\D', '', 'g') = v_normalized
-       AND email LIKE '%@puppyday.local'
-       AND created_by_admin = true
+       AND (
+         (email LIKE '%@puppyday.local' AND created_by_admin = true)
+         OR
+         (is_active = false AND (email IS NULL OR email = '' OR email LIKE '%@puppyday.local'))
+       )
      LIMIT 1;
 
     IF v_old_id IS NOT NULL THEN
@@ -264,7 +267,7 @@ $$;
 -- Add descriptive comment
 COMMENT ON FUNCTION public.handle_new_user() IS
   'Trigger function on auth.users INSERT. Three linking paths: '
-  '(1) Phone-based: matches CSV-imported profiles by normalized phone + @puppyday.local email + created_by_admin. '
+  '(1) Phone-based: matches CSV-imported profiles OR inactive guests by normalized phone. '
   '(2) Email-based: matches orphaned guest-booked profiles by email where public.users.id has no auth.users entry. '
   '(3) New user: no match found, creates fresh public.users row. '
   'In linking paths, all FK references are re-pointed to the new auth UUID before deleting the old profile.';

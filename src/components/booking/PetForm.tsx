@@ -4,24 +4,33 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useImperativeHandle, forwardRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { petFormSchema, type PetFormData } from '@/lib/booking/validation';
 import { getSizeLabel, getServicePriceForSize, formatCurrency } from '@/lib/booking/pricing';
-import { getMockStore } from '@/mocks/supabase/store';
 import type { Breed, PetSize, ServiceWithPrices } from '@/types/database';
+
+export interface PetFormHandle {
+  /** Programmatically trigger form validation + submit. Returns true if valid. */
+  triggerSubmit: () => Promise<boolean>;
+}
 
 interface PetFormProps {
   onSubmit: (data: PetFormData) => void;
   onCancel?: () => void;
   initialData?: Partial<PetFormData>;
   selectedService?: ServiceWithPrices | null;
+  /** Hide the Save Pet / Cancel buttons (footer handles submission) */
+  hideActions?: boolean;
 }
 
 const PET_SIZES: PetSize[] = ['small', 'medium', 'large', 'xlarge'];
 
-export function PetForm({ onSubmit, onCancel, initialData, selectedService }: PetFormProps) {
+export const PetForm = forwardRef<PetFormHandle, PetFormProps>(function PetForm(
+  { onSubmit, onCancel, initialData, selectedService, hideActions },
+  ref
+) {
   const [breeds, setBreeds] = useState<Breed[]>([]);
 
   const {
@@ -46,6 +55,20 @@ export function PetForm({ onSubmit, onCancel, initialData, selectedService }: Pe
 
   const selectedSize = watch('size');
   const selectedBreedId = watch('breed_id');
+
+  // Expose imperative handle for programmatic submit
+  useImperativeHandle(ref, () => ({
+    triggerSubmit: () =>
+      new Promise<boolean>((resolve) => {
+        handleSubmit(
+          (data) => {
+            onSubmit(data);
+            resolve(true);
+          },
+          () => resolve(false)
+        )();
+      }),
+  }), [handleSubmit, onSubmit]);
 
   // Load breeds on mount
   useEffect(() => {
@@ -255,36 +278,38 @@ export function PetForm({ onSubmit, onCancel, initialData, selectedService }: Pe
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3">
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
-                     hover:bg-[#EAE0D5] transition-colors duration-200
-                     flex-1"
-          >
-            Cancel
-          </button>
-        )}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={`bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
-                     hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
-                     disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
-                     flex items-center justify-center gap-2 ${onCancel ? 'flex-1' : 'w-full'}`}
-        >
-          {isSubmitting ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Saving...
-            </>
-          ) : (
-            'Save Pet'
+      {!hideActions && (
+        <div className="flex gap-3">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="text-[#434E54] font-medium py-2.5 px-5 rounded-lg
+                       hover:bg-[#EAE0D5] transition-colors duration-200
+                       flex-1"
+            >
+              Cancel
+            </button>
           )}
-        </button>
-      </div>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`bg-[#434E54] text-white font-semibold py-3 px-8 rounded-lg
+                       hover:bg-[#434E54]/90 transition-all duration-200 shadow-md hover:shadow-lg
+                       disabled:bg-[#434E54]/40 disabled:cursor-not-allowed disabled:opacity-50
+                       flex items-center justify-center gap-2 ${onCancel ? 'flex-1' : 'w-full'}`}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save Pet'
+            )}
+          </button>
+        </div>
+      )}
     </form>
   );
-}
+});

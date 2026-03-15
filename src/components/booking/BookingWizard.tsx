@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, type MutableRefObject } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useServices } from '@/hooks/useServices';
@@ -13,7 +13,8 @@ import { BookingProgress } from './BookingProgress';
 import { PriceSummary } from './PriceSummary';
 import { ServiceStep } from './steps/ServiceStep';
 import { DateTimeStep } from './steps/DateTimeStep';
-import { DetailsStep } from './steps/DetailsStep';
+import { CustomerStep, type CustomerStepHandle } from './steps/CustomerStep';
+import { PetStep, type PetStepHandle } from './steps/PetStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { ConfirmationStep } from './steps/ConfirmationStep';
 import { WalkinReviewStep } from './steps/WalkinReviewStep';
@@ -22,8 +23,12 @@ import { MODE_CONFIG, type BookingModalMode } from '@/hooks/useBookingModal';
 
 interface BookingWizardProps {
   preSelectedServiceId?: string;
-  embedded?: boolean; // Hide header/progress when embedded
-  mode?: BookingModalMode; // Modal mode affects step order
+  embedded?: boolean;
+  mode?: BookingModalMode;
+  /** Ref that the modal footer uses to call step-specific continue logic */
+  stepContinueRef?: MutableRefObject<(() => Promise<boolean>) | null>;
+  /** Callback to override the footer's canContinue state (null = use default store check) */
+  onStepCanContinueChange?: (override: boolean | null) => void;
 }
 
 const stepVariants = {
@@ -41,7 +46,7 @@ const stepVariants = {
   }),
 };
 
-export function BookingWizard({ preSelectedServiceId, embedded = false, mode = 'customer' }: BookingWizardProps) {
+export function BookingWizard({ preSelectedServiceId, embedded = false, mode = 'customer', stepContinueRef, onStepCanContinueChange }: BookingWizardProps) {
   const {
     currentStep,
     setStep,
@@ -76,6 +81,38 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
     }
   }, [preSelectedServiceId, selectedServiceId, services, selectService]);
 
+  // Refs for step-specific continue logic
+  const customerStepRef = useRef<CustomerStepHandle>(null);
+  const petStepRef = useRef<PetStepHandle>(null);
+
+  // Wire stepContinueRef to the active step's handler
+  useEffect(() => {
+    if (!stepContinueRef) return;
+
+    // Customer step (step 1 in all modes)
+    if (currentStep === 1) {
+      stepContinueRef.current = () => customerStepRef.current?.onContinue() ?? Promise.resolve(true);
+    }
+    // Pet step (step 2 in all modes)
+    else if (currentStep === 2) {
+      stepContinueRef.current = () => petStepRef.current?.onContinue() ?? Promise.resolve(true);
+    }
+    // Other steps don't need custom handlers
+    else {
+      stepContinueRef.current = null;
+    }
+
+    // Clear canContinue override when leaving customer/pet steps
+    if (currentStep !== 1 && currentStep !== 2) {
+      onStepCanContinueChange?.(null);
+    }
+
+    return () => {
+      if (stepContinueRef) stepContinueRef.current = null;
+      onStepCanContinueChange?.(null);
+    };
+  }, [currentStep, stepContinueRef, onStepCanContinueChange]);
+
   // Track step direction for animations
   const direction = 1; // Always forward for now, could track previous step
 
@@ -98,9 +135,9 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
         case 0:
           return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
         case 1:
-          return <DetailsStep mode="walkin" section="customer" />;
+          return <CustomerStep ref={customerStepRef} mode="walkin" onCanContinueChange={onStepCanContinueChange} />;
         case 2:
-          return <DetailsStep mode="walkin" section="pet" />;
+          return <PetStep ref={petStepRef} mode="walkin" onCanContinueChange={onStepCanContinueChange} />;
         case 3:
           return <WalkinReviewStep customerId={selectedCustomerId} />;
         case 4:
@@ -116,9 +153,9 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
         case 0:
           return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
         case 1:
-          return <DetailsStep mode="admin" section="customer" />;
+          return <CustomerStep ref={customerStepRef} mode="admin" onCanContinueChange={onStepCanContinueChange} />;
         case 2:
-          return <DetailsStep mode="admin" section="pet" />;
+          return <PetStep ref={petStepRef} mode="admin" onCanContinueChange={onStepCanContinueChange} />;
         case 3:
           return <DateTimeStep />;
         case 4:
@@ -135,9 +172,9 @@ export function BookingWizard({ preSelectedServiceId, embedded = false, mode = '
       case 0:
         return <ServiceStep preSelectedServiceId={preSelectedServiceId} />;
       case 1:
-        return <DetailsStep mode="customer" section="customer" />;
+        return <CustomerStep ref={customerStepRef} mode="customer" onCanContinueChange={onStepCanContinueChange} />;
       case 2:
-        return <DetailsStep mode="customer" section="pet" />;
+        return <PetStep ref={petStepRef} mode="customer" onCanContinueChange={onStepCanContinueChange} />;
       case 3:
         return <DateTimeStep />;
       case 4:

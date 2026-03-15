@@ -22,7 +22,8 @@ export {
 
 // Steps
 export { ServiceStep } from './steps/ServiceStep';
-export { DetailsStep } from './steps/DetailsStep';
+export { CustomerStep } from './steps/CustomerStep';
+export { PetStep } from './steps/PetStep';
 export { DateTimeStep } from './steps/DateTimeStep';
 export { AddonsStep } from './steps/AddonsStep';
 export { ReviewStep } from './steps/ReviewStep';

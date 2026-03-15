@@ -121,6 +121,34 @@ export async function POST(req: NextRequest) {
       if (existingUsers && existingUsers.length > 0) {
         customerId = existingUsers[0].id;
       } else {
+        // Try phone-based matching for inactive users
+        const normalizedPhone = validated.guest_info.phone.replace(/[\s\-()]/g, '');
+        const { data: phoneMatchUsers } = await supabase
+          .from('users')
+          .select('*')
+          .eq('phone', normalizedPhone)
+          .eq('is_active', false);
+
+        if (phoneMatchUsers && phoneMatchUsers.length > 0) {
+          const matchedUser = phoneMatchUsers[0];
+          customerId = matchedUser.id;
+
+          // Update with fresher guest data, keep is_active = false
+          await supabase
+            .from('users')
+            .update({
+              first_name: validated.guest_info.firstName,
+              last_name: validated.guest_info.lastName,
+              email: validated.guest_info.email.toLowerCase(),
+              address: validated.guest_info.address || matchedUser.address,
+              city: validated.guest_info.city || matchedUser.city,
+              zip: validated.guest_info.zip || matchedUser.zip,
+            })
+            .eq('id', matchedUser.id);
+        }
+      }
+
+      if (!customerId) {
         // Create guest user
         const { data: guestUser, error: userError } = await supabase
           .from('users')
