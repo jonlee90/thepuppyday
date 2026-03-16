@@ -412,6 +412,52 @@ export async function POST(req: NextRequest) {
       // Don't fail the booking if notification fails
     }
 
+    // Trigger calendar sync (auto-sync)
+    try {
+      const { triggerAutoSyncInBackground } = await import(
+        '@/lib/calendar/sync/auto-sync-trigger'
+      );
+
+      const customer = appointment.customer as unknown as {
+        first_name: string; last_name: string; email: string; phone: string | null;
+      };
+      const pet = appointment.pet as unknown as { name: string; size?: string };
+      const service = appointment.service as unknown as { name: string; duration_minutes?: number };
+
+      const syncData = {
+        id: appointment.id,
+        customer_id: appointment.customer_id,
+        pet_id: appointment.pet_id,
+        service_id: appointment.service_id,
+        scheduled_at: appointment.scheduled_at,
+        status: appointment.status,
+        notes: appointment.notes,
+        customer: {
+          first_name: customer.first_name,
+          last_name: customer.last_name,
+          email: customer.email,
+          phone: customer.phone,
+        },
+        pet: {
+          name: pet.name,
+          size: pet.size || null,
+        },
+        service: {
+          name: service.name,
+          duration_minutes: service.duration_minutes || 60,
+        },
+        addons: addons.map((a) => ({
+          addon_id: a.id,
+          addon_name: a.name,
+          duration_minutes: 0,
+        })),
+      };
+
+      triggerAutoSyncInBackground(supabase, syncData);
+    } catch (syncError) {
+      console.error('[Appointments API] Calendar sync error:', syncError);
+    }
+
     return NextResponse.json({
       success: true,
       appointment_id: appointment.id,
