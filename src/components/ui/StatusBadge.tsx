@@ -30,9 +30,9 @@ const statusConfig: Record<AppointmentStatus, {
   },
   in_progress: {
     label: 'In Progress',
-    bgColor: 'bg-[#6B7280]/15',
-    textColor: 'text-[#374151]',
-    dotColor: 'bg-[#6B7280]',
+    bgColor: 'bg-[#3B82F6]/15',
+    textColor: 'text-[#1E40AF]',
+    dotColor: 'bg-[#3B82F6]',
   },
   completed: {
     label: 'Completed',

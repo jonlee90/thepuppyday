@@ -56,7 +56,7 @@ export const UNASSIGNED_COLOR = '#9CA3AF';
 export const STATUS_COLORS: Record<string, string> = {
   pending: '#FCD34D',
   confirmed: '#10B981',
-  in_progress: '#6B7280',
+  in_progress: '#3B82F6',
   completed: '#434E54',
   cancelled: '#EF4444',
   no_show: '#DC2626',

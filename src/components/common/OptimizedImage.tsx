@@ -53,7 +53,7 @@ export function OptimizedImage({
       placeholder={enableBlur ? 'blur' : 'empty'}
       blurDataURL={
         enableBlur
-          ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
+          ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP48e4pAAWtAsyqbuMfAAAAAElFTkSuQmCC'
           : undefined
       }
       onError={handleError}
