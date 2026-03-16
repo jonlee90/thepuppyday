@@ -99,7 +99,18 @@ export async function pushAppointmentToCalendar(
       };
     }
 
-    // Check sync criteria
+    // Check if appointment should be deleted from calendar (before sync criteria)
+    // Cancelled/no-show appointments should always be removed regardless of sync settings
+    if (shouldDeleteEvent(appointment)) {
+      return await deleteAppointmentFromCalendar(
+        supabase,
+        appointment.id,
+        adminConnection.id,
+        startTime
+      );
+    }
+
+    // Check sync criteria (for create/update operations)
     const syncSettings = await getSyncSettings(supabase);
     const syncDecision = shouldSyncAppointment(appointment, syncSettings, force);
 
@@ -115,16 +126,6 @@ export async function pushAppointmentToCalendar(
         duration_ms: Date.now() - startTime,
         details: { sync_decision: syncDecision },
       };
-    }
-
-    // Check if appointment should be deleted from calendar
-    if (shouldDeleteEvent(appointment)) {
-      return await deleteAppointmentFromCalendar(
-        supabase,
-        appointment.id,
-        adminConnection.id,
-        startTime
-      );
     }
 
     // Check if appointment is already synced
