@@ -198,6 +198,7 @@ export function DateTimeStep() {
               selectedTime={selectedTimeSlot}
               onTimeChange={handleTimeSelect}
               isBackdated={isBackdated}
+              businessHours={businessHours}
             />
           ) : (
             !selectedDate ? (

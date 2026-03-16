@@ -48,7 +48,8 @@ export function CalendarPicker({
       const [year, month, day] = minDate.split('-').map(Number);
       return new Date(year, month - 1, day);
     }
-    return today;
+    // No minDate = no lower bound (allow past dates for admin)
+    return null;
   }, [minDate]);
 
   const maxDateObj = useMemo(() => {
@@ -56,10 +57,8 @@ export function CalendarPicker({
       const [year, month, day] = maxDate.split('-').map(Number);
       return new Date(year, month - 1, day);
     }
-    // Default to 2 months ahead
-    const max = new Date(today);
-    max.setMonth(max.getMonth() + 2);
-    return max;
+    // No maxDate = no upper bound
+    return null;
   }, [maxDate]);
 
   // Generate calendar days
@@ -91,11 +90,13 @@ export function CalendarPicker({
   }, [currentMonth]);
 
   const canGoPrev = useMemo(() => {
+    if (!minDateObj) return true;
     const prevMonth = new Date(currentMonth.year, currentMonth.month - 1, 1);
     return prevMonth >= new Date(minDateObj.getFullYear(), minDateObj.getMonth(), 1);
   }, [currentMonth, minDateObj]);
 
   const canGoNext = useMemo(() => {
+    if (!maxDateObj) return true;
     const nextMonth = new Date(currentMonth.year, currentMonth.month + 1, 1);
     return nextMonth <= new Date(maxDateObj.getFullYear(), maxDateObj.getMonth(), 1);
   }, [currentMonth, maxDateObj]);
@@ -122,8 +123,8 @@ export function CalendarPicker({
 
   const isDateDisabled = (dateString: string | null, date: Date | null) => {
     if (!dateString || !date) return true;
-    if (date < minDateObj) return true;
-    if (date > maxDateObj) return true;
+    if (minDateObj && date < minDateObj) return true;
+    if (maxDateObj && date > maxDateObj) return true;
     if (disabledDates.includes(dateString)) return true;
     return false;
   };
