@@ -314,8 +314,8 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
         </div>
 
         {/* Price breakdown */}
-        <div className="p-3 bg-[#FFFBF7]">
-          <div className="space-y-1.5">
+        <div className="bg-[#FFFBF7]">
+          <div className="p-3 space-y-1.5">
             <div className="flex justify-between text-sm">
               <span className="text-[#434E54]/70">{selectedService?.name}</span>
               <span className="text-[#434E54]">{formatCurrency(servicePrice)}</span>
@@ -336,11 +336,21 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
                 </span>
               </div>
             ))}
-            <div className="border-t border-[#434E54]/20 pt-2 mt-2">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-[#434E54]">Total</span>
-                <span className="text-lg font-bold text-[#434E54]">{formatCurrency(totalPrice)}</span>
-              </div>
+          </div>
+          {/* Price Adjustments Form (Admin mode only) */}
+          {adminMode && (
+            <div className="px-3 pb-2">
+              <PriceAdjustmentForm
+                adjustments={priceAdjustments}
+                onAdd={addPriceAdjustment}
+                onRemove={removePriceAdjustment}
+              />
+            </div>
+          )}
+          <div className="p-3 border-t border-[#434E54]/20">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-[#434E54]">Total</span>
+              <span className="text-lg font-bold text-[#434E54]">{formatCurrency(totalPrice)}</span>
             </div>
           </div>
         </div>
@@ -374,15 +384,6 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
             </p>
           </div>
         </label>
-      ) : null}
-
-      {/* Price Adjustments (Admin mode only) */}
-      {adminMode ? (
-        <PriceAdjustmentForm
-          adjustments={priceAdjustments}
-          onAdd={addPriceAdjustment}
-          onRemove={removePriceAdjustment}
-        />
       ) : null}
 
       {/* Add-ons Selection */}
