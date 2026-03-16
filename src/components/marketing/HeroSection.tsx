@@ -23,9 +23,9 @@ export function HeroSection({ heroContent }: HeroSectionProps) {
   const todayHours = isWeekday ? '8 AM – 5 PM' : today === 'Saturday' ? '9 AM – 4 PM' : 'Closed';
 
   return (
-    <section id="home" className="relative min-h-[85vh] flex items-end overflow-hidden">
+    <section id="home" className="relative min-h-[85vh] flex items-end overflow-hidden touch-action-manipulation" style={{ touchAction: 'manipulation' }}>
       {/* Full-bleed background image */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" style={{ willChange: 'transform' }}>
         <OptimizedImage
           src="/images/puppyday-lobby-background.png"
           alt="The Puppy Day salon lobby"
