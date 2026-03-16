@@ -7,7 +7,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { exchangeCodeForTokens } from '@/lib/calendar/oauth';
 import { createConnection } from '@/lib/calendar/connection';
 import { google } from 'googleapis';
@@ -15,7 +15,6 @@ import { createAuthenticatedClient } from '@/lib/calendar/oauth';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
     const serviceClient = createServiceRoleClient();
     const searchParams = request.nextUrl.searchParams;
 
@@ -128,7 +127,7 @@ export async function GET(request: NextRequest) {
     // Create calendar connection with encrypted tokens
     try {
       await createConnection(
-        supabase,
+        serviceClient,
         adminId,
         tokens,
         calendarEmail,
