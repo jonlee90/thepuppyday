@@ -1336,6 +1336,70 @@ export function createAdminNoShowEmail(data: AdminNoShowData): EmailTemplate {
 }
 
 // ============================================================================
+// 17. GROOMING COMPLETE EMAIL
+// ============================================================================
+
+export interface GroomingCompleteEmailData {
+  customer_name: string;
+  pet_name: string;
+  service_name: string;
+  yelp_url: string;
+  rebook_url: string;
+}
+
+function generateGroomingCompleteContent(data: GroomingCompleteEmailData): string {
+  return createCard(`
+    ${createPetHero(data.pet_name, 'All Freshened Up!')}
+
+    <h2 style="color: #434E54; margin: 0 0 8px 0;">Grooming Complete!</h2>
+    <p style="color: #434E54; margin: 0 0 24px 0;">
+      ${escapeHtml(data.pet_name)} is looking and feeling amazing after their ${escapeHtml(data.service_name)} session. Ready for pickup!
+    </p>
+
+    ${createDivider()}
+
+    ${createPrimaryCTA('Leave Us a Yelp Review', data.yelp_url)}
+
+    ${createSecondaryCTA('Book Next Visit', data.rebook_url)}
+
+    ${createTip(`Regular grooming every 4-6 weeks keeps ${escapeHtml(data.pet_name)} healthy and happy!`)}
+  `);
+}
+
+function generateGroomingCompleteText(data: GroomingCompleteEmailData): string {
+  return `
+GROOMING COMPLETE! - Puppy Day
+
+Hi ${escapeHtml(data.customer_name)},
+
+${escapeHtml(data.pet_name)} is looking and feeling amazing after their ${escapeHtml(data.service_name)} session. Ready for pickup!
+
+If you enjoyed ${escapeHtml(data.pet_name)}'s grooming, we'd love a Yelp review:
+${escapeHtml(data.yelp_url)}
+
+Book Next Visit:
+${escapeHtml(data.rebook_url)}
+
+Tip: Regular grooming every 4-6 weeks keeps ${escapeHtml(data.pet_name)} healthy and happy!
+
+---
+Puppy Day
+14936 Leffingwell Rd, La Mirada, CA 90638
+(657) 252-2903 | puppyday14936@gmail.com
+Monday-Saturday, 9:00 AM - 5:00 PM
+  `.trim();
+}
+
+export function createGroomingCompleteEmail(data: GroomingCompleteEmailData): EmailTemplate {
+  const subject = `${escapeHtml(data.pet_name)}'s Grooming is Complete!`;
+  const content = generateGroomingCompleteContent(data);
+  const { html } = wrapEmailContent(content, { mood: 'success', moodTitle: 'All Done!' });
+  const text = generateGroomingCompleteText(data);
+
+  return { html, text, subject };
+}
+
+// ============================================================================
 // EXPORT ALL TEMPLATE GENERATORS
 // ============================================================================
 
@@ -1356,4 +1420,5 @@ export const emailTemplates = {
   adminNewBooking: createAdminNewBookingEmail,
   adminCancellation: createAdminCancellationEmail,
   adminNoShow: createAdminNoShowEmail,
+  groomingComplete: createGroomingCompleteEmail,
 };

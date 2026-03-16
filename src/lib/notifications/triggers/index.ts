@@ -80,6 +80,14 @@ export {
   type WaitlistAddedTriggerResult,
 } from './waitlist-added';
 
+// Grooming Complete
+export {
+  triggerGroomingComplete,
+  validateGroomingCompleteData,
+  type GroomingCompleteTriggerData,
+  type GroomingCompleteTriggerResult,
+} from './grooming-complete';
+
 // Admin Notification Triggers
 export {
   triggerAdminNewBooking,

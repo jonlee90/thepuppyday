@@ -133,8 +133,7 @@ export async function POST(
         const service = store.selectById('services', appointment.service_id) as Service | null;
 
         if (customer && pet && service) {
-          // Use new notification triggers for in_progress and completed statuses (Task 0108)
-          if (newStatus === 'in_progress' || newStatus === 'completed') {
+          if (newStatus === 'in_progress') {
             const { triggerAppointmentStatus } = await import(
               '@/lib/notifications/triggers'
             );
@@ -145,7 +144,7 @@ export async function POST(
               customerPhone: customer.phone,
               petName: pet.name,
               status: newStatus,
-              manualOverride: true, // Manual trigger from admin
+              manualOverride: true,
             });
 
             if (!statusResult.success && !statusResult.skipped) {
@@ -153,6 +152,23 @@ export async function POST(
                 '[Admin API] Status notification failed:',
                 statusResult.errors
               );
+            }
+          } else if (newStatus === 'completed') {
+            const { triggerGroomingComplete } = await import(
+              '@/lib/notifications/triggers'
+            );
+
+            const completeResult = await triggerGroomingComplete(supabase, {
+              appointmentId: id,
+              customerId: appointment.customer_id,
+              customerName: `${customer.first_name} ${customer.last_name}`,
+              customerEmail: customer.email,
+              petName: pet.name,
+              serviceName: service.name,
+            });
+
+            if (!completeResult.success) {
+              console.error('[Admin API] Grooming complete notification failed:', completeResult.errors);
             }
           }
           // Use trigger functions for confirmed and cancelled statuses
@@ -281,8 +297,7 @@ export async function POST(
           ]);
 
           if (customer && pet && service) {
-            // Use new notification triggers for in_progress and completed statuses (Task 0108)
-            if (newStatus === 'in_progress' || newStatus === 'completed') {
+            if (newStatus === 'in_progress') {
               const { triggerAppointmentStatus } = await import(
                 '@/lib/notifications/triggers'
               );
@@ -299,7 +314,23 @@ export async function POST(
               if (!statusResult.success && !statusResult.skipped) {
                 console.error('[Admin API] Status notification failed:', statusResult.errors);
               }
+            } else if (newStatus === 'completed') {
+              const { triggerGroomingComplete } = await import(
+                '@/lib/notifications/triggers'
+              );
 
+              const completeResult = await triggerGroomingComplete(serviceClient, {
+                appointmentId: id,
+                customerId: appointment.customer_id,
+                customerName: `${customer.first_name} ${customer.last_name}`,
+                customerEmail: customer.email,
+                petName: pet.name,
+                serviceName: service.name,
+              });
+
+              if (!completeResult.success) {
+                console.error('[Admin API] Grooming complete notification failed:', completeResult.errors);
+              }
             }
             // Confirmed status — no email here; customer already received confirmation at booking time
             else if (newStatus === 'cancelled') {
