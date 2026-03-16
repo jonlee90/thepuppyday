@@ -19,6 +19,7 @@ const serwist = new Serwist({
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: defaultCache,
+  cleanupOutdatedCaches: true,
   fallbacks: {
     entries: [
       {
@@ -29,6 +30,28 @@ const serwist = new Serwist({
       },
     ],
   },
+});
+
+// Clean up bad cache entries on activate (e.g., cached 502 responses from deploys)
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
+        cacheNames.map(async (cacheName) => {
+          const cache = await caches.open(cacheName);
+          const requests = await cache.keys();
+          return Promise.all(
+            requests.map(async (request) => {
+              const response = await cache.match(request);
+              if (response && !response.ok) {
+                await cache.delete(request);
+              }
+            })
+          );
+        })
+      )
+    )
+  );
 });
 
 serwist.addEventListeners();
