@@ -82,9 +82,7 @@ export async function middleware(request: NextRequest) {
     // Check if trying to access admin routes without admin/staff role
     if (isAdminRoute) {
       if (!isAuthenticated) {
-        const loginUrl = new URL('/login', request.nextUrl.origin);
-        loginUrl.searchParams.set('returnTo', pathname);
-        return NextResponse.redirect(loginUrl);
+        return redirectTo('/login', { returnTo: pathname });
       }
 
       if (userRole !== 'admin' && userRole !== 'groomer') {
@@ -172,9 +170,7 @@ export async function middleware(request: NextRequest) {
   if (isAdminRoute || isAdminApiRoute) {
     if (!user) {
       if (isAdminRoute) {
-        const redirectUrl = new URL('/login', request.nextUrl.origin);
-        redirectUrl.searchParams.set('returnTo', pathname);
-        return NextResponse.redirect(redirectUrl);
+        return redirectTo('/login', { returnTo: pathname });
       }
       return NextResponse.json(
         { error: 'Unauthorized: Authentication required' },

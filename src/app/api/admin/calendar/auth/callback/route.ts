@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] OAuth error:', error);
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=oauth_denied',
-        request.nextUrl.origin
+        process.env.NEXT_PUBLIC_APP_URL!
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] Missing authorization code');
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=missing_code',
-        request.nextUrl.origin
+        process.env.NEXT_PUBLIC_APP_URL!
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] Missing state parameter');
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=invalid_state',
-        request.nextUrl.origin
+        process.env.NEXT_PUBLIC_APP_URL!
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] Invalid admin user:', adminId);
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=invalid_user',
-        request.nextUrl.origin
+        process.env.NEXT_PUBLIC_APP_URL!
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] User is not admin:', adminUser.role);
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=unauthorized',
-        request.nextUrl.origin
+        process.env.NEXT_PUBLIC_APP_URL!
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
       console.error('[Calendar OAuth Callback] Token exchange failed:', error);
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=token_exchange_failed',
-        request.nextUrl.origin
+        process.env.NEXT_PUBLIC_APP_URL!
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
       // Redirect to settings page with success status
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&status=connected',
-        request.nextUrl.origin
+        process.env.NEXT_PUBLIC_APP_URL!
       );
       return NextResponse.redirect(redirectUrl);
     } catch (error) {
@@ -151,14 +151,14 @@ export async function GET(request: NextRequest) {
       ) {
         const redirectUrl = new URL(
           '/admin/settings?tab=calendar&error=already_connected',
-          request.url
+          process.env.NEXT_PUBLIC_APP_URL!
         );
         return NextResponse.redirect(redirectUrl);
       }
 
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=connection_failed',
-        request.nextUrl.origin
+        process.env.NEXT_PUBLIC_APP_URL!
       );
       return NextResponse.redirect(redirectUrl);
     }
@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
 
     const redirectUrl = new URL(
       '/admin/settings?tab=calendar&error=server_error',
-      request.nextUrl.origin
+      process.env.NEXT_PUBLIC_APP_URL!
     );
     return NextResponse.redirect(redirectUrl);
   }
