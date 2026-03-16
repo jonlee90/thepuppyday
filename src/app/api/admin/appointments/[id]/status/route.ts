@@ -301,22 +301,8 @@ export async function POST(
               }
 
             }
-            // Use trigger functions for confirmed and cancelled statuses
-            else if (newStatus === 'confirmed') {
-              const { triggerBookingConfirmation } = await import('@/lib/notifications/triggers');
-              const totalPrice = (appointment as any).total_price ?? 0;
-              await triggerBookingConfirmation(serviceClient, {
-                appointmentId: id,
-                customerId: appointment.customer_id,
-                customerName: `${customer.first_name} ${customer.last_name}`,
-                customerEmail: customer.email,
-                customerPhone: customer.phone,
-                petName: pet.name,
-                serviceName: service.name,
-                scheduledAt: appointment.scheduled_at,
-                totalPrice,
-              });
-            } else if (newStatus === 'cancelled') {
+            // Confirmed status — no email here; customer already received confirmation at booking time
+            else if (newStatus === 'cancelled') {
               const { triggerAppointmentCancelled, triggerAdminCancellation } = await import('@/lib/notifications/triggers');
               const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
               await Promise.all([

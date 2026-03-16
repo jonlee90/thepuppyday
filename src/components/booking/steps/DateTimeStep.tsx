@@ -16,6 +16,12 @@ const WaitlistModal = dynamic(
   () => import('../WaitlistModal').then((m) => m.WaitlistModal),
   { ssr: false }
 );
+
+const AdminFreeTimeInput = dynamic(
+  () => import('../AdminFreeTimeInput').then((m) => m.AdminFreeTimeInput),
+  { ssr: false }
+);
+
 import {
   getDisabledDates,
   formatTimeDisplay,
@@ -28,59 +34,67 @@ export function DateTimeStep() {
   const [waitlistTime, setWaitlistTime] = useState<string | undefined>();
 
   const {
+    mode,
     selectedService,
     selectedDate,
     selectedTimeSlot,
     selectDateTime,
     clearDateTime,
-    nextStep,
-    prevStep,
+    setSendNotification,
   } = useBookingStore();
 
-  // Fetch availability for selected date and service
+  const isAdmin = mode === 'admin' || mode === 'walkin';
+
+  // Derive today string during render (not via useEffect)
+  const todayString = new Date().toISOString().split('T')[0];
+
+  // Derive backdated state during render
+  const isBackdated = isAdmin && selectedDate ? selectedDate < todayString : false;
+
+  // Fetch availability for selected date and service — skip in admin mode
   const { slots, isLoading: slotsLoading, error, bookingSettings } = useAvailability({
-    date: selectedDate,
-    serviceId: selectedService?.id || null,
+    date: isAdmin ? null : selectedDate,
+    serviceId: isAdmin ? null : (selectedService?.id || null),
   });
 
   // Use business hours from booking settings or default
   const businessHours: BusinessHours = bookingSettings?.business_hours || DEFAULT_BUSINESS_HOURS;
 
-  // Calculate disabled dates with booking settings
+  // Calculate disabled dates with booking settings (customer mode only)
   const disabledDates = useMemo(() => {
+    if (isAdmin) return [];
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set to midnight to avoid UTC conversion issues
+    today.setHours(0, 0, 0, 0);
     const maxDate = new Date(today);
-
-    // Use max_advance_days from settings if available
     if (bookingSettings?.max_advance_days) {
       maxDate.setDate(maxDate.getDate() + bookingSettings.max_advance_days);
     } else {
       maxDate.setMonth(maxDate.getMonth() + 2);
     }
-
     return getDisabledDates(today, maxDate, businessHours, bookingSettings || undefined);
-  }, [businessHours, bookingSettings]);
+  }, [businessHours, bookingSettings, isAdmin]);
 
-  // Calculate min and max dates for calendar based on booking settings
+  // Calculate min and max dates for calendar based on booking settings (customer mode only)
   const minDate = useMemo(() => {
+    if (isAdmin) return undefined;
     if (!bookingSettings?.min_advance_hours) return undefined;
     const now = new Date();
     const minDateTime = new Date(now.getTime() + bookingSettings.min_advance_hours * 60 * 60 * 1000);
     return minDateTime.toISOString().split('T')[0];
-  }, [bookingSettings]);
+  }, [bookingSettings, isAdmin]);
 
   const maxDate = useMemo(() => {
+    if (isAdmin) return undefined;
     if (!bookingSettings?.max_advance_days) return undefined;
     const today = new Date();
     const maxDateTime = new Date(today);
     maxDateTime.setDate(maxDateTime.getDate() + bookingSettings.max_advance_days);
     return maxDateTime.toISOString().split('T')[0];
-  }, [bookingSettings]);
+  }, [bookingSettings, isAdmin]);
 
-  // Auto-select the next available date when the step first loads
+  // Auto-select the next available date when the step first loads (customer mode only)
   useEffect(() => {
-    if (selectedDate || !bookingSettings) return;
+    if (isAdmin || selectedDate || !bookingSettings) return;
 
     const disabledSet = new Set(disabledDates);
     const start = minDate ? new Date(minDate + 'T00:00:00') : new Date();
@@ -103,6 +117,12 @@ export function DateTimeStep() {
     }
   }, [bookingSettings]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-update notification toggle based on backdating (admin mode only)
+  useEffect(() => {
+    if (!isAdmin) return;
+    setSendNotification(!isBackdated);
+  }, [isBackdated, isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleDateSelect = (date: string) => {
     // Clear time when date changes
     if (date !== selectedDate) {
@@ -121,15 +141,7 @@ export function DateTimeStep() {
     setWaitlistModalOpen(true);
   };
 
-  const handleContinue = () => {
-    if (selectedDate && selectedTimeSlot) {
-      nextStep();
-    }
-  };
-
-  const canContinue = selectedDate !== null && selectedTimeSlot !== null;
-
-  if (error) {
+  if (!isAdmin && error) {
     return (
       <div className="space-y-6">
         <p className="text-[#434E54]/70">Choose when you&apos;d like to bring your pet in</p>
@@ -165,8 +177,6 @@ export function DateTimeStep() {
 
   return (
     <div className="space-y-4">
-
-
       {/* Calendar and time slots */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Calendar */}
@@ -174,46 +184,55 @@ export function DateTimeStep() {
           <CalendarPicker
             selectedDate={selectedDate}
             onDateSelect={handleDateSelect}
-            disabledDates={disabledDates}
-            minDate={minDate}
-            maxDate={maxDate}
+            disabledDates={isAdmin ? [] : disabledDates}
+            minDate={isAdmin ? undefined : minDate}
+            maxDate={isAdmin ? undefined : maxDate}
           />
         </div>
 
-        {/* Time slots */}
+        {/* Time input */}
         <div>
-          {!selectedDate ? (
-            <div className="bg-white rounded-xl shadow-md p-6 text-center h-full flex flex-col items-center justify-center">
-              <div className="w-16 h-16 bg-[#EAE0D5] rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-[#434E54]/70"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-              <p className="text-[#434E54]/70">Select a date to see available times</p>
-            </div>
-          ) : (
-            <TimeSlotGrid
-              slots={slots}
+          {isAdmin ? (
+            <AdminFreeTimeInput
+              selectedDate={selectedDate}
               selectedTime={selectedTimeSlot}
-              onTimeSelect={handleTimeSelect}
-              onJoinWaitlist={config.features.waitlistEnabled ? handleJoinWaitlist : undefined}
-              loading={slotsLoading}
+              onTimeChange={handleTimeSelect}
+              isBackdated={isBackdated}
             />
+          ) : (
+            !selectedDate ? (
+              <div className="bg-white rounded-xl shadow-md p-6 text-center h-full flex flex-col items-center justify-center">
+                <div className="w-16 h-16 bg-[#EAE0D5] rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-[#434E54]/70"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-[#434E54]/70">Select a date to see available times</p>
+              </div>
+            ) : (
+              <TimeSlotGrid
+                slots={slots}
+                selectedTime={selectedTimeSlot}
+                onTimeSelect={handleTimeSelect}
+                onJoinWaitlist={config.features.waitlistEnabled ? handleJoinWaitlist : undefined}
+                loading={slotsLoading}
+              />
+            )
           )}
 
-               {/* Selected datetime banner - compact */}
+          {/* Selected datetime banner - compact */}
           {selectedDate && selectedTimeSlot && (
-            <div className="bg-[#434E54]/5 border border-[#434E54]/20 rounded-xl p-3">
+            <div className="bg-[#434E54]/5 border border-[#434E54]/20 rounded-xl p-3 mt-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <svg
@@ -258,8 +277,8 @@ export function DateTimeStep() {
         </div>
       </div>
 
-      {/* Waitlist Modal */}
-      {config.features.waitlistEnabled && selectedDate && (
+      {/* Waitlist Modal (customer mode only) */}
+      {!isAdmin && config.features.waitlistEnabled && selectedDate ? (
         <WaitlistModal
           isOpen={waitlistModalOpen}
           onClose={() => {
@@ -270,7 +289,7 @@ export function DateTimeStep() {
           time={waitlistTime}
           businessHours={businessHours}
         />
-      )}
+      ) : null}
     </div>
   );
 }

@@ -7,6 +7,13 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ServiceWithPrices, Pet, Addon, PetSize, CreatePetInput } from '@/types/database';
 import type { BookingModalMode } from '@/hooks/useBookingModal';
 
+export interface PriceAdjustment {
+  id: string;          // Client-side temporary ID (crypto.randomUUID())
+  label: string;
+  amount: number;      // Positive = surcharge, negative = discount
+  note?: string;
+}
+
 export interface GuestInfo {
   firstName: string;
   lastName: string;
@@ -60,6 +67,9 @@ export interface BookingState {
   // Admin: send confirmation email
   sendNotification: boolean;
 
+  // Admin booking: price adjustments
+  priceAdjustments: PriceAdjustment[];
+
   // Booking result
   bookingId: string | null;
   bookingReference: string | null;
@@ -101,6 +111,11 @@ export interface BookingActions {
 
   // Admin: send confirmation email
   setSendNotification: (value: boolean) => void;
+
+  // Admin: price adjustments
+  addPriceAdjustment: (adj: Omit<PriceAdjustment, 'id'>) => void;
+  removePriceAdjustment: (id: string) => void;
+  clearPriceAdjustments: () => void;
 
   // Booking result
   setBookingResult: (id: string, reference: string) => void;
@@ -144,6 +159,7 @@ const initialState: BookingState = {
   totalPrice: 0,
   lastActivityTimestamp: Date.now(),
   sendNotification: false,
+  priceAdjustments: [],
   bookingId: null,
   bookingReference: null,
 };
@@ -334,9 +350,26 @@ export const useBookingStore = create<BookingStore>()(
         });
       },
 
+      // Admin: price adjustments
+      addPriceAdjustment: (adj) => {
+        const id = crypto.randomUUID();
+        set((state) => ({ priceAdjustments: [...state.priceAdjustments, { ...adj, id }] }));
+        get().calculatePrices();
+      },
+
+      removePriceAdjustment: (id) => {
+        set((state) => ({ priceAdjustments: state.priceAdjustments.filter((a) => a.id !== id) }));
+        get().calculatePrices();
+      },
+
+      clearPriceAdjustments: () => {
+        set({ priceAdjustments: [] });
+        get().calculatePrices();
+      },
+
       // Utilities
       calculatePrices: () => {
-        const { selectedService, petSize, selectedAddons } = get();
+        const { selectedService, petSize, selectedAddons, priceAdjustments } = get();
 
         let servicePrice = 0;
         if (selectedService && petSize) {
@@ -345,7 +378,8 @@ export const useBookingStore = create<BookingStore>()(
         }
 
         const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
-        const totalPrice = servicePrice + addonsTotal;
+        const adjustmentsTotal = priceAdjustments.reduce((sum, adj) => sum + adj.amount, 0);
+        const totalPrice = Math.max(0, servicePrice + addonsTotal + adjustmentsTotal);
 
         set({ servicePrice, addonsTotal, totalPrice });
       },
@@ -401,3 +435,4 @@ export const useBookingResult = () =>
     bookingId: state.bookingId,
     bookingReference: state.bookingReference,
   }));
+export const usePriceAdjustments = () => useBookingStore((state) => state.priceAdjustments);

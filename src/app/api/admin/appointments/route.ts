@@ -6,7 +6,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { getTodayInBusinessTimezone } from '@/lib/utils/timezone';
@@ -344,6 +344,12 @@ const CreateAppointmentSchema = z.object({
     .optional(),
   send_notification: z.boolean().default(true),
   source: z.enum(['walk_in', 'phone', 'online', 'admin']).optional(), // Track appointment creation source
+  // New: price adjustments created during booking
+  price_adjustments: z.array(z.object({
+    label: z.string().min(1).max(100),
+    amount: z.number().refine((n) => n !== 0, { message: 'Amount cannot be zero' }),
+    note: z.string().max(500).optional(),
+  })).default([]),
 });
 
 /**
@@ -603,6 +609,15 @@ export async function POST(request: NextRequest) {
     // 4. Create appointment
     const scheduledAt = new Date(`${data.appointment_date}T${data.appointment_time}:00`);
 
+    // Determine status based on date: backdated appointments are auto-completed
+    const now = new Date();
+    const isBackdated = scheduledAt < now;
+    const appointmentStatus = data.source === 'walk_in'
+      ? 'in_progress'
+      : isBackdated
+        ? 'completed'
+        : 'pending';
+
     // Generate unique booking reference
     const { randomBytes } = await import('crypto');
     const generateBookingReference = (): string => {
@@ -644,7 +659,7 @@ export async function POST(request: NextRequest) {
         groomer_id: data.groomer_id || null,
         scheduled_at: scheduledAt.toISOString(),
         duration_minutes: service.duration_minutes,
-        status: data.source === 'walk_in' ? 'in_progress' : 'pending',
+        status: appointmentStatus,
         payment_status: data.payment_status,
         total_price: priceBreakdown.total,
         notes: data.notes || null,
@@ -709,11 +724,43 @@ export async function POST(request: NextRequest) {
           throw new Error(`Failed to create payment record: ${paymentError.message}`);
         }
       }
+
+      // 7. Insert price adjustments (in parallel)
+      if (data.price_adjustments.length > 0) {
+        const adjustmentRecords = data.price_adjustments.map((adj) => ({
+          appointment_id: appointment.id,
+          label: adj.label,
+          amount: adj.amount,
+          note: adj.note || null,
+          created_by: adminUser.id,
+        }));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: adjError } = await (supabase as any)
+          .from('appointment_price_adjustments')
+          .insert(adjustmentRecords);
+        if (adjError) {
+          throw new Error(`Failed to create price adjustments: ${adjError.message}`);
+        }
+
+        // Recalculate total with adjustments and update the appointment
+        const adjustmentsTotal = data.price_adjustments.reduce((sum, a) => sum + a.amount, 0);
+        const adjustedTotal = Math.max(0, priceBreakdown.total + adjustmentsTotal);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('appointments')
+          .update({ total_price: adjustedTotal })
+          .eq('id', appointment.id);
+      }
     } catch (criticalError) {
       // Rollback: delete the appointment and any addons that may have been created
       console.error('[Create Appointment] Critical operation failed, rolling back appointment:', criticalError);
       try {
-        // Delete addons first (foreign key dependency)
+        // Delete price adjustments first
+        await supabase
+          .from('appointment_price_adjustments')
+          .delete()
+          .eq('appointment_id', appointment.id);
+        // Delete addons (foreign key dependency)
         await supabase
           .from('appointment_addons')
           .delete()
@@ -740,8 +787,8 @@ export async function POST(request: NextRequest) {
     // --- Non-critical operations (fire-and-forget) ---
     // These should not block the response or cause the appointment creation to fail.
 
-    // 7. Send notifications (customer + admin) in parallel
-    {
+    // 8. Send notifications (customer + admin) — non-blocking via after()
+    after(async () => {
       const notificationPromises: Promise<unknown>[] = [];
       const source = data.source === 'walk_in' ? 'walk_in' as const : 'admin' as const;
 
@@ -792,9 +839,9 @@ export async function POST(request: NextRequest) {
         // Log but do not fail the appointment creation
         console.error('[Admin Appointments] Notification trigger failed:', notifError);
       }
-    }
+    });
 
-    // 8. Trigger calendar sync (auto-sync) - Task 0025
+    // 9. Trigger calendar sync (auto-sync) - Task 0025
     // This runs asynchronously and won't block the response
     try {
       const { triggerAutoSyncInBackground } = await import(

@@ -58,19 +58,27 @@ export function ProductivityWidget({
         ? Math.round(((completed + inProgress) / Math.min(total, MAX_DAILY_SLOTS)) * 100)
         : 0;
 
-    // Prefer API-provided revenue data; fall back to summing the array
-    let completedRevenue: number;
-    if (revenueData?.today?.completed !== undefined) {
-      completedRevenue = revenueData.today.completed;
+    // Revenue: use all statuses excluding cancelled/no_show
+    const activeAppts = appointments.filter(
+      (a) => a.status !== 'cancelled' && a.status !== 'no_show'
+    );
+    const activeCount = activeAppts.length;
+
+    let totalRevenue: number;
+    if (revenueData?.today?.total !== undefined) {
+      totalRevenue = revenueData.today.total;
     } else {
-      completedRevenue = completedAppts.reduce(
+      totalRevenue = activeAppts.reduce(
         (sum, a) => sum + (a.total_price ?? 0),
         0
       );
     }
 
-    const avgRevenue = completed > 0 ? completedRevenue / completed : 0;
+    const avgRevenue = activeCount > 0 ? totalRevenue / activeCount : 0;
     const strokeDashoffset = RING_CIRCUMFERENCE * (1 - completedRatio);
+
+    const cancelledCount = appointments.filter((a) => a.status === 'cancelled').length;
+    const noShowCount = appointments.filter((a) => a.status === 'no_show').length;
 
     return {
       total,
@@ -79,6 +87,8 @@ export function ProductivityWidget({
       capacityPct,
       avgRevenue,
       strokeDashoffset,
+      cancelledCount,
+      noShowCount,
     };
   }, [appointments, revenueData]);
 
@@ -156,7 +166,7 @@ export function ProductivityWidget({
         </svg>
       </div>
 
-      {/* Stats row */}
+      {/* Stats rows */}
       <div className="flex justify-between">
         <div className="flex flex-col gap-0.5">
           <span className="text-xs text-[#434E54]/60">Capacity</span>
@@ -169,6 +179,19 @@ export function ProductivityWidget({
           </span>
         </div>
       </div>
+
+      {(stats.cancelledCount > 0 || stats.noShowCount > 0) && (
+        <div className="flex justify-between mt-3 pt-3 border-t border-[#EAE0D5]">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs text-[#434E54]/60">Cancelled</span>
+            <span className="text-sm font-semibold text-red-500">{stats.cancelledCount}</span>
+          </div>
+          <div className="flex flex-col gap-0.5 items-end">
+            <span className="text-xs text-[#434E54]/60">No-Show</span>
+            <span className="text-sm font-semibold text-amber-500">{stats.noShowCount}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

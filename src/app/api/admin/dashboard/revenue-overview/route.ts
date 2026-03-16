@@ -24,20 +24,24 @@ export interface RevenueOverviewResponse {
     changePercent: number | null; // % change vs yesterday's total, null if no yesterday data
   };
   thisWeek: {
-    total: number;       // Sum of total_price for current Mon-Sat
-    changePercent: number | null; // % change vs last week's total
+    completed: number;
+    pending: number;
+    total: number;
+    changePercent: number | null;
   };
   thisMonth: {
-    total: number;       // Sum of total_price for current calendar month
-    changePercent: number | null; // % change vs last month's total
+    completed: number;
+    pending: number;
+    total: number;
+    changePercent: number | null;
   };
 }
 
 // Static mock data for development/mock mode
 const MOCK_RESPONSE: RevenueOverviewResponse = {
   today: { completed: 220, pending: 100, total: 320, changePercent: 12 },
-  thisWeek: { total: 1840, changePercent: 8 },
-  thisMonth: { total: 6200, changePercent: 5 },
+  thisWeek: { completed: 1200, pending: 640, total: 1840, changePercent: 8 },
+  thisMonth: { completed: 4800, pending: 1400, total: 6200, changePercent: 5 },
 };
 
 /**
@@ -123,7 +127,7 @@ export async function GET() {
       0, 0, 0, 0
     );
     const thisWeekStart = fromZonedTime(thisWeekMonday, BUSINESS_TIMEZONE).toISOString();
-    const thisWeekEnd = now.toISOString();
+    const thisWeekEnd = todayEnd; // Include all of today's appointments
 
     // --- LAST WEEK same range (Monday - same day last week) ---
     const lastWeekMonday = new Date(thisWeekMonday);
@@ -151,7 +155,7 @@ export async function GET() {
       0, 0, 0, 0
     );
     const thisMonthStart = fromZonedTime(thisMonthFirst, BUSINESS_TIMEZONE).toISOString();
-    const thisMonthEnd = now.toISOString();
+    const thisMonthEnd = todayEnd; // Include all of today's appointments
 
     // --- LAST MONTH same day range ---
     const lastMonthFirst = new Date(
@@ -176,17 +180,21 @@ export async function GET() {
       todayCompleted,
       todayPending,
       yesterdayTotal,
-      thisWeekTotal,
+      thisWeekCompleted,
+      thisWeekPending,
       lastWeekTotal,
-      thisMonthTotal,
+      thisMonthCompleted,
+      thisMonthPending,
       lastMonthTotal,
     ] = await Promise.all([
       sumRevenue(serviceClient, todayStart, todayEnd, ['completed']),
       sumRevenue(serviceClient, todayStart, todayEnd, ['pending', 'confirmed', 'in_progress']),
       sumRevenue(serviceClient, yesterdayStart, yesterdayEnd),
-      sumRevenue(serviceClient, thisWeekStart, thisWeekEnd),
+      sumRevenue(serviceClient, thisWeekStart, thisWeekEnd, ['completed']),
+      sumRevenue(serviceClient, thisWeekStart, thisWeekEnd, ['pending', 'confirmed', 'in_progress']),
       sumRevenue(serviceClient, lastWeekStart, lastWeekEnd),
-      sumRevenue(serviceClient, thisMonthStart, thisMonthEnd),
+      sumRevenue(serviceClient, thisMonthStart, thisMonthEnd, ['completed']),
+      sumRevenue(serviceClient, thisMonthStart, thisMonthEnd, ['pending', 'confirmed', 'in_progress']),
       sumRevenue(serviceClient, lastMonthStart, lastMonthEnd),
     ]);
 
@@ -198,12 +206,16 @@ export async function GET() {
         changePercent: computeChangePercent(todayCompleted + todayPending, yesterdayTotal),
       },
       thisWeek: {
-        total: thisWeekTotal,
-        changePercent: computeChangePercent(thisWeekTotal, lastWeekTotal),
+        completed: thisWeekCompleted,
+        pending: thisWeekPending,
+        total: thisWeekCompleted + thisWeekPending,
+        changePercent: computeChangePercent(thisWeekCompleted + thisWeekPending, lastWeekTotal),
       },
       thisMonth: {
-        total: thisMonthTotal,
-        changePercent: computeChangePercent(thisMonthTotal, lastMonthTotal),
+        completed: thisMonthCompleted,
+        pending: thisMonthPending,
+        total: thisMonthCompleted + thisMonthPending,
+        changePercent: computeChangePercent(thisMonthCompleted + thisMonthPending, lastMonthTotal),
       },
     };
 

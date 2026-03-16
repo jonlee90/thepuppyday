@@ -44,7 +44,7 @@ export interface DashboardTimelineProps {
 // Constants
 // ---------------------------------------------------------------------------
 
-const HOUR_HEIGHT_PX = 80; // px per hour in the timeline
+const HOUR_HEIGHT_PX = 120; // px per hour in the timeline (enough for card height ~100px)
 const BUSINESS_START = BUSINESS_HOURS.start; // e.g. 9
 const BUSINESS_END = BUSINESS_HOURS.end;     // e.g. 17
 const TOTAL_HOURS = BUSINESS_END - BUSINESS_START;

@@ -14,7 +14,13 @@ import { GroomerSelect } from '../GroomerSelect';
 import { useAddons } from '@/hooks/useAddons';
 import { formatCurrency, formatDuration, getSizeLabel } from '@/lib/booking/pricing';
 import { formatTimeDisplay } from '@/lib/booking/availability';
+import dynamic from 'next/dynamic';
 import type { Addon } from '@/types/database';
+
+const PriceAdjustmentForm = dynamic(
+  () => import('../PriceAdjustmentForm').then((m) => m.PriceAdjustmentForm),
+  { ssr: false }
+);
 
 interface ReviewStepProps {
   onComplete?: () => Promise<void>;
@@ -48,11 +54,18 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
     setSelectedGroomerId,
     sendNotification,
     setSendNotification,
+    priceAdjustments,
+    addPriceAdjustment,
+    removePriceAdjustment,
     setStep,
     nextStep,
     prevStep,
     setBookingResult,
   } = useBookingStore();
+
+  // Derive today string during render for backdated check
+  const todayString = new Date().toISOString().split('T')[0];
+  const isBackdated = adminMode && selectedDate ? selectedDate < todayString : false;
 
   // Fetch add-ons for selection
   const { addons, isLoading: isLoadingAddons, getUpsellAddons } = useAddons();
@@ -157,6 +170,11 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
         appointment_time: selectedTimeSlot,
         payment_status: 'pending' as const,
         send_notification: sendNotification,
+        price_adjustments: priceAdjustments.map(({ label, amount, note }) => ({
+          label,
+          amount,
+          note,
+        })),
       };
 
       const response = await fetch('/api/admin/appointments', {
@@ -171,7 +189,7 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
       }
 
       const data = await response.json();
-      setBookingResult(data.appointment_id, data.appointment_id);
+      setBookingResult(data.appointment_id, data.booking_reference || data.appointment_id);
 
       return { success: true, appointmentId: data.appointment_id };
     } catch (error) {
@@ -247,6 +265,14 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
               <p className="text-xs text-[#434E54]/70 mt-0.5">
                 {selectedTimeSlot && formatTimeDisplay(selectedTimeSlot)}
               </p>
+              {isBackdated ? (
+                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  This appointment will be created with &apos;completed&apos; status
+                </p>
+              ) : null}
             </div>
             <button
               onClick={() => setStep(1)}
@@ -300,6 +326,16 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
                 <span className="text-[#434E54]">{formatCurrency(addon.price)}</span>
               </div>
             ))}
+            {priceAdjustments.map((adj) => (
+              <div key={adj.id} className="flex justify-between text-sm">
+                <span className="text-[#434E54]/70">{adj.label}</span>
+                <span className={adj.amount < 0 ? 'text-green-600' : 'text-[#434E54]'}>
+                  {adj.amount < 0
+                    ? `-${formatCurrency(Math.abs(adj.amount))}`
+                    : `+${formatCurrency(adj.amount)}`}
+                </span>
+              </div>
+            ))}
             <div className="border-t border-[#434E54]/20 pt-2 mt-2">
               <div className="flex justify-between items-center">
                 <span className="font-semibold text-[#434E54]">Total</span>
@@ -321,7 +357,7 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
       )}
 
       {/* Send confirmation email checkbox (Admin mode only) */}
-      {adminMode && (
+      {adminMode ? (
         <label className="flex items-center gap-3 cursor-pointer bg-white rounded-xl border border-[#434E54]/20 p-4">
           <input
             type="checkbox"
@@ -331,10 +367,23 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
           />
           <div>
             <span className="text-sm font-medium text-[#434E54]">Send confirmation email</span>
-            <p className="text-xs text-[#434E54]/60 mt-0.5">Customer will receive a booking confirmation email</p>
+            <p className="text-xs text-[#434E54]/60 mt-0.5">
+              {isBackdated
+                ? 'Unchecked by default for backdated appointments'
+                : 'Customer will receive a booking confirmation email'}
+            </p>
           </div>
         </label>
-      )}
+      ) : null}
+
+      {/* Price Adjustments (Admin mode only) */}
+      {adminMode ? (
+        <PriceAdjustmentForm
+          adjustments={priceAdjustments}
+          onAdd={addPriceAdjustment}
+          onRemove={removePriceAdjustment}
+        />
+      ) : null}
 
       {/* Add-ons Selection */}
       {!isLoadingAddons && addons.length > 0 && (
