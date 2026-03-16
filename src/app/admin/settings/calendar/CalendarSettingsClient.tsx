@@ -15,7 +15,6 @@ import { PausedSyncBanner } from '@/components/admin/calendar/PausedSyncBanner';
 import { SyncErrorRecovery } from '@/components/admin/calendar/SyncErrorRecovery';
 import { toast } from '@/hooks/use-toast';
 import {
-  connectServiceAccount,
   disconnectCalendar,
   updateSyncSettings,
   updateSelectedCalendar,
@@ -113,36 +112,6 @@ export function CalendarSettingsClient({
       toast.error(error instanceof Error ? error.message : 'Failed to resume auto-sync');
     }
   }, [connectionStatus.connection?.id, handleRefreshStatus]);
-
-  const handleConnect = useCallback(async (
-    credentials: string,
-    calendarId: string
-  ): Promise<{ success: boolean; error?: string }> => {
-    setIsLoading(true);
-    try {
-      const result = await connectServiceAccount(credentials, calendarId);
-
-      if (!result.success) {
-        return {
-          success: false,
-          error: result.error || 'Failed to connect to Google Calendar',
-        };
-      }
-
-      toast.success('Google Calendar connected');
-      await handleRefreshStatus();
-
-      return { success: true };
-    } catch (error) {
-      console.error('Failed to connect calendar:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to connect calendar',
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [handleRefreshStatus]);
 
   const handleDisconnect = useCallback(async () => {
     setIsLoading(true);
@@ -309,7 +278,6 @@ export function CalendarSettingsClient({
       {/* Connection Card */}
       <CalendarConnectionCard
         connectionStatus={connectionStatus}
-        onConnect={handleConnect}
         onDisconnect={handleDisconnect}
         isLoading={isLoading}
       />

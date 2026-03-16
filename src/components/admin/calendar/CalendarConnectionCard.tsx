@@ -7,19 +7,17 @@
 
 import { useState } from 'react';
 import { CheckCircle2, XCircle, AlertTriangle, Calendar as CalendarIcon, Lock } from 'lucide-react';
-import { ServiceAccountConnect } from './ServiceAccountConnect';
+import { GoogleOAuthButton } from './GoogleOAuthButton';
 import type { CalendarConnectionStatus } from '@/types/calendar';
 
 interface CalendarConnectionCardProps {
   connectionStatus: CalendarConnectionStatus;
-  onConnect: (credentials: string, calendarId: string) => Promise<{ success: boolean; error?: string }>;
   onDisconnect: () => void;
   isLoading?: boolean;
 }
 
 export function CalendarConnectionCard({
   connectionStatus,
-  onConnect,
   onDisconnect,
   isLoading = false,
 }: CalendarConnectionCardProps) {
@@ -80,7 +78,7 @@ export function CalendarConnectionCard({
                 'Two-way sync with Google Calendar',
                 'Automatic appointment updates',
                 'Reduce scheduling conflicts',
-                'Secure server-to-server authentication',
+                'Secure OAuth 2.0 authentication',
               ].map((benefit, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-[#10B981] flex-shrink-0" />
@@ -90,15 +88,12 @@ export function CalendarConnectionCard({
             </div>
           </div>
 
-          <ServiceAccountConnect
-            onConnect={onConnect}
-            isConnecting={isLoading}
-          />
+          <GoogleOAuthButton fullWidth disabled={isLoading} />
 
           <div className="flex items-start gap-2 p-3 bg-[#F8EEE5] rounded-lg mt-4">
             <Lock className="w-4 h-4 text-[#9CA3AF] flex-shrink-0 mt-0.5" />
             <p className="text-sm text-[#9CA3AF]">
-              Your service account credentials are encrypted and stored securely. They are only used to sync appointments with your Google Calendar.
+              Your calendar credentials are stored securely and only used to sync appointments with your Google Calendar.
             </p>
           </div>
         </div>
@@ -152,10 +147,7 @@ export function CalendarConnectionCard({
 
           <div className="mt-6">
             <h3 className="font-medium text-[#434E54] mb-4">Reconnect Google Calendar</h3>
-            <ServiceAccountConnect
-              onConnect={onConnect}
-              isConnecting={isLoading}
-            />
+            <GoogleOAuthButton variant="secondary" disabled={isLoading} />
           </div>
         </div>
       </div>
