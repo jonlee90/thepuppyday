@@ -59,23 +59,32 @@ export async function pushAppointmentToCalendar(
       };
     }
 
-    // Get the admin's calendar connection for syncing
-    const { data: adminUser } = await supabase.auth.getUser();
-
-    if (!adminUser.user) {
-      return {
-        success: false,
-        operation: 'create',
-        appointment_id: appointment.id,
-        error: {
-          code: 'AUTH_ERROR',
-          message: 'No authenticated admin user',
-        },
-        duration_ms: Date.now() - startTime,
-      };
+    // Get any active calendar connection for syncing
+    // First try authenticated user, then fall back to any active connection
+    let adminId: string | null = null;
+    try {
+      const { data: adminUser } = await supabase.auth.getUser();
+      adminId = adminUser.user?.id ?? null;
+    } catch {
+      // No authenticated user (e.g. customer booking) — will use fallback
     }
 
-    const adminConnection = await getActiveConnection(supabase, adminUser.user.id);
+    let adminConnection: Awaited<ReturnType<typeof getActiveConnection>> = null;
+    if (adminId) {
+      adminConnection = await getActiveConnection(supabase, adminId);
+    }
+
+    // Fallback: find any active connection
+    if (!adminConnection) {
+      const { data: anyConnection } = await supabase
+        .from('calendar_connections')
+        .select('*')
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+
+      adminConnection = anyConnection as Awaited<ReturnType<typeof getActiveConnection>>;
+    }
 
     if (!adminConnection) {
       return {
