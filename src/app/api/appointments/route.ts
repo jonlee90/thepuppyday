@@ -358,11 +358,11 @@ export async function POST(req: NextRequest) {
       const pet = appointment.pet as unknown as { id: string; name: string };
       const service = appointment.service as unknown as { id: string; name: string };
 
-      const { triggerBookingConfirmation } = await import(
+      const { triggerBookingConfirmation, triggerAdminNewBooking } = await import(
         '@/lib/notifications/triggers'
       );
 
-      const notificationResult = await triggerBookingConfirmation(supabase, {
+      const customerNotificationData = {
         appointmentId: appointment.id,
         customerId: customer.id,
         customerName: `${customer.first_name} ${customer.last_name}`,
@@ -375,7 +375,24 @@ export async function POST(req: NextRequest) {
         addons: validated.addon_ids && validated.addon_ids.length > 0
           ? (addons ?? []).map((a: { name: string; price: number }) => ({ name: a.name, price: a.price }))
           : undefined,
-      });
+      };
+
+      const [notificationResult] = await Promise.all([
+        triggerBookingConfirmation(supabase, customerNotificationData),
+        triggerAdminNewBooking(supabase, {
+          appointmentId: appointment.id,
+          customerName: `${customer.first_name} ${customer.last_name}`,
+          customerEmail: customer.email,
+          customerPhone: customer.phone,
+          petName: pet.name,
+          serviceName: service.name,
+          scheduledAt: appointment.scheduled_at,
+          totalPrice: appointment.total_price,
+          addons: customerNotificationData.addons,
+          bookingReference: reference,
+          source: 'website',
+        }),
+      ]);
 
       if (!notificationResult.success) {
         console.error(

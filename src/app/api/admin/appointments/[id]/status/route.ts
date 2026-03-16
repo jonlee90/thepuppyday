@@ -317,20 +317,47 @@ export async function POST(
                 totalPrice,
               });
             } else if (newStatus === 'cancelled') {
-              const { triggerAppointmentCancelled } = await import('@/lib/notifications/triggers');
+              const { triggerAppointmentCancelled, triggerAdminCancellation } = await import('@/lib/notifications/triggers');
               const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-              await triggerAppointmentCancelled(serviceClient, {
+              await Promise.all([
+                triggerAppointmentCancelled(serviceClient, {
+                  appointmentId: id,
+                  customerId: appointment.customer_id,
+                  customerName: `${customer.first_name} ${customer.last_name}`,
+                  customerEmail: customer.email,
+                  customerPhone: customer.phone,
+                  petName: pet.name,
+                  serviceName: service.name,
+                  scheduledAt: appointment.scheduled_at,
+                  cancellationReason,
+                  cancelledBy: 'admin',
+                  rebookUrl: `${baseUrl}/booking`,
+                }),
+                triggerAdminCancellation(serviceClient, {
+                  appointmentId: id,
+                  customerName: `${customer.first_name} ${customer.last_name}`,
+                  customerEmail: customer.email,
+                  petName: pet.name,
+                  serviceName: service.name,
+                  scheduledAt: appointment.scheduled_at,
+                  cancellationReason,
+                  cancelledBy: 'admin',
+                  bookingReference: (appointment as any).booking_reference,
+                }),
+              ]);
+            } else if (newStatus === 'no_show') {
+              const { triggerAdminNoShow } = await import('@/lib/notifications/triggers');
+              const noShowCount = ((customer.preferences as any)?.no_show_count || 0) + 1;
+              await triggerAdminNoShow(serviceClient, {
                 appointmentId: id,
-                customerId: appointment.customer_id,
                 customerName: `${customer.first_name} ${customer.last_name}`,
                 customerEmail: customer.email,
                 customerPhone: customer.phone,
                 petName: pet.name,
                 serviceName: service.name,
                 scheduledAt: appointment.scheduled_at,
-                cancellationReason,
-                cancelledBy: 'admin',
-                rebookUrl: `${baseUrl}/booking`,
+                noShowCount: noShowCount,
+                bookingReference: (appointment as any).booking_reference,
               });
             }
           }

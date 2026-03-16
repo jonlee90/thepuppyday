@@ -1138,6 +1138,204 @@ export function createWaitlistAvailableEmail(data: WaitlistAvailableEmailData): 
 }
 
 // ============================================================================
+// ADMIN NOTIFICATION TYPES
+// ============================================================================
+
+export interface AdminNewBookingData {
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string;
+  pet_name: string;
+  service_name: string;
+  appointment_date: string;
+  appointment_time: string;
+  total_price: string;
+  addons?: BookingConfirmationAddon[];
+  booking_reference: string;
+  source: 'website' | 'admin' | 'walk_in';
+}
+
+export interface AdminCancellationData {
+  customer_name: string;
+  pet_name: string;
+  service_name: string;
+  appointment_date: string;
+  appointment_time: string;
+  cancellation_reason?: string;
+  cancelled_by: string;
+  booking_reference?: string;
+}
+
+export interface AdminNoShowData {
+  customer_name: string;
+  customer_phone: string;
+  pet_name: string;
+  service_name: string;
+  appointment_date: string;
+  appointment_time: string;
+  no_show_count: number;
+  booking_reference?: string;
+}
+
+// ============================================================================
+// ADMIN NEW BOOKING EMAIL
+// ============================================================================
+
+function generateAdminNewBookingContent(data: AdminNewBookingData): string {
+  const sourceLabel = data.source === 'website' ? 'Website' : data.source === 'admin' ? 'Admin' : 'Walk-in';
+
+  return createCard(`
+    ${createPetHero(data.pet_name, 'New Booking')}
+
+    <h2 style="color: #434E54; margin: 0 0 8px 0;">New Booking Received</h2>
+    <p style="color: #434E54; margin: 0 0 24px 0;">A new grooming appointment has been booked.</p>
+
+    ${createDivider()}
+
+    ${createContentBox(`
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        ${createInfoRow('Customer', data.customer_name)}
+        ${createInfoRow('Phone', data.customer_phone)}
+        ${createInfoRow('Email', data.customer_email)}
+        ${createInfoRow('Pet', data.pet_name)}
+        ${createInfoRow('Service', data.service_name)}
+        ${data.addons && data.addons.length > 0 ? data.addons.map(addon =>
+          createInfoRow('Add-on', `${escapeHtml(addon.name)} — $${addon.price.toFixed(2)}`)
+        ).join('') : ''}
+        ${createInfoRow('Date & Time', `${data.appointment_date} at ${data.appointment_time}`)}
+        ${createInfoRow('Total', data.total_price)}
+        ${createInfoRow('Source', sourceLabel)}
+        ${createInfoRow('Reference', data.booking_reference)}
+      </table>
+    `)}
+
+    ${createPrimaryCTA('View Appointments', `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/admin/appointments`)}
+  `);
+}
+
+function generateAdminNewBookingText(data: AdminNewBookingData): string {
+  const sourceLabel = data.source === 'website' ? 'Website' : data.source === 'admin' ? 'Admin' : 'Walk-in';
+  return `
+NEW BOOKING - Puppy Day
+
+Customer: ${data.customer_name}
+Phone: ${data.customer_phone}
+Email: ${data.customer_email}
+Pet: ${data.pet_name}
+Service: ${data.service_name}${data.addons && data.addons.length > 0 ? '\n' + data.addons.map(a => `Add-on: ${a.name} — $${a.price.toFixed(2)}`).join('\n') : ''}
+Date & Time: ${data.appointment_date} at ${data.appointment_time}
+Total: ${data.total_price}
+Source: ${sourceLabel}
+Reference: ${data.booking_reference}
+  `.trim();
+}
+
+export function createAdminNewBookingEmail(data: AdminNewBookingData): EmailTemplate {
+  const contentHtml = generateAdminNewBookingContent(data);
+  const { html } = wrapEmailContent(contentHtml, { mood: 'celebration', moodTitle: 'New Booking!' });
+  const text = generateAdminNewBookingText(data);
+  const subject = `New Booking: ${escapeHtml(data.pet_name)} — ${escapeHtml(data.service_name)}`;
+  return { html, text, subject };
+}
+
+// ============================================================================
+// ADMIN CANCELLATION EMAIL
+// ============================================================================
+
+function generateAdminCancellationContent(data: AdminCancellationData): string {
+  return createCard(`
+    <h2 style="color: #434E54; margin: 0 0 8px 0;">Appointment Cancelled</h2>
+    <p style="color: #434E54; margin: 0 0 24px 0;">An appointment has been cancelled.</p>
+
+    ${createDivider()}
+
+    ${createContentBox(`
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        ${createInfoRow('Customer', data.customer_name)}
+        ${createInfoRow('Pet', data.pet_name)}
+        ${createInfoRow('Service', data.service_name)}
+        ${createInfoRow('Date & Time', `${data.appointment_date} at ${data.appointment_time}`)}
+        ${data.cancellation_reason ? createInfoRow('Reason', data.cancellation_reason) : ''}
+        ${createInfoRow('Cancelled By', data.cancelled_by)}
+        ${data.booking_reference ? createInfoRow('Reference', data.booking_reference) : ''}
+      </table>
+    `)}
+
+    ${createPrimaryCTA('View Appointments', `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/admin/appointments`)}
+  `);
+}
+
+function generateAdminCancellationText(data: AdminCancellationData): string {
+  return `
+APPOINTMENT CANCELLED - Puppy Day
+
+Customer: ${data.customer_name}
+Pet: ${data.pet_name}
+Service: ${data.service_name}
+Date & Time: ${data.appointment_date} at ${data.appointment_time}${data.cancellation_reason ? `\nReason: ${data.cancellation_reason}` : ''}
+Cancelled By: ${data.cancelled_by}${data.booking_reference ? `\nReference: ${data.booking_reference}` : ''}
+  `.trim();
+}
+
+export function createAdminCancellationEmail(data: AdminCancellationData): EmailTemplate {
+  const contentHtml = generateAdminCancellationContent(data);
+  const { html } = wrapEmailContent(contentHtml, { mood: 'warning', moodTitle: 'Cancellation' });
+  const text = generateAdminCancellationText(data);
+  const subject = `Cancelled: ${escapeHtml(data.pet_name)} — ${escapeHtml(data.service_name)}`;
+  return { html, text, subject };
+}
+
+// ============================================================================
+// ADMIN NO-SHOW EMAIL
+// ============================================================================
+
+function generateAdminNoShowContent(data: AdminNoShowData): string {
+  return createCard(`
+    <h2 style="color: #434E54; margin: 0 0 8px 0;">No-Show Recorded</h2>
+    <p style="color: #434E54; margin: 0 0 24px 0;">A customer did not show up for their appointment.</p>
+
+    ${createDivider()}
+
+    ${createContentBox(`
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        ${createInfoRow('Customer', data.customer_name)}
+        ${createInfoRow('Phone', data.customer_phone)}
+        ${createInfoRow('Pet', data.pet_name)}
+        ${createInfoRow('Service', data.service_name)}
+        ${createInfoRow('Date & Time', `${data.appointment_date} at ${data.appointment_time}`)}
+        ${createInfoRow('No-Show Count', String(data.no_show_count))}
+        ${data.booking_reference ? createInfoRow('Reference', data.booking_reference) : ''}
+      </table>
+    `)}
+
+    ${data.no_show_count >= 3 ? createTip('This customer has multiple no-shows. Consider flagging them for follow-up or requiring a deposit for future bookings.') : ''}
+
+    ${createPrimaryCTA('View Customers', `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/admin/customers`)}
+  `);
+}
+
+function generateAdminNoShowText(data: AdminNoShowData): string {
+  return `
+NO-SHOW - Puppy Day
+
+Customer: ${data.customer_name}
+Phone: ${data.customer_phone}
+Pet: ${data.pet_name}
+Service: ${data.service_name}
+Date & Time: ${data.appointment_date} at ${data.appointment_time}
+No-Show Count: ${data.no_show_count}${data.booking_reference ? `\nReference: ${data.booking_reference}` : ''}${data.no_show_count >= 3 ? '\n\nNote: This customer has multiple no-shows. Consider flagging them for follow-up.' : ''}
+  `.trim();
+}
+
+export function createAdminNoShowEmail(data: AdminNoShowData): EmailTemplate {
+  const contentHtml = generateAdminNoShowContent(data);
+  const { html } = wrapEmailContent(contentHtml, { mood: 'warning', moodTitle: 'No-Show' });
+  const text = generateAdminNoShowText(data);
+  const subject = `No-Show: ${escapeHtml(data.pet_name)} — ${escapeHtml(data.service_name)}`;
+  return { html, text, subject };
+}
+
+// ============================================================================
 // EXPORT ALL TEMPLATE GENERATORS
 // ============================================================================
 
@@ -1155,4 +1353,7 @@ export const emailTemplates = {
   reviewRequest: createReviewRequestEmail,
   waitlistAdded: createWaitlistAddedEmail,
   waitlistAvailable: createWaitlistAvailableEmail,
+  adminNewBooking: createAdminNewBookingEmail,
+  adminCancellation: createAdminCancellationEmail,
+  adminNoShow: createAdminNoShowEmail,
 };

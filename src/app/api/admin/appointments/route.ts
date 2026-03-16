@@ -12,7 +12,7 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { getTodayInBusinessTimezone } from '@/lib/utils/timezone';
 import { z } from 'zod';
 import { calculatePrice } from '@/lib/booking/pricing';
-import { triggerBookingConfirmation } from '@/lib/notifications/triggers/booking-confirmation';
+import { triggerBookingConfirmation, triggerAdminNewBooking } from '@/lib/notifications/triggers';
 import { generateWalkinEmail } from '@/lib/utils';
 import type { Appointment, User, Pet, Service, PetSize, ServiceWithPrices, Addon } from '@/types/database';
 import type { CreateAppointmentResponse } from '@/types/admin-appointments';
@@ -740,13 +740,37 @@ export async function POST(request: NextRequest) {
     // --- Non-critical operations (fire-and-forget) ---
     // These should not block the response or cause the appointment creation to fail.
 
-    // 7. Send notification only to active customers
-    if (data.send_notification && customerStatus === 'active') {
-      try {
+    // 7. Send notifications (customer + admin) in parallel
+    {
+      const notificationPromises: Promise<unknown>[] = [];
+      const source = data.source === 'walk_in' ? 'walk_in' as const : 'admin' as const;
+
+      // Customer notification only for active customers who opted in
+      if (data.send_notification && customerStatus === 'active') {
+        notificationPromises.push(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          triggerBookingConfirmation(supabase as any, {
+            appointmentId: appointment.id,
+            customerId: customerId,
+            customerName: `${data.customer.first_name} ${data.customer.last_name}`,
+            customerEmail: data.customer.email || '',
+            customerPhone: data.customer.phone || null,
+            petName: data.pet.name,
+            serviceName: service.name,
+            scheduledAt: appointment.scheduled_at,
+            totalPrice: appointment.total_price || 0,
+            addons: addons.length > 0
+              ? addons.map((a) => ({ name: a.name, price: a.price }))
+              : undefined,
+          })
+        );
+      }
+
+      // Admin notification always
+      notificationPromises.push(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await triggerBookingConfirmation(supabase as any, {
+        triggerAdminNewBooking(supabase as any, {
           appointmentId: appointment.id,
-          customerId: customerId,
           customerName: `${data.customer.first_name} ${data.customer.last_name}`,
           customerEmail: data.customer.email || '',
           customerPhone: data.customer.phone || null,
@@ -757,7 +781,13 @@ export async function POST(request: NextRequest) {
           addons: addons.length > 0
             ? addons.map((a) => ({ name: a.name, price: a.price }))
             : undefined,
-        });
+          bookingReference: bookingReference,
+          source,
+        })
+      );
+
+      try {
+        await Promise.all(notificationPromises);
       } catch (notifError) {
         // Log but do not fail the appointment creation
         console.error('[Admin Appointments] Notification trigger failed:', notifError);
