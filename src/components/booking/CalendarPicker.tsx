@@ -44,21 +44,24 @@ export function CalendarPicker({
 
   // Calculate min and max dates
   const minDateObj = useMemo(() => {
+    if (minDate === 'none') return null;
     if (minDate) {
       const [year, month, day] = minDate.split('-').map(Number);
       return new Date(year, month - 1, day);
     }
-    // No minDate = no lower bound (allow past dates for admin)
-    return null;
+    return today;
   }, [minDate]);
 
   const maxDateObj = useMemo(() => {
+    if (maxDate === 'none') return null;
     if (maxDate) {
       const [year, month, day] = maxDate.split('-').map(Number);
       return new Date(year, month - 1, day);
     }
-    // No maxDate = no upper bound
-    return null;
+    // Default to 2 months ahead
+    const max = new Date(today);
+    max.setMonth(max.getMonth() + 2);
+    return max;
   }, [maxDate]);
 
   // Generate calendar days

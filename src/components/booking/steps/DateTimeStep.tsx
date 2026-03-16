@@ -185,8 +185,8 @@ export function DateTimeStep() {
             selectedDate={selectedDate}
             onDateSelect={handleDateSelect}
             disabledDates={isAdmin ? [] : disabledDates}
-            minDate={isAdmin ? undefined : minDate}
-            maxDate={isAdmin ? undefined : maxDate}
+            minDate={isAdmin ? 'none' : minDate}
+            maxDate={isAdmin ? 'none' : maxDate}
           />
         </div>
 
