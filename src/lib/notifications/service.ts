@@ -353,8 +353,13 @@ export class DefaultNotificationService implements NotificationService {
       ? this.templateEngine.render(template.subject_template, data)
       : undefined;
 
-    const html = template.html_template
-      ? wrapEmailContent(this.templateEngine.render(template.html_template, data)).html
+    const renderedHtml = template.html_template
+      ? this.templateEngine.render(template.html_template, data)
+      : undefined;
+
+    // Skip wrapping if HTML is already a full document (pre-rendered by trigger)
+    const html = renderedHtml
+      ? (renderedHtml.trimStart().startsWith('<!DOCTYPE') ? renderedHtml : wrapEmailContent(renderedHtml).html)
       : undefined;
 
     const text = this.templateEngine.render(template.text_template, data);
