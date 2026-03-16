@@ -85,7 +85,7 @@ export async function updateSyncSettings(
         key: 'calendar_sync_settings',
         value: settings,
         updated_at: new Date().toISOString(),
-      });
+      }, { onConflict: 'key' });
 
     if (error) {
       throw new Error(`Failed to update settings: ${error.message}`);
