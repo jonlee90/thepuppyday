@@ -429,7 +429,7 @@ export function BookingModal({
 
           {/* Modal Container - Mobile (Bottom Sheet) */}
           <motion.div
-            className="fixed inset-x-0 bottom-0 z-50 sm:hidden pointer-events-none"
+            className="fixed inset-0 z-50 sm:hidden pointer-events-none"
             variants={overlayVariants}
             initial="hidden"
             animate="visible"
@@ -437,7 +437,7 @@ export function BookingModal({
           >
             <motion.div
               ref={modalRef}
-              className="relative w-full h-[92vh] bg-[#FFFBF7] rounded-t-[20px] shadow-[0_-25px_50px_-12px_rgba(67,78,84,0.25)] overflow-hidden flex flex-col pointer-events-auto"
+              className="relative w-full h-full bg-[#FFFBF7] shadow-[0_-25px_50px_-12px_rgba(67,78,84,0.25)] overflow-hidden flex flex-col pointer-events-auto"
               variants={mobileModalVariants}
               initial="hidden"
               animate="visible"
