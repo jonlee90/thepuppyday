@@ -87,11 +87,13 @@ export async function GET(request: NextRequest) {
     try {
       tokens = await exchangeCodeForTokens(code);
     } catch (error) {
-      console.error('[Calendar OAuth Callback] Token exchange failed:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[Calendar OAuth Callback] Token exchange failed:', errorMsg);
       const redirectUrl = new URL(
         '/admin/settings?tab=calendar&error=token_exchange_failed',
         process.env.NEXT_PUBLIC_APP_URL!
       );
+      redirectUrl.searchParams.set('detail', errorMsg.substring(0, 200));
       return NextResponse.redirect(redirectUrl);
     }
 
@@ -142,13 +144,11 @@ export async function GET(request: NextRequest) {
       );
       return NextResponse.redirect(redirectUrl);
     } catch (error) {
-      console.error('[Calendar OAuth Callback] Failed to create connection:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[Calendar OAuth Callback] Failed to create connection:', errorMsg, error);
 
       // Check if error is due to existing connection
-      if (
-        error instanceof Error &&
-        error.message.includes('already exists')
-      ) {
+      if (errorMsg.includes('already exists')) {
         const redirectUrl = new URL(
           '/admin/settings?tab=calendar&error=already_connected',
           process.env.NEXT_PUBLIC_APP_URL!
@@ -160,15 +160,18 @@ export async function GET(request: NextRequest) {
         '/admin/settings?tab=calendar&error=connection_failed',
         process.env.NEXT_PUBLIC_APP_URL!
       );
+      redirectUrl.searchParams.set('detail', errorMsg.substring(0, 200));
       return NextResponse.redirect(redirectUrl);
     }
   } catch (error) {
-    console.error('[Calendar OAuth Callback] Unexpected error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Calendar OAuth Callback] Unexpected error:', errorMsg, error);
 
     const redirectUrl = new URL(
       '/admin/settings?tab=calendar&error=server_error',
       process.env.NEXT_PUBLIC_APP_URL!
     );
+    redirectUrl.searchParams.set('detail', errorMsg.substring(0, 200));
     return NextResponse.redirect(redirectUrl);
   }
 }
