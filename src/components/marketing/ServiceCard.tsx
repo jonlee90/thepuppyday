@@ -60,7 +60,6 @@ const SERVICE_DATA: Record<string, {
       'Everything in Basic Groom',
       'Full haircut & breed-specific styling',
       'Paw pad & sanitary trim',
-      'Teeth brushing for fresh breath',
       'Finishing cologne spritz',
       'Bandana or bow',
     ],
@@ -69,9 +68,7 @@ const SERVICE_DATA: Record<string, {
     icon: Check,
     gradient: 'from-[#FFFBF7] to-[#F8EEE5]',
     addonServices: [
-      { name: 'Long Hair / Sporting', price: 10 },
       { name: 'Teeth Brushing', price: 10 },
-      { name: 'Pawdicure', price: 15 },
       { name: 'Flea & Tick Treatment', price: 25 },
       { name: 'Tangles / Matting (>20min)', priceRange: '5-30' },
     ],
