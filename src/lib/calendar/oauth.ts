@@ -11,7 +11,7 @@ import type { GoogleOAuthTokens } from '@/types/calendar';
  * Google Calendar API scopes required for the integration
  */
 export const GOOGLE_CALENDAR_SCOPES = [
-  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/userinfo.email',
 ] as const;
 
