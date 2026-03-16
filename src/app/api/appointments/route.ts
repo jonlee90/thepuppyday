@@ -319,14 +319,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Create appointment_addon records
+    let addons: { id: string; name: string; price: number }[] = [];
     if (validated.addon_ids && validated.addon_ids.length > 0) {
       // Get addon prices
-      const { data: addons } = await supabase
+      const { data: addonsData } = await supabase
         .from('addons')
         .select('*')
         .in('id', validated.addon_ids);
 
-      if (addons && addons.length > 0) {
+      addons = (addonsData ?? []) as { id: string; name: string; price: number }[];
+      if (addons.length > 0) {
         const addonInserts = addons.map((addon) => ({
           appointment_id: appointment.id,
           addon_id: addon.id,
@@ -373,7 +375,7 @@ export async function POST(req: NextRequest) {
         scheduledAt: appointment.scheduled_at,
         totalPrice: appointment.total_price,
         addons: validated.addon_ids && validated.addon_ids.length > 0
-          ? (addons ?? []).map((a: { name: string; price: number }) => ({ name: a.name, price: a.price }))
+          ? addons.map((a) => ({ name: a.name, price: a.price }))
           : undefined,
       };
 

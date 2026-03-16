@@ -362,7 +362,7 @@ const BlockedHourRangeSchema = z.object({
 export const BlockedDateSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  reason: z.string().min(1).max(200),
+  reason: z.string().max(200).default(''),
   blocked_hours: z.array(BlockedHourRangeSchema).optional(),
 });
 
