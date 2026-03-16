@@ -1358,9 +1358,24 @@ function generateGroomingCompleteContent(data: GroomingCompleteEmailData): strin
 
     ${createDivider()}
 
-    ${createPrimaryCTA('Leave Us a Yelp Review', data.yelp_url)}
-
-    ${createSecondaryCTA('Book Next Visit', data.rebook_url)}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td align="center" style="padding: 8px 0;">
+          <a href="${data.yelp_url}" target="_blank" style="background-color: #D4A574; color: #ffffff !important; text-decoration: none; padding: 14px 40px; border-radius: 50px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(212, 165, 116, 0.4); min-width: 220px; text-align: center;">
+            Leave Us a Yelp Review
+          </a>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td align="center" style="padding: 8px 0;">
+          <a href="${data.rebook_url}" target="_blank" style="background-color: transparent; color: #D4A574 !important; text-decoration: none; padding: 14px 40px; border-radius: 50px; border: 2px solid #D4A574; display: inline-block; font-weight: 600; font-size: 16px; min-width: 220px; text-align: center;">
+            Book Next Visit
+          </a>
+        </td>
+      </tr>
+    </table>
 
     ${createTip(`Regular grooming every 4-6 weeks keeps ${escapeHtml(data.pet_name)} healthy and happy!`)}
   `);
@@ -1375,10 +1390,10 @@ Hi ${escapeHtml(data.customer_name)},
 ${escapeHtml(data.pet_name)} is looking and feeling amazing after their ${escapeHtml(data.service_name)} session. Ready for pickup!
 
 If you enjoyed ${escapeHtml(data.pet_name)}'s grooming, we'd love a Yelp review:
-${escapeHtml(data.yelp_url)}
+${data.yelp_url}
 
 Book Next Visit:
-${escapeHtml(data.rebook_url)}
+${data.rebook_url}
 
 Tip: Regular grooming every 4-6 weeks keeps ${escapeHtml(data.pet_name)} healthy and happy!
 
