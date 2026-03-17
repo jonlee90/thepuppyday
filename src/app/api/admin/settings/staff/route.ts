@@ -150,11 +150,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Production Supabase query
+    // Production Supabase query (exclude owner admin from groomer lists)
     let query = (serviceClient as any)
       .from('users')
       .select('*')
-      .in('role', roleFilter === 'all' ? ['admin', 'groomer'] : [roleFilter]);
+      .in('role', roleFilter === 'all' ? ['admin', 'groomer'] : [roleFilter])
+      .neq('id', '682450ba-5a9d-4a34-9c9d-7e7f944ee8df');
 
     if (statusFilter === 'active') {
       query = query.eq('is_active', true);
