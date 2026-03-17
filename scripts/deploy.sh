@@ -48,9 +48,9 @@ else
   log "Skipping build (--skip-build flag)"
 fi
 
-# ── 5. Restart PM2 ───────────────────────────────────────────
-log "Restarting PM2 process..."
-pm2 restart ecosystem.config.cjs --update-env
+# ── 5. Graceful reload PM2 (zero-downtime) ────────────────────
+log "Reloading PM2 process (graceful)..."
+pm2 reload ecosystem.config.cjs --update-env
 
 # ── 6. Health check ──────────────────────────────────────────
 log "Waiting for server to start..."
