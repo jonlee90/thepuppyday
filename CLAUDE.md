@@ -39,19 +39,36 @@ Using **live Supabase** (`NEXT_PUBLIC_USE_MOCKS=false`). All API routes connect 
 
 | Task Type | Tools to Use |
 |---|---|
-| React/Next.js components | Context7 (React/Next.js docs), Serena (`find_symbol`, `get_symbols_overview`), `/vercel-react-best-practices`, `/vercel-composition-patterns` |
-| UI/UX, styling, accessibility | Serena (component analysis), `/web-design-guidelines`, `@skill design-system` |
-| Database, schema, migrations, RLS | Supabase MCP tools, `/postgres-best-practices`, Serena (find types/queries) |
-| Bug fix or refactor | Serena (`find_symbol`, `find_referencing_symbols`), Context7 (relevant lib docs) |
+| React/Next.js components | Context7 (React/Next.js docs), Serena (`find_symbol`, `get_symbols_overview`), `/vercel-react-best-practices`, `/vercel-composition-patterns`, `/component-patterns` |
+| UI/UX, styling, accessibility | Serena (component analysis), `/web-design-guidelines`, `/design-system`, `/daisyui-components` |
+| API routes | `/api-patterns`, `/supabase-patterns`, Serena (find types/queries) |
+| Database, schema, migrations, RLS | Supabase MCP tools, `/postgres-best-practices`, `/supabase-patterns`, Serena (find types/queries) |
+| Forms & validation | `/form-patterns`, `/component-patterns`, `/daisyui-components` |
+| State management | `/state-patterns`, `/component-patterns` |
+| Bug fix or refactor | Serena (`find_symbol`, `find_referencing_symbols`), Context7 (relevant lib docs), `/code-audit` |
 | New library/API integration | Context7 (`resolve-library-id` then `query-docs`), Serena for integration points |
 
 ### Skill Auto-Invocation Triggers
 
 Invoke these skills **proactively** when their trigger conditions match — don't wait for user to ask:
+
+**Vercel/External Skills:**
 - **`/vercel-react-best-practices`** — Any React component work, render optimization, Server vs Client component decisions
 - **`/vercel-composition-patterns`** — Component API design, props patterns, compound components, composition refactors
 - **`/web-design-guidelines`** — UI layouts, accessibility audits, responsive design, UX reviews
 - **`/postgres-best-practices`** — SQL queries, schema design, migrations, RLS policies, indexing
+
+**Project-Specific Skills (enforce codebase consistency):**
+- **`/api-patterns`** — Any API route work: error handling, auth checks, response format, validation
+- **`/design-system`** — UI colors, typography, spacing, shadows, dog-themed elements
+- **`/component-patterns`** — Component creation, props design, hooks, loading states, data fetching strategy
+- **`/form-patterns`** — Form creation, validation, mutation handling, toast notifications
+- **`/supabase-patterns`** — Database queries, Supabase client usage, RLS, type imports
+- **`/state-patterns`** — Zustand stores, state management decisions
+- **`/daisyui-components`** — DaisyUI component classes, theme usage, modals, tables, forms
+
+**Manual-Only Skills:**
+- **`/code-audit [path] [--fix]`** — Scan files/directories for pattern violations and report/fix issues
 
 ### Post-Implementation Rules
 
@@ -185,9 +202,14 @@ See [Global Design System](docs/architecture/ARCHITECTURE.md#global-design-syste
 
 ### Available Skills
 Reference these for detailed specifications:
-- `@skill design-system`: The Puppy Day colors, typography, spacing
-- `@skill daisyui-components`: DaisyUI component patterns and theme config
-- `@skill nextjs-patterns`: App Router, data fetching, Server/Client components
+- `/design-system`: The Puppy Day colors, typography, spacing, dog-themed elements
+- `/daisyui-components`: DaisyUI 5 component patterns and theme config
+- `/api-patterns`: API route structure, auth, error handling, validation
+- `/component-patterns`: Component architecture, props, hooks, loading states
+- `/form-patterns`: Form handling, Zod validation, toast notifications
+- `/supabase-patterns`: Supabase client usage, RLS, query patterns, types
+- `/state-patterns`: Zustand store structure and state management decisions
+- `/code-audit`: Audit files/directories for pattern violations (manual only)
 
 ## Development Workflow
 
