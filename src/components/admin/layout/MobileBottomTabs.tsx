@@ -12,11 +12,16 @@ import { useAdminStore } from '@/stores/admin-store';
 import { useBookingModal } from '@/hooks/useBookingModal';
 import { config } from '@/lib/config';
 
-export function MobileBottomTabs() {
+interface MobileBottomTabsProps {
+  userRole?: string;
+}
+
+export function MobileBottomTabs({ userRole }: MobileBottomTabsProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { activeBottomTab, setActiveBottomTab, toggleMobileDrawer } = useAdminStore();
   const { open: openModal } = useBookingModal();
+  const isGroomer = userRole === 'groomer';
 
   const allTabs = [
     {
@@ -31,35 +36,60 @@ export function MobileBottomTabs() {
       icon: Calendar,
       href: '/admin/appointments',
     },
-    {
-      id: 'customers' as const,
-      label: 'Customers',
-      icon: Users,
-      href: '/admin/customers',
-    },
-    {
-      id: 'walkin' as const,
-      label: 'Walk-in',
-      icon: UserPlus,
-      action: 'walkin',
-    },
-    {
-      id: 'waitlist' as const,
-      label: 'Waitlist',
-      icon: ClipboardList,
-      href: '/admin/waitlist',
-    },
-    {
-      id: 'analytics' as const,
-      label: 'Analytics',
-      icon: BarChart2,
-      href: '/admin/analytics',
-    },
+    ...(isGroomer
+      ? [
+          {
+            id: 'walkin' as const,
+            label: 'Walk-in',
+            icon: UserPlus,
+            action: 'walkin' as const,
+          },
+          {
+            id: 'customers' as const,
+            label: 'Customers',
+            icon: Users,
+            href: '/admin/customers',
+          },
+        ]
+      : [
+          {
+            id: 'customers' as const,
+            label: 'Customers',
+            icon: Users,
+            href: '/admin/customers',
+          },
+          {
+            id: 'walkin' as const,
+            label: 'Walk-in',
+            icon: UserPlus,
+            action: 'walkin' as const,
+          },
+        ]),
+    ...(!isGroomer && config.features.waitlistEnabled
+      ? [
+          {
+            id: 'waitlist' as const,
+            label: 'Waitlist',
+            icon: ClipboardList,
+            href: '/admin/waitlist',
+          },
+        ]
+      : []),
+    ...(!isGroomer
+      ? [
+          {
+            id: 'analytics' as const,
+            label: 'Analytics',
+            icon: BarChart2,
+            href: '/admin/analytics',
+          },
+        ]
+      : []),
     {
       id: 'more' as const,
       label: 'More',
       icon: MoreHorizontal,
-      action: 'drawer',
+      action: 'drawer' as const,
     },
   ];
 

@@ -43,6 +43,7 @@ interface NavItem {
   href?: string;
   icon: React.ElementType;
   ownerOnly?: boolean;
+  adminOnly?: boolean;
   children?: NavItem[];
 }
 
@@ -64,6 +65,7 @@ const navSections: NavSection[] = [
         label: 'Analytics',
         href: '/admin/analytics',
         icon: BarChart3,
+        adminOnly: true,
       },
     ],
   },
@@ -79,6 +81,7 @@ const navSections: NavSection[] = [
         label: 'Waitlist',
         href: '/admin/waitlist',
         icon: Clock,
+        adminOnly: true,
       },
       {
         label: 'Customers',
@@ -99,7 +102,6 @@ const navSections: NavSection[] = [
       {
         label: 'Notifications',
         icon: Bell,
-        ownerOnly: true,
         children: [
           {
             label: 'Dashboard',
@@ -288,9 +290,11 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {navSections.map((section, sectionIndex) => {
           // Filter out owner-only items if user is not owner
+          const isGroomer = user.role === 'groomer';
           const visibleItems = section.items.filter(
             (item) =>
               (!item.ownerOnly || isOwner) &&
+              (!item.adminOnly || !isGroomer) &&
               (config.features.waitlistEnabled || item.label !== 'Waitlist')
           );
 

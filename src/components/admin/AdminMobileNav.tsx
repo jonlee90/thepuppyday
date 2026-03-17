@@ -42,6 +42,7 @@ interface NavItem {
   href?: string;
   icon: React.ElementType;
   ownerOnly?: boolean;
+  adminOnly?: boolean;
   children?: NavItem[];
 }
 
@@ -55,6 +56,7 @@ const navItems: NavItem[] = [
     label: 'Analytics',
     href: '/admin/analytics',
     icon: BarChart3,
+    adminOnly: true,
   },
   {
     label: 'Appointments',
@@ -65,6 +67,7 @@ const navItems: NavItem[] = [
     label: 'Waitlist',
     href: '/admin/waitlist',
     icon: Clock,
+    adminOnly: true,
   },
   {
     label: 'Customers',
@@ -80,7 +83,6 @@ const navItems: NavItem[] = [
   {
     label: 'Notifications',
     icon: Bell,
-    ownerOnly: true,
     children: [
       {
         label: 'Dashboard',
@@ -190,11 +192,13 @@ export function AdminMobileNav({ user }: AdminMobileNavProps) {
   };
 
   const isOwner = user?.role === 'admin';
+  const isGroomer = user?.role === 'groomer';
 
-  // Filter out owner-only items if user is not owner
+  // Filter out owner-only and admin-only items based on role
   const visibleItems = navItems.filter(
     (item) =>
       (!item.ownerOnly || isOwner) &&
+      (!item.adminOnly || !isGroomer) &&
       (config.features.waitlistEnabled || item.label !== 'Waitlist')
   );
 

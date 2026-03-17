@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { useDashboardData } from '@/hooks/admin/use-dashboard-data';
+import { useAuth } from '@/hooks/use-auth';
 import { DashboardHeader } from '@/components/admin/dashboard/DashboardHeader';
 import { RevenueOverview } from '@/components/admin/dashboard/RevenueOverview';
 import { DashboardTimeline } from '@/components/admin/dashboard/DashboardTimeline';
@@ -23,6 +24,9 @@ const WaitlistWidget = dynamic(
 );
 
 export function DashboardClient() {
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  // Only hide content once we've confirmed the user is a groomer (not during loading)
+  const isGroomer = !authLoading && authUser?.role === 'groomer';
   const {
     revenue,
     appointments,
@@ -53,13 +57,15 @@ export function DashboardClient() {
         isPolling={isPolling}
       />
 
-      {/* Revenue Overview */}
-      <RevenueOverview
-        revenueData={revenue}
-        loading={loading.revenue}
-        error={errors.revenue}
-        onRetry={refetch}
-      />
+      {/* Revenue Overview (hidden for groomers) */}
+      {!isGroomer && (
+        <RevenueOverview
+          revenueData={revenue}
+          loading={loading.revenue}
+          error={errors.revenue}
+          onRetry={refetch}
+        />
+      )}
 
       {/* Needs Attention — full width, below revenue */}
       <PendingActionsWidget
@@ -85,7 +91,7 @@ export function DashboardClient() {
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
           <ProductivityWidget
             appointments={appointments}
-            revenueData={revenue}
+            revenueData={!isGroomer ? revenue : null}
             loading={loading.appointments}
           />
           {config.features.waitlistEnabled && <WaitlistWidget />}

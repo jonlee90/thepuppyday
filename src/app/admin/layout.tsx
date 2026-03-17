@@ -57,7 +57,7 @@ export default async function AdminLayout({
         <AdminMobileNav user={user} />
 
         {/* Mobile Bottom Tabs (<1024px) - Fixed bottom */}
-        <MobileBottomTabs />
+        <MobileBottomTabs userRole={user.role} />
 
         {/* Main content area - Responsive to sidebar collapse state */}
         <AdminMainContent>{children}</AdminMainContent>

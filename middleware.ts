@@ -24,6 +24,24 @@ const adminRoutes = ['/admin'];
 // Admin API routes that require admin/staff role
 const adminApiRoutes = ['/api/admin'];
 
+// Routes groomers are allowed to access (admin gets full access)
+const groomerAllowedRoutes = [
+  '/admin/dashboard',
+  '/admin/appointments',
+  '/admin/customers',
+  '/admin/notifications',
+];
+const groomerAllowedApiRoutes = [
+  '/api/admin/appointments',
+  '/api/admin/customers',
+  '/api/admin/notifications',
+  '/api/admin/groomers',
+  '/api/admin/services',
+  '/api/admin/addons',
+  '/api/admin/breeds',
+  '/api/admin/pets',
+];
+
 // Routes that should redirect to dashboard if already authenticated
 const authRoutes = ['/login', '/register', '/forgot-password'];
 
@@ -89,6 +107,14 @@ export async function middleware(request: NextRequest) {
         // Redirect to customer dashboard if not admin/staff
         return redirectTo('/dashboard');
       }
+
+      // Restrict groomers to allowed routes only
+      if (userRole === 'groomer') {
+        const isAllowed = groomerAllowedRoutes.some((route) => pathname.startsWith(route));
+        if (!isAllowed) {
+          return redirectTo('/admin/dashboard');
+        }
+      }
     }
 
     // Protect admin API routes - return 403 for unauthorized access
@@ -98,6 +124,17 @@ export async function middleware(request: NextRequest) {
           { error: 'Forbidden: Admin or staff access required' },
           { status: 403 }
         );
+      }
+
+      // Restrict groomer API access
+      if (userRole === 'groomer') {
+        const isAllowed = groomerAllowedApiRoutes.some((route) => pathname.startsWith(route));
+        if (!isAllowed) {
+          return NextResponse.json(
+            { error: 'Forbidden: Admin access required' },
+            { status: 403 }
+          );
+        }
       }
     }
 
@@ -186,6 +223,25 @@ export async function middleware(request: NextRequest) {
         { error: 'Forbidden: Admin or staff access required' },
         { status: 403 }
       );
+    }
+
+    // Restrict groomers to allowed routes only
+    if (userRole === 'groomer') {
+      if (isAdminRoute) {
+        const isAllowed = groomerAllowedRoutes.some((route) => pathname.startsWith(route));
+        if (!isAllowed) {
+          return redirectTo('/admin/dashboard');
+        }
+      }
+      if (isAdminApiRoute) {
+        const isAllowed = groomerAllowedApiRoutes.some((route) => pathname.startsWith(route));
+        if (!isAllowed) {
+          return NextResponse.json(
+            { error: 'Forbidden: Admin access required' },
+            { status: 403 }
+          );
+        }
+      }
     }
   }
 
