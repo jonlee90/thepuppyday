@@ -7,7 +7,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { PawPrint, AlertTriangle } from 'lucide-react';
+import { PawPrint, AlertTriangle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { getSizeLabel } from '@/lib/booking/pricing';
@@ -33,6 +33,7 @@ interface PetCardProps {
   lastGroomService?: string | null;
   onBook: (petId: string) => void;
   onEdit: (petId: string) => void;
+  onDelete?: (petId: string) => void;
 }
 
 const SIZE_ACCENT_COLORS: Record<PetSize, string> = {
@@ -42,7 +43,7 @@ const SIZE_ACCENT_COLORS: Record<PetSize, string> = {
   xlarge: 'bg-[#C97B63]',
 };
 
-export function PetCard({ pet, index, lastGroomDate, lastGroomService, onBook, onEdit }: PetCardProps) {
+export function PetCard({ pet, index, lastGroomDate, lastGroomService, onBook, onEdit, onDelete }: PetCardProps) {
   const accentColor = SIZE_ACCENT_COLORS[pet.size as PetSize] || SIZE_ACCENT_COLORS.medium;
 
   // Build details line: breed, size, gender, color -- omit falsy values
@@ -70,14 +71,26 @@ export function PetCard({ pet, index, lastGroomDate, lastGroomService, onBook, o
             <PawPrint className="w-4 h-4 text-[#D4A574] flex-shrink-0" />
             <span className="font-semibold text-[#434E54] truncate">{pet.name}</span>
           </div>
-          <AdminButton
-            variant="ghost"
-            size="xs"
-            onClick={(e) => { e.stopPropagation(); onBook(pet.id); }}
-            className="flex-shrink-0"
-          >
-            Book
-          </AdminButton>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <AdminButton
+              variant="ghost"
+              size="xs"
+              onClick={(e) => { e.stopPropagation(); onBook(pet.id); }}
+            >
+              Book
+            </AdminButton>
+            {onDelete && (
+              <AdminButton
+                variant="ghost"
+                size="xs"
+                onClick={(e) => { e.stopPropagation(); onDelete(pet.id); }}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                aria-label={`Delete ${pet.name}`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </AdminButton>
+            )}
+          </div>
         </div>
 
         {/* Details line */}

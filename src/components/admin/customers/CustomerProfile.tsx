@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useBookingModal } from '@/hooks/useBookingModal';
 import { format } from 'date-fns';
 import {
@@ -54,6 +54,10 @@ const PetEditModal = dynamic(
   () => import('./PetEditModal').then((m) => ({ default: m.PetEditModal })),
   { ssr: false }
 );
+const PetAddModal = dynamic(
+  () => import('./PetAddModal').then((m) => ({ default: m.PetAddModal })),
+  { ssr: false }
+);
 
 // Module-level constants
 const EMPTY_APPOINTMENTS: AppointmentWithDetails[] = [];
@@ -93,6 +97,9 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
 
   // Pet editing state
   const [editingPet, setEditingPet] = useState<PetWithBreed | null>(null);
+  const [isAddPetOpen, setIsAddPetOpen] = useState(false);
+  const [deletingPetId, setDeletingPetId] = useState<string | null>(null);
+  const [isDeletingPet, setIsDeletingPet] = useState(false);
 
   // Booking modal
   const { open: openBookingModal } = useBookingModal();
@@ -243,6 +250,28 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
     }
   };
 
+  const handleDeletePet = async () => {
+    if (!deletingPetId) return;
+    setIsDeletingPet(true);
+    try {
+      const response = await fetch(
+        `/api/admin/customers/${customerId}/pets/${deletingPetId}`,
+        { method: 'DELETE' }
+      );
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to delete pet');
+      setCustomer((prev) =>
+        prev ? { ...prev, pets: prev.pets.filter((p) => p.id !== deletingPetId) } : prev
+      );
+      setDeletingPetId(null);
+      toast.success('Pet deleted');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete pet');
+    } finally {
+      setIsDeletingPet(false);
+    }
+  };
+
   const renderSidebarSections = () => (
     <>
       {/* Pets section */}
@@ -259,23 +288,20 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
               <PawPrint className="w-4 h-4" />
               Pets ({customer?.pets.length ?? 0})
             </h2>
+            <AdminButton
+              variant="ghost"
+              size="xs"
+              onClick={() => setIsAddPetOpen(true)}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Add
+            </AdminButton>
           </div>
 
           {!customer || customer.pets.length === 0 ? (
             <div className="text-center py-8">
               <PawPrint className="w-10 h-10 text-[#EAE0D5] mx-auto mb-2" />
               <p className="text-sm text-[#434E54]/50">No pets registered</p>
-              <AdminButton
-                variant="ghost"
-                size="sm"
-                className="mt-3"
-                onClick={() => {
-                  // TODO: open add pet modal
-                }}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add Pet
-              </AdminButton>
             </div>
           ) : (
             <div className="space-y-3">
@@ -314,6 +340,7 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
                       const found = customer.pets.find((p) => p.id === petId);
                       if (found) setEditingPet(found as PetWithBreed);
                     }}
+                    onDelete={(petId) => setDeletingPetId(petId)}
                   />
                 );
               })}
@@ -686,9 +713,7 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
           },
           onSuccess: () => fetchAppointments(),
         })}
-        onAddPet={() => {
-          // TODO: open add pet modal
-        }}
+        onAddPet={() => setIsAddPetOpen(true)}
       />
 
       {/* Safety Alert Banner */}
@@ -799,6 +824,76 @@ export function CustomerProfile({ customerId }: CustomerProfileProps) {
           }}
         />
       )}
+
+      <PetAddModal
+        customerId={customerId}
+        isOpen={isAddPetOpen}
+        onClose={() => setIsAddPetOpen(false)}
+        onSaved={(newPet) => {
+          setCustomer((prev) =>
+            prev ? { ...prev, pets: [...prev.pets, newPet] } : prev
+          );
+          setIsAddPetOpen(false);
+        }}
+      />
+
+      {/* Delete Pet Confirmation */}
+      <AnimatePresence>
+        {deletingPetId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+            onClick={(e) => e.target === e.currentTarget && !isDeletingPet && setDeletingPetId(null)}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-sm w-full"
+            >
+              <div className="p-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                  <PawPrint className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-[#434E54] mb-2">Delete Pet?</h3>
+                <p className="text-sm text-[#434E54]/60">
+                  Are you sure you want to delete{' '}
+                  <span className="font-medium text-[#434E54]">
+                    {customer?.pets.find((p) => p.id === deletingPetId)?.name ?? 'this pet'}
+                  </span>
+                  ? This action cannot be undone.
+                </p>
+              </div>
+              <div className="bg-[#EAE0D5]/30 rounded-b-2xl px-5 py-4 flex items-center justify-end gap-3">
+                <AdminButton
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setDeletingPetId(null)}
+                  disabled={isDeletingPet}
+                >
+                  Cancel
+                </AdminButton>
+                <AdminButton
+                  variant="primary"
+                  size="sm"
+                  onClick={handleDeletePet}
+                  isLoading={isDeletingPet}
+                  loadingText="Deleting..."
+                  className="!bg-red-600 hover:!bg-red-700"
+                >
+                  Delete
+                </AdminButton>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
