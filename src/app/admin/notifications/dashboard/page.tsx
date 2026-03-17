@@ -55,8 +55,7 @@ export default function NotificationsDashboardPage() {
   }, [fetchDashboardData]);
 
   return (
-    <div className="min-h-screen bg-[#F8EEE5] py-8">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
@@ -68,7 +67,7 @@ export default function NotificationsDashboardPage() {
                 <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">
                   Notifications Dashboard
                 </h1>
-                <p className="text-[#6B7280] mt-1">
+                <p className="text-[#434E54]/60 mt-1">
                   Monitor notification delivery and performance
                 </p>
               </div>
@@ -162,7 +161,6 @@ export default function NotificationsDashboardPage() {
             />
           </div>
         )}
-      </div>
     </div>
   );
 }

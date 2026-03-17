@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Mail, MessageSquare, Calendar, Users, MoreVertical, Edit, Copy, Trash2, Send, BarChart3, AlertCircle } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { CreateCampaignModal } from './CreateCampaignModal';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { toast } from '@/hooks/use-toast';
 import type { MarketingCampaign, CampaignStatus } from '@/types/marketing';
 
@@ -24,6 +26,8 @@ export function CampaignList({ initialStatus }: CampaignListProps) {
   const [total, setTotal] = useState(0);
   const [statusFilter, setStatusFilter] = useState<CampaignStatus | ''>( initialStatus || '');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmSend, setConfirmSend] = useState<{ id: string; name: string } | null>(null);
   const limit = 25;
 
   // Fetch campaigns
@@ -103,21 +107,27 @@ export function CampaignList({ initialStatus }: CampaignListProps) {
     });
   };
 
-  const handleDelete = async (campaignId: string) => {
-    if (!confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
-      return;
-    }
+  const handleDelete = (campaignId: string) => {
+    setConfirmDeleteId(campaignId);
+  };
 
+  const confirmDelete = () => {
+    if (!confirmDeleteId) return;
+    setConfirmDeleteId(null);
     // TODO: Delete campaign via API
     toast.info('Delete Campaign', {
       description: 'Campaign deletion will be implemented in a future task.',
     });
   };
 
-  const handleSendCampaign = async (campaignId: string, campaignName: string) => {
-    if (!confirm(`Are you sure you want to send "${campaignName}"? This will send notifications to all matching customers.`)) {
-      return;
-    }
+  const handleSendCampaign = (campaignId: string, campaignName: string) => {
+    setConfirmSend({ id: campaignId, name: campaignName });
+  };
+
+  const confirmSendCampaign = async () => {
+    if (!confirmSend) return;
+    const { id: campaignId } = confirmSend;
+    setConfirmSend(null);
 
     try {
       const response = await fetch(`/api/admin/campaigns/${campaignId}/send`, {
@@ -208,6 +218,24 @@ export function CampaignList({ initialStatus }: CampaignListProps) {
 
   return (
     <>
+      <ConfirmationModal
+        isOpen={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Campaign"
+        description="Are you sure you want to delete this campaign? This action cannot be undone."
+        confirmText="Delete"
+        variant="error"
+      />
+      <ConfirmationModal
+        isOpen={confirmSend !== null}
+        onClose={() => setConfirmSend(null)}
+        onConfirm={confirmSendCampaign}
+        title="Send Campaign"
+        description={confirmSend ? `Are you sure you want to send "${confirmSend.name}"? This will send notifications to all matching customers.` : ''}
+        confirmText="Send"
+        variant="warning"
+      />
       {/* Create Campaign Modal */}
       <CreateCampaignModal
         isOpen={isCreateModalOpen}
@@ -220,48 +248,45 @@ export function CampaignList({ initialStatus }: CampaignListProps) {
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         {/* Status Filter */}
         <div className="flex gap-2 flex-wrap">
-          <button
+          <AdminButton
+            variant={statusFilter === '' ? 'primary' : 'ghost'}
+            size="sm"
             onClick={() => handleStatusChange('')}
-            className={`btn btn-sm ${
-              statusFilter === '' ? 'btn-primary' : 'btn-ghost'
-            }`}
           >
             All
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
+            variant={statusFilter === 'draft' ? 'primary' : 'ghost'}
+            size="sm"
             onClick={() => handleStatusChange('draft')}
-            className={`btn btn-sm ${
-              statusFilter === 'draft' ? 'btn-primary' : 'btn-ghost'
-            }`}
           >
             Draft
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
+            variant={statusFilter === 'scheduled' ? 'primary' : 'ghost'}
+            size="sm"
             onClick={() => handleStatusChange('scheduled')}
-            className={`btn btn-sm ${
-              statusFilter === 'scheduled' ? 'btn-primary' : 'btn-ghost'
-            }`}
           >
             Scheduled
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
+            variant={statusFilter === 'sent' ? 'primary' : 'ghost'}
+            size="sm"
             onClick={() => handleStatusChange('sent')}
-            className={`btn btn-sm ${
-              statusFilter === 'sent' ? 'btn-primary' : 'btn-ghost'
-            }`}
           >
             Sent
-          </button>
+          </AdminButton>
         </div>
 
         {/* Create Campaign Button */}
-        <button
+        <AdminButton
+          variant="primary"
           onClick={handleCreateCampaign}
-          className="btn btn-primary gap-2"
+          className="gap-2"
         >
           <Plus className="w-5 h-5" />
           Create Campaign
-        </button>
+        </AdminButton>
       </div>
 
       {/* Loading State */}
@@ -278,12 +303,9 @@ export function CampaignList({ initialStatus }: CampaignListProps) {
             <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
             <h3 className="text-lg font-semibold text-[#434E54] mb-2">Error Loading Campaigns</h3>
             <p className="text-[#6B7280] mb-4 text-center max-w-md">{error}</p>
-            <button
-              onClick={fetchCampaigns}
-              className="btn bg-[#434E54] text-white hover:bg-[#363F44]"
-            >
+            <AdminButton variant="primary" onClick={fetchCampaigns}>
               Try Again
-            </button>
+            </AdminButton>
           </div>
         </div>
       )}

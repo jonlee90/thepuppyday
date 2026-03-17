@@ -168,11 +168,9 @@ export default function NotificationLogPage() {
 
   if (loading && logs.length === 0) {
     return (
-      <div className="min-h-screen bg-[#F8EEE5] p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="w-8 h-8 text-[#434E54] animate-spin" />
-          </div>
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 text-[#434E54] animate-spin" />
         </div>
       </div>
     );
@@ -180,22 +178,20 @@ export default function NotificationLogPage() {
 
   if (error && logs.length === 0) {
     return (
-      <div className="min-h-screen bg-[#F8EEE5] p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-[#434E54] mb-2">
-                Error Loading Logs
-              </h3>
-              <p className="text-[#6B7280] mb-4">{error}</p>
-              <button
-                onClick={fetchLogs}
-                className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none"
-              >
-                Retry
-              </button>
-            </div>
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-[#434E54] mb-2">
+              Error Loading Logs
+            </h3>
+            <p className="text-[#6B7280] mb-4">{error}</p>
+            <button
+              onClick={fetchLogs}
+              className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none"
+            >
+              Retry
+            </button>
           </div>
         </div>
       </div>
@@ -203,13 +199,12 @@ export default function NotificationLogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8EEE5] p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="hidden lg:block text-3xl font-bold text-[#434E54] mb-2">Notification Log</h1>
-            <p className="text-[#6B7280]">
+            <p className="text-[#434E54]/60">
               View and manage all notification logs with detailed filtering
             </p>
           </div>
@@ -289,7 +284,6 @@ export default function NotificationLogPage() {
           onResend={handleResend}
           onSuccess={handleResendSuccess}
         />
-      </div>
     </div>
   );
 }

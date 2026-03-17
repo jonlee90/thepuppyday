@@ -3,7 +3,7 @@
 > **Module**: Admin Dashboard
 > **Location**: `src/components/admin/dashboard/`
 > **Status**: Complete (Phases A-F, admin-dashboard-redesign spec, Phase 10 polish)
-> **Last Updated**: 2026-03-09
+> **Last Updated**: 2026-03-16
 
 ## Overview
 
@@ -146,7 +146,7 @@ interface DashboardTimelineProps {
 **Sub-components**:
 - `TimeMarkers`: Hour labels 9 AM–5 PM from `BUSINESS_HOURS` constants, 80px per hour
 - `NowIndicator`: Red pulsing dot + horizontal line at current time; auto-scrolls on mount; updates every 60s; hidden outside business hours
-- `TimelineAppointmentCard`: Left color stripe (`STATUS_COLORS`), time/customer/pet/service/price, `StatusBadge`, status action button (Confirm/Start/Complete); Framer Motion entrance `delay: index * 0.06`
+- `TimelineAppointmentCard`: Left color stripe using groomer color (matches calendar view groomer color palette), time/customer/pet/service/price, `StatusBadge`, status action button (Confirm/Start/Complete); Framer Motion entrance `delay: index * 0.06`
 - `AvailableSlotGap`: Dashed border slots for hours without appointments
 
 **Layout**: Scrollable container `max-h-[calc(100vh-300px)] overflow-y-auto`; relative positioning model at 80px/hour

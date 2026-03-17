@@ -92,3 +92,47 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(_request: NextRequest, context: RouteContext) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const serviceClient = createServiceRoleClient();
+    await requireAdmin(supabase);
+    const { id: customerId, petId } = await context.params;
+
+    // Check for existing appointments linked to this pet
+    const { count } = await (serviceClient as any)
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('pet_id', petId)
+      .eq('customer_id', customerId);
+
+    if (count && count > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete pet with ${count} appointment${count > 1 ? 's' : ''}. Remove appointments first.` },
+        { status: 409 }
+      );
+    }
+
+    const { error: deleteError } = await (serviceClient as any)
+      .from('pets')
+      .delete()
+      .eq('id', petId)
+      .eq('owner_id', customerId);
+
+    if (deleteError) {
+      console.error('[Pet API] Delete error:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete pet' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[Pet API] DELETE error:', error);
+
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

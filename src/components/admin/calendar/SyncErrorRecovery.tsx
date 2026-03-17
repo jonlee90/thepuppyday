@@ -13,6 +13,8 @@ import {
   Search,
   PawPrint
 } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 interface SyncError {
   id: string;
@@ -461,9 +463,9 @@ export function SyncErrorRecovery({ onRetry, onResync, onRetryBatch }: SyncError
           </div>
 
           {/* Reset */}
-          <button onClick={resetFilters} className="btn btn-ghost btn-sm">
+          <AdminButton variant="ghost" size="sm" onClick={resetFilters}>
             Reset Filters
-          </button>
+          </AdminButton>
         </div>
 
         {/* Active filter count */}
@@ -563,36 +565,39 @@ export function SyncErrorRecovery({ onRetry, onResync, onRetryBatch }: SyncError
                 <div className="flex items-center gap-3">
                   {error.retryCount < error.maxRetries ? (
                     <>
-                      <button
+                      <AdminButton
+                        variant="primary"
+                        size="sm"
                         onClick={() => handleRetry(error.appointmentId, error.id)}
-                        className="btn btn-primary btn-sm bg-[#434E54] hover:bg-[#363F44] border-none"
                         aria-label={`Retry sync for ${error.petName}'s appointment`}
                       >
                         <RotateCw className="w-4 h-4 mr-1" />
                         Retry Now
-                      </button>
-                      <button
+                      </AdminButton>
+                      <AdminButton
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                           setResyncTarget({ appointmentId: error.appointmentId, errorId: error.id });
                           setShowResyncModal(true);
                         }}
-                        className="btn btn-ghost btn-sm"
                         aria-label={`Resync calendar event for ${error.petName}`}
                       >
                         <RefreshCw className="w-4 h-4 mr-1" />
                         Resync
-                      </button>
+                      </AdminButton>
                     </>
                   ) : (
-                    <button className="btn btn-error btn-sm">Contact Support</button>
+                    <AdminButton variant="danger" size="sm">Contact Support</AdminButton>
                   )}
                 </div>
 
-                <button
+                <AdminButton
+                  variant="ghost"
+                  size="sm"
                   onClick={() =>
                     setExpandedErrorId(expandedErrorId === error.id ? null : error.id)
                   }
-                  className="btn btn-ghost btn-sm"
                   aria-expanded={expandedErrorId === error.id}
                   aria-label="Toggle error details"
                 >
@@ -602,7 +607,7 @@ export function SyncErrorRecovery({ onRetry, onResync, onRetryBatch }: SyncError
                   ) : (
                     <ChevronDown className="w-4 h-4 ml-1" />
                   )}
-                </button>
+                </AdminButton>
               </div>
 
               {/* Expanded details */}
@@ -672,74 +677,43 @@ export function SyncErrorRecovery({ onRetry, onResync, onRetryBatch }: SyncError
             </div>
 
             <div className="flex items-center gap-3">
-              <button
+              <AdminButton
+                variant="primary"
+                size="sm"
                 onClick={() => setShowBatchRetryModal(true)}
                 disabled={selectedErrorIds.size === 0}
-                className="btn btn-primary btn-sm bg-[#434E54] hover:bg-[#363F44] border-none disabled:bg-neutral-300"
               >
                 Retry All Selected ({selectedErrorIds.size})
-              </button>
-              <button className="btn btn-ghost btn-sm text-red-600 hover:bg-red-50">
+              </AdminButton>
+              <AdminButton variant="ghost" size="sm" className="text-red-600 hover:bg-red-50">
                 Clear Resolved Errors
-              </button>
+              </AdminButton>
             </div>
           </div>
         </div>
       )}
 
       {/* Resync Confirmation Modal */}
-      {showResyncModal && (
-        <dialog className="modal modal-open">
-          <div className="modal-box bg-white">
-            <h3 className="text-lg font-semibold text-[#434E54] mb-3">Resync Calendar Event?</h3>
-            <p className="text-sm text-[#6B7280] mb-6">
-              This will delete the existing event and create a new one. Use this if event details
-              have changed.
-            </p>
-            <div className="modal-action">
-              <button onClick={() => setShowResyncModal(false)} className="btn btn-ghost">
-                Cancel
-              </button>
-              <button
-                onClick={handleResync}
-                className="btn btn-primary bg-[#434E54] hover:bg-[#363F44] border-none"
-              >
-                Resync Event
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop bg-black/50" onClick={() => setShowResyncModal(false)} />
-        </dialog>
-      )}
+      <ConfirmationModal
+        isOpen={showResyncModal}
+        onClose={() => setShowResyncModal(false)}
+        onConfirm={handleResync}
+        title="Resync Calendar Event?"
+        description="This will delete the existing event and create a new one. Use this if event details have changed."
+        confirmText="Resync Event"
+        variant="default"
+      />
 
       {/* Batch Retry Confirmation Modal */}
-      {showBatchRetryModal && (
-        <dialog className="modal modal-open">
-          <div className="modal-box bg-white">
-            <h3 className="text-lg font-semibold text-[#434E54] mb-3">
-              Retry {selectedErrorIds.size} Selected Error{selectedErrorIds.size > 1 ? 's' : ''}?
-            </h3>
-            <p className="text-sm text-[#6B7280] mb-6">
-              This will attempt to retry all selected sync operations. This may take a moment.
-            </p>
-            <div className="modal-action">
-              <button onClick={() => setShowBatchRetryModal(false)} className="btn btn-ghost">
-                Cancel
-              </button>
-              <button
-                onClick={handleBatchRetry}
-                className="btn btn-primary bg-[#434E54] hover:bg-[#363F44] border-none"
-              >
-                Retry All
-              </button>
-            </div>
-          </div>
-          <div
-            className="modal-backdrop bg-black/50"
-            onClick={() => setShowBatchRetryModal(false)}
-          />
-        </dialog>
-      )}
+      <ConfirmationModal
+        isOpen={showBatchRetryModal}
+        onClose={() => setShowBatchRetryModal(false)}
+        onConfirm={handleBatchRetry}
+        title={`Retry ${selectedErrorIds.size} Selected Error${selectedErrorIds.size > 1 ? 's' : ''}?`}
+        description="This will attempt to retry all selected sync operations. This may take a moment."
+        confirmText="Retry All"
+        variant="default"
+      />
     </div>
   );
 }

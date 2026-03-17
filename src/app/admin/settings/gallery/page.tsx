@@ -23,7 +23,7 @@ export default async function GalleryPage() {
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="hidden lg:block text-3xl font-bold text-[#434E54] mb-2">Gallery Management</h1>
-        <p className="text-gray-600">
+        <p className="text-[#434E54]/60">
           Upload, edit, and organize photos for the public gallery. Drag and drop to reorder images.
         </p>
       </div>

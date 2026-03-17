@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { Search, Grid3x3, List, Plus, Star, MoreVertical, PawPrint, Pencil, Trash2, Mail, Scissors, Shield } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { StaffMemberWithStats, StaffDirectoryFilters, StaffViewMode } from '@/types/staff';
 import { StaffForm } from './StaffForm';
@@ -157,13 +158,13 @@ export function StaffDirectory({ initialStaff = EMPTY_STAFF, onStaffCountChange 
               </button>
             </div>
 
-            <button
+            <AdminButton
+              variant="primary"
               onClick={handleCreateStaff}
-              className="btn btn-primary bg-[#434E54] hover:bg-[#363F44] text-white border-none"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Add Staff Member</span>
-            </button>
+            </AdminButton>
           </div>
         </div>
 
@@ -646,16 +647,18 @@ function DeleteConfirmModal({
           </div>
         </div>
         <div className="modal-action">
-          <button onClick={onCancel} className="btn btn-ghost" disabled={deleting}>
+          <AdminButton variant="ghost" onClick={onCancel} disabled={deleting}>
             Cancel
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
+            variant="danger"
             onClick={onConfirm}
-            className="btn bg-red-500 hover:bg-red-600 text-white border-none"
             disabled={deleting}
+            isLoading={deleting}
+            loadingText="Deactivating..."
           >
-            {deleting ? 'Deactivating...' : 'Deactivate'}
-          </button>
+            Deactivate
+          </AdminButton>
         </div>
       </div>
       <div className="modal-backdrop bg-black/50" onClick={onCancel}></div>
@@ -689,9 +692,9 @@ function StaffEmptyState({
             : 'Add your first staff member to get started with team management.'}
         </p>
         {hasSearch && (
-          <button onClick={onClearSearch} className="btn btn-outline btn-sm">
+          <AdminButton variant="secondary" size="sm" onClick={onClearSearch}>
             Clear Search
-          </button>
+          </AdminButton>
         )}
       </div>
     </div>

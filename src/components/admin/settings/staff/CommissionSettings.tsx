@@ -5,6 +5,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, DollarSign, Percent, AlertCircle, Calculator, X } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { toast } from '@/hooks/use-toast';
 import type { CommissionSettingsData, CommissionPreviewCalculation } from '@/types/staff';
 import type { Service, StaffCommission } from '@/types/database';
@@ -386,21 +387,24 @@ export function CommissionSettings({ staffId, staffName }: CommissionSettingsPro
                         </td>
                         <td>
                           {hasOverride ? (
-                            <button
+                            <AdminButton
+                              variant="ghost"
+                              size="sm"
                               type="button"
                               onClick={() => handleRemoveOverride(service.id)}
-                              className="btn btn-ghost btn-sm text-error"
+                              className="text-error"
                             >
                               <X className="w-4 h-4" />
-                            </button>
+                            </AdminButton>
                           ) : (
-                            <button
+                            <AdminButton
+                              variant="ghost"
+                              size="sm"
                               type="button"
                               onClick={() => handleAddOverride(service.id)}
-                              className="btn btn-ghost btn-sm"
                             >
                               Set Override
-                            </button>
+                            </AdminButton>
                           )}
                         </td>
                       </tr>
@@ -484,28 +488,23 @@ export function CommissionSettings({ staffId, staffName }: CommissionSettingsPro
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-3">
-          <button
+          <AdminButton
+            variant="ghost"
             type="button"
             onClick={() => reset(initialSettings as any)}
-            className="btn btn-ghost"
             disabled={!isDirty || saving}
           >
             Reset Changes
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
+            variant="primary"
             type="submit"
-            className="btn bg-[#434E54] hover:bg-[#363F44] text-white border-none"
             disabled={!isDirty || saving}
+            isLoading={saving}
+            loadingText="Saving..."
           >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              'Save Commission Settings'
-            )}
-          </button>
+            Save Commission Settings
+          </AdminButton>
         </div>
       </form>
     </div>

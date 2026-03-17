@@ -23,6 +23,7 @@ import {
   Calendar,
   RotateCcw,
 } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { BookingSettings } from '@/types/settings';
 
@@ -494,13 +495,15 @@ export function RecurringBlockedDays({
                   </span>
                 ))}
               </div>
-              <button
+              <AdminButton
+                variant="primary"
+                size="sm"
                 onClick={handleBlockAllClosedDays}
                 disabled={isSaving}
-                className="btn btn-sm bg-blue-600 text-white hover:bg-blue-700 border-none"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 Block All Closed Days
-              </button>
+              </AdminButton>
             </div>
           </div>
         </motion.div>
@@ -565,31 +568,26 @@ export function RecurringBlockedDays({
             </div>
 
             <div className="flex items-center gap-2">
-              <button
+              <AdminButton
+                variant="ghost"
+                size="sm"
                 onClick={handleReset}
                 disabled={isSaving}
-                className="btn btn-sm btn-ghost text-[#434E54]"
               >
                 <RotateCcw className="w-4 h-4 mr-1" />
                 Reset
-              </button>
-              <button
+              </AdminButton>
+              <AdminButton
+                variant="primary"
+                size="sm"
                 onClick={handleSave}
                 disabled={isSaving || isCheckingConflicts}
-                className="btn btn-sm bg-[#434E54] text-white hover:bg-[#363F44] border-none"
+                isLoading={isSaving}
+                loadingText="Saving..."
               >
-                {isSaving ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm"></span>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-1" />
-                    Save Changes
-                  </>
-                )}
-              </button>
+                <Save className="w-4 h-4 mr-1" />
+                Save Changes
+              </AdminButton>
             </div>
           </div>
         </motion.div>
@@ -629,23 +627,24 @@ export function RecurringBlockedDays({
               </p>
 
               <div className="modal-action">
-                <button
+                <AdminButton
+                  variant="ghost"
                   onClick={() => {
                     setShowConflictWarning(false);
                     setConflictDayToToggle(null);
                   }}
                   disabled={isSaving}
-                  className="btn btn-ghost"
                 >
                   Cancel
-                </button>
-                <button
+                </AdminButton>
+                <AdminButton
+                  variant="danger"
                   onClick={handleForceToggle}
                   disabled={isSaving}
-                  className="btn bg-orange-600 text-white hover:bg-orange-700 border-none"
+                  className="bg-orange-600 hover:bg-orange-700"
                 >
                   Block Anyway
-                </button>
+                </AdminButton>
               </div>
             </motion.div>
           </div>

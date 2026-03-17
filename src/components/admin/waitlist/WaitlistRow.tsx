@@ -1,6 +1,7 @@
 'use client';
 
 import { Calendar } from 'lucide-react';
+import { formatTime12h } from '@/lib/utils/time';
 import type { WaitlistEntry, WaitlistStatus } from '@/types/database';
 
 interface WaitlistRowProps {
@@ -37,12 +38,6 @@ const TIME_PREFERENCE_LABELS: Record<string, string> = {
   any: 'Any Time',
 };
 
-function formatTime12h(time: string): string {
-  const [h, m] = time.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const hour12 = h % 12 || 12;
-  return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
-}
 
 function formatTimePreference(pref: string, preferredTime?: string | null): string {
   if (preferredTime) return formatTime12h(preferredTime);

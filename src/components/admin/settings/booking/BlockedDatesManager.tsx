@@ -14,6 +14,7 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar, Plus, Trash2, AlertTriangle, X, Clock } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { toast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { BlockedDate, BlockedHourRange } from '@/types/settings';
@@ -237,22 +238,26 @@ export function BlockedDatesManager({
           <h3 className="text-lg font-semibold text-[#434E54]">Blocked Dates</h3>
         </div>
         <div className="flex gap-2">
-          <button
+          <AdminButton
+            variant="primary"
+            size="sm"
             onClick={() => handleOpenAddModal(false)}
             disabled={isLoading}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#434E54] rounded-lg hover:bg-[#363F44] transition-colors disabled:opacity-50"
+            className="gap-2"
           >
             <Plus className="w-4 h-4" />
             Block Single Date
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
+            variant="secondary"
+            size="sm"
             onClick={() => handleOpenAddModal(true)}
             disabled={isLoading}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#434E54] bg-transparent border border-[#434E54] rounded-lg hover:bg-[#434E54] hover:text-white transition-colors disabled:opacity-50"
+            className="gap-2"
           >
             <Plus className="w-4 h-4" />
             Block Date Range
-          </button>
+          </AdminButton>
         </div>
       </div>
 
@@ -459,27 +464,22 @@ export function BlockedDatesManager({
               </div>
 
               <div className="modal-action">
-                <button
+                <AdminButton
+                  variant="ghost"
                   onClick={handleCloseAddModal}
                   disabled={isLoading}
-                  className="btn btn-ghost"
                 >
                   Cancel
-                </button>
-                <button
+                </AdminButton>
+                <AdminButton
+                  variant="primary"
                   onClick={() => handleSubmitBlockedDate(false)}
                   disabled={isLoading || !formDate}
-                  className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none"
+                  isLoading={isLoading}
+                  loadingText="Adding..."
                 >
-                  {isLoading ? (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      Adding...
-                    </>
-                  ) : (
-                    'Add Blocked Date'
-                  )}
-                </button>
+                  Add Blocked Date
+                </AdminButton>
               </div>
             </motion.div>
           </div>
@@ -530,27 +530,23 @@ export function BlockedDatesManager({
               </p>
 
               <div className="modal-action">
-                <button
+                <AdminButton
+                  variant="ghost"
                   onClick={() => setShowConflictDialog(false)}
                   disabled={isLoading}
-                  className="btn btn-ghost"
                 >
                   Cancel
-                </button>
-                <button
+                </AdminButton>
+                <AdminButton
+                  variant="danger"
                   onClick={handleForceBlock}
                   disabled={isLoading}
-                  className="btn bg-orange-600 text-white hover:bg-orange-700 border-none"
+                  isLoading={isLoading}
+                  loadingText="Blocking..."
+                  className="bg-orange-600 hover:bg-orange-700"
                 >
-                  {isLoading ? (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      Blocking...
-                    </>
-                  ) : (
-                    'Block Anyway'
-                  )}
-                </button>
+                  Block Anyway
+                </AdminButton>
               </div>
             </motion.div>
           </div>
@@ -573,27 +569,22 @@ export function BlockedDatesManager({
               </p>
 
               <div className="modal-action">
-                <button
+                <AdminButton
+                  variant="ghost"
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={isLoading}
-                  className="btn btn-ghost"
                 >
                   Cancel
-                </button>
-                <button
+                </AdminButton>
+                <AdminButton
+                  variant="danger"
                   onClick={handleDeleteBlockedDate}
                   disabled={isLoading}
-                  className="btn bg-red-600 text-white hover:bg-red-700 border-none"
+                  isLoading={isLoading}
+                  loadingText="Removing..."
                 >
-                  {isLoading ? (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      Removing...
-                    </>
-                  ) : (
-                    'Remove'
-                  )}
-                </button>
+                  Remove
+                </AdminButton>
               </div>
             </motion.div>
           </div>

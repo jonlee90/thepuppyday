@@ -7,7 +7,9 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { format } from 'date-fns';
-import { Search, Calendar, X, RefreshCw } from 'lucide-react';
+import { Calendar, X, RefreshCw } from 'lucide-react';
+import { SearchFilterBar } from '@/components/admin/shared';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import type { AppointmentStatus } from '@/types/database';
 import { getTodayInBusinessTimezone } from '@/lib/utils/timezone';
@@ -403,18 +405,11 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
       {/* Search and Filters */}
       <div className="space-y-4 mb-6">
         {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
-          <input
-            type="text"
-            placeholder="Search by customer name, pet name, email, or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#E5E5E5] bg-white
-                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
-                     placeholder:text-[#9CA3AF] transition-colors duration-200"
-          />
-        </div>
+        <SearchFilterBar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search by customer name, pet name, email, or phone..."
+        />
 
         {/* Filters Row - Status + Dates on one line */}
         <div className="flex flex-row items-center gap-3">
@@ -488,13 +483,14 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
 
           {/* Clear Filters */}
           {hasActiveFilters && (
-            <button
+            <AdminButton
+              variant="ghost"
+              size="sm"
               onClick={clearFilters}
-              className="btn btn-ghost btn-sm text-[#434E54] hover:bg-[#EAE0D5]"
             >
               <X className="w-4 h-4" />
               Clear
-            </button>
+            </AdminButton>
           )}
         </div>
       </div>
@@ -613,11 +609,11 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
                         {syncStatusMap[apt.id] &&
                           (syncStatusMap[apt.id].status === 'failed' ||
                             syncStatusMap[apt.id].status === 'not_eligible') && (
-                            <button
-                              type="button"
+                            <AdminButton
+                              variant="ghost"
+                              size="xs"
                               onClick={(e) => handleManualSync(apt.id, e)}
                               disabled={syncingAppointments.has(apt.id)}
-                              className="btn btn-xs btn-ghost text-[#434E54] hover:bg-[#EAE0D5] disabled:opacity-50"
                               title="Sync to Google Calendar"
                             >
                               <RefreshCw
@@ -625,21 +621,22 @@ export function AppointmentListView({ onRowClick }: AppointmentListViewProps) {
                                   syncingAppointments.has(apt.id) ? 'animate-spin' : ''
                                 }`}
                               />
-                            </button>
+                            </AdminButton>
                           )}
                       </div>
                     </td>
                   )}
                   <td>
-                    <button
+                    <AdminButton
+                      variant="ghost"
+                      size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         onRowClick(apt.id);
                       }}
-                      className="btn btn-sm btn-ghost text-[#434E54] hover:bg-[#EAE0D5]"
                     >
                       View
-                    </button>
+                    </AdminButton>
                   </td>
                 </tr>
               ))

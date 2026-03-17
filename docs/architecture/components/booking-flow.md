@@ -3,7 +3,7 @@
 > **Module**: Booking Widget Components
 > **Location**: `src/components/booking/`
 > **Status**: Completed (Phase 3, Updated Phase 10, Refactored)
-> **Last Updated**: 2026-03-07
+> **Last Updated**: 2026-03-16
 
 ## Overview
 
@@ -285,7 +285,7 @@ Uses `forwardRef` with `PetStepHandle` (`{ onContinue: () => Promise<boolean> }`
 - **Display**: 9:00 AM, 10:00 AM, 11:00 AM, etc.
 
 **Sub-components**:
-- `CalendarPicker` (`CalendarPicker.tsx`) - Date selection calendar
+- `CalendarPicker` (`CalendarPicker.tsx`) - Date selection calendar. Supports `minDate` prop: defaults to today (customers cannot select past dates), pass `minDate="none"` for admin mode (unrestricted past-date selection). Previous month navigation blocked when before `minDate`.
 - `TimeSlotGrid` (`TimeSlotGrid.tsx`) - Grid of available time slots
 
 **Waitlist Option**: Available when no time slots are available for the selected date, opens `WaitlistModal`.
@@ -349,6 +349,7 @@ interface WalkinReviewStepProps {
 | `PetCard.tsx` | Pet selection card + AddPetCard |
 | `PetForm.tsx` | Pet creation/edit form |
 | `GuestInfoForm.tsx` | Guest info form (unauthenticated booking) |
+| `PriceAdjustmentForm.tsx` | Price adjustment form for admin mode (inside order summary) |
 | `GroomerSelect.tsx` | Groomer selection dropdown |
 | `WaitlistModal.tsx` | Waitlist join modal |
 | `index.ts` | Module exports |
@@ -520,5 +521,5 @@ The following components were removed during prior refactors:
 
 ---
 
-**Last Updated**: 2026-03-14 by Claude Code
-**Changes**: Replaced DetailsStep references with separate CustomerStep and PetStep; updated step order tables (Customer now before DateTime in all modes); updated BookingModal sizing; updated PriceSummary mobile note; added users table is_active/created_by_admin/activated_at columns; corrected Deleted Components list.
+**Last Updated**: 2026-03-16 by Claude Code
+**Changes**: Added CalendarPicker minDate prop docs (past-date restriction for customers, unrestricted for admin); added PriceAdjustmentForm to supporting components; documented CustomerStep 3-mode system (guest/createAccount/login).

@@ -89,12 +89,11 @@ export default function NotificationSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8EEE5] p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="hidden lg:block text-2xl font-semibold text-[#434E54] mb-2">Notification Settings</h1>
-          <p className="text-[#6B7280]">
+          <h1 className="hidden lg:block text-3xl font-bold text-[#434E54] mb-2">Notification Settings</h1>
+          <p className="text-[#434E54]/60">
             Configure notification channels and delivery settings for each notification type
           </p>
         </div>
@@ -146,7 +145,6 @@ export default function NotificationSettingsPage() {
             )}
           </>
         )}
-      </div>
     </div>
   );
 }

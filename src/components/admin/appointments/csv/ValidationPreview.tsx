@@ -198,13 +198,15 @@ export function ValidationPreview({ results, onContinue, onBack }: ValidationPre
                   <p className="text-sm font-semibold text-[#434E54]">
                     Validation Errors ({results.errors.length})
                   </p>
-                  <button
+                  <AdminButton
+                    variant="ghost"
+                    size="sm"
                     onClick={handleDownloadErrors}
-                    className="btn btn-ghost btn-sm text-[#434E54] hover:bg-[#EAE0D5] gap-2"
+                    className="gap-2"
                   >
                     <Download className="w-4 h-4" />
                     Download Errors
-                  </button>
+                  </AdminButton>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="table table-sm">

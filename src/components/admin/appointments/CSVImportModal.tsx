@@ -8,6 +8,7 @@
 
 import { useState, useCallback } from 'react';
 import { X } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import type {
   CSVValidationResponse,
   CSVImportResult,
@@ -161,12 +162,14 @@ export function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImportModalPro
             <p className="text-sm text-[#6B7280] mt-1">{STEP_TITLES[state.currentStep]}</p>
           </div>
           {canClose && (
-            <button
+            <AdminButton
+              variant="ghost"
+              size="sm"
               onClick={handleClose}
-              className="btn btn-ghost btn-sm btn-circle text-[#6B7280] hover:text-[#434E54] hover:bg-[#EAE0D5]"
+              className="btn-circle text-[#6B7280] hover:text-[#434E54]"
             >
               <X className="w-5 h-5" />
-            </button>
+            </AdminButton>
           )}
         </div>
 
@@ -263,12 +266,13 @@ export function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImportModalPro
         {/* Footer - Only show back/cancel on certain steps */}
         {(state.currentStep === 'review' || state.currentStep === 'duplicates') && (
           <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-[#FFFBF7]">
-            <button
+            <AdminButton
+              variant="ghost"
               onClick={handleBack}
-              className="btn btn-ghost text-[#434E54] hover:bg-[#EAE0D5] font-medium"
+              className="font-medium"
             >
               Back
-            </button>
+            </AdminButton>
             <div className="text-sm text-[#6B7280]">
               {state.currentStep === 'duplicates'
                 ? `${state.validationResults?.duplicates_found || 0} duplicates to resolve`

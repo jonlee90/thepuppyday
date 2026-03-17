@@ -6,6 +6,7 @@ import { X, Edit, XCircle } from 'lucide-react';
 import { createFocusTrap } from '@/lib/accessibility/focus';
 import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { toast } from '@/hooks/use-toast';
+import { formatTime12h } from '@/lib/utils/time';
 import type { WaitlistEntry } from '@/types/database';
 
 type WaitlistEntryWithJoins = WaitlistEntry & {
@@ -32,12 +33,6 @@ const PRIORITIES = [
   { value: 5, label: 'Critical' },
 ] as const;
 
-function formatTime12h(time: string): string {
-  const [h, m] = time.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const hour12 = h % 12 || 12;
-  return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
-}
 
 export function EditWaitlistModal({ entry, isOpen, onClose, onSuccess, onCancelEntry }: EditWaitlistModalProps) {
   const [requestedDate, setRequestedDate] = useState('');

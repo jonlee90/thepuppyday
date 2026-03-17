@@ -7,6 +7,8 @@
 
 import { useState } from 'react';
 import { X, Mail, MessageSquare, RefreshCw, User } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import type { NotificationWithCustomer } from '@/types/notifications';
@@ -36,7 +38,7 @@ export function NotificationDetailModal({
       onClose();
     } catch (error) {
       console.error('Failed to resend notification:', error);
-      alert('Failed to resend notification');
+      toast.error('Failed to resend notification');
     } finally {
       setResending(false);
     }
@@ -52,13 +54,15 @@ export function NotificationDetailModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-[#434E54]">Notification Details</h3>
-          <button
+          <AdminButton
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="btn btn-ghost btn-sm btn-circle"
+            className="btn-circle"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
-          </button>
+          </AdminButton>
         </div>
 
         {/* Content */}
@@ -174,9 +178,9 @@ export function NotificationDetailModal({
 
         {/* Actions */}
         <div className="modal-action">
-          <button onClick={onClose} className="btn btn-ghost">
+          <AdminButton variant="ghost" onClick={onClose}>
             Close
-          </button>
+          </AdminButton>
           {notification.customer_id && (
             <Link
               href={`/admin/customers/${notification.customer_id}`}
@@ -187,23 +191,17 @@ export function NotificationDetailModal({
             </Link>
           )}
           {notification.status === 'failed' && onResend && (
-            <button
+            <AdminButton
+              variant="primary"
               onClick={() => handleResend(notification.id)}
               disabled={resending}
-              className="btn btn-primary bg-[#434E54] hover:bg-[#363F44] text-white gap-2"
+              isLoading={resending}
+              loadingText="Resending..."
+              className="gap-2"
             >
-              {resending ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Resending...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4" />
-                  Resend
-                </>
-              )}
-            </button>
+              <RefreshCw className="w-4 h-4" />
+              Resend
+            </AdminButton>
           )}
         </div>
       </div>

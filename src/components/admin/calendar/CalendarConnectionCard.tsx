@@ -8,6 +8,8 @@
 import { useState } from 'react';
 import { CheckCircle2, XCircle, AlertTriangle, Calendar as CalendarIcon, Lock } from 'lucide-react';
 import { GoogleOAuthButton } from './GoogleOAuthButton';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import type { CalendarConnectionStatus } from '@/types/calendar';
 
 interface CalendarConnectionCardProps {
@@ -211,55 +213,28 @@ export function CalendarConnectionCard({
           </div>
 
           <div className="card-actions justify-end mt-4">
-            <button
+            <AdminButton
+              variant="danger"
               onClick={() => setShowDisconnectModal(true)}
-              className="btn btn-outline btn-error hover:bg-[#EF4444] hover:text-white hover:border-[#EF4444]"
               disabled={isLoading}
             >
               Disconnect
-            </button>
+            </AdminButton>
           </div>
         </div>
       </div>
 
       {/* Disconnect Confirmation Modal */}
-      {showDisconnectModal && (
-        <dialog className="modal modal-open">
-          <div className="modal-box bg-white">
-            <h3 className="font-bold text-lg text-[#434E54] mb-4">
-              Disconnect Google Calendar?
-            </h3>
-            <p className="text-[#6B7280] mb-6">
-              This will stop syncing appointments with your Google Calendar.
-              Existing calendar events will not be deleted, but future appointments will not sync.
-            </p>
-            <div className="modal-action">
-              <button
-                onClick={() => setShowDisconnectModal(false)}
-                className="btn btn-ghost"
-                disabled={isDisconnecting}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDisconnect}
-                className="btn btn-error bg-[#EF4444] hover:bg-[#DC2626] border-none text-white"
-                disabled={isDisconnecting}
-              >
-                {isDisconnecting ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm"></span>
-                    Disconnecting...
-                  </>
-                ) : (
-                  'Disconnect'
-                )}
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop bg-black/50" onClick={() => !isDisconnecting && setShowDisconnectModal(false)} />
-        </dialog>
-      )}
+      <ConfirmationModal
+        isOpen={showDisconnectModal}
+        onClose={() => !isDisconnecting && setShowDisconnectModal(false)}
+        onConfirm={handleDisconnect}
+        title="Disconnect Google Calendar?"
+        description="This will stop syncing appointments with your Google Calendar. Existing calendar events will not be deleted, but future appointments will not sync."
+        confirmText="Disconnect"
+        variant="error"
+        isLoading={isDisconnecting}
+      />
     </>
   );
 }

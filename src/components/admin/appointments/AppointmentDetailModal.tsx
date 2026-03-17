@@ -502,11 +502,21 @@ export function AppointmentDetailModal({
     : (appointment?.groomer_id || '');
 
   return (
-    <dialog className="modal modal-open" role="dialog" aria-modal="true" aria-labelledby="appointment-modal-title">
+    <>
       {/* Backdrop */}
-      <div className="modal-backdrop bg-black/50 backdrop-blur-sm" onClick={handleClose} />
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+        onClick={handleClose}
+        aria-hidden="true"
+      />
 
-      <div className="modal-box bg-[#F8EEE5] max-w-[900px] max-h-[92vh] overflow-y-auto has-[dialog.modal-open]:overflow-y-clip shadow-xl rounded-xl p-0">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="appointment-modal-title"
+      >
+      <div className="bg-[#F8EEE5] w-full max-w-[900px] max-h-[92vh] overflow-y-auto shadow-xl rounded-xl p-0">
         {/* Header - Simplified */}
         <div className="sticky top-0 z-10 bg-white px-5 py-4 border-b border-[#E5E5E5] shadow-sm">
           <div className="flex items-center justify-between">
@@ -1260,6 +1270,7 @@ export function AppointmentDetailModal({
           </div>
         )}
       </div>
-    </dialog>
+      </div>
+    </>
   );
 }

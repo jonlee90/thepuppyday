@@ -12,6 +12,7 @@ import {
 import { useEffect, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { toast } from '@/hooks/use-toast';
 
 interface SyncStatus {
@@ -179,9 +180,9 @@ export function CalendarSyncWidget() {
           <p className="text-xs text-[#9CA3AF] mb-4">
             Please refresh the page or check your connection
           </p>
-          <button onClick={handleRetry} className="btn btn-secondary btn-sm">
+          <AdminButton variant="secondary" size="sm" onClick={handleRetry}>
             Retry
-          </button>
+          </AdminButton>
         </div>
       )}
 
@@ -273,25 +274,16 @@ export function CalendarSyncWidget() {
           </div>
 
           {/* Sync All Now Button */}
-          <button
+          <AdminButton
             onClick={handleSyncAll}
-            disabled={isSyncing}
+            isLoading={isSyncing}
+            loadingText="Syncing..."
             aria-label="Sync all appointments now"
-            className="
-              btn btn-primary
-              w-full
-              bg-[#434E54] hover:bg-[#363F44]
-              border-none
-              text-white text-sm font-medium
-              shadow-sm hover:shadow-md
-              disabled:bg-gray-300 disabled:cursor-not-allowed
-            "
+            className="w-full text-sm font-medium shadow-sm hover:shadow-md"
           >
-            <RefreshCw
-              className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`}
-            />
-            {isSyncing ? 'Syncing...' : 'Sync All Now'}
-          </button>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Sync All Now
+          </AdminButton>
 
           {/* Settings Link */}
           <Link

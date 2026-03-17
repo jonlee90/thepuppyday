@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, Search, AlertCircle, ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import type { GoogleCalendarEvent } from '@/types/calendar';
 
 interface EventMappingFormProps {
@@ -466,25 +467,27 @@ export function EventMappingForm({
 
       {/* Navigation between events */}
       <div className="flex items-center justify-between pt-4 border-t border-[#E5E5E5]">
-        <button
+        <AdminButton
+          variant="ghost"
           type="button"
           onClick={() => onChangeIndex(Math.max(0, currentIndex - 1))}
           disabled={currentIndex === 0}
-          className="btn btn-ghost hover:bg-[#F8EEE5] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="hover:bg-[#F8EEE5]"
         >
           <ChevronLeft className="w-5 h-5" aria-hidden="true" />
           Previous Event
-        </button>
+        </AdminButton>
 
-        <button
+        <AdminButton
+          variant="ghost"
           type="button"
           onClick={() => onChangeIndex(Math.min(selectedEvents.length - 1, currentIndex + 1))}
           disabled={currentIndex === selectedEvents.length - 1}
-          className="btn btn-ghost hover:bg-[#F8EEE5] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="hover:bg-[#F8EEE5]"
         >
           Next Event
           <ChevronRight className="w-5 h-5" aria-hidden="true" />
-        </button>
+        </AdminButton>
       </div>
     </div>
   );

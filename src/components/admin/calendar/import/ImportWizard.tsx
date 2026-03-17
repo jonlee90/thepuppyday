@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, AlertTriangle } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { DateRangeStep } from './DateRangeStep';
 import { EventSelectionStep } from './EventSelectionStep';
 import { ReviewStep } from './ReviewStep';
@@ -374,13 +375,15 @@ export function ImportWizard({ isOpen, onClose, onSuccess }: ImportWizardProps) 
               <h2 className="text-2xl font-semibold text-[#434E54]">Import from Google Calendar</h2>
               <p className="text-sm text-[#6B7280] mt-1">Import calendar events as appointments</p>
             </div>
-            <button
+            <AdminButton
+              variant="ghost"
+              size="sm"
               onClick={handleCancel}
-              className="btn btn-ghost btn-sm btn-circle hover:bg-[#F8EEE5]"
+              className="btn-circle hover:bg-[#F8EEE5]"
               aria-label="Close"
             >
               <X className="w-5 h-5 text-[#6B7280]" />
-            </button>
+            </AdminButton>
           </div>
 
           {/* Step Indicator */}
@@ -469,23 +472,26 @@ export function ImportWizard({ isOpen, onClose, onSuccess }: ImportWizardProps) 
 
           {/* Footer */}
           <div className="flex items-center justify-between p-6 border-t border-[#E5E5E5] bg-[#FFFBF7]">
-            <button
+            <AdminButton
+              variant="ghost"
               onClick={handleBack}
               disabled={currentStep === 1 || isImporting || isLoadingPreview}
-              className="btn btn-ghost hover:bg-[#F8EEE5] disabled:opacity-50"
+              className="hover:bg-[#F8EEE5]"
             >
               Back
-            </button>
+            </AdminButton>
             <div className="flex items-center gap-2">
-              <button
+              <AdminButton
+                variant="ghost"
                 onClick={handleCancel}
                 disabled={isImporting || isLoadingPreview}
-                className="btn btn-ghost hover:bg-[#F8EEE5]"
+                className="hover:bg-[#F8EEE5]"
               >
                 Cancel
-              </button>
+              </AdminButton>
               {currentStep < 3 && (
-                <button
+                <AdminButton
+                  variant="primary"
                   onClick={handleNext}
                   disabled={
                     (currentStep === 1 && (!dateFrom || !dateTo)) ||
@@ -493,17 +499,11 @@ export function ImportWizard({ isOpen, onClose, onSuccess }: ImportWizardProps) 
                     isLoadingPreview ||
                     isImporting
                   }
-                  className="btn bg-[#F59E0B] hover:bg-[#D97706] text-white border-none disabled:bg-[#E5E5E5] disabled:text-[#9CA3AF]"
+                  isLoading={currentStep === 1 && isLoadingPreview}
+                  loadingText="Loading Events..."
                 >
-                  {currentStep === 1 && isLoadingPreview ? (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      Loading Events...
-                    </>
-                  ) : (
-                    'Next'
-                  )}
-                </button>
+                  Next
+                </AdminButton>
               )}
             </div>
           </div>
@@ -532,18 +532,19 @@ export function ImportWizard({ isOpen, onClose, onSuccess }: ImportWizardProps) 
                     Are you sure you want to cancel? All progress will be lost.
                   </p>
                   <div className="flex items-center gap-2 justify-end">
-                    <button
+                    <AdminButton
+                      variant="ghost"
                       onClick={() => setShowCancelDialog(false)}
-                      className="btn btn-ghost hover:bg-[#F8EEE5]"
+                      className="hover:bg-[#F8EEE5]"
                     >
                       Continue Import
-                    </button>
-                    <button
+                    </AdminButton>
+                    <AdminButton
+                      variant="danger"
                       onClick={handleConfirmCancel}
-                      className="btn bg-[#EF4444] hover:bg-[#DC2626] text-white border-none"
                     >
                       Yes, Cancel
-                    </button>
+                    </AdminButton>
                   </div>
                 </div>
               </div>

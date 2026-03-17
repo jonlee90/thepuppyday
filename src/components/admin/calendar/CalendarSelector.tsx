@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Calendar as CalendarIcon, ChevronDown, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import type { GoogleCalendarInfo } from '@/types/calendar';
 
 interface CalendarSelectorProps {
@@ -218,17 +219,19 @@ export function CalendarSelector({
 
         {/* Refresh Button */}
         <div className="flex justify-end mt-4">
-          <button
+          <AdminButton
+            variant="ghost"
+            size="sm"
             onClick={handleRefresh}
             disabled={isDisabled}
-            className="btn btn-ghost btn-sm gap-2 hover:bg-[#FFFBF7]"
             type="button"
+            className="gap-2 hover:bg-[#FFFBF7]"
           >
             <RefreshCw
               className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
             />
             Refresh Calendars
-          </button>
+          </AdminButton>
         </div>
 
         {/* Empty State */}

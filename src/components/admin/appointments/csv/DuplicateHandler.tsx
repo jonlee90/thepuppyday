@@ -65,25 +65,29 @@ export function DuplicateHandler({ duplicates, onResolve, onBack }: DuplicateHan
 
       {/* Duplicate Navigation */}
       <div className="flex items-center justify-between bg-[#FFFBF7] rounded-lg p-4 border border-[#EAE0D5]">
-        <button
+        <AdminButton
+          variant="ghost"
+          size="sm"
           onClick={handlePrev}
           disabled={!hasPrev}
-          className="btn btn-ghost btn-sm text-[#434E54] hover:bg-[#EAE0D5] disabled:opacity-30 gap-2"
+          className="disabled:opacity-30 gap-2"
         >
           <ChevronLeft className="w-4 h-4" />
           Previous
-        </button>
+        </AdminButton>
         <span className="text-sm font-semibold text-[#434E54]">
           Duplicate {currentIndex + 1} of {duplicates.length}
         </span>
-        <button
+        <AdminButton
+          variant="ghost"
+          size="sm"
           onClick={handleNext}
           disabled={!hasNext}
-          className="btn btn-ghost btn-sm text-[#434E54] hover:bg-[#EAE0D5] disabled:opacity-30 gap-2"
+          className="disabled:opacity-30 gap-2"
         >
           Next
           <ChevronRight className="w-4 h-4" />
-        </button>
+        </AdminButton>
       </div>
 
       {/* Comparison Cards */}

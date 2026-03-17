@@ -134,13 +134,23 @@ export function calculateCustomerMetrics(
 }
 
 const STATUS_COLORS: Record<AppointmentStatus, { bg: string; text: string; border: string }> = {
-  pending: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-  confirmed: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-  checked_in: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
-  in_progress: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
-  completed: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-  cancelled: { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' },
-  no_show: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+  pending:     { bg: 'bg-[#FCD34D]/20', text: 'text-[#92400E]', border: 'border-[#FCD34D]/30' },
+  confirmed:   { bg: 'bg-[#10B981]/15', text: 'text-[#065F46]', border: 'border-[#10B981]/20' },
+  checked_in:  { bg: 'bg-[#8B5CF6]/15', text: 'text-[#5B21B6]', border: 'border-[#8B5CF6]/20' },
+  in_progress: { bg: 'bg-[#3B82F6]/15', text: 'text-[#1E40AF]', border: 'border-[#3B82F6]/20' },
+  completed:   { bg: 'bg-[#434E54]/15', text: 'text-[#434E54]',  border: 'border-[#434E54]/20' },
+  cancelled:   { bg: 'bg-[#434E54]/10', text: 'text-[#434E54]/70', border: 'border-[#434E54]/10' },
+  no_show:     { bg: 'bg-[#EF4444]/10', text: 'text-[#991B1B]', border: 'border-[#EF4444]/20' },
+};
+
+const STATUS_BORDER: Record<string, string> = {
+  completed:   'border-l-[#434E54]/40',
+  cancelled:   'border-l-[#434E54]/15',
+  no_show:     'border-l-[#EF4444]/50',
+  pending:     'border-l-[#FCD34D]/60',
+  confirmed:   'border-l-[#10B981]/50',
+  checked_in:  'border-l-[#8B5CF6]/50',
+  in_progress: 'border-l-[#3B82F6]/50',
 };
 
 interface AppointmentHistoryListProps {
@@ -201,6 +211,18 @@ export function AppointmentHistoryList({
     return filtered;
   }, [appointments, statusFilter, dateRangeFilter]);
 
+  // Group by month
+  const grouped = useMemo(() => {
+    const groups: { month: string; items: AppointmentWithDetails[] }[] = [];
+    for (const apt of filteredAppointments) {
+      const month = format(new Date(apt.scheduled_at), 'MMMM yyyy');
+      const last = groups[groups.length - 1];
+      if (last?.month === month) last.items.push(apt);
+      else groups.push({ month, items: [apt] });
+    }
+    return groups;
+  }, [filteredAppointments]);
+
   const handleAppointmentClick = (appointmentId: string) => {
     setSelectedAppointmentId(appointmentId);
     setIsModalOpen(true);
@@ -220,16 +242,16 @@ export function AppointmentHistoryList({
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">Filters:</span>
+          <Filter className="w-4 h-4 text-[#434E54]/50" />
+          <span className="text-sm font-medium text-[#434E54]/70">Filters:</span>
         </div>
 
         {/* Status Filter */}
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm
-                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+          className="px-3 py-1.5 rounded-lg border border-[#434E54]/20 bg-white text-sm
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]
                      transition-colors"
         >
           <option value="all">All Status</option>
@@ -242,8 +264,8 @@ export function AppointmentHistoryList({
         <select
           value={dateRangeFilter}
           onChange={(e) => setDateRangeFilter(e.target.value as DateRangeFilter)}
-          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm
-                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+          className="px-3 py-1.5 rounded-lg border border-[#434E54]/20 bg-white text-sm
+                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]
                      transition-colors"
         >
           <option value="all">All Time</option>
@@ -252,14 +274,14 @@ export function AppointmentHistoryList({
           <option value="last_year">Last Year</option>
         </select>
 
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-[#434E54]/50">
           {filteredAppointments.length} appointment{filteredAppointments.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Error State */}
       {error && (
-        <div className="p-4 rounded-lg bg-red-50 border border-red-200">
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200">
           <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
@@ -267,100 +289,110 @@ export function AppointmentHistoryList({
       {/* Appointments List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-2 text-gray-500">
-            <div className="w-5 h-5 border-2 border-gray-300 border-t-[#434E54] rounded-full animate-spin" />
+          <div className="flex items-center gap-2 text-[#434E54]/50">
+            <div className="w-5 h-5 border-2 border-[#EAE0D5] border-t-[#D4A574] rounded-full animate-spin" />
             <span>Loading appointments...</span>
           </div>
         </div>
       ) : filteredAppointments.length === 0 ? (
-        <div className="bg-white rounded-lg p-12 text-center">
-          <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="font-medium text-gray-900">No appointments found</p>
-          <p className="text-sm text-gray-500 mt-1">
+        <div className="bg-white rounded-xl p-12 text-center">
+          <Calendar className="w-12 h-12 text-[#EAE0D5] mx-auto mb-3" />
+          <p className="font-medium text-[#434E54]">No appointments found</p>
+          <p className="text-sm text-[#434E54]/50 mt-1">
             {statusFilter !== 'all' || dateRangeFilter !== 'all'
               ? 'Try adjusting your filters'
               : 'This customer has no appointments yet'}
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredAppointments.map((appointment) => {
-            const statusConfig = STATUS_COLORS[appointment.status];
+        <div className="space-y-6">
+          {grouped.map(({ month, items }) => (
+            <div key={month}>
+              <h3 className="text-xs font-semibold text-[#434E54]/40 uppercase tracking-wider sticky top-0 bg-white py-2 z-10">
+                {month}
+              </h3>
+              <div className="space-y-3">
+                {items.map((appointment) => {
+                  const statusConfig = STATUS_COLORS[appointment.status];
+                  const borderClass = STATUS_BORDER[appointment.status ?? ''] ?? '';
 
-            return (
-              <div
-                key={appointment.id}
-                onClick={() => handleAppointmentClick(appointment.id)}
-                className="bg-white p-4 rounded-lg shadow-sm border border-gray-200
-                           hover:shadow-md transition-all cursor-pointer"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  {/* Left: Details */}
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="flex items-center gap-2 text-[#434E54]">
-                        <Calendar className="w-4 h-4" />
-                        <span className="font-semibold">
-                          {format(new Date(appointment.scheduled_at), 'MMM dd, yyyy')}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        <span className="text-sm">
-                          {format(new Date(appointment.scheduled_at), 'h:mm a')}
-                        </span>
-                      </div>
-                      <span
-                        className={`
-                          inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
-                          ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border
-                        `}
-                      >
-                        {appointment.status.replace('_', ' ').toUpperCase()}
-                      </span>
-                    </div>
+                  return (
+                    <div
+                      key={appointment.id}
+                      onClick={() => handleAppointmentClick(appointment.id)}
+                      className={`bg-white p-4 rounded-xl shadow-sm border-l-4 ${borderClass}
+                                 hover:shadow-md transition-all cursor-pointer`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Left: Details */}
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <div className="flex items-center gap-2 text-[#434E54]">
+                              <Calendar className="w-4 h-4" />
+                              <span className="font-semibold">
+                                {format(new Date(appointment.scheduled_at), 'MMM dd, yyyy')}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[#434E54]/60">
+                              <Clock className="w-4 h-4" />
+                              <span className="text-sm">
+                                {format(new Date(appointment.scheduled_at), 'h:mm a')}
+                              </span>
+                            </div>
+                            <span
+                              className={`
+                                inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                                ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border
+                              `}
+                            >
+                              {appointment.status.replace('_', ' ').toUpperCase()}
+                            </span>
+                          </div>
 
-                    <div className="flex items-center gap-4 flex-wrap text-sm">
-                      <div>
-                        <span className="text-gray-600">Pet: </span>
-                        <span className="font-medium text-[#434E54]">
-                          {appointment.pet?.name || 'Unknown'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Service: </span>
-                        <span className="font-medium text-[#434E54]">
-                          {appointment.service?.name || 'Unknown'}
-                        </span>
-                      </div>
-                      {appointment.addons && appointment.addons.length > 0 && (
-                        <div>
-                          <span className="text-gray-600">Add-ons: </span>
-                          <span className="font-medium text-[#434E54]">
-                            {appointment.addons.map((a) => a.addon?.name).join(', ')}
-                          </span>
+                          <div className="flex items-center gap-4 flex-wrap text-sm">
+                            <div>
+                              <span className="text-[#434E54]/60">Pet: </span>
+                              <span className="font-medium text-[#434E54]">
+                                {appointment.pet?.name || 'Unknown'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[#434E54]/60">Service: </span>
+                              <span className="font-medium text-[#434E54]">
+                                {appointment.service?.name || 'Unknown'}
+                              </span>
+                            </div>
+                            {appointment.addons && appointment.addons.length > 0 && (
+                              <div>
+                                <span className="text-[#434E54]/60">Add-ons: </span>
+                                <span className="font-medium text-[#434E54]">
+                                  {appointment.addons.map((a) => a.addon?.name).join(', ')}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Right: Price and Report Card */}
-                  <div className="flex items-center gap-4">
-                    {appointment.report_card && (
-                      <div className="flex items-center gap-1 text-green-600">
-                        <ImageIcon className="w-4 h-4" />
-                        <span className="text-xs font-medium">Report Card</span>
+                        {/* Right: Price and Report Card */}
+                        <div className="flex items-center gap-4">
+                          {appointment.report_card && (
+                            <div className="flex items-center gap-1 text-[#10B981]">
+                              <ImageIcon className="w-4 h-4" />
+                              <span className="text-xs font-medium">Report Card</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1 text-[#434E54]">
+                            <DollarSign className="w-4 h-4" />
+                            <span className="font-bold">{appointment.total_price.toFixed(2)}</span>
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    <div className="flex items-center gap-1 text-[#434E54]">
-                      <DollarSign className="w-4 h-4" />
-                      <span className="font-bold">{appointment.total_price.toFixed(2)}</span>
                     </div>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { SizeBasedPricingInputs } from './SizeBasedPricingInputs';
 import type { Service, ServicePrice, PetSize } from '@/types/database';
 
@@ -45,6 +46,7 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [uploadError, setUploadError] = useState<string>('');
@@ -237,19 +239,27 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
 
   const handleClose = () => {
     if (isDirty) {
-      const confirmed = confirm(
-        'You have unsaved changes. Are you sure you want to close?'
-      );
-      if (!confirmed) return;
+      setShowCloseConfirm(true);
+      return;
     }
     onClose();
   };
 
   return (
+    <>
+    <ConfirmationModal
+      isOpen={showCloseConfirm}
+      onClose={() => setShowCloseConfirm(false)}
+      onConfirm={() => { setShowCloseConfirm(false); onClose(); }}
+      title="Unsaved Changes"
+      description="You have unsaved changes. Are you sure you want to close?"
+      confirmText="Discard Changes"
+      variant="error"
+    />
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl">
+        <div className="sticky top-0 bg-white border-b border-[#434E54]/20 px-6 py-4 flex items-center justify-between rounded-t-xl">
           <h2 className="text-xl font-bold text-[#434E54]">
             {service ? 'Edit Service' : 'Add New Service'}
           </h2>
@@ -265,17 +275,17 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Name */}
           <div>
-            <label className="block text-sm font-semibold text-[#434E54] mb-1.5">
-              Service Name <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#434E54] mb-1.5">
+              Service Name <span className="text-[#D4A574]">*</span>
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
               className={`w-full py-2.5 px-4 rounded-lg border bg-white
-                focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+                focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]
                 placeholder:text-gray-400 transition-colors duration-200
-                ${errors.name ? 'border-red-500' : 'border-gray-200'}
+                ${errors.name ? 'border-red-500' : 'border-[#434E54]/20'}
               `}
               placeholder="e.g., Basic Groom"
               maxLength={100}
@@ -287,7 +297,7 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-semibold text-[#434E54] mb-1.5">
+            <label className="block text-sm font-medium text-[#434E54] mb-1.5">
               Description
               <span className="text-xs text-[#6B7280] ml-2">
                 ({formData.description.length}/500)
@@ -298,9 +308,9 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
               onChange={(e) => handleChange('description', e.target.value)}
               rows={3}
               className={`w-full py-2.5 px-4 rounded-lg border bg-white
-                focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+                focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]
                 placeholder:text-gray-400 transition-colors duration-200 resize-none
-                ${errors.description ? 'border-red-500' : 'border-gray-200'}
+                ${errors.description ? 'border-red-500' : 'border-[#434E54]/20'}
               `}
               placeholder="Describe what's included in this service"
               maxLength={500}
@@ -312,8 +322,8 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
 
           {/* Duration */}
           <div>
-            <label className="block text-sm font-semibold text-[#434E54] mb-1.5">
-              Duration (minutes) <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#434E54] mb-1.5">
+              Duration (minutes) <span className="text-[#D4A574]">*</span>
             </label>
             <input
               type="number"
@@ -325,9 +335,9 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
                 handleChange('duration_minutes', parseInt(e.target.value))
               }
               className={`w-full py-2.5 px-4 rounded-lg border bg-white
-                focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+                focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]
                 transition-colors duration-200
-                ${errors.duration_minutes ? 'border-red-500' : 'border-gray-200'}
+                ${errors.duration_minutes ? 'border-red-500' : 'border-[#434E54]/20'}
               `}
             />
             {errors.duration_minutes && (
@@ -339,7 +349,7 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
 
           {/* Image Upload */}
           <div>
-            <label className="block text-sm font-semibold text-[#434E54] mb-1.5">
+            <label className="block text-sm font-medium text-[#434E54] mb-1.5">
               Service Image
             </label>
             <div className="space-y-3">
@@ -362,7 +372,7 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-2.5 px-4 rounded-lg border border-gray-200 bg-white
+                className="w-full py-2.5 px-4 rounded-lg border border-[#434E54]/20 bg-white
                   hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center gap-2
                   text-sm font-medium text-[#434E54]"
               >
@@ -393,7 +403,7 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
               checked={formData.is_active}
               onChange={(e) => handleChange('is_active', e.target.checked)}
               className="w-5 h-5 rounded border-gray-300 text-[#434E54]
-                focus:ring-[#434E54]/20"
+                focus:ring-2 focus:ring-[#434E54]/30"
             />
             <label htmlFor="is_active" className="text-sm font-medium text-[#434E54]">
               Active (visible to customers)
@@ -401,7 +411,7 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+          <div className="flex items-center gap-3 pt-4 border-t border-[#434E54]/20">
             <button
               type="button"
               onClick={handleClose}
@@ -431,5 +441,6 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
         </form>
       </div>
     </div>
+    </>
   );
 }

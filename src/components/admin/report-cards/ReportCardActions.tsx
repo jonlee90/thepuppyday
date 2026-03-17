@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Send, RefreshCw, AlertCircle, Info } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { toast } from '@/hooks/use-toast';
 
@@ -120,10 +121,10 @@ export function ReportCardActions({
             enable.
           </span>
         </div>
-        <button disabled className="btn btn-primary gap-2" aria-disabled="true">
+        <AdminButton variant="primary" disabled aria-disabled="true" className="gap-2">
           <Send className="h-5 w-5" />
           Send Report Card
-        </button>
+        </AdminButton>
       </div>
     );
   }
@@ -133,24 +134,26 @@ export function ReportCardActions({
       <div className="flex gap-3">
         {!reportCard.sent_at ? (
           // Send Now Button
-          <button
+          <AdminButton
+            variant="primary"
             onClick={() => setShowSendModal(true)}
-            className="btn btn-primary gap-2"
             aria-label="Send report card to customer"
+            className="gap-2"
           >
             <Send className="h-5 w-5" />
             Send Report Card
-          </button>
+          </AdminButton>
         ) : (
           // Resend Button
-          <button
+          <AdminButton
+            variant="secondary"
             onClick={() => setShowResendModal(true)}
-            className="btn btn-outline btn-primary gap-2"
             aria-label="Resend report card to customer"
+            className="gap-2"
           >
             <RefreshCw className="h-5 w-5" />
             Resend Report Card
-          </button>
+          </AdminButton>
         )}
       </div>
 

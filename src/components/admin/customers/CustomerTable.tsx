@@ -8,8 +8,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Users, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
+import { Users, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { CustomerFlagBadge } from './CustomerFlagBadge';
+import { SearchFilterBar } from '@/components/admin/shared';
 import { isWalkinPlaceholderEmail } from '@/lib/utils';
 import type { User, CustomerFlag } from '@/types/database';
 
@@ -177,26 +178,21 @@ export function CustomerTable({ onCustomerClick }: CustomerTableProps) {
   return (
     <div className="space-y-4">
       {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by name, email, phone, or pet name..."
-          className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-gray-200 bg-white
-                     focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
-                     placeholder:text-gray-400 transition-colors"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#434E54]"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
-      </div>
+      <SearchFilterBar
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search by name, email, phone, or pet name..."
+        actions={
+          searchQuery ? (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="text-[#434E54]/40 hover:text-[#434E54]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : undefined
+        }
+      />
 
       {/* Results Count */}
       <p className="text-sm text-gray-600">

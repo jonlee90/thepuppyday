@@ -196,8 +196,9 @@ See [Global Design System](docs/architecture/ARCHITECTURE.md#global-design-syste
 
 ### Development Agents
 - `app-dev`: Frontend development - UI/UX design, React components, Next.js pages, DaisyUI implementation, responsive design, accessibility
-- `data-dev`: Backend development - Supabase integration, authentication, RLS policies, database queries, migrations (has MCP tools)
-- `code-reviewer`: Code review and audits - security, performance, design system compliance (has MCP tools)
+- `data-dev`: Backend development — Supabase integration, RLS, migrations, API routes. Dual-mode: IMPLEMENT for new features, DIAGNOSE for debugging. Security-obsessed, has MCP Supabase tools
+- `code-reviewer`: Code review — blunt, project-pattern aware, auto-fixes critical issues. Compact table output. Has MCP Supabase tools, invokes /simplify post-review
+- `frontend-designer`: UI/UX design critic and architect — research-backed critique of existing UI, mobile-first ASCII wireframe specs for new designs, Puppy Day brand enforcement
 
 ### Available Skills
 Reference these for detailed specifications:

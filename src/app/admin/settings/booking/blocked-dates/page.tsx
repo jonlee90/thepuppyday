@@ -15,7 +15,7 @@ export const metadata = {
 
 export default function BlockedDatesPage() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       <BlockedDatesSection />
     </div>
   );

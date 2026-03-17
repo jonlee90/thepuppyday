@@ -1,8 +1,8 @@
 # The Puppy Day - Master Architecture Documentation
 
-> **Version**: 1.7
-> **Last Updated**: 2026-03-14
-> **Status**: Production-Ready (Phases 1-6, 8-9, 11 Complete | Admin Dashboard Redesign Complete | Notification Templates Redesign In Progress | Phase 7 Pending | Phase 10 In Progress)
+> **Version**: 1.8
+> **Last Updated**: 2026-03-16
+> **Status**: Production-Ready (Phases 1-6, 8-9, 11, NT Complete | Admin Dashboard Redesign Complete | Phase 7 Pending | Phase 10 In Progress)
 
 ## Table of Contents
 
@@ -56,16 +56,16 @@
 | 3 | Booking System | Completed | Multi-step booking wizard, availability, waitlist, guest users |
 | 4 | Customer Portal | Completed | Dashboard, appointments, pets, profile, report cards |
 | 5 | Admin Panel Core | Completed | Dashboard, appointments, customers, services, gallery |
-| 6 | Admin Panel Advanced | Completed | Analytics, marketing campaigns, admin appointment management with CSV import and walk-in appointments |
+| 6 | Admin Panel Advanced | Completed | Analytics, marketing campaigns, admin appointment management with walk-in appointments |
 | 7 | Payments & Memberships | Pending | Stripe integration, memberships, loyalty program |
 | 8 | Notifications | Completed | Templates, triggers, preferences, email provider, unsubscribe system |
 | 9 | Admin Settings | Completed | Business settings, staff management, site content, banners |
-| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), AdminButton component (done), AppointmentDetailModal redesign (done), settings hierarchy reorganization (done), custom swimlane calendar with overlap layout (done), StaffForm edit data loading fix (done), comprehensive testing pending |
+| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), AdminButton component (done), AppointmentDetailModal redesign (done), settings hierarchy reorganization (done), custom swimlane calendar with overlap layout (done), StaffForm edit data loading fix (done), groomer role route restrictions (done), Google Calendar OAuth refactor (done), booking flexibility features (done), comprehensive testing pending |
 | 11 | Calendar Error Recovery | Completed | Retry queue, error recovery UI, quota tracking, auto-pause system |
 | SEO | Multi-Page SEO Architecture | Completed | Blog infrastructure with SEO articles, location-based `/dog-grooming/[city]` pages, individual `/services/[slug]` pages, standalone about/contact/gallery/reviews/faq/privacy/terms/accessibility pages, renamed `/areas` to `/dog-grooming` for keyword ranking |
 | PWA | Progressive Web App | Completed | Serwist/Turbopack PWA integration, service worker, offline support |
 | F | Admin Dashboard Redesign | Completed | Replaced DashboardStats/TodayAppointments/PendingAppointments with RevenueOverview, DashboardTimeline, ProductivityWidget, WaitlistWidget, PendingActionsWidget; useDashboardData hook; revenue-overview API endpoint; QuickAccess removed; PendingActionsWidget moved full-width above grid |
-| NT | Notification Templates Redesign | In Progress | Email mood system (celebration/reminder/urgent/info/warning/success), HTML email base redesign with charcoal header and gold accents, 7 reusable component functions, pill-style CTAs, all 13 email templates updated with mood banners and pet hero sections, 5 new notification triggers |
+| NT | Notification Templates Redesign | Completed | Email mood system (celebration/reminder/urgent/info/warning/success), HTML email base redesign with charcoal header and gold accents, 7 reusable component functions, pill-style CTAs, all 13 email templates updated with mood banners and pet hero sections, 5 new notification triggers, double-wrapping prevention, new admin triggers (new booking, cancellation, no-show), grooming complete with Yelp review link |
 
 ---
 
@@ -1297,7 +1297,7 @@ Key indexes for performance:
 **Flows**:
 1. **Customer Registration** - Email/password signup with email verification
 2. **Guest Users** - Guest checkout creates a user record for booking
-3. **Admin-Created Accounts** - Admin creates customer account via CSV import or manual entry
+3. **Admin-Created Accounts** - Admin creates customer account via manual entry
 4. **Password Reset** - Email-based password reset flow
 5. **Session Management** - Server-side session validation via Supabase SSR
 
@@ -1330,6 +1330,22 @@ const adminRoutes = ['/admin'];
 // Admin API routes
 const adminApiRoutes = ['/api/admin'];
 ```
+
+#### Groomer Role Route Restrictions
+
+Groomers have limited access to admin routes. Unauthorized routes redirect to `/admin/dashboard`.
+
+**Allowed UI routes** (groomers):
+- `/admin/dashboard`
+- `/admin/appointments`
+- `/admin/customers`
+- `/admin/notifications`
+
+**Allowed API routes** (groomers):
+- `/api/admin/appointments`, `/api/admin/customers`, `/api/admin/notifications`
+- `/api/admin/groomers`, `/api/admin/services`, `/api/admin/addons`, `/api/admin/breeds`, `/api/admin/pets`
+
+**Owner Admin Exclusion**: The owner admin account is excluded from staff/groomer lists in the groomers API route via hardcoded UUID filter.
 
 #### API Route Protection
 
@@ -1586,7 +1602,7 @@ HMAC-SHA256 signed tokens with expiration for email unsubscribe links.
 | GET | `/api/admin/calendar/auth/start` | Start OAuth flow |
 | GET | `/api/admin/calendar/auth/callback` | OAuth callback |
 | POST | `/api/admin/calendar/auth/disconnect` | Disconnect calendar |
-| POST | `/api/admin/calendar/auth/service-account` | Service account auth |
+| ~~POST~~ | ~~`/api/admin/calendar/auth/service-account`~~ | Removed (OAuth-only auth) |
 | GET | `/api/admin/calendar/calendars` | List available calendars |
 | GET | `/api/admin/calendar/connection` | Get connection status |
 | POST | `/api/admin/calendar/connection/resume` | Resume paused sync |
@@ -1764,10 +1780,11 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 # Resend (Email)
 RESEND_API_KEY=re_...
 
-# Google Calendar (OAuth)
+# Google Calendar (OAuth-only, service account auth removed)
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GOOGLE_REDIRECT_URI=...
+# Scopes: https://www.googleapis.com/auth/calendar, https://www.googleapis.com/auth/userinfo.email
 
 # Unsubscribe Tokens
 UNSUBSCRIBE_TOKEN_SECRET=your-secret-key
