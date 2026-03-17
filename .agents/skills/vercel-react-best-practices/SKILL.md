@@ -1,24 +1,28 @@
 ---
 name: vercel-react-best-practices
-description: React and Next.js performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements.
+description: React/Next.js PERFORMANCE optimization guidelines from Vercel Engineering. Use for performance audits, bundle optimization, waterfall elimination, and re-render optimization. Do NOT use for basic component structure or Server/Client decisions (use /component-patterns instead).
 license: MIT
 metadata:
   author: vercel
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
-# Vercel React Best Practices
+# Vercel React Best Practices (Performance Focus)
 
-Comprehensive performance optimization guide for React and Next.js applications, maintained by Vercel. Contains 57 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.
+Performance optimization guide for React and Next.js applications from Vercel Engineering. Contains 57 rules across 8 categories, prioritized by impact.
+
+**Scope**: This skill covers PERFORMANCE patterns only. For component structure, Server/Client decisions, props patterns, hooks, and loading states, use `/component-patterns` instead.
 
 ## When to Apply
 
 Reference these guidelines when:
-- Writing new React components or Next.js pages
-- Implementing data fetching (client or server-side)
-- Reviewing code for performance issues
-- Refactoring existing React/Next.js code
-- Optimizing bundle size or load times
+- **Performance audits** — profiling, identifying bottlenecks
+- **Bundle size optimization** — code splitting, tree shaking, dynamic imports
+- **Waterfall elimination** — parallel fetching, deferred awaits
+- **Re-render optimization** — memoization, state management, transitions
+- **Reviewing code for performance issues**
+
+Do NOT invoke for basic component creation — use `/component-patterns`.
 
 ## Rule Categories by Priority
 
