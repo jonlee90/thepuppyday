@@ -4,7 +4,7 @@
 > **Status**: Completed (Phase 2 + SEO Phase)
 > **Base Path**: `(marketing)/`
 > **Authentication**: Not Required
-> **Last Updated**: 2026-03-14
+> **Last Updated**: 2026-03-16
 
 ## Overview
 
@@ -117,7 +117,7 @@ async function getMarketingData() {
 export const revalidate = 900; // ISR: Revalidate every 15 minutes
 ```
 
-**Structured Data**: Schema.org `LocalBusiness` JSON-LD with dynamic business info, opening hours, geo coordinates, and aggregate rating.
+**Structured Data**: Schema.org `LocalBusiness` JSON-LD with dynamic business info, opening hours, geo coordinates, and social links. No `aggregateRating` (removed to avoid Google warnings without verified review data).
 
 ---
 
@@ -249,7 +249,7 @@ All pages rendered on the server for full SEO crawlability.
 Fetched from `site_content` database table, editable via admin panel.
 
 ### Structured Data
-Schema.org `LocalBusiness` with address, phone, hours, geo, ratings, and social links.
+Schema.org `LocalBusiness` with address, phone, hours, geo, and social links (no aggregateRating).
 
 ### ISR
 Pages revalidate every 15 minutes (900 seconds) matching banner cache TTL.

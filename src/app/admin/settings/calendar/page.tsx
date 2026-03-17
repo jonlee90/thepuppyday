@@ -6,6 +6,7 @@
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin, getAuthenticatedAdmin } from '@/lib/admin/auth';
+import { AdminBreadcrumb } from '@/components/admin/shared';
 import { CalendarSettingsClient } from './CalendarSettingsClient';
 import { getActiveConnection } from '@/lib/calendar/connection';
 import { getValidAccessToken } from '@/lib/calendar/token-manager';
@@ -251,17 +252,7 @@ export default async function CalendarSettingsPage({
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <div className="text-sm breadcrumbs mb-2">
-          <ul className="text-[#9CA3AF]">
-            <li>
-              <a href="/admin/settings" className="hover:text-[#434E54] hover:underline">
-                Settings
-              </a>
-            </li>
-            <li className="text-[#434E54]">Calendar Integration</li>
-          </ul>
-        </div>
-
+        <AdminBreadcrumb items={[{ label: 'Settings', href: '/admin/settings' }, { label: 'Calendar Integration' }]} />
         <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Calendar Integration Settings</h1>
         <p className="mt-2 text-[#6B7280]">
           Manage your Google Calendar connection and sync settings.

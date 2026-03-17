@@ -10,6 +10,7 @@ import { Download, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
 import { exportKPIsToCSV, exportChartDataToCSV } from '@/lib/utils/csv-export';
 import { exportAnalyticsPDF } from '@/lib/utils/analytics-pdf';
 import { config } from '@/lib/config';
+import { toast } from '@/hooks/use-toast';
 
 interface ExportMenuProps {
   dateRange: {
@@ -38,7 +39,7 @@ export function ExportMenu({ dateRange }: ExportMenuProps) {
       setIsOpen(false);
     } catch (error) {
       console.error('Error exporting KPIs:', error);
-      alert('Failed to export KPIs. Please try again.');
+      toast.error('Failed to export KPIs');
     } finally {
       setIsExporting(false);
     }
@@ -54,7 +55,7 @@ export function ExportMenu({ dateRange }: ExportMenuProps) {
       setIsOpen(false);
     } catch (error) {
       console.error('Error exporting services:', error);
-      alert('Failed to export service data. Please try again.');
+      toast.error('Failed to export service data');
     } finally {
       setIsExporting(false);
     }
@@ -91,7 +92,7 @@ export function ExportMenu({ dateRange }: ExportMenuProps) {
       setIsOpen(false);
     } catch (error) {
       console.error('Error exporting groomers:', error);
-      alert('Failed to export groomer data. Please try again.');
+      toast.error('Failed to export groomer data');
     } finally {
       setIsExporting(false);
     }
@@ -129,7 +130,7 @@ export function ExportMenu({ dateRange }: ExportMenuProps) {
       setIsOpen(false);
     } catch (error) {
       console.error('Error exporting waitlist:', error);
-      alert('Failed to export waitlist data. Please try again.');
+      toast.error('Failed to export waitlist data');
     } finally {
       setIsExporting(false);
     }
@@ -168,7 +169,7 @@ export function ExportMenu({ dateRange }: ExportMenuProps) {
       setIsOpen(false);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
+      toast.error('Failed to generate PDF');
     } finally {
       setIsExporting(false);
     }

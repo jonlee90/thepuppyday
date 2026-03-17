@@ -28,21 +28,19 @@ export default async function CampaignsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8EEE5] p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="hidden lg:block text-3xl font-bold text-[#434E54] mb-2">
-            Campaign Builder
-          </h1>
-          <p className="text-[#6B7280]">
-            Create and manage targeted marketing campaigns to engage customers via email and SMS
-          </p>
-        </div>
-
-        {/* Campaign List */}
-        <CampaignList />
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="hidden lg:block text-3xl font-bold text-[#434E54] mb-2">
+          Campaign Builder
+        </h1>
+        <p className="text-[#434E54]/60">
+          Create and manage targeted marketing campaigns to engage customers via email and SMS
+        </p>
       </div>
+
+      {/* Campaign List */}
+      <CampaignList />
     </div>
   );
 }

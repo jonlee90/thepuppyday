@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { Lock, Loader } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 
 interface GoogleOAuthButtonProps {
   onError?: (error: string) => void;
@@ -65,41 +66,21 @@ export function GoogleOAuthButton({
     }
   };
 
-  const sizeClasses = {
-    sm: 'btn-sm py-2 px-4 text-sm',
-    md: 'py-2.5 px-5 text-base',
-    lg: 'btn-lg py-3 px-6 text-base',
-  };
-
-  const variantClasses = {
-    primary: 'bg-[#F59E0B] hover:bg-[#D97706] text-white border-none',
-    secondary: 'bg-[#434E54] hover:bg-[#363F44] text-white border-none',
-  };
+  const sizeMap = { sm: 'sm' as const, md: 'md' as const, lg: 'lg' as const };
 
   return (
-    <button
+    <AdminButton
+      variant="primary"
+      size={sizeMap[size]}
       onClick={handleConnect}
-      disabled={disabled || isLoading}
-      className={`
-        btn ${sizeClasses[size]} ${variantClasses[variant]}
-        ${fullWidth ? 'w-full' : ''}
-        shadow-sm hover:shadow-md transition-all duration-200
-        disabled:bg-[#E5E5E5] disabled:text-[#9CA3AF] disabled:cursor-not-allowed
-        flex items-center justify-center gap-2
-      `}
+      disabled={disabled}
+      isLoading={isLoading}
+      loadingText="Connecting..."
+      className={`${fullWidth ? 'w-full' : ''} shadow-sm hover:shadow-md transition-all duration-200 gap-2`}
       type="button"
     >
-      {isLoading ? (
-        <>
-          <Loader className="w-5 h-5 animate-spin" />
-          <span>Connecting...</span>
-        </>
-      ) : (
-        <>
-          <Lock className="w-5 h-5" />
-          <span>{variant === 'secondary' ? 'Reconnect Calendar' : 'Connect Google Calendar'}</span>
-        </>
-      )}
-    </button>
+      <Lock className="w-5 h-5" />
+      <span>{variant === 'secondary' ? 'Reconnect Calendar' : 'Connect Google Calendar'}</span>
+    </AdminButton>
   );
 }

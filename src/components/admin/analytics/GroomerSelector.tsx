@@ -26,10 +26,10 @@ export function GroomerSelector({ onGroomerChange, selectedGroomerId }: GroomerS
   const fetchGroomers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/users?role=groomer');
+      const response = await fetch('/api/admin/analytics/groomers?listOnly=true');
       if (!response.ok) throw new Error('Failed to fetch groomers');
       const data = await response.json();
-      setGroomers(data.users || []);
+      setGroomers(data.groomers || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load groomers');
     } finally {

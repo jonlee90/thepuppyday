@@ -15,6 +15,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, AlertTriangle, X } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { BlockedDate } from '@/types/settings';
 
@@ -399,12 +400,13 @@ export function BlockedDatesCalendar({
           <CalendarIcon className="w-5 h-5 text-[#434E54]" />
           <h3 className="text-lg font-semibold text-[#434E54]">Calendar View</h3>
         </div>
-        <button
+        <AdminButton
+          variant="secondary"
+          size="sm"
           onClick={goToToday}
-          className="btn btn-sm bg-transparent text-[#434E54] border border-[#434E54] hover:bg-[#434E54] hover:text-white"
         >
           Today
-        </button>
+        </AdminButton>
       </div>
 
       {/* Month Navigation */}
@@ -558,27 +560,22 @@ export function BlockedDatesCalendar({
               </div>
 
               <div className="modal-action">
-                <button
+                <AdminButton
+                  variant="ghost"
                   onClick={() => setShowAddModal(false)}
                   disabled={isLoading}
-                  className="btn btn-ghost"
                 >
                   Cancel
-                </button>
-                <button
+                </AdminButton>
+                <AdminButton
+                  variant="primary"
                   onClick={() => handleAddBlockedDate(false)}
                   disabled={isLoading}
-                  className="btn bg-[#434E54] text-white hover:bg-[#363F44] border-none"
+                  isLoading={isLoading}
+                  loadingText="Blocking..."
                 >
-                  {isLoading ? (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      Blocking...
-                    </>
-                  ) : (
-                    'Block Date'
-                  )}
-                </button>
+                  Block Date
+                </AdminButton>
               </div>
             </motion.div>
           </div>
@@ -602,27 +599,22 @@ export function BlockedDatesCalendar({
               </p>
 
               <div className="modal-action">
-                <button
+                <AdminButton
+                  variant="ghost"
                   onClick={() => setShowRemoveModal(false)}
                   disabled={isLoading}
-                  className="btn btn-ghost"
                 >
                   Cancel
-                </button>
-                <button
+                </AdminButton>
+                <AdminButton
+                  variant="danger"
                   onClick={handleRemoveBlockedDate}
                   disabled={isLoading}
-                  className="btn bg-red-600 text-white hover:bg-red-700 border-none"
+                  isLoading={isLoading}
+                  loadingText="Removing..."
                 >
-                  {isLoading ? (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      Removing...
-                    </>
-                  ) : (
-                    'Remove Block'
-                  )}
-                </button>
+                  Remove Block
+                </AdminButton>
               </div>
             </motion.div>
           </div>
@@ -662,27 +654,23 @@ export function BlockedDatesCalendar({
               </p>
 
               <div className="modal-action">
-                <button
+                <AdminButton
+                  variant="ghost"
                   onClick={() => setShowConflictDialog(false)}
                   disabled={isLoading}
-                  className="btn btn-ghost"
                 >
                   Cancel
-                </button>
-                <button
+                </AdminButton>
+                <AdminButton
+                  variant="danger"
                   onClick={handleForceBlock}
                   disabled={isLoading}
-                  className="btn bg-orange-600 text-white hover:bg-orange-700 border-none"
+                  isLoading={isLoading}
+                  loadingText="Blocking..."
+                  className="bg-orange-600 hover:bg-orange-700"
                 >
-                  {isLoading ? (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      Blocking...
-                    </>
-                  ) : (
-                    'Block Anyway'
-                  )}
-                </button>
+                  Block Anyway
+                </AdminButton>
               </div>
             </motion.div>
           </div>

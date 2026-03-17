@@ -6,6 +6,7 @@
 'use client';
 
 import { Upload } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 
 interface ImportButtonProps {
   isConnected: boolean;
@@ -19,12 +20,13 @@ export function ImportButton({ isConnected, onOpen }: ImportButtonProps) {
   }
 
   return (
-    <button
+    <AdminButton
+      variant="primary"
       onClick={onOpen}
-      className="btn btn-primary bg-[#F59E0B] hover:bg-[#D97706] border-none text-white shadow-md hover:shadow-lg transition-all duration-200"
+      className="shadow-md hover:shadow-lg transition-all duration-200"
     >
       <Upload className="w-5 h-5" />
       Import from Calendar
-    </button>
+    </AdminButton>
   );
 }

@@ -39,7 +39,7 @@ export default async function WaitlistPage() {
     .order('name');
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Waitlist Management</h1>

@@ -222,7 +222,7 @@ export function GalleryImageEditModal({
               <div className="space-y-4">
                 {/* Pet Name */}
                 <div>
-                  <label className="block text-sm font-medium text-[#434E54] mb-2">
+                  <label className="block text-sm font-medium text-[#434E54] mb-1.5">
                     Pet Name
                   </label>
                   <input
@@ -230,23 +230,23 @@ export function GalleryImageEditModal({
                     value={petName}
                     onChange={(e) => setPetName(e.target.value)}
                     placeholder="Optional"
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white
-                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
-                             placeholder:text-gray-400 transition-colors"
+                    className="w-full px-3 py-2.5 rounded-lg border border-[#434E54]/20 bg-white
+                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]/40
+                             placeholder:text-gray-400 transition-colors text-sm text-[#434E54]"
                   />
                 </div>
 
                 {/* Breed */}
                 <div>
-                  <label className="block text-sm font-medium text-[#434E54] mb-2">
+                  <label className="block text-sm font-medium text-[#434E54] mb-1.5">
                     Breed
                   </label>
                   <select
                     value={breedId}
                     onChange={(e) => setBreedId(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white
-                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
-                             transition-colors"
+                    className="w-full px-3 py-2.5 rounded-lg border border-[#434E54]/20 bg-white
+                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]/40
+                             transition-colors text-sm text-[#434E54]"
                   >
                     <option value="">Select breed (optional)</option>
                     {breeds.map((breed) => (
@@ -259,7 +259,7 @@ export function GalleryImageEditModal({
 
                 {/* Caption */}
                 <div>
-                  <label className="block text-sm font-medium text-[#434E54] mb-2">
+                  <label className="block text-sm font-medium text-[#434E54] mb-1.5">
                     Caption
                     <span className="ml-2 text-xs text-gray-500">
                       {captionLength}/{captionLimit}
@@ -270,15 +270,15 @@ export function GalleryImageEditModal({
                     onChange={(e) => setCaption(e.target.value.slice(0, captionLimit))}
                     placeholder="Add a caption for this photo..."
                     rows={3}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white
-                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
-                             placeholder:text-gray-400 transition-colors resize-none"
+                    className="w-full px-3 py-2.5 rounded-lg border border-[#434E54]/20 bg-white
+                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]/40
+                             placeholder:text-gray-400 transition-colors resize-none text-sm text-[#434E54]"
                   />
                 </div>
 
                 {/* Tags */}
                 <div>
-                  <label className="block text-sm font-medium text-[#434E54] mb-2">
+                  <label className="block text-sm font-medium text-[#434E54] mb-1.5">
                     Tags
                     <span className="ml-2 text-xs text-gray-500">
                       Comma-separated
@@ -289,9 +289,9 @@ export function GalleryImageEditModal({
                     value={tagsInput}
                     onChange={(e) => setTagsInput(e.target.value)}
                     placeholder="e.g., grooming, before-after, goldendoodle"
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white
-                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
-                             placeholder:text-gray-400 transition-colors"
+                    className="w-full px-3 py-2.5 rounded-lg border border-[#434E54]/20 bg-white
+                             focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]/40
+                             placeholder:text-gray-400 transition-colors text-sm text-[#434E54]"
                   />
                 </div>
 
@@ -302,8 +302,8 @@ export function GalleryImageEditModal({
                     id="published"
                     checked={isPublished}
                     onChange={(e) => setIsPublished(e.target.checked)}
-                    className="w-5 h-5 rounded border-gray-300 text-[#434E54]
-                             focus:ring-2 focus:ring-[#434E54]/20"
+                    className="w-5 h-5 rounded border-[#434E54]/20 text-[#434E54]
+                             focus:ring-2 focus:ring-[#434E54]/30"
                   />
                   <label htmlFor="published" className="text-sm font-medium text-[#434E54]">
                     Published (visible on public gallery)

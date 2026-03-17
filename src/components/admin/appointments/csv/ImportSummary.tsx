@@ -6,6 +6,7 @@
 'use client';
 
 import { CheckCircle, XCircle, Users, Dog, AlertCircle, Download, ExternalLink } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import type { CSVImportResult } from '@/types/admin-appointments';
 import { useRouter } from 'next/navigation';
 
@@ -171,13 +172,15 @@ export function ImportSummary({ results, onClose }: ImportSummaryProps) {
               Failed Imports ({results.failed_count})
             </h4>
             {results.errors.length > 0 && (
-              <button
+              <AdminButton
+                variant="ghost"
+                size="sm"
                 onClick={handleDownloadErrors}
-                className="btn btn-ghost btn-sm text-[#434E54] hover:bg-[#EAE0D5] gap-2"
+                className="gap-2"
               >
                 <Download className="w-4 h-4" />
                 Download Errors
-              </button>
+              </AdminButton>
             )}
           </div>
 
@@ -237,19 +240,20 @@ export function ImportSummary({ results, onClose }: ImportSummaryProps) {
 
       {/* Actions */}
       <div className="flex items-center justify-between gap-4 pt-4">
-        <button
+        <AdminButton
+          variant="ghost"
           onClick={onClose}
-          className="btn btn-ghost text-[#434E54] hover:bg-[#EAE0D5] font-medium"
+          className="font-medium"
         >
           Close
-        </button>
-        <button
+        </AdminButton>
+        <AdminButton
           onClick={handleViewAppointments}
-          className="btn bg-[#434E54] text-white hover:bg-[#363F44] font-medium gap-2 px-8"
+          className="font-medium gap-2 px-8"
         >
           View Appointments
           <ExternalLink className="w-4 h-4" />
-        </button>
+        </AdminButton>
       </div>
     </div>
   );

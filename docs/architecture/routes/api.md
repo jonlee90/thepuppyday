@@ -4,7 +4,7 @@
 > **Status**: Core Complete
 > **Base Path**: `/api/`
 > **Framework**: Next.js 16 App Router API Routes
-> **Last Updated**: 2026-03-14
+> **Last Updated**: 2026-03-16
 
 ## Overview
 
@@ -176,7 +176,7 @@ src/app/api/
 | `/api/admin/addons` | GET, POST | List/create addons |
 | `/api/admin/addons/[id]` | GET, PATCH, DELETE | Addon CRUD |
 | `/api/admin/breeds` | GET | List breeds |
-| `/api/admin/groomers` | GET | List groomers |
+| `/api/admin/groomers` | GET | List groomers (all staff roles; excludes owner admin) |
 
 #### Users
 
@@ -295,7 +295,7 @@ src/app/api/
 | `/api/admin/calendar/auth/start` | POST | Start OAuth flow |
 | `/api/admin/calendar/auth/callback` | GET | OAuth callback handler |
 | `/api/admin/calendar/auth/disconnect` | POST | Disconnect calendar |
-| `/api/admin/calendar/auth/service-account` | POST | Configure service account |
+| ~~`/api/admin/calendar/auth/service-account`~~ | ~~POST~~ | Removed (OAuth-only auth) |
 | `/api/admin/calendar/connection` | GET | Get connection status |
 | `/api/admin/calendar/connection/resume` | POST | Resume paused auto-sync |
 | `/api/admin/calendar/calendars` | GET | List available calendars |

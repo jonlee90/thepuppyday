@@ -11,8 +11,7 @@ export const dynamic = 'force-dynamic';
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { AdminBreadcrumb } from '@/components/admin/shared';
 import { PunchCardConfig } from '@/components/admin/settings/loyalty/PunchCardConfig';
 import { EarningRulesForm } from '@/components/admin/settings/loyalty/EarningRulesForm';
 import { RedemptionRulesForm } from '@/components/admin/settings/loyalty/RedemptionRulesForm';
@@ -28,17 +27,8 @@ export default async function LoyaltyProgramPage() {
   await requireAdmin(supabase);
 
   return (
-    <div className="min-h-screen bg-[#F8EEE5] p-6">
-      {/* Breadcrumb Navigation */}
-      <div className="mb-6">
-        <nav className="flex items-center text-sm text-[#434E54]/60">
-          <Link href="/admin/settings" className="hover:text-[#434E54] transition-colors">
-            Settings
-          </Link>
-          <ChevronRight className="w-4 h-4 mx-2" />
-          <span className="text-[#434E54] font-medium">Loyalty Settings</span>
-        </nav>
-      </div>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <AdminBreadcrumb items={[{ label: 'Settings', href: '/admin/settings' }, { label: 'Loyalty Settings' }]} />
 
       {/* Page Header */}
       <div className="mb-8">

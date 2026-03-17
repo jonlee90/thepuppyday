@@ -6,6 +6,7 @@
  */
 
 import { Mail, MessageSquare, CheckCircle, Eye, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { format } from 'date-fns';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { NotificationWithCustomer } from '@/types/notifications';
@@ -54,12 +55,9 @@ export function NotificationTable({
           <h3 className="text-lg font-semibold text-[#434E54] mb-2">Error Loading Notifications</h3>
           <p className="text-[#6B7280] mb-4 text-center max-w-md">{error}</p>
           {onRetry && (
-            <button
-              onClick={onRetry}
-              className="btn bg-[#434E54] text-white hover:bg-[#363F44]"
-            >
+            <AdminButton variant="primary" onClick={onRetry}>
               Try Again
-            </button>
+            </AdminButton>
           )}
         </div>
       </div>
@@ -97,15 +95,15 @@ export function NotificationTable({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="table w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-[#EAE0D5]">
             <tr>
-              <th className="text-left">Type</th>
-              <th className="text-left">Channel</th>
-              <th className="text-left">Recipient</th>
-              <th className="text-left">Status</th>
-              <th className="text-left">Sent</th>
-              <th className="text-left">Delivered</th>
-              <th className="text-left">Clicked</th>
+              <th className="text-left text-xs font-semibold uppercase tracking-wider text-[#434E54]/70">Type</th>
+              <th className="text-left text-xs font-semibold uppercase tracking-wider text-[#434E54]/70">Channel</th>
+              <th className="text-left text-xs font-semibold uppercase tracking-wider text-[#434E54]/70">Recipient</th>
+              <th className="text-left text-xs font-semibold uppercase tracking-wider text-[#434E54]/70">Status</th>
+              <th className="text-left text-xs font-semibold uppercase tracking-wider text-[#434E54]/70">Sent</th>
+              <th className="text-left text-xs font-semibold uppercase tracking-wider text-[#434E54]/70">Delivered</th>
+              <th className="text-left text-xs font-semibold uppercase tracking-wider text-[#434E54]/70">Clicked</th>
               <th></th>
             </tr>
           </thead>
@@ -183,16 +181,18 @@ export function NotificationTable({
 
                 {/* Actions */}
                 <td>
-                  <button
+                  <AdminButton
+                    variant="ghost"
+                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       onRowClick(notification);
                     }}
-                    className="btn btn-ghost btn-sm gap-2"
+                    className="gap-2"
                   >
                     <Eye className="w-4 h-4" />
                     View
-                  </button>
+                  </AdminButton>
                 </td>
               </tr>
             ))}

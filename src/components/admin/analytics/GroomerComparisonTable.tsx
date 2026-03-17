@@ -92,9 +92,9 @@ export function GroomerComparisonTable({ dateRange }: GroomerComparisonTableProp
       const bValue = b[sortField];
 
       if (sortDirection === 'asc') {
-        return aValue > bValue ? 1 : -1;
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       } else {
-        return aValue < bValue ? 1 : -1;
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
   };

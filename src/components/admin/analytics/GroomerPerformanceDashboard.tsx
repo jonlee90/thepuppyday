@@ -213,7 +213,7 @@ export function GroomerPerformanceDashboard({ dateRange }: GroomerPerformanceDas
           </div>
           <div className="flex items-baseline gap-2 mb-2">
             <span className="text-3xl font-bold text-[#434E54]">
-              {metrics.average_rating.toFixed(1)}
+              {(metrics.average_rating ?? 0).toFixed(1)}
             </span>
             <span className="text-lg text-[#9CA3AF]">/ 5.0</span>
             {getTrendIcon(metrics.rating_trend)}
@@ -355,28 +355,6 @@ export function GroomerPerformanceDashboard({ dateRange }: GroomerPerformanceDas
           </ChartWrapper>
         </div>
 
-        {/* Rating Trend */}
-        <div className="bg-white p-6 rounded-xl shadow-md lg:col-span-2">
-          <h3 className="text-lg font-semibold text-[#434E54] mb-4">
-            Rating Trend
-          </h3>
-          <ChartWrapper height={256}>
-            <LineChart data={getChartData()} margin={CHART_CONFIG.margin}>
-              <CartesianGrid {...CHART_CONFIG.grid} />
-              <XAxis dataKey="date" {...CHART_CONFIG.axis} />
-              <YAxis {...CHART_CONFIG.axis} domain={[0, 5]} />
-              <Tooltip {...CHART_CONFIG.tooltip} formatter={(value: number) => [value.toFixed(1), 'Rating']} />
-              <defs>
-                <linearGradient id="fillRating" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#FFB347" stopOpacity={0.1} />
-                  <stop offset="95%" stopColor="#FFB347" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area type="monotone" dataKey="rating" fill="url(#fillRating)" stroke="none" />
-              <Line type="monotone" dataKey="rating" stroke="#FFB347" strokeWidth={2} dot={{ r: 4, fill: '#FFB347', strokeWidth: 2, stroke: '#fff' }} />
-            </LineChart>
-          </ChartWrapper>
-        </div>
       </div>
     </div>
   );

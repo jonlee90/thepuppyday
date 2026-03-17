@@ -44,7 +44,7 @@ export default function AppointmentsPage() {
 
 
   return (
-    <div>
+    <div className="p-6 space-y-6">
       <div>
         {/* Desktop Header: title + actions */}
         <div className="hidden lg:flex items-start justify-between mb-6">

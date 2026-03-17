@@ -184,25 +184,28 @@ export function FileUploadStep({
                 <p className="text-sm text-[#6B7280]">{formatFileSize(selectedFile.size)}</p>
               </div>
             </div>
-            <button
+            <AdminButton
+              variant="ghost"
+              size="sm"
               onClick={handleClearFile}
-              className="btn btn-ghost btn-sm btn-circle text-[#6B7280] hover:text-[#434E54] hover:bg-[#EAE0D5]"
+              className="btn-circle text-[#6B7280] hover:text-[#434E54]"
             >
               <X className="w-4 h-4" />
-            </button>
+            </AdminButton>
           </div>
         </div>
       )}
 
       {/* Template Download */}
       <div className="flex items-center justify-center">
-        <button
+        <AdminButton
+          variant="ghost"
           onClick={handleDownloadTemplate}
-          className="btn btn-ghost text-[#434E54] hover:bg-[#EAE0D5] font-medium gap-2"
+          className="font-medium gap-2"
         >
           <Download className="w-4 h-4" />
           Download CSV Template
-        </button>
+        </AdminButton>
       </div>
 
       {/* Continue Button */}

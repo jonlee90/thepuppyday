@@ -13,19 +13,8 @@ import { Suspense } from 'react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { CustomerTable } from '@/components/admin/customers/CustomerTable';
+import { AdminSkeleton } from '@/components/admin/shared';
 import { Users } from 'lucide-react';
-
-function CustomersTableSkeleton() {
-  return (
-    <div className="animate-pulse space-y-4">
-      <div className="flex gap-4">
-        <div className="h-10 bg-base-200 rounded-lg flex-1" />
-        <div className="h-10 bg-base-200 rounded-lg w-32" />
-      </div>
-      <div className="bg-base-200 rounded-xl h-96" />
-    </div>
-  );
-}
 
 export const metadata = {
   title: 'Customers | The Puppy Day Admin',
@@ -37,7 +26,7 @@ export default async function CustomersPage() {
   await requireAdmin(supabase);
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -45,8 +34,8 @@ export default async function CustomersPage() {
             <Users className="w-6 h-6 text-[#434E54]" />
           </div>
           <div>
-            <h1 className="hidden lg:block text-2xl font-bold text-[#434E54]">Customers</h1>
-            <p className="text-sm text-gray-600 mt-0.5">
+            <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Customers</h1>
+            <p className="text-sm text-[#434E54]/60 mt-0.5">
               View and manage customer accounts
             </p>
           </div>
@@ -54,7 +43,7 @@ export default async function CustomersPage() {
       </div>
 
       {/* Customer Table */}
-      <Suspense fallback={<CustomersTableSkeleton />}>
+      <Suspense fallback={<AdminSkeleton variant="table" />}>
         <CustomerTable />
       </Suspense>
     </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { startOfWeek, startOfMonth, subMonths, format, parseISO } from 'date-fns';
 import { Calendar, TrendingUp, TrendingDown, Download, Loader2, DollarSign, Users, FileText, Coins } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import {
   BarChart,
   Bar,
@@ -214,22 +215,24 @@ export function EarningsReport() {
     <div className="space-y-6">
       {/* Export Toolbar */}
       <div className="flex justify-end gap-2">
-        <button
+        <AdminButton
+          variant="secondary"
+          size="sm"
           onClick={handleExportCSV}
           disabled={!reportData || loading}
-          className="btn btn-outline btn-sm"
         >
           <Download className="w-4 h-4" />
           Export CSV
-        </button>
-        <button
+        </AdminButton>
+        <AdminButton
+          variant="secondary"
+          size="sm"
           onClick={handleExportPDF}
           disabled={!reportData || loading}
-          className="btn btn-outline btn-sm"
         >
           <FileText className="w-4 h-4" />
           Export PDF
-        </button>
+        </AdminButton>
       </div>
 
       {/* Filters Card */}

@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { CampaignTypeSelector } from './campaign-creation/CampaignTypeSelector';
 import { SegmentBuilder } from './campaign-creation/SegmentBuilder';
 import { MessageComposer } from './campaign-creation/MessageComposer';
@@ -30,7 +32,6 @@ type Step = 'template' | 'type' | 'segment' | 'message' | 'schedule';
  * CreateCampaignModal - Multi-step campaign creation flow
  */
 export function CreateCampaignModal({ isOpen, onClose, onSuccess }: CreateCampaignModalProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const [currentStep, setCurrentStep] = useState<Step>('template');
 
   // Form state
@@ -45,15 +46,6 @@ export function CreateCampaignModal({ isOpen, onClose, onSuccess }: CreateCampai
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
 
   const { isSubmitting, error, createCampaign, reset } = useCreateCampaign();
-
-  // Sync dialog state with isOpen prop
-  useEffect(() => {
-    if (isOpen && dialogRef.current && !dialogRef.current.open) {
-      dialogRef.current.showModal();
-    } else if (!isOpen && dialogRef.current?.open) {
-      dialogRef.current.close();
-    }
-  }, [isOpen]);
 
   // Handle dialog close
   const handleClose = () => {
@@ -165,132 +157,145 @@ export function CreateCampaignModal({ isOpen, onClose, onSuccess }: CreateCampai
   };
 
   return (
-    <dialog ref={dialogRef} className="modal" onClose={handleClose}>
-      <div className="modal-box max-w-4xl max-h-[90vh] p-0 overflow-hidden">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-2xl font-bold text-[#434E54]">Create Campaign</h3>
-            <button
-              onClick={handleClose}
-              className="btn btn-ghost btn-sm btn-circle"
-              disabled={isSubmitting}
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            className="fixed inset-0 bg-black/50 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !isSubmitting && handleClose()}
+            aria-hidden="true"
+          />
+
+          {/* Modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+              role="dialog"
+              aria-modal="true"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
-              <X className="w-5 h-5" />
-            </button>
+              {/* Header */}
+              <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-semibold text-[#434E54]">Create Campaign</h3>
+                  <AdminButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClose}
+                    disabled={isSubmitting}
+                    className="btn-circle"
+                  >
+                    <X className="w-5 h-5" />
+                  </AdminButton>
+                </div>
+
+                {/* Progress Steps */}
+                {currentStep !== 'template' && (
+                  <ul className="steps w-full">
+                    <li className={`step ${getStepProgress() >= 1 ? 'step-primary' : ''}`}>
+                      Type
+                    </li>
+                    <li className={`step ${getStepProgress() >= 2 ? 'step-primary' : ''}`}>
+                      Audience
+                    </li>
+                    <li className={`step ${getStepProgress() >= 3 ? 'step-primary' : ''}`}>
+                      Message
+                    </li>
+                    <li className={`step ${getStepProgress() >= 4 ? 'step-primary' : ''}`}>
+                      Schedule
+                    </li>
+                  </ul>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="px-6 py-6 overflow-y-auto flex-1">
+                {currentStep === 'template' && (
+                  <TemplateSelector
+                    onSelectTemplate={handleTemplateSelect}
+                    onStartFromScratch={handleStartFromScratch}
+                  />
+                )}
+
+                {currentStep === 'type' && (
+                  <CampaignTypeSelector
+                    selectedType={campaignType}
+                    onSelectType={setCampaignType}
+                    campaignName={campaignName}
+                    onNameChange={setCampaignName}
+                    campaignDescription={campaignDescription}
+                    onDescriptionChange={setCampaignDescription}
+                  />
+                )}
+
+                {currentStep === 'segment' && (
+                  <SegmentBuilder
+                    criteria={segmentCriteria}
+                    onCriteriaChange={setSegmentCriteria}
+                  />
+                )}
+
+                {currentStep === 'message' && (
+                  <MessageComposer
+                    channel={channel}
+                    onChannelChange={setChannel}
+                    messageContent={messageContent}
+                    onMessageChange={setMessageContent}
+                    abTestConfig={abTestConfig}
+                    onAbTestChange={setAbTestConfig}
+                  />
+                )}
+
+                {currentStep === 'schedule' && (
+                  <ScheduleSection
+                    campaignType={campaignType!}
+                    sendNow={sendNow}
+                    onSendNowChange={setSendNow}
+                    scheduledAt={scheduledAt}
+                    onScheduledAtChange={setScheduledAt}
+                  />
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-between">
+                <AdminButton
+                  variant="ghost"
+                  onClick={currentStep === 'template' ? handleClose : handleBack}
+                  disabled={isSubmitting}
+                >
+                  {currentStep === 'template' ? 'Cancel' : 'Back'}
+                </AdminButton>
+
+                {currentStep !== 'template' && currentStep !== 'schedule' && (
+                  <AdminButton variant="primary" onClick={handleNext} disabled={!campaignType}>
+                    Next
+                  </AdminButton>
+                )}
+
+                {currentStep === 'schedule' && (
+                  <AdminButton
+                    variant="primary"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting || !campaignType}
+                    isLoading={isSubmitting}
+                    loadingText="Creating..."
+                  >
+                    {sendNow ? 'Send Now' : 'Schedule Campaign'}
+                  </AdminButton>
+                )}
+              </div>
+            </motion.div>
           </div>
-
-          {/* Progress Steps */}
-          {currentStep !== 'template' && (
-            <ul className="steps w-full">
-              <li className={`step ${getStepProgress() >= 1 ? 'step-primary' : ''}`}>
-                Type
-              </li>
-              <li className={`step ${getStepProgress() >= 2 ? 'step-primary' : ''}`}>
-                Audience
-              </li>
-              <li className={`step ${getStepProgress() >= 3 ? 'step-primary' : ''}`}>
-                Message
-              </li>
-              <li className={`step ${getStepProgress() >= 4 ? 'step-primary' : ''}`}>
-                Schedule
-              </li>
-            </ul>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="px-6 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-          {currentStep === 'template' && (
-            <TemplateSelector
-              onSelectTemplate={handleTemplateSelect}
-              onStartFromScratch={handleStartFromScratch}
-            />
-          )}
-
-          {currentStep === 'type' && (
-            <CampaignTypeSelector
-              selectedType={campaignType}
-              onSelectType={setCampaignType}
-              campaignName={campaignName}
-              onNameChange={setCampaignName}
-              campaignDescription={campaignDescription}
-              onDescriptionChange={setCampaignDescription}
-            />
-          )}
-
-          {currentStep === 'segment' && (
-            <SegmentBuilder
-              criteria={segmentCriteria}
-              onCriteriaChange={setSegmentCriteria}
-            />
-          )}
-
-          {currentStep === 'message' && (
-            <MessageComposer
-              channel={channel}
-              onChannelChange={setChannel}
-              messageContent={messageContent}
-              onMessageChange={setMessageContent}
-              abTestConfig={abTestConfig}
-              onAbTestChange={setAbTestConfig}
-            />
-          )}
-
-          {currentStep === 'schedule' && (
-            <ScheduleSection
-              campaignType={campaignType!}
-              sendNow={sendNow}
-              onSendNowChange={setSendNow}
-              scheduledAt={scheduledAt}
-              onScheduledAtChange={setScheduledAt}
-            />
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-between">
-          <button
-            onClick={currentStep === 'template' ? handleClose : handleBack}
-            className="btn btn-ghost"
-            disabled={isSubmitting}
-          >
-            {currentStep === 'template' ? 'Cancel' : 'Back'}
-          </button>
-
-          {currentStep !== 'template' && currentStep !== 'schedule' && (
-            <button onClick={handleNext} className="btn btn-primary" disabled={!campaignType}>
-              Next
-            </button>
-          )}
-
-          {currentStep === 'schedule' && (
-            <button
-              onClick={handleSubmit}
-              className="btn btn-primary"
-              disabled={isSubmitting || !campaignType}
-            >
-              {isSubmitting ? (
-                <>
-                  <span className="loading loading-spinner loading-sm"></span>
-                  Creating...
-                </>
-              ) : sendNow ? (
-                'Send Now'
-              ) : (
-                'Schedule Campaign'
-              )}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Backdrop */}
-      <form method="dialog" className="modal-backdrop">
-        <button onClick={handleClose} disabled={isSubmitting}>
-          close
-        </button>
-      </form>
-    </dialog>
+        </>
+      )}
+    </AnimatePresence>
   );
 }

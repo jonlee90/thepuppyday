@@ -9,6 +9,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { config } from '@/lib/config';
 import { useCalendarState } from './calendar/hooks/useCalendarState';
 import { useCalendarAppointments } from './calendar/hooks/useCalendarAppointments';
@@ -266,66 +267,74 @@ export function AppointmentCalendar({
       />
 
       {/* Fill from Waitlist Modal */}
-      {selectedSlot && (
-        <dialog className="modal modal-open">
-          <div className="modal-box bg-white">
-            <h3 className="font-bold text-xl text-[#434E54] mb-4">Fill Time Slot</h3>
-            <p className="text-[#6B7280] mb-2">
-              Selected time:{' '}
-              <span className="font-semibold text-[#434E54]">
-                {selectedSlot.toLocaleString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
-              </span>
-            </p>
-
-            {slotWaitlistCount > 0 && (
-              <div className="alert bg-[#EAE0D5] border-none mb-4">
-                <Clock className="w-5 h-5 text-[#434E54]" />
-                <span className="text-[#434E54]">
-                  <strong>{slotWaitlistCount}</strong> customer
-                  {slotWaitlistCount !== 1 ? 's' : ''} on waitlist for this time
-                </span>
-              </div>
-            )}
-
-            <div className="modal-action">
-              <button
-                onClick={() => {
-                  setSelectedSlot(null);
-                  setSlotWaitlistCount(0);
-                }}
-                className="btn btn-ghost text-[#434E54]"
+      <AnimatePresence>
+        {selectedSlot && (
+          <>
+            <motion.div
+              className="fixed inset-0 bg-black/50 z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setSelectedSlot(null); setSlotWaitlistCount(0); }}
+            />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+                role="dialog"
+                aria-modal="true"
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
               >
-                Cancel
-              </button>
-              {slotWaitlistCount > 0 && (
-                <button
-                  onClick={handleFillSlot}
-                  className="btn bg-[#434E54] text-white hover:bg-[#363F44]"
-                >
-                  Fill from Waitlist
-                </button>
-              )}
+                <div className="p-6">
+                  <h3 className="font-semibold text-xl text-[#434E54] mb-4">Fill Time Slot</h3>
+                  <p className="text-[#6B7280] mb-2">
+                    Selected time:{' '}
+                    <span className="font-semibold text-[#434E54]">
+                      {selectedSlot.toLocaleString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </p>
+
+                  {slotWaitlistCount > 0 && (
+                    <div className="flex items-center gap-2 p-3 bg-[#EAE0D5] rounded-lg mb-4">
+                      <Clock className="w-5 h-5 text-[#434E54] flex-shrink-0" />
+                      <span className="text-[#434E54]">
+                        <strong>{slotWaitlistCount}</strong> customer
+                        {slotWaitlistCount !== 1 ? 's' : ''} on waitlist for this time
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="px-6 pb-6 pt-2 border-t border-[#E5E5E5] bg-[#EAE0D5]/30 flex justify-end gap-3">
+                  <AdminButton
+                    variant="ghost"
+                    onClick={() => {
+                      setSelectedSlot(null);
+                      setSlotWaitlistCount(0);
+                    }}
+                  >
+                    Cancel
+                  </AdminButton>
+                  {slotWaitlistCount > 0 && (
+                    <AdminButton onClick={handleFillSlot}>
+                      Fill from Waitlist
+                    </AdminButton>
+                  )}
+                </div>
+              </motion.div>
             </div>
-          </div>
-          <form method="dialog" className="modal-backdrop">
-            <button
-              onClick={() => {
-                setSelectedSlot(null);
-                setSlotWaitlistCount(0);
-              }}
-            >
-              close
-            </button>
-          </form>
-        </dialog>
-      )}
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

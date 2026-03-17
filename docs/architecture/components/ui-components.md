@@ -4,7 +4,7 @@
 > **Location**: `src/components/ui/` (shared) and `src/components/admin/ui/` (admin-specific)
 > **Status**: Completed
 > **Design System**: DaisyUI + Clean & Elegant Professional
-> **Last Updated**: 2026-03-09
+> **Last Updated**: 2026-03-16
 
 ## Overview
 
@@ -364,7 +364,7 @@ interface StatusBadgeProps {
 |--------|-------|-------------|------------|
 | `pending` | Pending | Yellow (#FCD34D) | Amber (#92400E) |
 | `confirmed` | Confirmed | Green (#10B981) | Dark green (#065F46) |
-| `in_progress` | In Progress | Gray (#6B7280) | Dark gray (#374151) |
+| `in_progress` | In Progress | Blue (#3B82F6) | Dark blue (#1E40AF) |
 | `completed` | Completed | Charcoal (#434E54) | Charcoal (#434E54) |
 | `cancelled` | Cancelled | Red (#EF4444) | Dark red (#991B1B) |
 | `no_show` | No Show | Dark red (#DC2626) | Darker red (#7F1D1D) |
@@ -468,5 +468,5 @@ Components use DaisyUI theme variables defined in `globals.css`:
 
 ---
 
-**Last Updated**: 2026-03-09 by Claude Code
-**Changes**: Added `AdminButton` (`src/components/admin/ui/AdminButton.tsx`) — admin-specific button with 4 variants, `aria-busy` loading pattern, `!opacity-100` spinner fix. Updated `button.tsx` loading note to reflect `aria-busy` usage. Updated module location header to include `src/components/admin/ui/`.
+**Last Updated**: 2026-03-16 by Claude Code
+**Changes**: Updated StatusBadge `in_progress` color from gray to blue (#3B82F6).

@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X, AlertTriangle, Loader2, UserPlus, Pencil, User, Mail, Phone, Scissors, Shield, PawPrint } from 'lucide-react';
+import { AlertTriangle, Loader2, UserPlus, Pencil, User, Mail, Phone, Scissors, Shield, PawPrint } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createFocusTrap } from '@/lib/accessibility/focus';
+import { AdminModal } from '@/components/admin/shared';
 import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { toast } from '@/hooks/use-toast';
 import type { StaffFormProps, StaffFormData } from '@/types/staff';
@@ -64,7 +64,6 @@ const inputCls = (hasError?: boolean) =>
 
 export function StaffForm({ staffId, isOpen, onClose, onSuccess }: StaffFormProps) {
   const isEditMode = !!staffId;
-  const modalRef = useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -94,35 +93,6 @@ export function StaffForm({ staffId, isOpen, onClose, onSuccess }: StaffFormProp
 
   const watchActive = watch('active');
   const watchRole = watch('role');
-
-  // Focus trap + body scroll lock
-  useEffect(() => {
-    if (isOpen && modalRef.current) {
-      document.body.style.overflow = 'hidden';
-      const focusTrap = createFocusTrap(modalRef.current);
-      focusTrap.activate();
-
-      return () => {
-        focusTrap.deactivate();
-        document.body.style.overflow = '';
-      };
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  // Escape key
-  const handleEscape = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape' && !submitting) onClose();
-  }, [submitting, onClose]);
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [handleEscape]);
 
   // Load / reset
   useEffect(() => {
@@ -215,291 +185,229 @@ export function StaffForm({ staffId, isOpen, onClose, onSuccess }: StaffFormProp
     }
   };
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !submitting) onClose();
-  };
+  const footerContent = !loading ? (
+    <AdminButton
+      type="submit"
+      form="staff-form"
+      variant="primary"
+      isLoading={submitting}
+      loadingText="Saving..."
+      disabled={!!emailError || !isDirty}
+    >
+      {isEditMode ? 'Save Changes' : 'Add to Team'}
+    </AdminButton>
+  ) : undefined;
 
   return (
     <>
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/50 z-50"
-              aria-hidden="true"
-            />
+      <AdminModal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={isEditMode ? 'Edit Staff Member' : 'Add Staff Member'}
+        subtitle={isEditMode ? 'Update staff information' : 'Bring a new groomer on board'}
+        icon={isEditMode ? Pencil : UserPlus}
+        footer={footerContent}
+        disabled={submitting}
+        ariaLabelledBy="staff-form-title"
+      >
+        {loading ? (
+          <div className="py-12 text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-[#434E54] mx-auto mb-3" />
+            <p className="text-sm text-[#6B7280]">Loading staff information...</p>
+          </div>
+        ) : (
+          <form id="staff-form" onSubmit={handleSubmit(onSubmit)}>
+            <div className="px-6 space-y-5">
 
-            {/* Modal container */}
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              onClick={handleBackdropClick}
-            >
-              <motion.div
-                ref={modalRef}
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden max-h-[90vh] flex flex-col"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="staff-form-title"
-                tabIndex={-1}
-              >
-                {/* Header */}
-                <div className="p-6 pb-4 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#EAE0D5] flex items-center justify-center">
-                      {isEditMode
-                        ? <Pencil className="w-4 h-4 text-[#434E54]" />
-                        : <UserPlus className="w-4 h-4 text-[#434E54]" />
-                      }
+              {/* Personal Info */}
+              <div>
+                <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#434E54]/40 mb-3">
+                  <User className="w-3.5 h-3.5" /> Personal Info
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-[#434E54] mb-1.5">
+                      First Name <span className="text-[#D4A574]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      {...register('first_name')}
+                      className={inputCls(!!errors.first_name)}
+                      placeholder="John"
+                      disabled={submitting}
+                    />
+                    {errors.first_name && (
+                      <p className="text-xs text-red-500 mt-1">{errors.first_name.message}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#434E54] mb-1.5">
+                      Last Name <span className="text-[#D4A574]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      {...register('last_name')}
+                      className={inputCls(!!errors.last_name)}
+                      placeholder="Doe"
+                      disabled={submitting}
+                    />
+                    {errors.last_name && (
+                      <p className="text-xs text-red-500 mt-1">{errors.last_name.message}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-dashed border-[#434E54]/10" />
+
+              {/* Contact */}
+              <div>
+                <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#434E54]/40 mb-3">
+                  <Mail className="w-3.5 h-3.5" /> Contact
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-[#434E54] mb-1.5">
+                      Email <span className="text-[#D4A574]">*</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#434E54]/30" />
+                      <input
+                        type="email"
+                        {...register('email')}
+                        onBlur={(e) => checkEmailUniqueness(e.target.value)}
+                        className={`${inputCls(!!(errors.email || emailError))} pl-9`}
+                        placeholder="john.doe@example.com"
+                        disabled={submitting}
+                      />
                     </div>
-                    <div>
-                      <h3 id="staff-form-title" className="text-lg font-bold text-[#434E54] leading-tight">
-                        {isEditMode ? 'Edit Staff Member' : 'Add Staff Member'}
-                      </h3>
-                      <p className="text-xs text-[#434E54]/50 mt-0.5">
-                        {isEditMode ? 'Update staff information' : 'Bring a new groomer on board'}
+                    {(errors.email || emailError) && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.email?.message || emailError}
                       </p>
-                    </div>
+                    )}
                   </div>
-                  <button
-                    onClick={onClose}
-                    disabled={submitting}
-                    className="p-2 rounded-lg text-[#434E54]/60 hover:bg-[#EAE0D5] transition-colors"
-                    aria-label="Close"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-
-                {/* Body */}
-                <div className="overflow-y-auto flex-1">
-                  {loading ? (
-                    <div className="py-12 text-center">
-                      <Loader2 className="w-8 h-8 animate-spin text-[#434E54] mx-auto mb-3" />
-                      <p className="text-sm text-[#6B7280]">Loading staff information...</p>
+                  <div>
+                    <label className="block text-sm font-medium text-[#434E54] mb-1.5">
+                      Phone
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#434E54]/30" />
+                      <input
+                        type="tel"
+                        {...register('phone', { onChange: handlePhoneChange })}
+                        className={`${inputCls()} pl-9`}
+                        placeholder="(123) 456-7890"
+                        maxLength={14}
+                        disabled={submitting}
+                      />
                     </div>
-                  ) : (
-                    <form id="staff-form" onSubmit={handleSubmit(onSubmit)}>
-                      <div className="px-6 space-y-5">
+                    <p className="text-xs text-[#434E54]/40 mt-1">Optional — auto-formats as you type</p>
+                  </div>
+                </div>
+              </div>
 
-                        {/* Personal Info */}
-                        <div>
-                          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#434E54]/40 mb-3">
-                            <User className="w-3.5 h-3.5" /> Personal Info
-                          </p>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-sm font-medium text-[#434E54] mb-1.5">
-                                First Name <span className="text-[#D4A574]">*</span>
-                              </label>
-                              <input
-                                type="text"
-                                {...register('first_name')}
-                                className={inputCls(!!errors.first_name)}
-                                placeholder="John"
-                                disabled={submitting}
-                              />
-                              {errors.first_name && (
-                                <p className="text-xs text-red-500 mt-1">{errors.first_name.message}</p>
-                              )}
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-[#434E54] mb-1.5">
-                                Last Name <span className="text-[#D4A574]">*</span>
-                              </label>
-                              <input
-                                type="text"
-                                {...register('last_name')}
-                                className={inputCls(!!errors.last_name)}
-                                placeholder="Doe"
-                                disabled={submitting}
-                              />
-                              {errors.last_name && (
-                                <p className="text-xs text-red-500 mt-1">{errors.last_name.message}</p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+              <div className="border-t border-dashed border-[#434E54]/10" />
 
-                        <div className="border-t border-dashed border-[#434E54]/10" />
-
-                        {/* Contact */}
-                        <div>
-                          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#434E54]/40 mb-3">
-                            <Mail className="w-3.5 h-3.5" /> Contact
-                          </p>
-                          <div className="space-y-3">
-                            <div>
-                              <label className="block text-sm font-medium text-[#434E54] mb-1.5">
-                                Email <span className="text-[#D4A574]">*</span>
-                              </label>
-                              <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#434E54]/30" />
-                                <input
-                                  type="email"
-                                  {...register('email')}
-                                  onBlur={(e) => checkEmailUniqueness(e.target.value)}
-                                  className={`${inputCls(!!(errors.email || emailError))} pl-9`}
-                                  placeholder="john.doe@example.com"
-                                  disabled={submitting}
-                                />
-                              </div>
-                              {(errors.email || emailError) && (
-                                <p className="text-xs text-red-500 mt-1">
-                                  {errors.email?.message || emailError}
-                                </p>
-                              )}
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-[#434E54] mb-1.5">
-                                Phone
-                              </label>
-                              <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#434E54]/30" />
-                                <input
-                                  type="tel"
-                                  {...register('phone', { onChange: handlePhoneChange })}
-                                  className={`${inputCls()} pl-9`}
-                                  placeholder="(123) 456-7890"
-                                  maxLength={14}
-                                  disabled={submitting}
-                                />
-                              </div>
-                              <p className="text-xs text-[#434E54]/40 mt-1">Optional — auto-formats as you type</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="border-t border-dashed border-[#434E54]/10" />
-
-                        {/* Role */}
-                        <div>
-                          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#434E54]/40 mb-3">
-                            <Scissors className="w-3.5 h-3.5" /> Role <span className="text-[#D4A574] ml-0.5">*</span>
-                          </p>
-                          <div className="grid grid-cols-2 gap-3">
-                            <label className={`cursor-pointer rounded-xl border-2 p-4 transition-all ${
-                              watchRole === 'groomer'
-                                ? 'border-[#D4A574] bg-[#FDF6EE]'
-                                : 'border-[#434E54]/15 bg-white hover:border-[#D4A574]/50'
-                            }`}>
-                              <input type="radio" {...register('role')} value="groomer" className="sr-only" />
-                              <div className="flex flex-col items-center text-center gap-2">
-                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                                  watchRole === 'groomer' ? 'bg-[#D4A574]' : 'bg-[#EAE0D5]'
-                                }`}>
-                                  <Scissors className={`w-4 h-4 ${watchRole === 'groomer' ? 'text-white' : 'text-[#434E54]/50'}`} />
-                                </div>
-                                <div>
-                                  <div className="font-semibold text-sm text-[#434E54]">Groomer</div>
-                                  <div className="text-xs text-[#434E54]/40 mt-0.5">Appointment access</div>
-                                </div>
-                              </div>
-                            </label>
-
-                            <label className={`cursor-pointer rounded-xl border-2 p-4 transition-all ${
-                              watchRole === 'admin'
-                                ? 'border-[#434E54] bg-[#434E54]/5'
-                                : 'border-[#434E54]/15 bg-white hover:border-[#434E54]/40'
-                            }`}>
-                              <input type="radio" {...register('role')} value="admin" className="sr-only" />
-                              <div className="flex flex-col items-center text-center gap-2">
-                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                                  watchRole === 'admin' ? 'bg-[#434E54]' : 'bg-[#EAE0D5]'
-                                }`}>
-                                  <Shield className={`w-4 h-4 ${watchRole === 'admin' ? 'text-white' : 'text-[#434E54]/50'}`} />
-                                </div>
-                                <div>
-                                  <div className="font-semibold text-sm text-[#434E54]">Admin</div>
-                                  <div className="text-xs text-[#434E54]/40 mt-0.5">Full access</div>
-                                </div>
-                              </div>
-                            </label>
-                          </div>
-                          {errors.role && (
-                            <p className="text-xs text-red-500 mt-2">{errors.role.message}</p>
-                          )}
-                        </div>
-
-                        {/* Active Status (edit mode only) */}
-                        {isEditMode && (
-                          <>
-                            <div className="border-t border-dashed border-[#434E54]/10" />
-                            <div className={`rounded-xl border-2 p-4 transition-all ${
-                              watchActive ? 'border-emerald-200 bg-emerald-50/40' : 'border-[#434E54]/15 bg-white'
-                            }`}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                                    watchActive ? 'bg-emerald-100' : 'bg-[#EAE0D5]'
-                                  }`}>
-                                    <PawPrint className={`w-4 h-4 ${watchActive ? 'text-emerald-600' : 'text-[#434E54]/40'}`} />
-                                  </div>
-                                  <div>
-                                    <div className="font-medium text-sm text-[#434E54]">
-                                      {watchActive ? 'Active & Available' : 'Inactive'}
-                                    </div>
-                                    <div className="text-xs text-[#434E54]/50">
-                                      {watchActive
-                                        ? 'Can be assigned to new appointments'
-                                        : 'Not available for new appointments'}
-                                    </div>
-                                  </div>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  {...register('active')}
-                                  className="toggle toggle-success"
-                                  disabled={submitting}
-                                />
-                              </div>
-                              {upcomingAppointments > 0 && !watchActive && (
-                                <div className="mt-3 flex items-center gap-2 p-2.5 bg-amber-50 rounded-lg border border-amber-100">
-                                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-                                  <span className="text-xs text-[#434E54]">
-                                    Has {upcomingAppointments} upcoming appointment{upcomingAppointments !== 1 ? 's' : ''}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        )}
-
-                        {/* Spacer so footer doesn't overlap content */}
-                        <div className="h-1" />
+              {/* Role */}
+              <div>
+                <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#434E54]/40 mb-3">
+                  <Scissors className="w-3.5 h-3.5" /> Role <span className="text-[#D4A574] ml-0.5">*</span>
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className={`cursor-pointer rounded-xl border-2 p-4 transition-all ${
+                    watchRole === 'groomer'
+                      ? 'border-[#D4A574] bg-[#FDF6EE]'
+                      : 'border-[#434E54]/15 bg-white hover:border-[#D4A574]/50'
+                  }`}>
+                    <input type="radio" {...register('role')} value="groomer" className="sr-only" />
+                    <div className="flex flex-col items-center text-center gap-2">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                        watchRole === 'groomer' ? 'bg-[#D4A574]' : 'bg-[#EAE0D5]'
+                      }`}>
+                        <Scissors className={`w-4 h-4 ${watchRole === 'groomer' ? 'text-white' : 'text-[#434E54]/50'}`} />
                       </div>
-                    </form>
-                  )}
-                </div>
+                      <div>
+                        <div className="font-semibold text-sm text-[#434E54]">Groomer</div>
+                        <div className="text-xs text-[#434E54]/40 mt-0.5">Appointment access</div>
+                      </div>
+                    </div>
+                  </label>
 
-                {/* Footer */}
-                {!loading && (
-                  <div className="p-6 pt-4 flex justify-end shrink-0">
-                    <AdminButton
-                      type="submit"
-                      form="staff-form"
-                      variant="primary"
-                      isLoading={submitting}
-                      loadingText="Saving..."
-                      disabled={!!emailError || !isDirty}
-                    >
-                      {isEditMode ? 'Save Changes' : 'Add to Team'}
-                    </AdminButton>
-                  </div>
+                  <label className={`cursor-pointer rounded-xl border-2 p-4 transition-all ${
+                    watchRole === 'admin'
+                      ? 'border-[#434E54] bg-[#434E54]/5'
+                      : 'border-[#434E54]/15 bg-white hover:border-[#434E54]/40'
+                  }`}>
+                    <input type="radio" {...register('role')} value="admin" className="sr-only" />
+                    <div className="flex flex-col items-center text-center gap-2">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                        watchRole === 'admin' ? 'bg-[#434E54]' : 'bg-[#EAE0D5]'
+                      }`}>
+                        <Shield className={`w-4 h-4 ${watchRole === 'admin' ? 'text-white' : 'text-[#434E54]/50'}`} />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-sm text-[#434E54]">Admin</div>
+                        <div className="text-xs text-[#434E54]/40 mt-0.5">Full access</div>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+                {errors.role && (
+                  <p className="text-xs text-red-500 mt-2">{errors.role.message}</p>
                 )}
-              </motion.div>
+              </div>
+
+              {/* Active Status (edit mode only) */}
+              {isEditMode && (
+                <>
+                  <div className="border-t border-dashed border-[#434E54]/10" />
+                  <div className={`rounded-xl border-2 p-4 transition-all ${
+                    watchActive ? 'border-emerald-200 bg-emerald-50/40' : 'border-[#434E54]/15 bg-white'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          watchActive ? 'bg-emerald-100' : 'bg-[#EAE0D5]'
+                        }`}>
+                          <PawPrint className={`w-4 h-4 ${watchActive ? 'text-emerald-600' : 'text-[#434E54]/40'}`} />
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm text-[#434E54]">
+                            {watchActive ? 'Active & Available' : 'Inactive'}
+                          </div>
+                          <div className="text-xs text-[#434E54]/50">
+                            {watchActive
+                              ? 'Can be assigned to new appointments'
+                              : 'Not available for new appointments'}
+                          </div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        {...register('active')}
+                        className="toggle toggle-success"
+                        disabled={submitting}
+                      />
+                    </div>
+                    {upcomingAppointments > 0 && !watchActive && (
+                      <div className="mt-3 flex items-center gap-2 p-2.5 bg-amber-50 rounded-lg border border-amber-100">
+                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                        <span className="text-xs text-[#434E54]">
+                          Has {upcomingAppointments} upcoming appointment{upcomingAppointments !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Spacer so footer doesn't overlap content */}
+              <div className="h-1" />
             </div>
-          </>
+          </form>
         )}
-      </AnimatePresence>
+      </AdminModal>
 
       {/* Deactivate Confirmation Modal */}
       <AnimatePresence>

@@ -7,6 +7,8 @@
 
 import { useState } from 'react';
 import { RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+import { toast } from '@/hooks/use-toast';
 
 interface BulkActionsProps {
   failedCount: number;
@@ -36,7 +38,7 @@ export function BulkActions({ failedCount, onResendFailed }: BulkActionsProps) {
       setShowResults(true);
     } catch (error) {
       console.error('Bulk resend failed:', error);
-      alert('Failed to resend notifications');
+      toast.error('Failed to resend notifications');
     } finally {
       setResending(false);
     }
@@ -53,14 +55,17 @@ export function BulkActions({ failedCount, onResendFailed }: BulkActionsProps) {
           )}
         </div>
 
-        <button
+        <AdminButton
+          variant="secondary"
           onClick={handleResendFailed}
           disabled={resending || failedCount === 0}
-          className="btn btn-outline gap-2"
+          isLoading={resending}
+          loadingText="Resending..."
+          className="gap-2"
         >
-          <RefreshCw className={`w-4 h-4 ${resending ? 'animate-spin' : ''}`} />
-          {resending ? 'Resending...' : 'Resend Failed'}
-        </button>
+          <RefreshCw className="w-4 h-4" />
+          Resend Failed
+        </AdminButton>
       </div>
 
       {/* Confirmation Modal */}
@@ -80,15 +85,12 @@ export function BulkActions({ failedCount, onResendFailed }: BulkActionsProps) {
               </div>
             </div>
             <div className="modal-action">
-              <button onClick={() => setShowConfirmation(false)} className="btn btn-ghost">
+              <AdminButton variant="ghost" onClick={() => setShowConfirmation(false)}>
                 Cancel
-              </button>
-              <button
-                onClick={confirmResend}
-                className="btn btn-primary bg-[#434E54] hover:bg-[#363F44] text-white"
-              >
+              </AdminButton>
+              <AdminButton variant="primary" onClick={confirmResend}>
                 Confirm Resend
-              </button>
+              </AdminButton>
             </div>
           </div>
           <div
@@ -137,15 +139,15 @@ export function BulkActions({ failedCount, onResendFailed }: BulkActionsProps) {
               )}
             </div>
             <div className="modal-action">
-              <button
+              <AdminButton
+                variant="primary"
                 onClick={() => {
                   setShowResults(false);
                   setResults(null);
                 }}
-                className="btn btn-primary bg-[#434E54] hover:bg-[#363F44] text-white"
               >
                 Close
-              </button>
+              </AdminButton>
             </div>
           </div>
           <div className="modal-backdrop" onClick={() => setShowResults(false)}></div>

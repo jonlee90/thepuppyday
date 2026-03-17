@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { Save, Loader } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
 import type { CalendarSyncSettings, AppointmentStatusType } from '@/types/calendar';
 
 interface SyncSettingsFormProps {
@@ -240,27 +241,17 @@ export function SyncSettingsForm({
 
         {/* Save Button */}
         <div className="card-actions justify-end pt-4 border-t border-[#E5E5E5]">
-          <button
+          <AdminButton
+            variant="primary"
             onClick={handleSave}
             disabled={!isDirty || isLoading}
-            className={`
-              btn btn-primary bg-[#F59E0B] hover:bg-[#D97706] border-none
-              ${!isDirty && !isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-              flex items-center gap-2
-            `}
+            isLoading={isSaving}
+            loadingText="Saving..."
+            className="gap-2"
           >
-            {isSaving ? (
-              <>
-                <Loader className="w-5 h-5 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-5 h-5" />
-                Save Settings
-              </>
-            )}
-          </button>
+            <Save className="w-5 h-5" />
+            Save Settings
+          </AdminButton>
         </div>
       </div>
     </div>

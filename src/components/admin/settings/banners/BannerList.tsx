@@ -11,9 +11,12 @@ import { Edit, Trash2, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown } from 
 import type { BannerWithStatus } from '@/types/banner';
 import { computeBannerStatus } from '@/types/banner';
 import { cn } from '@/lib/utils';
+import { StatusBadge, BANNER_STATUS_CONFIG } from '@/components/admin/shared';
 import { BannerSkeleton } from './BannerSkeleton';
 import { BannerEmptyState } from './BannerEmptyState';
 import { ErrorState } from '@/components/admin/ErrorState';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { toast } from '@/hooks/use-toast';
 import {
   DndContext,
   closestCenter,
@@ -45,6 +48,7 @@ export function BannerList({ onEdit, onDelete, onReorder, refreshTrigger }: Bann
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // DnD Kit sensors configuration
   const sensors = useSensors(
@@ -116,17 +120,20 @@ export function BannerList({ onEdit, onDelete, onReorder, refreshTrigger }: Bann
       ));
     } catch (err) {
       console.error('Error toggling banner:', err);
-      alert('Failed to toggle banner status. Please try again.');
+      toast.error('Failed to toggle banner status');
     } finally {
       setTogglingId(null);
     }
   };
 
-  const handleDelete = async (bannerId: string) => {
-    if (!confirm('Are you sure you want to delete this banner? This action cannot be undone.')) {
-      return;
-    }
+  const handleDelete = (bannerId: string) => {
+    setConfirmDeleteId(bannerId);
+  };
 
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    const bannerId = confirmDeleteId;
+    setConfirmDeleteId(null);
     setDeletingId(bannerId);
 
     try {
@@ -142,7 +149,7 @@ export function BannerList({ onEdit, onDelete, onReorder, refreshTrigger }: Bann
       onDelete(bannerId);
     } catch (err) {
       console.error('Error deleting banner:', err);
-      alert('Failed to delete banner. Please try again.');
+      toast.error('Failed to delete banner');
     } finally {
       setDeletingId(null);
     }
@@ -219,7 +226,7 @@ export function BannerList({ onEdit, onDelete, onReorder, refreshTrigger }: Bann
     } catch (err) {
       console.error('Error reordering banners:', err);
       fetchBanners(); // Rollback
-      alert('Failed to reorder banners. Please try again.');
+      toast.error('Failed to reorder banners');
     }
   };
 
@@ -246,6 +253,15 @@ export function BannerList({ onEdit, onDelete, onReorder, refreshTrigger }: Bann
 
   return (
     <div className="space-y-4">
+      <ConfirmationModal
+        isOpen={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Banner"
+        description="Are you sure you want to delete this banner? This action cannot be undone."
+        confirmText="Delete"
+        variant="error"
+      />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -390,7 +406,7 @@ function SortableBannerTableRow(props: BannerRowProps) {
 
       {/* Status Badge */}
       <td className="px-6 py-4">
-        <BannerStatusBadge status={props.banner.status} />
+        <StatusBadge status={props.banner.status} statusConfig={BANNER_STATUS_CONFIG} />
       </td>
 
       {/* Click Count */}
@@ -518,7 +534,7 @@ function MobileBannerCard({
 
       {/* Status and Clicks */}
       <div className="flex items-center justify-between">
-        <BannerStatusBadge status={banner.status} />
+        <StatusBadge status={banner.status} statusConfig={BANNER_STATUS_CONFIG} />
         <span className="text-sm text-[#6B7280]">
           {banner.click_count} clicks
         </span>
@@ -562,36 +578,3 @@ function MobileBannerCard({
   );
 }
 
-// Status Badge Component
-interface StatusBadgeProps {
-  status: 'draft' | 'scheduled' | 'active' | 'expired';
-}
-
-function BannerStatusBadge({ status }: StatusBadgeProps) {
-  const config = {
-    draft: {
-      label: 'Draft',
-      className: 'badge-ghost text-gray-600'
-    },
-    scheduled: {
-      label: 'Scheduled',
-      className: 'badge-info'
-    },
-    active: {
-      label: 'Active',
-      className: 'badge-success'
-    },
-    expired: {
-      label: 'Expired',
-      className: 'badge-error'
-    }
-  };
-
-  const { label, className } = config[status];
-
-  return (
-    <span className={cn('badge badge-sm', className)}>
-      {label}
-    </span>
-  );
-}

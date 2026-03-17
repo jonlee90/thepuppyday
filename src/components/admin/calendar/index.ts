@@ -9,4 +9,3 @@ export { SyncHistoryPopover } from './SyncHistoryPopover';
 export { QuotaWarning } from './QuotaWarning';
 export { SyncErrorRecovery } from './SyncErrorRecovery';
 export { PausedSyncBanner } from './PausedSyncBanner';
-export { CalendarErrorRecoveryExample } from './CalendarErrorRecoveryExample';

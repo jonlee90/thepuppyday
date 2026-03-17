@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Search, XCircle } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import type { Addon, Breed } from '@/types/database';
 
 interface AddOnFormProps {
@@ -39,36 +41,28 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   // Breed selection
   const [allBreeds, setAllBreeds] = useState<Breed[]>([]);
+  const [breedsLoading, setBreedsLoading] = useState(false);
   const [breedSearch, setBreedSearch] = useState('');
   const [showBreedDropdown, setShowBreedDropdown] = useState(false);
 
-  // Load breeds
+  // Load breeds from Supabase
   useEffect(() => {
-    const fetchBreeds = async () => {
+    async function fetchBreeds() {
+      setBreedsLoading(true);
       try {
-        // In a real implementation, this would call an API
-        // For now, we'll use a mock list
-        const mockBreeds: Breed[] = [
-          { id: '1', name: 'Golden Retriever', grooming_frequency_weeks: 6, reminder_message: '', created_at: '' },
-          { id: '2', name: 'Labrador Retriever', grooming_frequency_weeks: 8, reminder_message: '', created_at: '' },
-          { id: '3', name: 'Poodle', grooming_frequency_weeks: 6, reminder_message: '', created_at: '' },
-          { id: '4', name: 'Shih Tzu', grooming_frequency_weeks: 4, reminder_message: '', created_at: '' },
-          { id: '5', name: 'Yorkshire Terrier', grooming_frequency_weeks: 4, reminder_message: '', created_at: '' },
-          { id: '6', name: 'Maltese', grooming_frequency_weeks: 4, reminder_message: '', created_at: '' },
-          { id: '7', name: 'Cocker Spaniel', grooming_frequency_weeks: 6, reminder_message: '', created_at: '' },
-          { id: '8', name: 'French Bulldog', grooming_frequency_weeks: 6, reminder_message: '', created_at: '' },
-          { id: '9', name: 'German Shepherd', grooming_frequency_weeks: 8, reminder_message: '', created_at: '' },
-          { id: '10', name: 'Beagle', grooming_frequency_weeks: 8, reminder_message: '', created_at: '' },
-        ];
-        setAllBreeds(mockBreeds);
+        const supabase = createClient();
+        const { data } = await supabase.from('breeds').select('id, name').order('name');
+        setAllBreeds((data as Breed[]) || []);
       } catch (error) {
-        console.error('Error fetching breeds:', error);
+        console.error('[AddOnForm] Error fetching breeds:', error);
+      } finally {
+        setBreedsLoading(false);
       }
-    };
-
+    }
     fetchBreeds();
   }, []);
 
@@ -188,19 +182,27 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
 
   const handleClose = () => {
     if (isDirty) {
-      const confirmed = confirm(
-        'You have unsaved changes. Are you sure you want to close?'
-      );
-      if (!confirmed) return;
+      setShowCloseConfirm(true);
+      return;
     }
     onClose();
   };
 
   return (
+    <>
+    <ConfirmationModal
+      isOpen={showCloseConfirm}
+      onClose={() => setShowCloseConfirm(false)}
+      onConfirm={() => { setShowCloseConfirm(false); onClose(); }}
+      title="Unsaved Changes"
+      description="You have unsaved changes. Are you sure you want to close?"
+      confirmText="Discard Changes"
+      variant="error"
+    />
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl">
+        <div className="sticky top-0 bg-white border-b border-[#434E54]/20 px-6 py-4 flex items-center justify-between rounded-t-xl">
           <h2 className="text-xl font-bold text-[#434E54]">
             {addon ? 'Edit Add-On' : 'Add New Add-On'}
           </h2>
@@ -216,17 +218,17 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Name */}
           <div>
-            <label className="block text-sm font-semibold text-[#434E54] mb-1.5">
-              Add-On Name <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#434E54] mb-1.5">
+              Add-On Name <span className="text-[#D4A574]">*</span>
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
               className={`w-full py-2.5 px-4 rounded-lg border bg-white
-                focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+                focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]
                 placeholder:text-gray-400 transition-colors duration-200
-                ${errors.name ? 'border-red-500' : 'border-gray-200'}
+                ${errors.name ? 'border-red-500' : 'border-[#434E54]/20'}
               `}
               placeholder="e.g., Teeth Brushing"
               maxLength={100}
@@ -238,7 +240,7 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-semibold text-[#434E54] mb-1.5">
+            <label className="block text-sm font-medium text-[#434E54] mb-1.5">
               Description
               <span className="text-xs text-[#6B7280] ml-2">
                 ({formData.description.length}/500)
@@ -249,9 +251,9 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
               onChange={(e) => handleChange('description', e.target.value)}
               rows={3}
               className={`w-full py-2.5 px-4 rounded-lg border bg-white
-                focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+                focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]
                 placeholder:text-gray-400 transition-colors duration-200 resize-none
-                ${errors.description ? 'border-red-500' : 'border-gray-200'}
+                ${errors.description ? 'border-red-500' : 'border-[#434E54]/20'}
               `}
               placeholder="Describe what's included in this add-on"
               maxLength={500}
@@ -263,8 +265,8 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
 
           {/* Price */}
           <div>
-            <label className="block text-sm font-semibold text-[#434E54] mb-1.5">
-              Price <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#434E54] mb-1.5">
+              Price <span className="text-[#D4A574]">*</span>
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]">
@@ -279,9 +281,9 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
                   handleChange('price', parseFloat(e.target.value) || 0)
                 }
                 className={`w-full pl-8 pr-4 py-2.5 rounded-lg border bg-white
-                  focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+                  focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]
                   transition-colors duration-200
-                  ${errors.price ? 'border-red-500' : 'border-gray-200'}
+                  ${errors.price ? 'border-red-500' : 'border-[#434E54]/20'}
                 `}
                 placeholder="0.00"
               />
@@ -293,7 +295,7 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
 
           {/* Breed-Based Upsell */}
           <div>
-            <label className="block text-sm font-semibold text-[#434E54] mb-1.5">
+            <label className="block text-sm font-medium text-[#434E54] mb-1.5">
               Breed-Based Upsell (Optional)
             </label>
             <p className="text-xs text-[#6B7280] mb-3">
@@ -325,22 +327,28 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
             {/* Breed Search */}
             <div className="relative">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
+                {breedsLoading ? (
+                  <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280] animate-spin" />
+                ) : (
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
+                )}
                 <input
                   type="text"
                   value={breedSearch}
                   onChange={(e) => setBreedSearch(e.target.value)}
                   onFocus={() => setShowBreedDropdown(true)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white
-                    focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
-                    placeholder:text-gray-400 transition-colors duration-200"
-                  placeholder="Search breeds..."
+                  disabled={breedsLoading}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#434E54]/20 bg-white
+                    focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]
+                    placeholder:text-gray-400 transition-colors duration-200
+                    disabled:opacity-60 disabled:cursor-not-allowed"
+                  placeholder={breedsLoading ? 'Loading breeds...' : 'Search breeds...'}
                 />
               </div>
 
               {/* Dropdown */}
               {showBreedDropdown && breedSearch && filteredBreeds.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#434E54]/20
                   rounded-lg shadow-lg max-h-48 overflow-y-auto z-10">
                   {filteredBreeds.map((breed) => (
                     <button
@@ -360,15 +368,15 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
 
           {/* Upsell Prompt */}
           <div>
-            <label className="block text-sm font-semibold text-[#434E54] mb-1.5">
+            <label className="block text-sm font-medium text-[#434E54] mb-1.5">
               Upsell Prompt (Optional)
             </label>
             <input
               type="text"
               value={formData.upsell_prompt}
               onChange={(e) => handleChange('upsell_prompt', e.target.value)}
-              className="w-full py-2.5 px-4 rounded-lg border border-gray-200 bg-white
-                focus:outline-none focus:ring-2 focus:ring-[#434E54]/20 focus:border-[#434E54]
+              className="w-full py-2.5 px-4 rounded-lg border border-[#434E54]/20 bg-white
+                focus:outline-none focus:ring-2 focus:ring-[#434E54]/30 focus:border-[#434E54]
                 placeholder:text-gray-400 transition-colors duration-200"
               placeholder="e.g., Recommended for long-haired breeds"
             />
@@ -382,7 +390,7 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
               checked={formData.is_active}
               onChange={(e) => handleChange('is_active', e.target.checked)}
               className="w-5 h-5 rounded border-gray-300 text-[#434E54]
-                focus:ring-[#434E54]/20"
+                focus:ring-2 focus:ring-[#434E54]/30"
             />
             <label htmlFor="is_active" className="text-sm font-medium text-[#434E54]">
               Active (visible to customers)
@@ -390,7 +398,7 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+          <div className="flex items-center gap-3 pt-4 border-t border-[#434E54]/20">
             <button
               type="button"
               onClick={handleClose}
@@ -420,5 +428,6 @@ export function AddOnForm({ addon, onClose, onSuccess }: AddOnFormProps) {
         </form>
       </div>
     </div>
+    </>
   );
 }

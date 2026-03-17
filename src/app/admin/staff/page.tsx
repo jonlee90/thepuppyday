@@ -37,11 +37,11 @@ export default function StaffManagementPage() {
   const loading = staffCount === null;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Page Header */}
       <div>
         <h1 className="hidden lg:block text-3xl font-bold text-[#434E54]">Staff Management</h1>
-        <p className="text-[#6B7280] mt-2">
+        <p className="text-[#434E54]/60 mt-2">
           Manage your team members, assign groomers to appointments, and track earnings
         </p>
       </div>

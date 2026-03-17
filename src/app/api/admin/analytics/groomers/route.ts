@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,22 @@ export async function GET(request: NextRequest) {
     const groomerId = searchParams.get('groomerId');
     const comparison = searchParams.get('comparison') === 'true';
     const leaderboard = searchParams.get('leaderboard') === 'true';
+    const listOnly = searchParams.get('listOnly') === 'true';
     const metric = searchParams.get('metric') || 'revenue';
+
+    // listOnly: return just the list of groomers who have appeared in appointments
+    if (listOnly) {
+      const supabase = await createServerSupabaseClient();
+      await requireAdmin(supabase);
+      const serviceClient = createServiceRoleClient();
+      const groomers = await getGroomersFromAppointments(serviceClient);
+      const formatted = groomers.map((g: any) => ({
+        id: g.id,
+        full_name: [g.first_name, g.last_name].filter(Boolean).join(' ') || 'Unknown',
+        email: g.email,
+      }));
+      return NextResponse.json({ groomers: formatted });
+    }
 
     if (!start || !end) {
       return NextResponse.json(
@@ -113,9 +128,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Production implementation - require admin auth
-    const supabase = await createServerSupabaseClient();
-    await requireAdmin(supabase);
+    // Production implementation - require admin auth, query with service role to bypass RLS
+    const authClient = await createServerSupabaseClient();
+    await requireAdmin(authClient);
+    const supabase = createServiceRoleClient();
 
     // Handle comparison mode - returns all groomers with averages
     if (comparison) {
@@ -228,6 +244,28 @@ async function getIndividualGroomerPerformance(
 }
 
 /**
+ * Get users who have been assigned as groomer in at least one appointment
+ */
+async function getGroomersFromAppointments(supabase: any) {
+  const { data: appointments } = await supabase
+    .from('appointments')
+    .select('groomer_id')
+    .not('groomer_id', 'is', null);
+
+  const uniqueGroomerIds = [...new Set((appointments || []).map((a: any) => a.groomer_id))] as string[];
+
+  if (uniqueGroomerIds.length === 0) return [];
+
+  const { data: users } = await supabase
+    .from('users')
+    .select('id, first_name, last_name, email')
+    .in('id', uniqueGroomerIds)
+    .order('first_name');
+
+  return users || [];
+}
+
+/**
  * Get comparison data for all groomers
  */
 async function getGroomerComparison(
@@ -235,12 +273,8 @@ async function getGroomerComparison(
   start: string,
   end: string
 ) {
-  // Get all groomers
-  const { data: groomers } = await supabase
-    .from('users')
-    .select('id, first_name, last_name')
-    .eq('role', 'groomer')
-    .order('first_name');
+  // Get all users who have been assigned as groomer in appointments
+  const groomers = await getGroomersFromAppointments(supabase);
 
   if (!groomers || groomers.length === 0) {
     return { groomers: [], averages: {} };
@@ -295,12 +329,8 @@ async function getGroomerLeaderboard(
   end: string,
   metric: string
 ) {
-  // Get all groomers
-  const { data: groomers } = await supabase
-    .from('users')
-    .select('id, first_name, last_name, email')
-    .eq('role', 'groomer')
-    .order('first_name');
+  // Get all users who have been assigned as groomer in appointments
+  const groomers = await getGroomersFromAppointments(supabase);
 
   if (!groomers || groomers.length === 0) {
     return { rankings: [], metric };
@@ -377,45 +407,66 @@ async function getAggregatePerformance(
   start: string,
   end: string
 ) {
-  // Get all groomers
-  const { data: groomers } = await supabase
-    .from('users')
-    .select('id')
-    .eq('role', 'groomer');
+  // Get all users who have been assigned as groomer in appointments
+  const groomers = await getGroomersFromAppointments(supabase);
 
   if (!groomers || groomers.length === 0) {
     return null;
   }
 
-  // Aggregate metrics across all groomers
-  const allMetrics = await Promise.all(
-    groomers.map((groomer: any) =>
-      calculateGroomerMetrics(supabase, groomer.id, start, end)
-    )
-  );
+  // Calculate previous period for comparison
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const periodLength = endDate.getTime() - startDate.getTime();
+  const previousStart = new Date(startDate.getTime() - periodLength);
+  const previousEnd = startDate;
+
+  // Aggregate metrics across all groomers for current and previous periods
+  const [allMetrics, allPreviousMetrics] = await Promise.all([
+    Promise.all(
+      groomers.map((groomer: any) =>
+        calculateGroomerMetrics(supabase, groomer.id, start, end)
+      )
+    ),
+    Promise.all(
+      groomers.map((groomer: any) =>
+        calculateGroomerMetrics(supabase, groomer.id, previousStart.toISOString(), previousEnd.toISOString())
+      )
+    ),
+  ]);
+
+  const aggregateTrends = await getAggregateTrendData(supabase, start, end);
+
+  const currentAgg = {
+    appointments_completed: allMetrics.reduce((sum, m) => sum + m.appointments_completed, 0),
+    average_rating: average(allMetrics.map(m => m.average_rating)),
+    revenue_total: allMetrics.reduce((sum, m) => sum + m.revenue_total, 0),
+    revenue_per_appointment: average(allMetrics.map(m => m.revenue_per_appointment)),
+    addon_attachment_rate: average(allMetrics.map(m => m.addon_attachment_rate)),
+    completion_rate: average(allMetrics.map(m => m.completion_rate)),
+  };
+
+  const previousAgg = {
+    appointments_completed: allPreviousMetrics.reduce((sum, m) => sum + m.appointments_completed, 0),
+    average_rating: average(allPreviousMetrics.map(m => m.average_rating)),
+    revenue_total: allPreviousMetrics.reduce((sum, m) => sum + m.revenue_total, 0),
+    revenue_per_appointment: average(allPreviousMetrics.map(m => m.revenue_per_appointment)),
+    addon_attachment_rate: average(allPreviousMetrics.map(m => m.addon_attachment_rate)),
+    completion_rate: average(allPreviousMetrics.map(m => m.completion_rate)),
+  };
 
   return {
     groomer_id: 'all',
     groomer_name: 'All Groomers',
     metrics: {
-      appointments_completed: allMetrics.reduce((sum, m) => sum + m.appointments_completed, 0),
-      average_rating: average(allMetrics.map(m => m.average_rating)),
-      revenue_total: allMetrics.reduce((sum, m) => sum + m.revenue_total, 0),
-      revenue_per_appointment: average(allMetrics.map(m => m.revenue_per_appointment)),
-      addon_attachment_rate: average(allMetrics.map(m => m.addon_attachment_rate)),
-      completion_rate: average(allMetrics.map(m => m.completion_rate)),
-      appointments_trend: 0,
-      rating_trend: 0,
-      revenue_trend: 0,
-      addon_trend: 0,
-      completion_rate_trend: 0,
+      ...currentAgg,
+      appointments_trend: calculatePercentChange(currentAgg.appointments_completed, previousAgg.appointments_completed),
+      rating_trend: calculatePercentChange(currentAgg.average_rating, previousAgg.average_rating),
+      revenue_trend: calculatePercentChange(currentAgg.revenue_total, previousAgg.revenue_total),
+      addon_trend: calculatePercentChange(currentAgg.addon_attachment_rate, previousAgg.addon_attachment_rate),
+      completion_rate_trend: calculatePercentChange(currentAgg.completion_rate, previousAgg.completion_rate),
     },
-    trends: {
-      dates: [],
-      appointments: [],
-      revenue: [],
-      ratings: [],
-    },
+    trends: aggregateTrends,
   };
 }
 
@@ -432,36 +483,25 @@ async function calculateGroomerMetrics(
   const { data: appointments } = await supabase
     .from('appointments')
     .select(`
-      *,
+      id,
+      total_price,
       appointment_addons (
         addon:addons (
           price
         )
-      ),
-      service:services (
-        id,
-        name
-      ),
-      service_price:service_prices (
-        price
       )
     `)
     .eq('groomer_id', groomerId)
     .eq('status', 'completed')
-    .gte('start_time', start)
-    .lte('start_time', end);
+    .gte('scheduled_at', start)
+    .lte('scheduled_at', end);
 
   const appointmentsList = appointments || [];
   const appointmentsCompleted = appointmentsList.length;
 
-  // Calculate revenue
+  // Calculate revenue using total_price on the appointment
   const revenueTotal = appointmentsList.reduce((sum: number, apt: any) => {
-    const servicePrice = apt.service_price?.price || 0;
-    const addonPrice = apt.appointment_addons?.reduce(
-      (addonSum: number, aa: any) => addonSum + (aa.addon?.price || 0),
-      0
-    ) || 0;
-    return sum + servicePrice + addonPrice;
+    return sum + (apt.total_price || 0);
   }, 0);
 
   const revenuePerAppointment = appointmentsCompleted > 0
@@ -476,15 +516,17 @@ async function calculateGroomerMetrics(
     ? (appointmentsWithAddons / appointmentsCompleted) * 100
     : 0;
 
-  // Calculate average rating from reviews
-  const { data: reviews } = await supabase
-    .from('reviews')
-    .select('rating')
-    .eq('groomer_id', groomerId)
-    .gte('created_at', start)
-    .lte('created_at', end);
-
-  const reviewsList = reviews || [];
+  // Calculate average rating from reviews (join through appointments)
+  let reviewsList: { rating: number }[] = [];
+  if (appointmentsList.length > 0) {
+    const { data: reviews } = await supabase
+      .from('reviews')
+      .select('rating, appointment_id')
+      .in('appointment_id', appointmentsList.map((a: any) => a.id))
+      .gte('created_at', start)
+      .lte('created_at', end);
+    reviewsList = reviews || [];
+  }
   const averageRating = reviewsList.length > 0
     ? reviewsList.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviewsList.length
     : 0;
@@ -495,8 +537,8 @@ async function calculateGroomerMetrics(
     .select('id')
     .eq('groomer_id', groomerId)
     .in('status', ['completed', 'cancelled', 'no_show'])
-    .gte('start_time', start)
-    .lte('start_time', end);
+    .gte('scheduled_at', start)
+    .lte('scheduled_at', end);
 
   const totalScheduledCount = totalScheduled?.length ?? appointmentsCompleted;
   const completionRate = totalScheduledCount > 0
@@ -556,6 +598,46 @@ async function getGroomerTrendData(
     appointments: trendData.map(d => d.appointments),
     revenue: trendData.map(d => d.revenue),
     ratings: trendData.map(d => d.rating),
+  };
+}
+
+/**
+ * Get aggregate trend data across all groomers (single query approach)
+ */
+async function getAggregateTrendData(supabase: any, start: string, end: string) {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const granularity = daysDiff <= 7 ? 'day' : daysDiff <= 60 ? 'week' : 'month';
+
+  const { data: appointments } = await supabase
+    .from('appointments')
+    .select('scheduled_at, total_price')
+    .eq('status', 'completed')
+    .not('groomer_id', 'is', null)
+    .gte('scheduled_at', start)
+    .lte('scheduled_at', end);
+
+  const aptList: { scheduled_at: string; total_price: number }[] = appointments || [];
+  const buckets = generateDateBuckets(startDate, endDate, granularity);
+
+  const trendData = buckets.map((bucket) => {
+    const bucketApts = aptList.filter((a) => {
+      const t = new Date(a.scheduled_at).getTime();
+      return t >= bucket.start.getTime() && t <= bucket.end.getTime();
+    });
+    return {
+      date: formatDate(bucket.start, granularity),
+      appointments: bucketApts.length,
+      revenue: bucketApts.reduce((sum, a) => sum + (a.total_price || 0), 0),
+    };
+  });
+
+  return {
+    dates: trendData.map(d => d.date),
+    appointments: trendData.map(d => d.appointments),
+    revenue: trendData.map(d => d.revenue),
+    ratings: trendData.map(() => 0),
   };
 }
 

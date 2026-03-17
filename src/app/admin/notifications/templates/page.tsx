@@ -133,12 +133,11 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8EEE5] p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="mb-8">
           <h1 className="hidden lg:block text-3xl font-bold text-[#434E54] mb-2">Notification Templates</h1>
-          <p className="text-[#6B7280]">
+          <p className="text-[#434E54]/60">
             Manage email and SMS templates for automated notifications
           </p>
         </div>
@@ -175,7 +174,6 @@ export default function TemplatesPage() {
             Showing {filteredTemplates.length} of {templates.length} templates
           </div>
         )}
-      </div>
     </div>
   );
 }

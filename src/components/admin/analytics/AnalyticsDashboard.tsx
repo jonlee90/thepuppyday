@@ -264,14 +264,6 @@ export default function AnalyticsDashboard() {
         </AnalyticsErrorBoundary>
       )}
 
-      {/* Report Cards */}
-      <AnalyticsErrorBoundary sectionName="Report Card Performance">
-        <div className="card bg-white shadow-md p-6">
-          <h2 className="text-xl font-bold text-[#434E54] mb-4">Report Card Performance</h2>
-          <ReportCardAnalytics dateRange={dateRange} />
-        </div>
-      </AnalyticsErrorBoundary>
-
       {/* Waitlist */}
       {config.features.waitlistEnabled && (
         <AnalyticsErrorBoundary sectionName="Waitlist Performance">
@@ -281,14 +273,6 @@ export default function AnalyticsDashboard() {
           </div>
         </AnalyticsErrorBoundary>
       )}
-
-      {/* Marketing */}
-      <AnalyticsErrorBoundary sectionName="Marketing">
-        <div className="card bg-white shadow-md p-6">
-          <h2 className="text-xl font-bold text-[#434E54] mb-4">Marketing Campaign Performance</h2>
-          <MarketingAnalytics dateRange={dateRange} />
-        </div>
-      </AnalyticsErrorBoundary>
 
       {/* Groomer Performance */}
       <AnalyticsErrorBoundary sectionName="Groomer Performance">
@@ -309,6 +293,22 @@ export default function AnalyticsDashboard() {
       <AnalyticsErrorBoundary sectionName="Groomer Comparison">
         <div className="card bg-white shadow-md p-6">
           <GroomerComparisonTable dateRange={groomerDateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
+
+      {/* Report Cards */}
+      <AnalyticsErrorBoundary sectionName="Report Card Performance">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Report Card Performance</h2>
+          <ReportCardAnalytics dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
+
+      {/* Marketing */}
+      <AnalyticsErrorBoundary sectionName="Marketing">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Marketing Campaign Performance</h2>
+          <MarketingAnalytics dateRange={dateRange} />
         </div>
       </AnalyticsErrorBoundary>
     </div>

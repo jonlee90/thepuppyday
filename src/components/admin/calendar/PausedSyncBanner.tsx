@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { AlertOctagon, Play, ExternalLink, Loader2 } from 'lucide-react';
+import { AdminButton } from '@/components/admin/ui/AdminButton';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 interface PausedSyncBannerProps {
   pausedAt: string;
@@ -155,50 +157,24 @@ export function PausedSyncBanner({
       </div>
 
       {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <dialog className="modal modal-open">
-          <div className="modal-box bg-white max-w-md">
-            <h3 className="text-lg font-semibold text-[#434E54] mb-3">Resume Automatic Sync?</h3>
-            <p className="text-sm text-[#6B7280] mb-4 leading-relaxed">
-              This will re-enable automatic calendar syncing. Ensure errors have been resolved to
-              prevent repeated failures.
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => !isResuming && setShowConfirmModal(false)}
+        onConfirm={handleConfirmResume}
+        title="Resume Automatic Sync?"
+        description="This will re-enable automatic calendar syncing. Ensure errors have been resolved to prevent repeated failures."
+        confirmText="Resume Sync"
+        variant="default"
+        isLoading={isResuming}
+        additionalInfo={
+          <div className="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-lg">
+            <p className="text-sm text-amber-800">
+              <span className="font-medium">Warning:</span> If errors persist, sync will pause
+              again after 5 consecutive failures.
             </p>
-            <div className="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-lg mb-6">
-              <p className="text-sm text-amber-800">
-                <span className="font-medium">Warning:</span> If errors persist, sync will pause
-                again after 5 consecutive failures.
-              </p>
-            </div>
-            <div className="modal-action">
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="btn btn-ghost"
-                disabled={isResuming}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmResume}
-                className="btn btn-primary bg-[#434E54] hover:bg-[#363F44] border-none"
-                disabled={isResuming}
-              >
-                {isResuming ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Resuming...
-                  </>
-                ) : (
-                  'Resume Sync'
-                )}
-              </button>
-            </div>
           </div>
-          <div
-            className="modal-backdrop bg-black/50"
-            onClick={() => !isResuming && setShowConfirmModal(false)}
-          />
-        </dialog>
-      )}
+        }
+      />
     </>
   );
 }

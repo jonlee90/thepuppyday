@@ -4,7 +4,7 @@
 > **Status**: Phases 5, 6, 8, 9, 11 Complete | Phase 7 Pending (Payments) | Admin Dashboard Redesign Complete
 > **Base Path**: `admin/`
 > **Authentication**: Required (admin or groomer role)
-> **Last Updated**: 2026-03-14
+> **Last Updated**: 2026-03-16
 
 ## Overview
 
@@ -337,6 +337,10 @@ The admin panel uses the reusable `BookingModal` component for appointment creat
 **Middleware** protects all `/admin/*` routes. Layout verifies admin/groomer role via `getAuthenticatedAdmin()`.
 
 **requireAdmin Helper** (`src/lib/admin/auth.ts`): Validates admin or groomer role.
+
+**Groomer Route Restrictions**: Groomers can only access `/admin/dashboard`, `/admin/appointments`, `/admin/customers`, and `/admin/notifications`. All other admin routes redirect groomers to `/admin/dashboard`.
+
+**Owner Admin Exclusion**: The owner admin account is excluded from staff/groomer lists in the groomers API route to prevent self-assignment issues.
 
 **Owner-Only Operations**: Sensitive actions (deleting customers, managing staff, system settings) require `admin` role specifically.
 

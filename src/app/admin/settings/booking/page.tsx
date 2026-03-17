@@ -10,9 +10,8 @@ export const dynamic = 'force-dynamic';
 
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
 import { BookingSettingsClient } from '@/components/admin/settings/booking/BookingSettingsClient';
+import { AdminBreadcrumb } from '@/components/admin/shared';
 import { BookingSettingsSchema } from '@/types/settings';
 import type { BookingSettings } from '@/types/settings';
 
@@ -57,17 +56,8 @@ export default async function BookingSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8EEE5] p-6">
-      {/* Breadcrumb Navigation */}
-      <div className="mb-6">
-        <nav className="flex items-center text-sm text-[#434E54]/60">
-          <Link href="/admin/settings" className="hover:text-[#434E54] transition-colors">
-            Settings
-          </Link>
-          <ChevronRight className="w-4 h-4 mx-2" />
-          <span className="text-[#434E54] font-medium">Booking Settings</span>
-        </nav>
-      </div>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <AdminBreadcrumb items={[{ label: 'Settings', href: '/admin/settings' }, { label: 'Booking Settings' }]} />
 
       {/* Page Header */}
       <div className="mb-8">
