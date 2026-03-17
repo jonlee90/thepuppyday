@@ -39,8 +39,9 @@ Using **live Supabase** (`NEXT_PUBLIC_USE_MOCKS=false`). All API routes connect 
 
 | Task Type | Tools to Use |
 |---|---|
-| React/Next.js components | Context7 (React/Next.js docs), Serena (`find_symbol`, `get_symbols_overview`), `/vercel-react-best-practices`, `/vercel-composition-patterns`, `/component-patterns` |
-| UI/UX, styling, accessibility | Serena (component analysis), `/web-design-guidelines`, `/design-system`, `/daisyui-components` |
+| React/Next.js components | Context7 (React/Next.js docs), Serena (`find_symbol`, `get_symbols_overview`), `/component-patterns` |
+| UI/UX, styling, accessibility | Serena (component analysis), `/design-system`, `/daisyui-components` |
+| Performance optimization | `/vercel-react-best-practices`, Serena (find hot paths) |
 | API routes | `/api-patterns`, `/supabase-patterns`, Serena (find types/queries) |
 | Database, schema, migrations, RLS | Supabase MCP tools, `/postgres-best-practices`, `/supabase-patterns`, Serena (find types/queries) |
 | Forms & validation | `/form-patterns`, `/component-patterns`, `/daisyui-components` |
@@ -53,9 +54,7 @@ Using **live Supabase** (`NEXT_PUBLIC_USE_MOCKS=false`). All API routes connect 
 Invoke these skills **proactively** when their trigger conditions match — don't wait for user to ask:
 
 **Vercel/External Skills:**
-- **`/vercel-react-best-practices`** — Any React component work, render optimization, Server vs Client component decisions
-- **`/vercel-composition-patterns`** — Component API design, props patterns, compound components, composition refactors
-- **`/web-design-guidelines`** — UI layouts, accessibility audits, responsive design, UX reviews
+- **`/vercel-react-best-practices`** — Performance audits, bundle optimization, waterfall elimination, re-render optimization (NOT for basic component structure — use `/component-patterns`)
 - **`/postgres-best-practices`** — SQL queries, schema design, migrations, RLS policies, indexing
 
 **Project-Specific Skills (enforce codebase consistency):**
@@ -203,12 +202,13 @@ See [Global Design System](docs/architecture/ARCHITECTURE.md#global-design-syste
 ### Available Skills
 Reference these for detailed specifications:
 - `/design-system`: The Puppy Day colors, typography, spacing, dog-themed elements
-- `/daisyui-components`: DaisyUI 5 component patterns and theme config
-- `/api-patterns`: API route structure, auth, error handling, validation
-- `/component-patterns`: Component architecture, props, hooks, loading states
-- `/form-patterns`: Form handling, Zod validation, toast notifications
-- `/supabase-patterns`: Supabase client usage, RLS, query patterns, types
+- `/daisyui-components`: DaisyUI 5 component patterns, Tailwind CSS 4, theme config
+- `/api-patterns`: API routes + Server Actions, auth, error handling, validation
+- `/component-patterns`: React 19 component architecture, props, hooks, Suspense, loading states
+- `/form-patterns`: Server Actions + useActionState, React Hook Form + Zod, toast notifications
+- `/supabase-patterns`: Supabase client usage, getUser() security, RLS, query patterns
 - `/state-patterns`: Zustand store structure and state management decisions
+- `/vercel-react-best-practices`: Performance optimization — waterfalls, bundle size, re-renders
 - `/code-audit`: Audit files/directories for pattern violations (manual only)
 
 ## Development Workflow
