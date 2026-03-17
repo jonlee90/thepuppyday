@@ -213,7 +213,8 @@ export default async function MarketingPage() {
       <SchemaOrg
         schema={{
           '@context': 'https://schema.org',
-          '@type': 'PetGroomer',
+          '@type': 'LocalBusiness',
+          additionalType: 'https://schema.org/PetGroomer',
           '@id': 'https://thepuppyday.com',
           name: data.siteContent.business.name,
           description: `Professional dog grooming and day care services in ${data.siteContent.business.city}, ${data.siteContent.business.state}`,
@@ -243,11 +244,6 @@ export default async function MarketingPage() {
             : [],
           priceRange: '$$',
           image: 'https://placedog.net/1200/630?id=business',
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '5.0',
-            reviewCount: '16',
-          },
           hasOfferCatalog: {
             '@type': 'OfferCatalog',
             name: 'Dog Grooming Services',

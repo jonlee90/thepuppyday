@@ -26,13 +26,6 @@ export default async function ReviewsPage() {
           '@type': 'LocalBusiness',
           name: businessInfo.name,
           url: 'https://thepuppyday.com',
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '5.0',
-            reviewCount: '16',
-            bestRating: '5',
-            worstRating: '1',
-          },
         }}
       />
 

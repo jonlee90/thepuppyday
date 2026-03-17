@@ -86,11 +86,6 @@ export default async function CityPage({
       containedInPlace: { '@type': 'State', name: 'California' },
     },
     priceRange: '$$',
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '5.0',
-      reviewCount: '16',
-    },
   };
 
   return (
