@@ -1371,7 +1371,7 @@ function generateGroomingCompleteContent(data: GroomingCompleteEmailData): strin
       <tr>
         <td align="center" style="padding: 8px 0;">
           <a href="${data.rebook_url}" target="_blank" style="background-color: transparent; color: #D4A574 !important; text-decoration: none; padding: 14px 40px; border-radius: 50px; border: 2px solid #D4A574; display: inline-block; font-weight: 600; font-size: 16px; min-width: 220px; text-align: center;">
-            Book Next Visit
+            Visit Our Website
           </a>
         </td>
       </tr>
@@ -1392,7 +1392,7 @@ ${escapeHtml(data.pet_name)} is looking and feeling amazing after their ${escape
 If you enjoyed ${escapeHtml(data.pet_name)}'s grooming, we'd love a Yelp review:
 ${data.yelp_url}
 
-Book Next Visit:
+Visit Our Website:
 ${data.rebook_url}
 
 Tip: Regular grooming every 4-6 weeks keeps ${escapeHtml(data.pet_name)} healthy and happy!

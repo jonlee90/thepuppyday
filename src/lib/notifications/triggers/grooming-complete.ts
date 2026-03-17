@@ -65,7 +65,7 @@ export async function triggerGroomingComplete(
     pet_name: data.petName,
     service_name: data.serviceName,
     yelp_url: YELP_URL,
-    rebook_url: `${baseUrl}/booking`,
+    rebook_url: baseUrl,
   };
 
   // Generate pre-rendered content
