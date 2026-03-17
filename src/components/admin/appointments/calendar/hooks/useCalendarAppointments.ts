@@ -28,7 +28,7 @@ export function useCalendarAppointments(dateRange: CalendarDateRange) {
   useEffect(() => {
     (async () => {
       try {
-        const response = await fetch('/api/admin/settings/staff?role=groomer&status=active');
+        const response = await fetch('/api/admin/settings/staff?role=all&status=active');
         const result = await response.json();
         if (response.ok) {
           const list: Groomer[] = result.data || [];

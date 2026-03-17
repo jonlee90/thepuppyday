@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Calendar, List, Upload } from 'lucide-react';
+import { Calendar, List } from 'lucide-react';
 import { useAdminStore } from '@/stores/admin-store';
 import { AppointmentCalendar } from '@/components/admin/appointments/AppointmentCalendar';
 import { AppointmentListView } from '@/components/admin/appointments/AppointmentListView';
@@ -18,16 +18,11 @@ const AppointmentDetailModal = dynamic(
   () => import('@/components/admin/appointments/AppointmentDetailModal').then((mod) => ({ default: mod.AppointmentDetailModal })),
   { ssr: false }
 );
-const CSVImportModal = dynamic(
-  () => import('@/components/admin/appointments/CSVImportModal').then((mod) => ({ default: mod.CSVImportModal })),
-  { ssr: false }
-);
 
 export default function AppointmentsPage() {
   const { appointmentsView, setAppointmentsView } = useAdminStore();
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Handle appointment click from either view
@@ -47,10 +42,6 @@ export default function AppointmentsPage() {
     setRefreshKey((prev) => prev + 1);
   };
 
-  // Handle successful CSV import
-  const handleImportSuccess = () => {
-    setRefreshKey((prev) => prev + 1);
-  };
 
   return (
     <div>
@@ -59,13 +50,6 @@ export default function AppointmentsPage() {
         <div className="hidden lg:flex items-start justify-between mb-6">
           <h1 className="text-3xl font-bold text-[#434E54]">Appointments</h1>
           <div className="flex gap-3">
-            <button
-              onClick={() => setIsImportModalOpen(true)}
-              className="btn bg-white text-[#434E54] hover:bg-[#FFFBF7] border border-[#E5E5E5] shadow-sm"
-            >
-              <Upload className="w-5 h-5 mr-2" />
-              Import CSV
-            </button>
             <AdminCreateButton
               onSuccess={() => setRefreshKey((prev) => prev + 1)}
             />
@@ -149,12 +133,6 @@ export default function AppointmentsPage() {
           onUpdate={handleAppointmentUpdate}
         />
 
-        {/* CSV Import Modal */}
-        <CSVImportModal
-          isOpen={isImportModalOpen}
-          onClose={() => setIsImportModalOpen(false)}
-          onSuccess={handleImportSuccess}
-        />
       </div>
     </div>
   );
