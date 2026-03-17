@@ -40,12 +40,13 @@ export async function GET() {
       return NextResponse.json({ groomers });
     }
 
-    // Production: Fetch users with admin or groomer roles
+    // Production: Fetch users with groomer role (exclude owner admin)
     const { data: groomers, error } = await supabase
       .from('users')
       .select('id, first_name, last_name, email, role')
       .in('role', ['admin', 'groomer'])
       .eq('is_active', true)
+      .neq('id', '682450ba-5a9d-4a34-9c9d-7e7f944ee8df')
       .order('first_name', { ascending: true });
 
     if (error) {
