@@ -15,7 +15,7 @@ import { Dog, Calendar, CheckCircle, PlayCircle, User, Package } from 'lucide-re
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { AppointmentDetailModal } from '@/components/admin/appointments/AppointmentDetailModal';
 import { formatTime, formatCurrency } from '@/lib/utils';
-import { BUSINESS_HOURS, STATUS_COLORS } from '@/components/admin/appointments/calendar/constants';
+import { BUSINESS_HOURS, STATUS_COLORS, GROOMER_COLORS, UNASSIGNED_COLOR } from '@/components/admin/appointments/calendar/constants';
 import { toast } from '@/hooks/use-toast';
 import type { AppointmentStatus } from '@/lib/validations/common';
 import type { Tables } from '@/types/supabase';
@@ -193,6 +193,7 @@ function NowIndicator({ containerRef }: NowIndicatorProps) {
 interface TimelineAppointmentCardProps {
   appointment: Appointment;
   index: number;
+  groomerColorMap: Record<string, string>;
   onStatusUpdate: (id: string, newStatus: AppointmentStatus) => void;
   onCardClick: (appointmentId: string) => void;
 }
@@ -200,6 +201,7 @@ interface TimelineAppointmentCardProps {
 function TimelineAppointmentCard({
   appointment,
   index,
+  groomerColorMap,
   onStatusUpdate,
   onCardClick,
 }: TimelineAppointmentCardProps) {
@@ -208,7 +210,8 @@ function TimelineAppointmentCard({
   const scheduledAt = new Date(appointment.scheduled_at);
   const timeStr = formatTime(scheduledAt);
   const status = (appointment.status ?? 'pending') as AppointmentStatus;
-  const stripeColor = STATUS_COLORS[status] ?? STATUS_COLORS.pending;
+  const groomerId = (appointment as any).groomer_id || 'unassigned';
+  const stripeColor = groomerColorMap[groomerId] || STATUS_COLORS[status] || STATUS_COLORS.pending;
   const nextAction = getNextAction(status);
 
   const handleStatusUpdate = async (e: React.MouseEvent) => {
@@ -364,11 +367,33 @@ export function DashboardTimeline({
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [localAppointments, setLocalAppointments] = useState<Appointment[]>(appointments);
+  const [groomerColorMap, setGroomerColorMap] = useState<Record<string, string>>({});
 
   // Keep local state in sync with prop updates from the hook
   useEffect(() => {
     setLocalAppointments(appointments);
   }, [appointments]);
+
+  // Fetch groomers for color mapping
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await fetch('/api/admin/settings/staff?role=all&status=active');
+        const result = await response.json();
+        if (response.ok) {
+          const list = result.data || [];
+          const colorMap: Record<string, string> = {};
+          list.forEach((g: { id: string }, i: number) => {
+            colorMap[g.id] = GROOMER_COLORS[i % GROOMER_COLORS.length];
+          });
+          colorMap['unassigned'] = UNASSIGNED_COLOR;
+          setGroomerColorMap(colorMap);
+        }
+      } catch {
+        // Silently fail — will fall back to status colors
+      }
+    })();
+  }, []);
 
   const handleStatusUpdate = useCallback(
     (id: string, newStatus: AppointmentStatus) => {
@@ -555,6 +580,7 @@ export function DashboardTimeline({
                   <TimelineAppointmentCard
                     appointment={apt}
                     index={index}
+                    groomerColorMap={groomerColorMap}
                     onStatusUpdate={handleStatusUpdate}
                     onCardClick={handleCardClick}
                   />
