@@ -1,9 +1,9 @@
 ---
 name: daisyui-components
-description: DaisyUI 5 component patterns and theme configuration for The Puppy Day. Auto-invoke when using DaisyUI components, creating UI with Tailwind utility classes, or implementing modals, tables, forms, cards, or navigation elements.
+description: DaisyUI 5 component patterns and theme configuration for The Puppy Day. Auto-invoke when using DaisyUI components, creating UI with Tailwind CSS 4 utility classes, or implementing modals, tables, forms, cards, or navigation elements.
 metadata:
   author: thepuppyday
-  version: "1.0.0"
+  version: "2.0.0"
 ---
 
 # DaisyUI Component Patterns
@@ -260,7 +260,74 @@ function MyModal({ isOpen, onClose, children }: MyModalProps) {
 <div class="drawer lg:drawer-open">
 ```
 
-## Rule 10: Avoid These Anti-Patterns
+## Rule 10: DaisyUI 5 New Components
+
+DaisyUI 5 added these components — use them when applicable:
+
+| Component | Class | Usage |
+|-----------|-------|-------|
+| **List** | `list` | Structured list with items (replaces custom ul/li patterns) |
+| **Status** | `status` | Status dot indicator |
+| **Fieldset** | `fieldset` | Form field grouping with legend |
+| **Label** | `label` | Enhanced label component |
+| **Filter** | `filter` | Filter/chip toggle group |
+| **Calendar** | `calendar` | Date picker (for simple date selection) |
+| **Dock** | `dock` | Bottom dock navigation (mobile) |
+
+## Rule 11: DaisyUI 5 Style Modifiers
+
+Use the new soft and dash variants for subtle UI:
+
+```html
+<!-- Soft variants (lower contrast, subtle) -->
+<button class="btn btn-soft btn-primary">Soft Primary</button>
+<div class="alert alert-soft alert-info">Soft info alert</div>
+<span class="badge badge-soft badge-success">Active</span>
+
+<!-- Dash variants (dashed border style) -->
+<button class="btn btn-dash btn-primary">Dashed Primary</button>
+
+<!-- Sizes: new xl size -->
+<button class="btn btn-xl">Extra Large</button>
+```
+
+## Rule 12: Tailwind CSS 4 Changes
+
+**Breaking change — gradients renamed:**
+```html
+<!-- OLD (Tailwind CSS 3) — DO NOT USE -->
+<div class="bg-gradient-to-r from-primary to-accent">
+
+<!-- NEW (Tailwind CSS 4) — USE THIS -->
+<div class="bg-linear-to-r from-primary to-accent">
+```
+
+**New Tailwind CSS 4 features available:**
+- Container queries: `@container`, `@sm:`, `@md:` etc.
+- `bg-linear-to-*` replaces `bg-gradient-to-*`
+- `bg-radial-*` for radial gradients
+- `bg-conic-*` for conic gradients
+- `@starting-style` for enter/exit transitions
+
+## Rule 13: Theme Setup (Tailwind CSS 4 + DaisyUI 5)
+
+Theme is configured in `src/app/globals.css` using the CSS `@plugin` directive:
+
+```css
+@plugin "daisyui" {
+  themes: light --default;
+}
+```
+
+Custom theme values use `@theme` directive (Tailwind CSS 4):
+```css
+@theme {
+  --color-primary: oklch(0.35 0.03 240);
+  --color-accent: oklch(0.75 0.15 180);
+}
+```
+
+## Rule 14: Avoid These Anti-Patterns
 
 ```html
 <!-- WRONG: Don't mix DaisyUI and raw color classes -->
@@ -271,11 +338,16 @@ function MyModal({ isOpen, onClose, children }: MyModalProps) {
 
 <!-- WRONG: Don't use custom border-radius when DaisyUI provides it -->
 <div class="rounded-[12px]">  <!-- Use rounded-xl -->
+
+<!-- WRONG: Old gradient syntax (Tailwind CSS 3) -->
+<div class="bg-gradient-to-r ...">  <!-- Use bg-linear-to-r -->
 ```
 
 ## Reference
 
 - DaisyUI 5 docs: https://daisyui.com/components/
+- DaisyUI 5 changelog: https://daisyui.com/docs/v5/
 - Theme config: `src/app/globals.css`
 - AdminButton: `src/components/admin/ui/AdminButton.tsx`
 - Design system: `docs/architecture/ARCHITECTURE.md` (Global Design System section)
+- Tailwind CSS 4 upgrade guide: https://tailwindcss.com/docs/upgrade-guide

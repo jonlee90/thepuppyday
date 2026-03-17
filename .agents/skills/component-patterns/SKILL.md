@@ -1,14 +1,14 @@
 ---
 name: component-patterns
-description: Enforces consistent React component patterns for The Puppy Day — props typing, file structure, data fetching strategy, hooks, and loading states. Auto-invoke when creating or modifying React components, custom hooks, or pages.
+description: Enforces consistent React 19 component patterns for The Puppy Day — props typing, file structure, data fetching strategy, hooks, loading states, and Suspense boundaries. Auto-invoke when creating or modifying React components, custom hooks, or pages.
 metadata:
   author: thepuppyday
-  version: "1.0.0"
+  version: "2.0.0"
 ---
 
 # Component Patterns
 
-Consistent patterns for React components, hooks, and pages in The Puppy Day.
+Consistent patterns for React 19 components, hooks, and pages in The Puppy Day (Next.js 16).
 
 ## When to Apply
 
@@ -36,7 +36,33 @@ interface Props {
 }
 ```
 
-## Rule 2: Component File Structure
+## Rule 2: React 19 — ref is a Regular Prop (NO forwardRef)
+
+In React 19, `forwardRef` is DEPRECATED. Pass `ref` directly as a prop:
+
+```typescript
+// CORRECT (React 19) — ref as a regular prop
+interface InputProps {
+  ref?: React.Ref<HTMLInputElement>;
+  label: string;
+  error?: string;
+}
+
+function Input({ ref, label, error, ...props }: InputProps) {
+  return (
+    <div className="form-control">
+      <label className="label"><span className="label-text">{label}</span></label>
+      <input ref={ref} className="input input-bordered" {...props} />
+      {error && <p className="text-error text-sm mt-1">{error}</p>}
+    </div>
+  );
+}
+
+// WRONG (deprecated) — do NOT use forwardRef in new code
+const Input = forwardRef<HTMLInputElement, InputProps>((props, ref) => { ... });
+```
+
+## Rule 3: Component File Structure
 
 Follow this order in every component file:
 
@@ -45,7 +71,7 @@ Follow this order in every component file:
 'use client';
 
 // 2. Imports (grouped: react, next, third-party, local components, hooks, types, utils)
-import { useState, useCallback } from 'react';
+import { useState, useCallback, use } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { AdminButton } from '@/components/admin/ui/AdminButton';
@@ -60,7 +86,7 @@ interface PetCardProps {
   isSelected?: boolean;
 }
 
-// 4. Component definition (named export preferred for pages, default for shared components)
+// 4. Component definition
 export function PetCard({ pet, onSelect, isSelected = false }: PetCardProps) {
   // 4a. Hooks first
   const [isLoading, setIsLoading] = useState(false);
@@ -75,7 +101,7 @@ export function PetCard({ pet, onSelect, isSelected = false }: PetCardProps) {
 }
 ```
 
-## Rule 3: Server vs Client Components
+## Rule 4: Server vs Client Components
 
 **Use Server Components (default) for:**
 - Page-level data fetching (`page.tsx` files)
@@ -89,19 +115,19 @@ export function PetCard({ pet, onSelect, isSelected = false }: PetCardProps) {
 - Framer Motion animations
 - Third-party client libraries
 
+**Push `'use client'` as deep as possible.** Pages should be Server Components that pass data to Client Component children.
+
 **Data fetching strategy:**
 ```typescript
-// Server Component page — fetches data
+// Server Component page — fetches data directly
 export default async function CustomersPage() {
-  // Fetch at page level
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/customers`);
-  const { data } = await response.json();
+  const supabase = await createServerSupabaseClient();
+  const { data } = await supabase.from('users').select('*').eq('role', 'customer');
 
-  // Pass to client component
-  return <CustomerList initialData={data} />;
+  return <CustomerList initialData={data ?? []} />;
 }
 
-// Client Component — receives data as props, handles interaction
+// Client Component — receives data, handles interaction
 'use client';
 function CustomerList({ initialData }: CustomerListProps) {
   const [data, setData] = useState(initialData);
@@ -114,12 +140,63 @@ function CustomerList({ initialData }: CustomerListProps) {
 - Data requires real-time updates
 - Component is a modal/dialog that loads on demand
 
-## Rule 4: Custom Hook Return Types
+## Rule 5: React 19 use() Hook
+
+The `use()` hook can read promises and context CONDITIONALLY (unlike other hooks):
+
+```typescript
+import { use } from 'react';
+
+// Read context conditionally
+function UserProfile({ userId }: { userId?: string }) {
+  if (!userId) return <div>No user selected</div>;
+  const theme = use(ThemeContext); // OK — conditional call allowed with use()
+  return <div className={theme.className}>...</div>;
+}
+```
+
+**When to use `use()` vs `useContext()`:**
+- `use()` — When you need conditional context reading
+- `useContext()` — Standard unconditional context reading (still valid)
+
+## Rule 6: Suspense Boundaries for Loading States
+
+Use nested Suspense boundaries for independent loading states:
+
+```typescript
+import { Suspense } from 'react';
+
+// Page with independent loading sections
+export default function AdminDashboard() {
+  return (
+    <div className="space-y-6">
+      <h1>Dashboard</h1>
+
+      <Suspense fallback={<div className="skeleton h-32 w-full rounded-xl" />}>
+        <RevenueOverview />
+      </Suspense>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Suspense fallback={<div className="skeleton h-48 w-full rounded-xl" />}>
+          <TodayAppointments />
+        </Suspense>
+
+        <Suspense fallback={<div className="skeleton h-48 w-full rounded-xl" />}>
+          <PendingActions />
+        </Suspense>
+      </div>
+    </div>
+  );
+}
+```
+
+Use `loading.tsx` for full-page loading states, Suspense for section-level.
+
+## Rule 7: Custom Hook Return Types
 
 ALL custom hooks MUST return an object with consistent naming:
 
 ```typescript
-// Standard hook return interface
 interface UseResourceReturn {
   data: Resource[] | null;
   isLoading: boolean;      // ALWAYS 'isLoading', never 'loading'
@@ -129,7 +206,7 @@ interface UseResourceReturn {
 
 export function useResource(): UseResourceReturn {
   const [data, setData] = useState<Resource[] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);   // true initially
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const refetch = useCallback(async () => {
@@ -162,17 +239,17 @@ export function useResource(): UseResourceReturn {
 | `error` | Error state (Error object or null) |
 | `refetch` | Re-run the data fetch |
 
-NEVER use: `loading`, `submitting`, `fetching`, `isSubmitting` (except in form context with React Hook Form).
+NEVER use: `loading`, `submitting`, `fetching`.
 
-## Rule 5: Loading States
+## Rule 8: Loading States
 
 ```typescript
-// Buttons — use AdminButton with isLoading prop (admin)
+// Admin buttons — use AdminButton with isLoading prop
 <AdminButton isLoading={isSaving} onClick={handleSave}>
   Save Changes
 </AdminButton>
 
-// Buttons — standard pattern (customer/marketing)
+// Standard buttons (customer/marketing)
 <button
   className="btn btn-primary"
   disabled={isSaving}
@@ -182,27 +259,19 @@ NEVER use: `loading`, `submitting`, `fetching`, `isSubmitting` (except in form c
   {isSaving ? 'Saving...' : 'Save Changes'}
 </button>
 
-// Page-level loading
-if (isLoading) {
-  return (
-    <div className="flex items-center justify-center min-h-[200px]">
-      <span className="loading loading-spinner loading-lg text-primary" />
-    </div>
-  );
-}
+// Page-level loading (use loading.tsx or Suspense)
+<div className="flex items-center justify-center min-h-[200px]">
+  <span className="loading loading-spinner loading-lg text-primary" />
+</div>
 
-// Error state
-if (error) {
-  return (
-    <div className="alert alert-error">
-      <span>{error.message}</span>
-      <button className="btn btn-sm" onClick={refetch}>Retry</button>
-    </div>
-  );
-}
+// Error state with retry
+<div className="alert alert-error">
+  <span>{error.message}</span>
+  <button className="btn btn-sm" onClick={refetch}>Retry</button>
+</div>
 ```
 
-## Rule 6: Export Pattern
+## Rule 9: Export Pattern
 
 ```typescript
 // Shared components — named export
@@ -216,7 +285,7 @@ export default async function CustomersPage() { } // Server component
 export function useAvailability() { }
 ```
 
-## Rule 7: Accessibility
+## Rule 10: Accessibility
 
 - All interactive elements must be keyboard accessible
 - Use `aria-busy` on buttons during loading states
@@ -227,12 +296,13 @@ export function useAvailability() { }
 ## Audit Checklist
 
 - [ ] Props interface named `ComponentNameProps`
+- [ ] NO `forwardRef` in new code — use ref as prop (React 19)
 - [ ] File structure follows the standard order
-- [ ] `'use client'` only when needed
+- [ ] `'use client'` only when needed, pushed as deep as possible
 - [ ] Hooks return `isLoading` (not `loading`)
-- [ ] Loading states use `aria-busy`
+- [ ] Loading states use `aria-busy` and Suspense boundaries
 - [ ] Admin buttons use `AdminButton` component
-- [ ] Data fetching at page level when possible
+- [ ] Data fetching at page level (Server Component) when possible
 
 ## Reference Files
 

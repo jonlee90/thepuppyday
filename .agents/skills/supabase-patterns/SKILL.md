@@ -19,6 +19,23 @@ Reference these patterns when:
 - Importing or defining database types
 - Deciding between relationship joins and parallel queries
 
+## CRITICAL SECURITY: getUser() vs getSession()
+
+**ALWAYS use `auth.getUser()` on the server. NEVER use `auth.getSession()` for auth verification.**
+
+- `auth.getUser()` — Sends request to Supabase Auth server to validate the JWT. **SAFE for server-side.**
+- `auth.getSession()` — Reads from cookies/local storage WITHOUT server verification. **Can be spoofed. UNSAFE for auth decisions.**
+
+```typescript
+// CORRECT — server-verified auth
+const { data: { user } } = await supabase.auth.getUser();
+
+// WRONG — unverified, can be spoofed by manipulating cookies
+const { data: { session } } = await supabase.auth.getSession();
+```
+
+`getSession()` is only acceptable for non-critical client-side UI rendering (e.g., showing a user's name).
+
 ## Rule 1: Client Selection by Route Type
 
 | Route Type | Auth Client | Data Client | Pattern |
@@ -26,12 +43,13 @@ Reference these patterns when:
 | Admin | `createServerSupabaseClient()` | `createServiceRoleClient()` | Two-client |
 | Customer | `createServerSupabaseClient()` | Same client | Single-client |
 | Public | None | `createServiceRoleClient()` | Service-only |
+| Server Action | `createServerSupabaseClient()` | `createServiceRoleClient()` (admin) | Same as route |
 
 ### Admin Routes (Two-Client Pattern)
 ```typescript
 // Auth client — validates admin role (respects RLS)
 const authSupabase = await createServerSupabaseClient();
-await requireAdmin(authSupabase);
+await requireAdmin(authSupabase); // Uses getUser() internally
 
 // Data client — bypasses RLS for cross-customer queries
 const supabase = createServiceRoleClient();
@@ -42,7 +60,7 @@ const { data } = await supabase.from('users').select('*');
 ```typescript
 // RLS automatically scopes queries to the authenticated user
 const supabase = await createServerSupabaseClient();
-const { data: { user } } = await supabase.auth.getUser();
+const { data: { user } } = await supabase.auth.getUser(); // MUST use getUser()
 if (!user) {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 }
@@ -53,6 +71,15 @@ const { data } = await supabase.from('pets').select('*'); // RLS: owner_id = aut
 ```typescript
 const supabase = createServiceRoleClient();
 const { data } = await supabase.from('services').select('*').eq('is_active', true);
+```
+
+### Server Actions
+```typescript
+'use server';
+// Same pattern as the equivalent route type
+const authSupabase = await createServerSupabaseClient();
+await requireAdmin(authSupabase);
+const supabase = createServiceRoleClient();
 ```
 
 ## Rule 2: Variable Naming

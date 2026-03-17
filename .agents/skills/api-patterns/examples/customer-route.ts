@@ -65,7 +65,7 @@ export async function PUT(request: NextRequest) {
     const parsed = UpdateProfileSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0]?.message || 'Invalid input' },
+        { error: 'Validation error', details: parsed.error.flatten() },
         { status: 400 }
       );
     }

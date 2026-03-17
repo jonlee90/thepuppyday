@@ -8,7 +8,21 @@ metadata:
 
 # API Route Patterns
 
-Canonical patterns for all Next.js API routes in The Puppy Day. Ensures consistent auth, error handling, response format, and validation across admin, customer, and public endpoints.
+Canonical patterns for all Next.js 16 API routes in The Puppy Day. Ensures consistent auth, error handling, response format, and validation across admin, customer, and public endpoints.
+
+## Server Actions vs API Routes Decision (Next.js 16)
+
+**Server Actions are PREFERRED for internal mutations.** Only use API routes when needed.
+
+| Use Case | Approach |
+|----------|----------|
+| Internal form submissions, CRUD from UI | **Server Actions** (preferred) |
+| External API consumers (mobile app, 3rd party) | **API Routes** (required) |
+| Webhooks (Stripe, Google Calendar) | **API Routes** (required) |
+| Complex HTTP needs (streaming, custom headers) | **API Routes** |
+| Data reads with pagination/filtering | **API Routes** |
+
+For new features, default to Server Actions for mutations. See `/form-patterns` for Server Action form patterns.
 
 ## When to Apply
 
@@ -165,7 +179,7 @@ export async function POST(request: NextRequest) {
     const parsed = CreateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0]?.message || 'Invalid input' },
+        { error: 'Validation error', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
@@ -244,6 +258,51 @@ When auditing an API route, check for:
 - [ ] `console.error` with context tag in catch blocks
 - [ ] `export const dynamic = 'force-dynamic'` at top
 - [ ] File header comment with methods and paths
+
+## Rule 11: Prefer Server Actions for New Mutations
+
+For NEW internal mutations (not external API), use Server Actions instead of API routes:
+
+```typescript
+// src/app/actions/services.ts
+'use server';
+
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/admin/auth';
+import { revalidateTag } from 'next/cache';
+import { z } from 'zod';
+
+const CreateServiceSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional(),
+});
+
+export async function createService(formData: FormData) {
+  const authSupabase = await createServerSupabaseClient();
+  await requireAdmin(authSupabase);
+  const supabase = createServiceRoleClient();
+
+  const parsed = CreateServiceSchema.safeParse({
+    name: formData.get('name'),
+    description: formData.get('description'),
+  });
+
+  if (!parsed.success) {
+    return { error: 'Validation error', details: parsed.error.flatten() };
+  }
+
+  const { data, error } = await supabase
+    .from('services')
+    .insert(parsed.data)
+    .select()
+    .single();
+
+  if (error) return { error: 'Failed to create service' };
+
+  revalidateTag('services');
+  return { data };
+}
+```
 
 ## Reference Files
 

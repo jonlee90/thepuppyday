@@ -34,11 +34,11 @@ if (!body.name || typeof body.name !== 'string') {
   return NextResponse.json({ error: 'Name required' }, { status: 400 });
 }
 
-// CORRECT — Zod schema
+// CORRECT — Zod schema with flatten() for structured errors
 const parsed = CreateSchema.safeParse(body);
 if (!parsed.success) {
   return NextResponse.json(
-    { error: parsed.error.errors[0]?.message || 'Invalid input' },
+    { error: 'Validation error', details: parsed.error.flatten() },
     { status: 400 }
   );
 }
