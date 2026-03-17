@@ -54,6 +54,9 @@ nul
 .idea/
 .vscode/settings.json
 
+# Data files
+*.csv
+
 # Secrets & credentials
 *.pem
 *.key
