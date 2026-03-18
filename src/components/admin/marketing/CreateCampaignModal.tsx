@@ -173,7 +173,7 @@ export function CreateCampaignModal({ isOpen, onClose, onSuccess }: CreateCampai
           {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-sm:max-w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col"
               role="dialog"
               aria-modal="true"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}

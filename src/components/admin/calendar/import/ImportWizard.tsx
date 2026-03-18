@@ -362,7 +362,7 @@ export function ImportWizard({ isOpen, onClose, onSuccess }: ImportWizardProps) 
         }}
       >
         <motion.div
-          className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+          className="relative w-full max-w-4xl max-sm:max-w-[calc(100vw-2rem)] max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
           variants={modalVariants}
           initial="hidden"
           animate="visible"

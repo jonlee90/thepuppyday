@@ -206,8 +206,79 @@ export function CustomerTable({ onCustomerClick }: CustomerTableProps) {
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-3">
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-xl bg-white shadow-sm p-4 border border-[#434E54]/5 space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <div className="skeleton h-4 w-32 rounded" />
+                  <div className="skeleton h-3 w-44 rounded" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1"><div className="skeleton h-3 w-10 rounded" /><div className="skeleton h-4 w-24 rounded" /></div>
+                <div className="space-y-1"><div className="skeleton h-3 w-8 rounded" /><div className="skeleton h-4 w-8 rounded" /></div>
+              </div>
+            </div>
+          ))
+        ) : customers.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-12">
+            <Users className="w-12 h-12 text-gray-300" />
+            <div className="text-center">
+              <p className="font-medium text-gray-900">No customers found</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {searchQuery ? 'Try adjusting your search criteria' : 'No customers have registered yet'}
+              </p>
+            </div>
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="px-4 py-2 rounded-lg bg-[#434E54] text-white font-medium hover:bg-[#363F44] transition-colors">
+                Clear Search
+              </button>
+            )}
+          </div>
+        ) : (
+          customers.map((customer) => (
+            <div
+              key={customer.id}
+              onClick={() => handleRowClick(customer.id)}
+              className="rounded-xl bg-white shadow-sm p-4 border border-[#434E54]/5 cursor-pointer active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="min-w-0 flex-1 mr-2">
+                  <p className="font-medium text-[#434E54] truncate">
+                    {highlightText(`${customer.first_name} ${customer.last_name}`)}
+                  </p>
+                  <p className="text-sm text-[#434E54]/60 truncate">
+                    {isWalkinPlaceholderEmail(customer.email)
+                      ? 'Walk-in (phone only)'
+                      : highlightText(customer.email)}
+                  </p>
+                </div>
+                <CustomerFlagBadge flags={customer.flags} maxVisible={2} size="sm" />
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-[#434E54]/40 text-xs">Phone</p>
+                  <p className="text-[#434E54]">{customer.phone ? highlightText(customer.phone) : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-[#434E54]/40 text-xs">Pets</p>
+                  <p className="text-[#434E54]">{customer.pets_count}</p>
+                </div>
+                <div>
+                  <p className="text-[#434E54]/40 text-xs">Appointments</p>
+                  <p className="text-[#434E54]">{customer.appointments_count}</p>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table */}
+      <div className="hidden lg:block bg-white rounded-xl shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-[#EAE0D5] border-b border-gray-200">
@@ -215,7 +286,7 @@ export function CustomerTable({ onCustomerClick }: CustomerTableProps) {
                 <th className="text-left py-3 px-4">
                   <button
                     onClick={() => handleSort('name')}
-                    className="flex items-center gap-2 text-sm font-semibold text-[#434E54] hover:text-[#363F44] transition-colors"
+                    className="flex items-center gap-2 text-sm font-semibold text-[#434E54] hover:text-[#363F44] transition-colors min-h-[44px]"
                   >
                     Name
                     {getSortIcon('name')}
@@ -224,7 +295,7 @@ export function CustomerTable({ onCustomerClick }: CustomerTableProps) {
                 <th className="text-left py-3 px-4">
                   <button
                     onClick={() => handleSort('email')}
-                    className="flex items-center gap-2 text-sm font-semibold text-[#434E54] hover:text-[#363F44] transition-colors"
+                    className="flex items-center gap-2 text-sm font-semibold text-[#434E54] hover:text-[#363F44] transition-colors min-h-[44px]"
                   >
                     Email
                     {getSortIcon('email')}

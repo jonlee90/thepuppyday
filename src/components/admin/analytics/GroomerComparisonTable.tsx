@@ -221,8 +221,50 @@ export function GroomerComparisonTable({ dateRange }: GroomerComparisonTableProp
         </button>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-3">
+        {sortedGroomers.map((groomer) => (
+          <div key={groomer.groomer_id} className="rounded-xl bg-white shadow-sm p-4 border border-[#434E54]/5">
+            <p className="font-medium text-[#434E54] mb-3">{groomer.groomer_name}</p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <p className="text-[#434E54]/40 text-xs">Appointments</p>
+                <p className={isBelowAverage(groomer.appointments, data.averages.appointments) ? 'text-[#FFB347] font-medium' : 'text-[#434E54]'}>{groomer.appointments}</p>
+              </div>
+              <div>
+                <p className="text-[#434E54]/40 text-xs">Revenue</p>
+                <p className={isBelowAverage(groomer.revenue, data.averages.revenue) ? 'text-[#FFB347] font-medium' : 'text-[#434E54]'}>${groomer.revenue.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-[#434E54]/40 text-xs">Avg Rating</p>
+                <p className={isBelowAverage(groomer.average_rating, data.averages.average_rating) ? 'text-[#FFB347] font-medium' : 'text-[#434E54]'}>{groomer.average_rating.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-[#434E54]/40 text-xs">Add-on Rate</p>
+                <p className={isBelowAverage(groomer.addon_rate, data.averages.addon_rate) ? 'text-[#FFB347] font-medium' : 'text-[#434E54]'}>{groomer.addon_rate.toFixed(1)}%</p>
+              </div>
+              <div>
+                <p className="text-[#434E54]/40 text-xs">Completion</p>
+                <p className={isBelowAverage(groomer.completion_rate, data.averages.completion_rate) ? 'text-[#FFB347] font-medium' : 'text-[#434E54]'}>{groomer.completion_rate.toFixed(1)}%</p>
+              </div>
+            </div>
+          </div>
+        ))}
+        {/* Averages Card */}
+        <div className="rounded-xl bg-[#EAE0D5] p-4">
+          <p className="font-semibold text-[#434E54] mb-3">Team Average</p>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div><p className="text-[#434E54]/40 text-xs">Appointments</p><p className="text-[#434E54] font-medium">{data.averages.appointments.toFixed(0)}</p></div>
+            <div><p className="text-[#434E54]/40 text-xs">Revenue</p><p className="text-[#434E54] font-medium">${data.averages.revenue.toLocaleString()}</p></div>
+            <div><p className="text-[#434E54]/40 text-xs">Avg Rating</p><p className="text-[#434E54] font-medium">{data.averages.average_rating.toFixed(2)}</p></div>
+            <div><p className="text-[#434E54]/40 text-xs">Add-on Rate</p><p className="text-[#434E54] font-medium">{data.averages.addon_rate.toFixed(1)}%</p></div>
+            <div><p className="text-[#434E54]/40 text-xs">Completion</p><p className="text-[#434E54] font-medium">{data.averages.completion_rate.toFixed(1)}%</p></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Table */}
+      <div className="hidden lg:block overflow-x-auto">
         <table className="table table-zebra w-full">
           <thead>
             <tr className="bg-[#F8EEE5]">

@@ -41,6 +41,7 @@ import { toast } from '@/hooks/use-toast';
 import type { Appointment, CustomerFlag, Service, Addon, Pet, ServicePrice, AppointmentPriceAdjustment } from '@/types/database';
 import type { User as UserType, PetSize } from '@/types/database';
 import { getSizeLabel } from '@/lib/booking/pricing';
+import { useAdminStore } from '@/stores/admin-store';
 
 interface EditFormState {
   scheduled_date: string;
@@ -80,6 +81,8 @@ export function AppointmentDetailModal({
   onClose,
   onUpdate,
 }: AppointmentDetailModalProps) {
+  const { currentBreakpoint } = useAdminStore();
+  const isMobile = currentBreakpoint === 'mobile';
   const [appointment, setAppointment] = useState<AppointmentDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -511,12 +514,30 @@ export function AppointmentDetailModal({
       />
 
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className={`fixed inset-0 z-50 flex ${isMobile ? 'items-end' : 'items-center justify-center p-4'}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="appointment-modal-title"
       >
-      <div className="bg-[#F8EEE5] w-full max-w-[900px] max-h-[92vh] overflow-y-auto shadow-xl rounded-xl p-0">
+      <motion.div
+        initial={isMobile ? { y: '100%' } : { opacity: 0, scale: 0.95 }}
+        animate={isMobile ? { y: 0 } : { opacity: 1, scale: 1 }}
+        exit={isMobile ? { y: '100%' } : { opacity: 0, scale: 0.95 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        drag={isMobile ? 'y' : false}
+        dragConstraints={{ top: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(_: unknown, info: { offset: { y: number } }) => {
+          if (isMobile && info.offset.y > 100) handleClose();
+        }}
+        className={`bg-[#F8EEE5] w-full shadow-xl p-0 overflow-y-auto ${isMobile ? 'max-w-full max-h-[90vh] rounded-t-2xl' : 'max-w-[900px] max-h-[92vh] rounded-xl'}`}
+      >
+        {/* Mobile drag handle */}
+        {isMobile && (
+          <div className="flex justify-center pt-3 pb-1 sticky top-0 z-20">
+            <div className="w-10 h-1 rounded-full bg-[#434E54]/20" />
+          </div>
+        )}
         {/* Header - Simplified */}
         <div className="sticky top-0 z-10 bg-white px-5 py-4 border-b border-[#E5E5E5] shadow-sm">
           <div className="flex items-center justify-between">
@@ -565,7 +586,7 @@ export function AppointmentDetailModal({
               {/* Circular close button */}
               <button
                 onClick={handleClose}
-                className="w-9 h-9 rounded-full bg-[#EAE0D5] hover:bg-[#434E54] text-[#434E54] hover:text-white flex items-center justify-center transition-all duration-200 shadow-sm cursor-pointer"
+                className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-[#EAE0D5] hover:bg-[#434E54] text-[#434E54] hover:text-white flex items-center justify-center transition-all duration-200 shadow-sm cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
@@ -1269,7 +1290,7 @@ export function AppointmentDetailModal({
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
       </div>
     </>
   );

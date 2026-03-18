@@ -224,7 +224,7 @@ export function StaffForm({ staffId, isOpen, onClose, onSuccess }: StaffFormProp
                 <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#434E54]/40 mb-3">
                   <User className="w-3.5 h-3.5" /> Personal Info
                 </p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-[#434E54] mb-1.5">
                       First Name <span className="text-[#D4A574]">*</span>
@@ -314,7 +314,7 @@ export function StaffForm({ staffId, isOpen, onClose, onSuccess }: StaffFormProp
                 <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#434E54]/40 mb-3">
                   <Scissors className="w-3.5 h-3.5" /> Role <span className="text-[#D4A574] ml-0.5">*</span>
                 </p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <label className={`cursor-pointer rounded-xl border-2 p-4 transition-all ${
                     watchRole === 'groomer'
                       ? 'border-[#D4A574] bg-[#FDF6EE]'

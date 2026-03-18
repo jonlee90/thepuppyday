@@ -60,6 +60,25 @@ export const CHART_CONFIG = {
   },
 };
 
+// Mobile-optimized chart configuration
+export const CHART_CONFIG_MOBILE = {
+  margin: { top: 5, right: 10, left: 0, bottom: 5 },
+  axis: {
+    tick: { fill: '#6B7280', fontSize: 10 },
+    line: { stroke: '#E5E7EB' },
+  },
+};
+
+// Get chart config based on breakpoint
+export function getChartConfig(isMobile: boolean) {
+  return {
+    margin: isMobile ? CHART_CONFIG_MOBILE.margin : CHART_CONFIG.margin,
+    axis: isMobile ? CHART_CONFIG_MOBILE.axis : CHART_CONFIG.axis,
+    grid: CHART_CONFIG.grid,
+    tooltip: CHART_CONFIG.tooltip,
+  };
+}
+
 // Format currency for charts
 export const formatCurrency = (value: number | undefined | null): string => {
   if (value == null) return '$0';

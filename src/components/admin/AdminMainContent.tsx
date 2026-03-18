@@ -28,8 +28,8 @@ export function AdminMainContent({ children }: AdminMainContentProps) {
       <div
         className={`
           mx-auto
-          px-4 lg:px-8
-          py-4 lg:py-8
+          px-4 sm:px-6 lg:px-8
+          py-4 sm:py-6 lg:py-8
           transition-all duration-300
           ${isSidebarCollapsed ? 'max-w-[1600px]' : 'max-w-7xl'}
         `}
