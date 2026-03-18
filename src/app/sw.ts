@@ -54,4 +54,24 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Bypass browser HTTP cache for page navigations.
+// Prevents stale cached 502 error pages from being served after deploys.
+// Must be registered BEFORE serwist.addEventListeners() so it takes priority.
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode !== 'navigate') return;
+
+  event.respondWith(
+    fetch(event.request, { cache: 'no-store' })
+      .then((response) => {
+        if (response.ok) return response;
+        // Server returned an error — fall back to offline page
+        return caches.match('/~offline') ?? response;
+      })
+      .catch(() =>
+        caches.match('/~offline') ??
+        new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } })
+      )
+  );
+});
+
 serwist.addEventListeners();
