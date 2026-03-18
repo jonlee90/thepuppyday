@@ -616,7 +616,9 @@ export async function POST(request: NextRequest) {
       ? 'in_progress'
       : isBackdated
         ? 'completed'
-        : 'pending';
+        : data.source === 'admin'
+          ? 'confirmed'
+          : 'pending';
 
     // Generate unique booking reference
     const { randomBytes } = await import('crypto');

@@ -194,9 +194,9 @@ export function AppointmentCalendar({
         groomerColorMap={groomerColorMap}
       />
 
-      {/* Legend */}
+      {/* Legend 
       <CalendarLegend groomers={groomers} groomerColorMap={groomerColorMap} />
-
+*/}
       {/* Loading overlay */}
       {loading && (
         <div className="flex items-center justify-center py-8">
