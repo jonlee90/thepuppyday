@@ -6,10 +6,12 @@
 'use client';
 
 import { ResponsiveContainer } from 'recharts';
+import { useAdminStore } from '@/stores/admin-store';
 
 interface ChartWrapperProps {
   children: React.ReactNode;
   height?: number;
+  mobileHeight?: number;
   isLoading?: boolean;
   error?: string | null;
 }
@@ -17,14 +19,18 @@ interface ChartWrapperProps {
 export function ChartWrapper({
   children,
   height = 300,
+  mobileHeight,
   isLoading = false,
   error = null,
 }: ChartWrapperProps) {
+  const isMobile = useAdminStore((s) => s.currentBreakpoint === 'mobile');
+  const effectiveHeight = (isMobile && mobileHeight) ? mobileHeight : height;
+
   if (isLoading) {
     return (
       <div
         className="flex items-center justify-center bg-gray-50 rounded-lg animate-pulse"
-        style={{ height }}
+        style={{ height: effectiveHeight }}
       >
         <div className="text-gray-400">Loading chart...</div>
       </div>
@@ -35,7 +41,7 @@ export function ChartWrapper({
     return (
       <div
         className="flex items-center justify-center bg-red-50 rounded-lg"
-        style={{ height }}
+        style={{ height: effectiveHeight }}
       >
         <div className="text-red-600 text-sm">{error}</div>
       </div>
@@ -43,7 +49,7 @@ export function ChartWrapper({
   }
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={effectiveHeight}>
       {children}
     </ResponsiveContainer>
   );

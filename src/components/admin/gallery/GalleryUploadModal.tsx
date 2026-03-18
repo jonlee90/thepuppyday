@@ -177,7 +177,7 @@ export function GalleryUploadModal({ isOpen, onClose, onSuccess }: GalleryUpload
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl max-sm:max-w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-[#434E54]">Upload Gallery Photos</h2>

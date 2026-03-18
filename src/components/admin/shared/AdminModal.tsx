@@ -92,14 +92,14 @@ export function AdminModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className={`bg-white rounded-2xl shadow-2xl ${maxWidth} w-full overflow-hidden max-h-[90vh] flex flex-col`}
+              className={`bg-white rounded-2xl shadow-2xl ${maxWidth} w-full max-sm:max-w-[calc(100vw-2rem)] overflow-hidden max-h-[90vh] flex flex-col`}
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}
               tabIndex={-1}
             >
               {/* Header */}
-              <div className="p-6 pb-4 flex items-center justify-between shrink-0">
+              <div className="p-4 sm:p-6 pb-4 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   {Icon && (
                     <div className="w-9 h-9 rounded-xl bg-[#EAE0D5] flex items-center justify-center">
@@ -120,7 +120,7 @@ export function AdminModal({
                 <button
                   onClick={onClose}
                   disabled={disabled}
-                  className="p-2 rounded-lg text-[#434E54]/60 hover:bg-[#EAE0D5] transition-colors"
+                  className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[#434E54]/60 hover:bg-[#EAE0D5] transition-colors"
                   aria-label="Close"
                 >
                   <X className="h-5 w-5" />
@@ -134,7 +134,7 @@ export function AdminModal({
 
               {/* Footer */}
               {footer && (
-                <div className="p-6 pt-4 flex justify-end shrink-0">
+                <div className="p-4 sm:p-6 pt-4 flex justify-end shrink-0">
                   {footer}
                 </div>
               )}
