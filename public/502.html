@@ -7,7 +7,6 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta http-equiv="refresh" content="5">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -45,5 +44,18 @@
     <p>We're updating The Puppy Day to make it even better. This page will automatically refresh in a few seconds.</p>
     <div class="spinner"></div>
   </div>
+  <script>
+    // Clear any service worker caches that might have stored error responses
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        names.forEach(function(name) { caches.delete(name); });
+      });
+    }
+    // Retry with cache-busting param so the browser bypasses HTTP cache
+    setTimeout(function() {
+      var url = window.location.origin + window.location.pathname;
+      window.location.replace(url + '?_cb=' + Date.now());
+    }, 5000);
+  </script>
 </body>
 </html>
