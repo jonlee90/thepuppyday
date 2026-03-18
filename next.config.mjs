@@ -130,5 +130,6 @@ export default withSerwist(nextConfig, {
     /puppyday-lobby-background\.png$/,
     /premium-plan\.png$/,
     /basic-plan\.png$/,
+    /502\.html$/,
   ],
 });
