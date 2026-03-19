@@ -3,6 +3,8 @@
  * For production, consider using Redis or a dedicated rate limiting service
  */
 
+const MAX_ENTRIES = 500;
+
 interface RateLimitEntry {
   count: number;
   resetTime: number;
@@ -10,16 +12,20 @@ interface RateLimitEntry {
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
-// Cleanup old entries every 5 minutes (guarded to prevent timer stacking)
+function cleanupExpired() {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore.entries()) {
+    if (now > entry.resetTime) {
+      rateLimitStore.delete(key);
+    }
+  }
+}
+
+// Cleanup old entries every 1 minute (guarded to prevent timer stacking)
 if (!(globalThis as any).__rateLimitCleanup) {
   (globalThis as any).__rateLimitCleanup = setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of rateLimitStore.entries()) {
-      if (now > entry.resetTime) {
-        rateLimitStore.delete(key);
-      }
-    }
-  }, 5 * 60 * 1000);
+    cleanupExpired();
+  }, 60 * 1000);
 }
 
 export interface RateLimitOptions {
@@ -71,6 +77,23 @@ export function checkRateLimit(
 
   // No entry or expired entry - create new
   if (!entry || now > entry.resetTime) {
+    // Enforce max size before adding
+    if (rateLimitStore.size >= MAX_ENTRIES) {
+      cleanupExpired();
+      // If still over limit after cleanup, evict oldest
+      if (rateLimitStore.size >= MAX_ENTRIES) {
+        let oldestKey: string | null = null;
+        let oldestReset = Infinity;
+        for (const [k, e] of rateLimitStore.entries()) {
+          if (e.resetTime < oldestReset) {
+            oldestReset = e.resetTime;
+            oldestKey = k;
+          }
+        }
+        if (oldestKey) rateLimitStore.delete(oldestKey);
+      }
+    }
+
     const resetTime = now + options.windowMs;
     rateLimitStore.set(key, { count: 1, resetTime });
 
