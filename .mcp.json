@@ -4,13 +4,20 @@
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?project_ref=jajbtwgbhrkvgxvvruaa"
     },
-    "playwright" : {
+    "playwright": {
       "command": "npx",
       "args": [
-        "@playwright/mcp@0.0.52", 
+        "@playwright/mcp@0.0.52",
         "--config",
         "./playwright-mcp-config.json",
         "--vision"
+      ]
+    },
+    "next-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "next-devtools-mcp@latest"
       ]
     }
   }

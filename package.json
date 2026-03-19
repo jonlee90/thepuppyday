@@ -33,11 +33,11 @@
     "jspdf": "^3.0.4",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.560.0",
-    "next": "16.0.7",
+    "next": "^16.1.4",
     "papaparse": "^5.5.3",
-    "react": "19.2.0",
+    "react": "^19.2.3",
     "react-compare-image": "^3.5.13",
-    "react-dom": "19.2.0",
+    "react-dom": "^19.2.3",
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.68.0",
     "recharts": "^3.5.1",
@@ -45,7 +45,7 @@
     "sharp": "^0.34.5",
     "swiper": "^12.0.3",
     "tailwind-merge": "^3.4.0",
-"zod": "^4.1.13",
+    "zod": "^4.1.13",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
