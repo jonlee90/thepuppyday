@@ -19,7 +19,7 @@ import {
 import type { CalendarView, CalendarDateRange } from '../types';
 
 export function useCalendarState() {
-  const [view, setView] = useState<CalendarView>('week');
+  const [view, setView] = useState<CalendarView>('month');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
   const navigateNext = useCallback(() => {
