@@ -2,8 +2,10 @@
  * Caching Layer
  * Tasks 0229-0230: Implement caching layer for static and semi-static data
  *
- * In-memory cache with TTL support
+ * In-memory cache with TTL support and max size limit
  */
+
+const MAX_ENTRIES = 100;
 
 export interface CacheEntry<T> {
   data: T;
@@ -37,9 +39,14 @@ export class InMemoryCache {
   }
 
   /**
-   * Set value in cache with TTL
+   * Set value in cache with TTL. Evicts oldest-expiring entry when full.
    */
   set<T>(key: string, data: T, ttlMs: number): void {
+    // Evict if at capacity and this is a new key
+    if (this.cache.size >= MAX_ENTRIES && !this.cache.has(key)) {
+      this.evictOldest();
+    }
+
     const expiresAt = Date.now() + ttlMs;
     this.cache.set(key, { data, expiresAt });
   }
@@ -88,6 +95,25 @@ export class InMemoryCache {
 
     return cleaned;
   }
+
+  /**
+   * Evict the entry closest to expiry (oldest-expiring)
+   */
+  private evictOldest(): void {
+    let oldestKey: string | null = null;
+    let oldestExpiry = Infinity;
+
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.expiresAt < oldestExpiry) {
+        oldestExpiry = entry.expiresAt;
+        oldestKey = key;
+      }
+    }
+
+    if (oldestKey) {
+      this.cache.delete(oldestKey);
+    }
+  }
 }
 
 // Global cache instance
@@ -95,14 +121,14 @@ const globalCache = new InMemoryCache();
 
 // Cache TTL constants (in milliseconds)
 export const CACHE_TTL = {
-  BREEDS: 4 * 60 * 60 * 1000, // 4 hours
-  SERVICES: 60 * 60 * 1000, // 1 hour
-  SERVICE_PRICES: 60 * 60 * 1000, // 1 hour
-  ADDONS: 60 * 60 * 1000, // 1 hour
+  BREEDS: 30 * 60 * 1000, // 30 minutes
+  SERVICES: 15 * 60 * 1000, // 15 minutes
+  SERVICE_PRICES: 15 * 60 * 1000, // 15 minutes
+  ADDONS: 15 * 60 * 1000, // 15 minutes
   BANNERS: 15 * 60 * 1000, // 15 minutes
   GALLERY: 30 * 60 * 1000, // 30 minutes
   SETTINGS: 15 * 60 * 1000, // 15 minutes
-  BUSINESS_HOURS: 60 * 60 * 1000, // 1 hour
+  BUSINESS_HOURS: 15 * 60 * 1000, // 15 minutes
 } as const;
 
 /**
@@ -162,14 +188,14 @@ export function getCacheStats() {
   };
 }
 
-// Clean up expired entries every 5 minutes (guarded to prevent timer stacking)
+// Clean up expired entries every 2 minutes (guarded to prevent timer stacking)
 if (typeof setInterval !== 'undefined' && !(globalThis as any).__cacheCleanup) {
   (globalThis as any).__cacheCleanup = setInterval(() => {
     const cleaned = globalCache.cleanup();
     if (cleaned > 0) {
       console.log(`Cleaned up ${cleaned} expired cache entries`);
     }
-  }, 5 * 60 * 1000);
+  }, 2 * 60 * 1000);
 }
 
 export default globalCache;
