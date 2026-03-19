@@ -3,7 +3,18 @@
 /// <reference lib="webworker" />
 import { defaultCache } from '@serwist/turbopack/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { Serwist } from 'serwist';
+import { CacheableResponsePlugin, Serwist } from 'serwist';
+
+// Prevent caching 502/5xx error responses that can get stuck after deployments.
+// Without this, the SW's runtime cache captures Nginx 502 pages during deploys
+// and serves them even after the server recovers.
+const cacheableOkPlugin = new CacheableResponsePlugin({ statuses: [0, 200] });
+const safeCache = defaultCache.map((entry) => {
+  if (entry.handler && 'plugins' in entry.handler) {
+    entry.handler.plugins = [...(entry.handler.plugins || []), cacheableOkPlugin];
+  }
+  return entry;
+});
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -18,7 +29,7 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: safeCache,
   cleanupOutdatedCaches: true,
   fallbacks: {
     entries: [
