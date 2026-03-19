@@ -1838,21 +1838,25 @@ export const config = {
 module.exports = {
   apps: [{
     name: 'thepuppyday',
-    script: 'node_modules/.bin/next',
-    args: 'start',
-    cwd: '/var/www/thepuppyday',
+    script: '.next/standalone/server.js',
+    cwd: '/var/www/html/thepuppyday',
+    node_args: '--max-old-space-size=600',
     instances: 1,
     exec_mode: 'fork',
-    max_memory_restart: '512M',
+    max_memory_restart: '700M',
     env: {
       NODE_ENV: 'production',
-      PORT: 3000,
+      PORT: 3001,
+      HOSTNAME: '127.0.0.1',
+      TZ: 'America/Los_Angeles',
     },
   }],
 };
 ```
 
-**Nginx**: Configuration in `nginx/thepuppyday.conf` handles SSL termination, static file serving, and reverse proxy to the Next.js application on port 3000.
+**Health Check** (`scripts/health-check.sh`): Cron script (every 2 min) that detects zombie processes — PM2 shows "online" but Next.js RSC streaming is broken under memory pressure. Forces `pm2 reload` when `/api/health` fails.
+
+**Nginx**: Configuration in `nginx/thepuppyday.conf` handles SSL termination, static file serving, and reverse proxy to the Next.js application on port 3001.
 
 **Deployment Script**: `deploy.sh` automates the build and deployment process.
 
