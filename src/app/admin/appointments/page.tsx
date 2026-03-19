@@ -1,14 +1,17 @@
 /**
  * Admin Appointments Page
  * Toggleable calendar/list view with detail modal
+ * Mobile (< 768px): Agenda/List with cards + FAB
+ * Desktop (>= 768px): Calendar swimlane / Table list
  */
 
 'use client';
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Calendar, List } from 'lucide-react';
+import { Calendar, CalendarDays, List, Plus } from 'lucide-react';
 import { useAdminStore } from '@/stores/admin-store';
+import { useIsMobile } from '@/lib/utils/breakpoints';
 import { AppointmentCalendar } from '@/components/admin/appointments/AppointmentCalendar';
 import { AppointmentListView } from '@/components/admin/appointments/AppointmentListView';
 import { AdminCreateButton } from '@/components/booking';
@@ -19,11 +22,35 @@ const AppointmentDetailModal = dynamic(
   { ssr: false }
 );
 
+// Mobile-only dynamic imports (ssr: false — desktop users never download these)
+const MobileAgendaView = dynamic(
+  () => import('@/components/admin/appointments/mobile/MobileAgendaView').then((mod) => ({ default: mod.MobileAgendaView })),
+  { ssr: false }
+);
+const MobileListView = dynamic(
+  () => import('@/components/admin/appointments/mobile/MobileListView').then((mod) => ({ default: mod.MobileListView })),
+  { ssr: false }
+);
+const MobileFAB = dynamic(
+  () => import('@/components/admin/mobile/MobileFAB').then((mod) => ({ default: mod.MobileFAB })),
+  { ssr: false }
+);
+const MobileSegmentedControl = dynamic(
+  () => import('@/components/admin/mobile/MobileSegmentedControl').then((mod) => ({ default: mod.MobileSegmentedControl })),
+  { ssr: false }
+);
+const BookingModal = dynamic(
+  () => import('@/components/booking/BookingModal').then((mod) => ({ default: mod.BookingModal })),
+  { ssr: false }
+);
+
 export default function AppointmentsPage() {
   const { appointmentsView, setAppointmentsView } = useAdminStore();
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   // Handle appointment click from either view
   const handleAppointmentClick = (appointmentId: string) => {
@@ -41,7 +68,6 @@ export default function AppointmentsPage() {
   const handleAppointmentUpdate = () => {
     setRefreshKey((prev) => prev + 1);
   };
-
 
   return (
     <div className="p-6 space-y-6">
@@ -82,8 +108,8 @@ export default function AppointmentsPage() {
           </button>
         </div>
 
-        {/* Mobile/Tablet Toolbar: view toggle + actions in one row */}
-        <div className="flex lg:hidden items-center justify-between mb-4">
+        {/* Mobile/Tablet Toolbar (768px–1023px): keep existing pattern for tablets */}
+        <div className="hidden md:flex lg:hidden items-center justify-between mb-4">
           <div className="flex gap-2">
             <button
               onClick={() => setAppointmentsView('calendar')}
@@ -116,14 +142,55 @@ export default function AppointmentsPage() {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div key={refreshKey}>
-          {appointmentsView === 'calendar' ? (
-            <AppointmentCalendar onEventClick={handleAppointmentClick} />
-          ) : (
-            <AppointmentListView onRowClick={handleAppointmentClick} />
-          )}
-        </div>
+        {/* Mobile View (< 768px) — separate components, dynamically imported */}
+        {isMobile && (
+          <div className="space-y-3 -mx-6 -mt-4">
+            {/* Segmented control */}
+            <div className="px-4">
+              <MobileSegmentedControl
+                options={[
+                  { value: 'calendar', label: 'Agenda', icon: <CalendarDays className="w-4 h-4" /> },
+                  { value: 'list', label: 'List', icon: <List className="w-4 h-4" /> },
+                ]}
+                value={appointmentsView}
+                onChange={(v) => setAppointmentsView(v as 'calendar' | 'list')}
+              />
+            </div>
+
+            {/* Agenda or List */}
+            {appointmentsView === 'calendar' ? (
+              <MobileAgendaView
+                onAppointmentClick={handleAppointmentClick}
+                refreshKey={refreshKey}
+              />
+            ) : (
+              <MobileListView
+                onAppointmentClick={handleAppointmentClick}
+                refreshKey={refreshKey}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Desktop / Tablet Main Content — unchanged */}
+        {!isMobile && (
+          <div key={refreshKey}>
+            {appointmentsView === 'calendar' ? (
+              <AppointmentCalendar onEventClick={handleAppointmentClick} />
+            ) : (
+              <AppointmentListView onRowClick={handleAppointmentClick} />
+            )}
+          </div>
+        )}
+
+        {/* FAB — mobile only */}
+        {isMobile && (
+          <MobileFAB
+            icon={<Plus className="w-6 h-6" />}
+            label="Create appointment"
+            onClick={() => setIsBookingModalOpen(true)}
+          />
+        )}
 
         {/* Appointment Detail Modal */}
         <AppointmentDetailModal
@@ -133,6 +200,18 @@ export default function AppointmentsPage() {
           onUpdate={handleAppointmentUpdate}
         />
 
+        {/* Booking Modal (FAB) */}
+        {isBookingModalOpen && (
+          <BookingModal
+            isOpen={isBookingModalOpen}
+            onClose={() => setIsBookingModalOpen(false)}
+            mode="admin"
+            onSuccess={() => {
+              setIsBookingModalOpen(false);
+              setRefreshKey((prev) => prev + 1);
+            }}
+          />
+        )}
       </div>
     </div>
   );
