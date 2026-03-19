@@ -95,7 +95,7 @@ const globalCache = new InMemoryCache();
 
 // Cache TTL constants (in milliseconds)
 export const CACHE_TTL = {
-  BREEDS: 24 * 60 * 60 * 1000, // 24 hours
+  BREEDS: 4 * 60 * 60 * 1000, // 4 hours
   SERVICES: 60 * 60 * 1000, // 1 hour
   SERVICE_PRICES: 60 * 60 * 1000, // 1 hour
   ADDONS: 60 * 60 * 1000, // 1 hour
@@ -162,9 +162,9 @@ export function getCacheStats() {
   };
 }
 
-// Clean up expired entries every 5 minutes
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
+// Clean up expired entries every 5 minutes (guarded to prevent timer stacking)
+if (typeof setInterval !== 'undefined' && !(globalThis as any).__cacheCleanup) {
+  (globalThis as any).__cacheCleanup = setInterval(() => {
     const cleaned = globalCache.cleanup();
     if (cleaned > 0) {
       console.log(`Cleaned up ${cleaned} expired cache entries`);
