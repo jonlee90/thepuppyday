@@ -3,7 +3,7 @@ module.exports = {
     name: 'thepuppyday',
     script: '.next/standalone/server.js',
     cwd: '/var/www/html/thepuppyday',
-    node_args: '--max-old-space-size=512',
+    node_args: '',
     env: {
       NODE_ENV: 'production',
       PORT: 3001,
