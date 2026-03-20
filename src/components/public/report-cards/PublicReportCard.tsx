@@ -7,7 +7,9 @@ import { BeforeAfterComparison } from './BeforeAfterComparison';
 import { HealthObservationsSection } from './HealthObservationsSection';
 import { GroomerNotesSection } from './GroomerNotesSection';
 import { ReviewPrompt } from './ReviewPrompt';
-import { ShareButtons } from './ShareButtons';
+import dynamic from 'next/dynamic';
+
+const ShareButtons = dynamic(() => import('./ShareButtons').then(mod => ({ default: mod.ShareButtons })), { ssr: false });
 import type { PublicReportCard as PublicReportCardType } from '@/types/report-card';
 
 interface PublicReportCardProps {
