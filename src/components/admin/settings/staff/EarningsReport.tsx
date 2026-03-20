@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { startOfWeek, startOfMonth, subMonths, format, parseISO } from 'date-fns';
-import { Calendar, TrendingUp, TrendingDown, Download, Loader2, DollarSign, Users, FileText, Coins } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, Download, Loader2, DollarSign, Users, Coins } from 'lucide-react';
 import { AdminButton } from '@/components/admin/ui/AdminButton';
 import {
   BarChart,
@@ -162,55 +162,6 @@ export function EarningsReport() {
     URL.revokeObjectURL(url);
   };
 
-  const handleExportPDF = async () => {
-    if (!reportData) return;
-
-    // Use jsPDF to generate PDF
-    const { jsPDF } = await import('jspdf');
-    const autoTable = (await import('jspdf-autotable')).default;
-
-    const doc = new jsPDF();
-
-    // Title
-    doc.setFontSize(18);
-    doc.text('Earnings Report', 14, 20);
-
-    // Date range
-    doc.setFontSize(11);
-    doc.text(`${filters.start_date} to ${filters.end_date}`, 14, 28);
-
-    // Summary table
-    const summaryData = [
-      ['Total Services', reportData.summary.total_services.toString()],
-      ['Total Revenue', `$${reportData.summary.total_revenue.toFixed(2)}`],
-      ['Total Commission', `$${reportData.summary.total_commission.toFixed(2)}`],
-      ['Total Tips', `$${reportData.summary.total_tips.toFixed(2)}`],
-    ];
-
-    autoTable(doc, {
-      startY: 35,
-      head: [['Metric', 'Value']],
-      body: summaryData,
-    });
-
-    // Timeline table
-    const timelineData = reportData.timeline.map((entry) => [
-      entry.period,
-      entry.services_count.toString(),
-      `$${entry.revenue.toFixed(2)}`,
-      `$${entry.commission.toFixed(2)}`,
-    ]);
-
-    autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 10,
-      head: [['Period', 'Services', 'Revenue', 'Commission']],
-      body: timelineData,
-    });
-
-    // Download
-    doc.save(`earnings-report-${filters.start_date}-to-${filters.end_date}.pdf`);
-  };
-
   return (
     <div className="space-y-6">
       {/* Export Toolbar */}
@@ -223,15 +174,6 @@ export function EarningsReport() {
         >
           <Download className="w-4 h-4" />
           Export CSV
-        </AdminButton>
-        <AdminButton
-          variant="secondary"
-          size="sm"
-          onClick={handleExportPDF}
-          disabled={!reportData || loading}
-        >
-          <FileText className="w-4 h-4" />
-          Export PDF
         </AdminButton>
       </div>
 

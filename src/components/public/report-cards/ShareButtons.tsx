@@ -1,9 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Facebook, Instagram, Link2, Download } from 'lucide-react';
+import { Facebook, Instagram, Link2 } from 'lucide-react';
 import { useState } from 'react';
-import { generateReportCardPDF, canGeneratePDF } from '@/lib/utils/pdf-generator';
 import type { PublicReportCard } from '@/types/report-card';
 
 interface ShareButtonsProps {
@@ -15,7 +14,6 @@ interface ShareButtonsProps {
  */
 export function ShareButtons({ reportCard }: ShareButtonsProps) {
   const [showCopyToast, setShowCopyToast] = useState(false);
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Get current page URL
   const shareUrl =
@@ -55,26 +53,6 @@ export function ShareButtons({ reportCard }: ShareButtonsProps) {
     } catch (error) {
       console.error('Failed to copy link:', error);
       alert('Failed to copy link. Please copy manually: ' + shareUrl);
-    }
-  };
-
-  /**
-   * Download PDF
-   */
-  const handleDownloadPDF = async () => {
-    if (!canGeneratePDF(reportCard)) {
-      alert('Report card data is incomplete. Cannot generate PDF.');
-      return;
-    }
-
-    setIsGeneratingPDF(true);
-    try {
-      await generateReportCardPDF(reportCard);
-    } catch (error) {
-      console.error('Failed to generate PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
-    } finally {
-      setIsGeneratingPDF(false);
     }
   };
 
@@ -138,25 +116,6 @@ export function ShareButtons({ reportCard }: ShareButtonsProps) {
             </span>
           </motion.button>
 
-          {/* Download PDF */}
-          <motion.button
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleDownloadPDF}
-            disabled={isGeneratingPDF}
-            className="flex flex-col items-center gap-3 p-6 bg-[#F8EEE5] hover:bg-[#EAE0D5] rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div className="p-3 bg-[#10B981] rounded-lg">
-              <Download
-                className={`w-6 h-6 text-white ${
-                  isGeneratingPDF ? 'animate-bounce' : ''
-                }`}
-              />
-            </div>
-            <span className="text-sm font-medium text-[#434E54]">
-              {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
-            </span>
-          </motion.button>
         </div>
 
         {/* Copy Toast Notification */}
