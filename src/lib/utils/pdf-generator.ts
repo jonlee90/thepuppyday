@@ -3,7 +3,6 @@
  * Generates professional PDF reports with branding and photos
  */
 
-import jsPDF from 'jspdf';
 import type { PublicReportCard } from '@/types/report-card';
 
 /**
@@ -12,6 +11,7 @@ import type { PublicReportCard } from '@/types/report-card';
 export async function generateReportCardPDF(
   reportCard: PublicReportCard
 ): Promise<void> {
+  const { default: jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
