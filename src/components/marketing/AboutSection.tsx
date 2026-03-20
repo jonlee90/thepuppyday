@@ -60,7 +60,7 @@ export function AboutSection({ title, description, showViewAll = false }: AboutS
               <div className="relative">
                 <div className="rounded-3xl overflow-hidden shadow-[0_20px_60px_-15px_rgba(67,78,84,0.15)]">
                   <OptimizedImage
-                    src="/images/thepuppyday-front.png"
+                    src="/images/thepuppyday-front.webp"
                     alt="The Puppy Day salon lobby — a clean, modern waiting area with comfortable seating, plants, and the Puppy Day logo"
                     width={972}
                     height={842}

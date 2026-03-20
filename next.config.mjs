@@ -124,11 +124,5 @@ const nextConfig = {
 };
 
 export default withSerwist(nextConfig, {
-  // Exclude large images from SW precache — they'll be cached on first visit
-  // via the runtime cache strategy instead
-  exclude: [
-    /puppyday-lobby-background\.png$/,
-    /premium-plan\.png$/,
-    /basic-plan\.png$/,
-  ],
+  // WebP images are small enough (<150K) to include in precache
 });

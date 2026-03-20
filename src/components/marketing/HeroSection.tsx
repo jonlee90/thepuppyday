@@ -27,7 +27,7 @@ export function HeroSection({ heroContent }: HeroSectionProps) {
       {/* Full-bleed background image */}
       <div className="absolute inset-0">
         <OptimizedImage
-          src="/images/puppyday-lobby-background.png"
+          src="/images/puppyday-lobby-background.webp"
           alt="The Puppy Day salon lobby"
           fill
           priority={true}
