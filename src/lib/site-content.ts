@@ -78,8 +78,10 @@ export async function getSiteContent(): Promise<SiteContent> {
     };
 
     if (error) {
-      console.error('[getSiteContent] Error fetching site content:', error);
-      // Return defaults on error
+      const msg = typeof error?.message === 'string' && error.message.includes('<!DOCTYPE')
+        ? '502 Bad Gateway from upstream (Supabase/Cloudflare)'
+        : error?.message || error;
+      console.warn('[getSiteContent] Supabase error, using defaults:', msg);
       return {
         hero: DEFAULT_HERO,
         seo: DEFAULT_SEO,
@@ -96,7 +98,8 @@ export async function getSiteContent(): Promise<SiteContent> {
       business: (contentMap.get('business_info') as BusinessInfo) || DEFAULT_BUSINESS,
     };
   } catch (error) {
-    console.error('[getSiteContent] Unexpected error:', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.warn('[getSiteContent] Unexpected error, using defaults:', msg.includes('<!DOCTYPE') ? '502 Bad Gateway' : msg);
     // Return defaults on any error
     return {
       hero: DEFAULT_HERO,
