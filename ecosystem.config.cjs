@@ -3,7 +3,7 @@ module.exports = {
     name: 'thepuppyday',
     script: '.next/standalone/server.js',
     cwd: '/var/www/html/thepuppyday',
-    node_args: '--max-old-space-size=400',
+    node_args: '--max-old-space-size=512',
     env: {
       NODE_ENV: 'production',
       PORT: 3001,
@@ -12,7 +12,7 @@ module.exports = {
     },
     instances: 1,
     exec_mode: 'fork',
-    max_memory_restart: '500M',
+    max_memory_restart: '600M',
     autorestart: true,
     max_restarts: 10,
     restart_delay: 5000,

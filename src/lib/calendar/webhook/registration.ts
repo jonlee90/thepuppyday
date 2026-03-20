@@ -3,7 +3,7 @@
  * Manages Google Calendar push notification webhooks (watch requests)
  */
 
-import { google } from 'googleapis';
+import { calendar } from '@googleapis/calendar';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CalendarConnection } from '@/types/calendar';
 import { getValidAccessToken, retrieveTokens } from '../token-manager';
@@ -100,7 +100,7 @@ export async function registerWebhook(
     const auth = createAuthenticatedClient(tokens);
 
     // Create calendar client
-    const calendar = google.calendar({ version: 'v3', auth });
+    const cal = calendar({ version: 'v3', auth });
 
     // Generate unique channel ID
     const channelId = crypto.randomUUID();
@@ -112,7 +112,7 @@ export async function registerWebhook(
     const webhookUrl = getWebhookUrl();
 
     // Register webhook with Google Calendar API
-    const response = await calendar.events.watch({
+    const response = await cal.events.watch({
       calendarId: calendarId,
       requestBody: {
         id: channelId,
@@ -213,10 +213,10 @@ export async function stopWebhook(
     const auth = createAuthenticatedClient(tokens);
 
     // Create calendar client
-    const calendar = google.calendar({ version: 'v3', auth });
+    const cal = calendar({ version: 'v3', auth });
 
     // Stop webhook
-    await calendar.channels.stop({
+    await cal.channels.stop({
       requestBody: {
         id: connection.webhook_channel_id,
         resourceId: connection.webhook_resource_id,

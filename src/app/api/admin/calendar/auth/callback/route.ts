@@ -10,7 +10,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { exchangeCodeForTokens } from '@/lib/calendar/oauth';
 import { createConnection } from '@/lib/calendar/connection';
-import { google } from 'googleapis';
+import { calendar } from '@googleapis/calendar';
+import { oauth2 } from '@googleapis/oauth2';
 import { createAuthenticatedClient } from '@/lib/calendar/oauth';
 
 export async function GET(request: NextRequest) {
@@ -103,10 +104,10 @@ export async function GET(request: NextRequest) {
 
     try {
       const oauth2Client = createAuthenticatedClient(tokens);
-      const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+      const cal = calendar({ version: 'v3', auth: oauth2Client });
 
       // Fetch primary calendar to get email
-      const { data: calendarInfo } = await calendar.calendars.get({
+      const { data: calendarInfo } = await cal.calendars.get({
         calendarId: 'primary',
       });
 
@@ -115,8 +116,8 @@ export async function GET(request: NextRequest) {
       }
 
       // Fetch user info to get email
-      const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
-      const { data: userInfo } = await oauth2.userinfo.get();
+      const oauth2Client2 = oauth2({ version: 'v2', auth: oauth2Client });
+      const { data: userInfo } = await oauth2Client2.userinfo.get();
 
       if (userInfo.email) {
         calendarEmail = userInfo.email;

@@ -5,7 +5,7 @@
  * In-memory cache with TTL support and max size limit
  */
 
-const MAX_ENTRIES = 100;
+const MAX_ENTRIES = 50;
 
 export interface CacheEntry<T> {
   data: T;

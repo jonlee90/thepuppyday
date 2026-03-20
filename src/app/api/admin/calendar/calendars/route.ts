@@ -12,7 +12,7 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { getActiveConnection } from '@/lib/calendar/connection';
 import { getValidAccessToken } from '@/lib/calendar/token-manager';
 import { createAuthenticatedClient } from '@/lib/calendar/oauth';
-import { google } from 'googleapis';
+import { calendar } from '@googleapis/calendar';
 import type { GoogleCalendarInfo } from '@/types/calendar';
 
 export async function GET() {
@@ -74,12 +74,12 @@ export async function GET() {
       scope: 'https://www.googleapis.com/auth/calendar.events',
     });
 
-    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+    const cal = calendar({ version: 'v3', auth: oauth2Client });
 
     // Fetch calendar list from Google
     let calendarList;
     try {
-      const response = await calendar.calendarList.list({
+      const response = await cal.calendarList.list({
         minAccessRole: 'writer', // Only calendars where user can create events
         showHidden: false,
         showDeleted: false,

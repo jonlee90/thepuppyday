@@ -3,8 +3,7 @@
  * Wrapper around googleapis with rate limiting and error handling
  */
 
-import { google } from 'googleapis';
-import type { calendar_v3 } from 'googleapis';
+import { calendar, type calendar_v3 } from '@googleapis/calendar';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { GoogleCalendarEvent } from '@/types/calendar';
 import { getValidAccessToken } from './token-manager';
@@ -121,7 +120,7 @@ export class GoogleCalendarClient {
       const auth = createAuthenticatedClient(tokens);
 
       // Create calendar client
-      this.calendar = google.calendar({ version: 'v3', auth });
+      this.calendar = calendar({ version: 'v3', auth });
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Failed to initialize Google Calendar client: ${error.message}`);

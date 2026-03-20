@@ -3,7 +3,7 @@
  * Parses Google Calendar events and extracts appointment data
  */
 
-import type { calendar_v3 } from 'googleapis';
+import type { calendar_v3 } from '@googleapis/calendar';
 import type { PetSize } from '@/types/database';
 
 /**

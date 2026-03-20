@@ -3,8 +3,7 @@
  * Handles Google Calendar OAuth authentication flow
  */
 
-import { google } from 'googleapis';
-import type { OAuth2Client } from 'google-auth-library';
+import { OAuth2Client } from 'google-auth-library';
 import type { GoogleOAuthTokens } from '@/types/calendar';
 
 /**
@@ -77,7 +76,7 @@ function getOAuthConfig(): OAuthConfig {
 export function createOAuth2Client(): OAuth2Client {
   const config = getOAuthConfig();
 
-  return new google.auth.OAuth2(
+  return new OAuth2Client(
     config.clientId,
     config.clientSecret,
     config.redirectUri

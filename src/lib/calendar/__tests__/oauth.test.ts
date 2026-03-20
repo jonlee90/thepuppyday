@@ -15,8 +15,8 @@ import {
   GOOGLE_CALENDAR_SCOPES,
 } from '../oauth';
 
-// Mock the googleapis module
-vi.mock('googleapis', () => {
+// Mock the google-auth-library module
+vi.mock('google-auth-library', () => {
   const mockOAuth2Client = {
     generateAuthUrl: vi.fn(),
     getToken: vi.fn(),
@@ -26,16 +26,12 @@ vi.mock('googleapis', () => {
   };
 
   return {
-    google: {
-      auth: {
-        OAuth2: vi.fn(() => mockOAuth2Client),
-      },
-    },
+    OAuth2Client: vi.fn(() => mockOAuth2Client),
   };
 });
 
-// Import mocked google object
-import { google } from 'googleapis';
+// Import mocked OAuth2Client
+import { OAuth2Client } from 'google-auth-library';
 
 describe('Google OAuth Client', () => {
   const originalEnv = {
@@ -73,7 +69,7 @@ describe('Google OAuth Client', () => {
     it('should create OAuth2 client with correct parameters', () => {
       createOAuth2Client();
 
-      expect(google.auth.OAuth2).toHaveBeenCalledWith(
+      expect(OAuth2Client).toHaveBeenCalledWith(
         'test-client-id',
         'test-client-secret',
         'https://test.example.com/api/admin/calendar/auth/callback'
@@ -111,7 +107,7 @@ describe('Google OAuth Client', () => {
       const mockClient = {
         generateAuthUrl: mockGenerateAuthUrl,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       const authUrl = generateAuthUrl('admin-user-123');
 
@@ -129,7 +125,7 @@ describe('Google OAuth Client', () => {
       const mockClient = {
         generateAuthUrl: mockGenerateAuthUrl,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       generateAuthUrl('user-abc-xyz');
 
@@ -155,7 +151,7 @@ describe('Google OAuth Client', () => {
       const mockClient = {
         getToken: mockGetToken,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       const result = await exchangeCodeForTokens('auth-code-123');
 
@@ -176,7 +172,7 @@ describe('Google OAuth Client', () => {
       const mockClient = {
         getToken: mockGetToken,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       await expect(exchangeCodeForTokens('code')).rejects.toThrow(
         'No access token received from Google'
@@ -190,7 +186,7 @@ describe('Google OAuth Client', () => {
       const mockClient = {
         getToken: mockGetToken,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       await expect(exchangeCodeForTokens('code')).rejects.toThrow(
         'No refresh token received from Google'
@@ -204,7 +200,7 @@ describe('Google OAuth Client', () => {
       const mockClient = {
         getToken: mockGetToken,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       await expect(exchangeCodeForTokens('code')).rejects.toThrow(
         'No expiry date received from Google'
@@ -216,7 +212,7 @@ describe('Google OAuth Client', () => {
       const mockClient = {
         getToken: mockGetToken,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       await expect(exchangeCodeForTokens('code')).rejects.toThrow(
         'Failed to exchange authorization code: API error'
@@ -242,7 +238,7 @@ describe('Google OAuth Client', () => {
         setCredentials: mockSetCredentials,
         refreshAccessToken: mockRefreshAccessToken,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       const result = await refreshAccessToken('1//test-refresh');
 
@@ -267,7 +263,7 @@ describe('Google OAuth Client', () => {
         setCredentials: vi.fn(),
         refreshAccessToken: mockRefreshAccessToken,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       await expect(refreshAccessToken('token')).rejects.toThrow(
         'No access token received from Google'
@@ -281,7 +277,7 @@ describe('Google OAuth Client', () => {
         setCredentials: vi.fn(),
         refreshAccessToken: mockRefreshAccessToken,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       await expect(refreshAccessToken('token')).rejects.toThrow(
         'Refresh token is invalid or revoked'
@@ -299,7 +295,7 @@ describe('Google OAuth Client', () => {
         setCredentials: vi.fn(),
         refreshAccessToken: mockRefreshAccessToken,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       const result = await refreshAccessToken('1//existing-token');
 
@@ -315,7 +311,7 @@ describe('Google OAuth Client', () => {
         setCredentials: mockSetCredentials,
         revokeCredentials: mockRevokeCredentials,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       const result = await revokeTokens('ya29.access-token');
 
@@ -339,7 +335,7 @@ describe('Google OAuth Client', () => {
         setCredentials: vi.fn(),
         revokeCredentials: mockRevokeCredentials,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       const result = await revokeTokens('token');
 
@@ -353,7 +349,7 @@ describe('Google OAuth Client', () => {
         setCredentials: vi.fn(),
         revokeCredentials: mockRevokeCredentials,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       await expect(revokeTokens('token')).rejects.toThrow(
         'Failed to revoke tokens: Network error'
@@ -367,7 +363,7 @@ describe('Google OAuth Client', () => {
       const mockClient = {
         setCredentials: mockSetCredentials,
       };
-      (google.auth.OAuth2 as Mock).mockReturnValue(mockClient);
+      (OAuth2Client as Mock).mockReturnValue(mockClient);
 
       const tokens = {
         access_token: 'ya29.test',

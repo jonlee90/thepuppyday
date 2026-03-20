@@ -10,7 +10,8 @@ import { AdminBreadcrumb } from '@/components/admin/shared';
 import { CalendarSettingsClient } from './CalendarSettingsClient';
 import { getActiveConnection } from '@/lib/calendar/connection';
 import { getValidAccessToken } from '@/lib/calendar/token-manager';
-import { google } from 'googleapis';
+import { calendar } from '@googleapis/calendar';
+import { OAuth2Client } from 'google-auth-library';
 import type {
   CalendarConnectionStatus,
   CalendarSyncSettings,
@@ -136,12 +137,12 @@ async function getAvailableCalendars(
     const accessToken = await getValidAccessToken(supabase, connectionId);
 
     // Create OAuth2 client with access token
-    const oauth2Client = new google.auth.OAuth2();
+    const oauth2Client = new OAuth2Client();
     oauth2Client.setCredentials({ access_token: accessToken });
 
     // Fetch calendars from Google Calendar API
-    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-    const response = await calendar.calendarList.list({
+    const cal = calendar({ version: 'v3', auth: oauth2Client });
+    const response = await cal.calendarList.list({
       minAccessRole: 'writer', // Only calendars user can write to
     });
 

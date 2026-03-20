@@ -13,7 +13,8 @@ import { revokeTokens } from '@/lib/calendar/oauth';
 import { getValidAccessToken } from '@/lib/calendar/token-manager';
 import { getQuotaStatus as getQuotaStatusUtil } from '@/lib/calendar/quota/tracker';
 import { resumeAutoSync as resumeAutoSyncUtil } from '@/lib/calendar/sync/pause-manager';
-import { google } from 'googleapis';
+import { calendar } from '@googleapis/calendar';
+import { OAuth2Client } from 'google-auth-library';
 import type { CalendarSyncSettings, CalendarConnectionStatus, GoogleCalendarInfo } from '@/types/calendar';
 
 /**
@@ -313,11 +314,11 @@ export async function refreshCalendars(): Promise<{
 
     const accessToken = await getValidAccessToken(supabase, connection.id);
 
-    const oauth2Client = new google.auth.OAuth2();
+    const oauth2Client = new OAuth2Client();
     oauth2Client.setCredentials({ access_token: accessToken });
 
-    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-    const response = await calendar.calendarList.list({
+    const cal = calendar({ version: 'v3', auth: oauth2Client });
+    const response = await cal.calendarList.list({
       minAccessRole: 'writer',
     });
 
