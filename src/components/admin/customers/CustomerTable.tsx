@@ -45,8 +45,8 @@ export function CustomerTable({ onCustomerClick }: CustomerTableProps) {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [sortBy, setSortBy] = useState<SortField>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortBy, setSortBy] = useState<SortField>('join_date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Refs for IntersectionObserver — avoid recreating observer on every loading state change
   const sentinelRef = useRef<HTMLDivElement>(null);

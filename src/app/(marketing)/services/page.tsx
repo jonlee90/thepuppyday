@@ -169,7 +169,7 @@ export default async function ServicesPage() {
             })}
           </div>
 
-          {/* Add-on Services */}
+          {/* Add-on Services — pulled from database */}
           <h3 className="text-2xl font-bold text-[#434E54] mb-6">
             Add-On Services
           </h3>
@@ -177,33 +177,53 @@ export default async function ServicesPage() {
             Enhance any grooming package or book as a standalone service.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {SERVICE_SLUGS.filter(
-              (slug) => SERVICE_CONFIGS[slug].pricingSource === 'addons'
-            ).map((slug) => {
-              const config = SERVICE_CONFIGS[slug];
-              const price = getStartingPrice(slug, services, addons);
-              const Icon = serviceIcons[slug] ?? Check;
-              return (
-                <Link
-                  key={slug}
-                  href={`/services/${slug}`}
-                  className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col"
-                >
+            {addons.map((addon: any) => {
+              // Find matching SERVICE_CONFIG for detail page link (if exists)
+              const matchingSlug = SERVICE_SLUGS.find(
+                (slug) => SERVICE_CONFIGS[slug].addonName === addon.name
+              );
+              const Icon = matchingSlug
+                ? (serviceIcons[matchingSlug] ?? Check)
+                : Check;
+
+              const cardContent = (
+                <>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 rounded-lg bg-[#F8EEE5] flex items-center justify-center">
                       <Icon className="w-4 h-4 text-[#434E54]" />
                     </div>
                     <h4 className="text-lg font-bold text-[#434E54]">
-                      {config.displayName}
+                      {addon.name}
                     </h4>
                   </div>
-                  <p className="text-[#6B7280] text-sm leading-relaxed mb-3 flex-grow">
-                    {config.metaDescription.split('.')[0]}.
+                  {addon.description ? (
+                    <p className="text-[#6B7280] text-sm leading-relaxed mb-3 flex-grow">
+                      {addon.description}
+                    </p>
+                  ) : (
+                    <div className="flex-grow" />
+                  )}
+                  <p className="text-xl font-bold text-[#434E54]">
+                    ${addon.price}
                   </p>
-                  {price !== null ? (
-                    <p className="text-xl font-bold text-[#434E54]">${price}</p>
-                  ) : null}
+                </>
+              );
+
+              return matchingSlug ? (
+                <Link
+                  key={addon.id}
+                  href={`/services/${matchingSlug}`}
+                  className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col"
+                >
+                  {cardContent}
                 </Link>
+              ) : (
+                <div
+                  key={addon.id}
+                  className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col"
+                >
+                  {cardContent}
+                </div>
               );
             })}
           </div>
