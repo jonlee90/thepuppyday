@@ -1,5 +1,3 @@
-import { withSerwist } from '@serwist/turbopack';
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
@@ -123,6 +121,4 @@ const nextConfig = {
   },
 };
 
-export default withSerwist(nextConfig, {
-  // WebP images are small enough (<150K) to include in precache
-});
+export default nextConfig;

@@ -3,8 +3,7 @@ import { Bricolage_Grotesque, DM_Sans } from 'next/font/google';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { ErrorFilter } from './ErrorFilter';
-import { SerwistProvider } from './serwist';
-import { SwCachePurge } from '@/components/common/SwCachePurge';
+import { SwUnregister } from '@/components/common/SwUnregister';
 import './globals.css';
 
 // Distinctive heading font
@@ -76,10 +75,8 @@ export default function RootLayout({
         <div aria-live="assertive" aria-atomic="true" className="sr-only" />
 
         <ErrorFilter />
-        <SerwistProvider swUrl="/serwist/sw.js">
-          <SwCachePurge />
-          <AuthProvider>{children}</AuthProvider>
-        </SerwistProvider>
+        <SwUnregister />
+        <AuthProvider>{children}</AuthProvider>
         <Toaster />
       </body>
     </html>
