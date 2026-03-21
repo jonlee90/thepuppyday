@@ -187,6 +187,7 @@ export interface Service extends BaseEntity {
   image_url: string | null;
   duration_minutes: number;
   is_active: boolean;
+  is_quick_service: boolean;
   display_order: number;
   updated_at: string;
   // Joined data

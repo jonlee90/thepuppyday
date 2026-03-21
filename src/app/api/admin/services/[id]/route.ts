@@ -107,6 +107,7 @@ export async function PATCH(
       duration_minutes,
       image_url,
       is_active,
+      is_quick_service,
       display_order,
       prices,
     } = body;
@@ -167,6 +168,10 @@ export async function PATCH(
 
     if (display_order !== undefined) {
       serviceUpdate.display_order = display_order;
+    }
+
+    if (is_quick_service !== undefined) {
+      serviceUpdate.is_quick_service = is_quick_service;
     }
 
     // Update service

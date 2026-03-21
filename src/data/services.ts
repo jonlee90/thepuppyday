@@ -58,7 +58,7 @@ export const SERVICE_CONFIGS: Record<ServiceSlug, ServiceConfig> = {
   },
   'nail-trimming': {
     slug: 'nail-trimming',
-    dbServiceName: null,
+    dbServiceName: 'Nail Trim',
     addonName: 'Nail Trimming',
     displayName: 'Nail Trimming',
     h1Title: 'Dog Nail Trimming in La Mirada, CA',

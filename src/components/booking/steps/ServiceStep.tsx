@@ -7,6 +7,7 @@
 import { useMemo } from 'react';
 import { useBookingStore } from '@/stores/bookingStore';
 import { ServiceCard } from '../ServiceCard';
+import { QuickServiceCard } from '../QuickServiceCard';
 import { useServices } from '@/hooks/useServices';
 import type { ServiceWithPrices } from '@/types/database';
 
@@ -22,6 +23,16 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
   const bookableServices = useMemo(
     () => services.filter((service) => service.name !== 'Add-Ons'),
     [services]
+  );
+
+  // Split into main grooming packages and quick/minor services (driven by DB flag)
+  const mainServices = useMemo(
+    () => bookableServices.filter((s) => !s.is_quick_service),
+    [bookableServices]
+  );
+  const quickServices = useMemo(
+    () => bookableServices.filter((s) => s.is_quick_service),
+    [bookableServices]
   );
 
   const handleSelectService = (service: ServiceWithPrices) => {
@@ -130,17 +141,42 @@ export function ServiceStep({ preSelectedServiceId }: ServiceStepProps) {
 
   return (
     <div className="space-y-6">
-      {/* Editorial Grid - Optimized for modal width */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-8 lg:gap-10">
-        {bookableServices.map((service) => (
-          <ServiceCard
-            key={service.id}
-            service={service}
-            isSelected={selectedServiceId === service.id}
-            onSelect={() => handleSelectService(service)}
-          />
-        ))}
-      </div>
+      {/* Main Grooming Packages - Editorial Grid */}
+      {mainServices.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-8 lg:gap-10">
+          {mainServices.map((service) => (
+            <ServiceCard
+              key={service.id}
+              service={service}
+              isSelected={selectedServiceId === service.id}
+              onSelect={() => handleSelectService(service)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Quick Services Section */}
+      {quickServices.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-[#434E54]/10" />
+            <span className="text-xs font-semibold text-[#434E54]/50 uppercase tracking-wider">
+              Quick Services
+            </span>
+            <div className="h-px flex-1 bg-[#434E54]/10" />
+          </div>
+          <div className="max-w-sm mx-auto sm:mx-0">
+            {quickServices.map((service) => (
+              <QuickServiceCard
+                key={service.id}
+                service={service}
+                isSelected={selectedServiceId === service.id}
+                onSelect={() => handleSelectService(service)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

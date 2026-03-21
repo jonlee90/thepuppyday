@@ -23,6 +23,7 @@ interface FormData {
   duration_minutes: number;
   image_url: string;
   is_active: boolean;
+  is_quick_service: boolean;
   prices: Record<PetSize, number>;
 }
 
@@ -40,6 +41,7 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
     duration_minutes: 60,
     image_url: '',
     is_active: true,
+    is_quick_service: false,
     prices: { small: 0, medium: 0, large: 0, xlarge: 0 },
   });
 
@@ -73,6 +75,7 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
         duration_minutes: service.duration_minutes,
         image_url: service.image_url || '',
         is_active: service.is_active,
+        is_quick_service: service.is_quick_service ?? false,
         prices: pricesMap,
       });
 
@@ -205,6 +208,7 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
         duration_minutes: formData.duration_minutes,
         image_url: imageUrl,
         is_active: formData.is_active,
+        is_quick_service: formData.is_quick_service,
         prices: formData.prices,
       };
 
@@ -408,6 +412,26 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
             <label htmlFor="is_active" className="text-sm font-medium text-[#434E54]">
               Active (visible to customers)
             </label>
+          </div>
+
+          {/* Quick Service */}
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="is_quick_service"
+              checked={formData.is_quick_service}
+              onChange={(e) => handleChange('is_quick_service', e.target.checked)}
+              className="w-5 h-5 rounded border-gray-300 text-[#434E54]
+                focus:ring-2 focus:ring-[#434E54]/30"
+            />
+            <div>
+              <label htmlFor="is_quick_service" className="text-sm font-medium text-[#434E54]">
+                Quick Service
+              </label>
+              <p className="text-xs text-[#6B7280]">
+                Display as a compact card in the booking form
+              </p>
+            </div>
           </div>
 
           {/* Actions */}

@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
       duration_minutes,
       image_url,
       is_active = true,
+      is_quick_service = false,
       prices, // { small: number, medium: number, large: number, xlarge: number }
     } = body;
 
@@ -172,6 +173,7 @@ export async function POST(request: NextRequest) {
         duration_minutes,
         image_url: image_url || null,
         is_active,
+        is_quick_service,
         display_order,
       })
       .select()
