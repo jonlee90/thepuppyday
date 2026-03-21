@@ -122,8 +122,14 @@ const runtimeCaching = [
   },
 ];
 
+// Filter out 502.html from precache — it's served by Nginx internally and returns 404 via Node
+const filteredManifest = self.__SW_MANIFEST?.filter((entry) => {
+  const url = typeof entry === 'string' ? entry : entry.url;
+  return !url.includes('502.html');
+});
+
 const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
+  precacheEntries: filteredManifest,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
