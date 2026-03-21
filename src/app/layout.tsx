@@ -4,6 +4,7 @@ import { AuthProvider } from '@/components/providers/auth-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { ErrorFilter } from './ErrorFilter';
 import { SerwistProvider } from './serwist';
+import { SwCachePurge } from '@/components/common/SwCachePurge';
 import './globals.css';
 
 // Distinctive heading font
@@ -76,6 +77,7 @@ export default function RootLayout({
 
         <ErrorFilter />
         <SerwistProvider swUrl="/serwist/sw.js">
+          <SwCachePurge />
           <AuthProvider>{children}</AuthProvider>
         </SerwistProvider>
         <Toaster />

@@ -62,14 +62,27 @@ const runtimeCaching = [
       ],
     }),
   },
-  // Pages / navigation — ONLY cache 200 responses
+  // Pages / navigation — ONLY cache 200; never serve cached error pages
   {
     matcher: ({ request }: { request: Request }) => request.mode === 'navigate',
     handler: new NetworkFirst({
       cacheName: 'pages',
+      networkTimeoutSeconds: 5,
       plugins: [
         new CacheableResponsePlugin({ statuses: [200] }),
         new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 60 * 60 * 24 }),
+        {
+          // Replace non-200 network responses (e.g. Nginx 502) with cached page or offline fallback
+          fetchDidSucceed: async ({ request, response }: { request: Request; response: Response }) => {
+            if (response.ok) return response;
+            const cache = await caches.open('pages');
+            const cached = await cache.match(request);
+            if (cached?.ok) return cached;
+            const offline = await caches.match('/~offline');
+            // Must return a Response — if no fallback, return the original error
+            return offline || response;
+          },
+        },
       ],
     }),
   },
