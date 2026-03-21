@@ -1271,22 +1271,14 @@ export function AppointmentDetailModal({
           <div className="sticky bottom-0 bg-white border-t border-[#E5E5E5] px-5 py-4">
             {/* Optimized layout for 3 buttons - centered with even spacing */}
             <div className="flex items-center justify-center gap-3">
-              {allowedTransitions.map((transition) => {
-                let disabled = false;
-                if (isPast && !isTerminal) {
-                  disabled = !(transition.to === 'completed' || transition.to === 'no_show' || transition.to === 'cancelled');
-                }
-
-                return (
+              {allowedTransitions.map((transition) => (
                   <StatusTransitionButton
                     key={`${transition.from}-${transition.to}`}
                     transition={transition}
                     appointmentId={appointment.id}
-                    disabled={disabled}
                     onSuccess={handleStatusUpdateSuccess}
                   />
-                );
-              })}
+              ))}
             </div>
           </div>
         )}
