@@ -31,7 +31,7 @@ export function OptimizedImage({
   alt,
   priority = false,
   enableBlur = true,
-  fallbackSrc = '/images/placeholder.jpg',
+  fallbackSrc = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27300%27%3E%3Crect fill=%27%23EAE0D5%27 width=%27400%27 height=%27300%27/%3E%3C/svg%3E',
   onError,
   ...props
 }: OptimizedImageProps) {

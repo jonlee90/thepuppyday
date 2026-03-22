@@ -19,7 +19,9 @@ import {
   TestimonialsSection,
   ContactSection,
   BlogSection,
+  HomepageFAQ,
 } from '@/components/marketing';
+import { FAQ_ITEMS } from '@/data/faq';
 import { SchemaOrg } from '@/components/common/SchemaOrg';
 import { SERVICE_SLUGS, SERVICE_CONFIGS } from '@/data/services';
 import { CITY_SLUGS, CITY_CONFIGS } from '@/data/cities';
@@ -93,7 +95,7 @@ async function getMarketingData() {
   const supabase = await createServerSupabaseClient();
 
   // Fetch site content and other marketing data in parallel
-  const [siteContent, servicesRes, bannersRes, beforeAfterRes, galleryRes, settingsRes, addonsRes, reviewsRes] =
+  const [siteContent, servicesRes, bannersRes, beforeAfterRes, galleryRes, settingsRes, addonsRes, reviewsRes, individualReviewsRes] =
     await Promise.all([
       getSiteContent(),
       (supabase as any)
@@ -119,6 +121,14 @@ async function getMarketingData() {
         .select('rating')
         .eq('is_public', true)
         .not('rating', 'is', null),
+      (supabase as any)
+        .from('reviews')
+        .select('rating, feedback, created_at')
+        .eq('is_public', true)
+        .not('rating', 'is', null)
+        .not('feedback', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(5),
     ]);
 
   // Filter banners by date range
@@ -152,11 +162,15 @@ async function getMarketingData() {
     businessHours: settingsRes.data?.value || {},
     addons: (addonsRes.data as Array<{ id: string; name: string; price: number }>) || [],
     reviewStats,
+    individualReviews: (individualReviewsRes.data as Array<{ rating: number; feedback: string; created_at: string }>) || [],
   };
 }
 
+const HOMEPAGE_FAQ_INDICES = [0, 1, 2, 3, 9, 12];
+
 export default async function MarketingPage() {
   const data = await getMarketingData();
+  const homepageFaqs = HOMEPAGE_FAQ_INDICES.map((i) => FAQ_ITEMS[i]);
 
   return (
     <div className="grooming-pattern-bg">
@@ -182,6 +196,9 @@ export default async function MarketingPage() {
 
       {/* Testimonials Section - Yelp Reviews */}
       <TestimonialsSection />
+
+      {/* FAQ Section - Top 6 for GEO */}
+      <HomepageFAQ items={homepageFaqs} />
 
       {/* About Section */}
       <AboutSection
@@ -224,71 +241,133 @@ export default async function MarketingPage() {
         businessHours={data.businessHours}
       />
 
-      {/* Structured Data for SEO — PetGroomer schema via SchemaOrg */}
+      {/* Structured Data for GEO — @graph with LocalBusiness, Organization, WebSite, FAQPage, Reviews */}
       <SchemaOrg
         schema={{
           '@context': 'https://schema.org',
-          '@type': 'LocalBusiness',
-          additionalType: 'https://schema.org/PetGroomer',
-          '@id': 'https://thepuppyday.com',
-          name: data.siteContent.business.name,
-          description: `Professional dog grooming and day care services in ${data.siteContent.business.city}, ${data.siteContent.business.state}`,
-          url: 'https://thepuppyday.com',
-          telephone: data.siteContent.business.phone,
-          email: data.siteContent.business.email,
-          address: {
-            '@type': 'PostalAddress',
-            streetAddress: data.siteContent.business.address,
-            addressLocality: data.siteContent.business.city,
-            addressRegion: data.siteContent.business.state,
-            postalCode: data.siteContent.business.zip,
-            addressCountry: 'US',
-          },
-          geo: {
-            '@type': 'GeoCoordinates',
-            latitude: '33.9172',
-            longitude: '-118.0120',
-          },
-          openingHoursSpecification: data.businessHours
-            ? Object.entries(data.businessHours).map(([day, hours]) => ({
-                '@type': 'OpeningHoursSpecification',
-                dayOfWeek: day.charAt(0).toUpperCase() + day.slice(1),
-                opens: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).open : undefined,
-                closes: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).close : undefined,
-              }))
-            : [],
-          ...(data.reviewStats ? {
-            aggregateRating: {
-              '@type': 'AggregateRating',
-              ratingValue: data.reviewStats.average.toFixed(1),
-              reviewCount: data.reviewStats.count,
-              bestRating: '5',
-              worstRating: '1',
-            },
-          } : {}),
-          priceRange: '$$',
-          image: data.siteContent.seo.og_image_url || 'https://thepuppyday.com/og-image.jpg',
-          hasOfferCatalog: {
-            '@type': 'OfferCatalog',
-            name: 'Dog Grooming Services',
-            itemListElement: SERVICE_SLUGS.map((slug) => ({
-              '@type': 'Offer',
-              itemOffered: {
-                '@type': 'Service',
-                name: SERVICE_CONFIGS[slug].displayName,
-                url: `https://thepuppyday.com/services/${slug}`,
+          '@graph': [
+            // LocalBusiness
+            {
+              '@type': 'LocalBusiness',
+              additionalType: 'https://schema.org/PetGroomer',
+              '@id': 'https://thepuppyday.com',
+              name: data.siteContent.business.name,
+              description: `Professional dog grooming and day care services in ${data.siteContent.business.city}, ${data.siteContent.business.state}`,
+              url: 'https://thepuppyday.com',
+              telephone: data.siteContent.business.phone,
+              email: data.siteContent.business.email,
+              address: {
+                '@type': 'PostalAddress',
+                streetAddress: data.siteContent.business.address,
+                addressLocality: data.siteContent.business.city,
+                addressRegion: data.siteContent.business.state,
+                postalCode: data.siteContent.business.zip,
+                addressCountry: 'US',
               },
-            })),
-          },
-          areaServed: CITY_SLUGS.map((slug) => ({
-            '@type': 'City',
-            name: CITY_CONFIGS[slug].name,
-          })),
-          sameAs: [
-            data.siteContent.business.social_links.instagram,
-            data.siteContent.business.social_links.yelp,
-            data.siteContent.business.social_links.facebook,
-          ].filter(Boolean),
+              geo: {
+                '@type': 'GeoCoordinates',
+                latitude: '33.9172',
+                longitude: '-118.0120',
+              },
+              openingHoursSpecification: data.businessHours
+                ? Object.entries(data.businessHours).map(([day, hours]) => ({
+                    '@type': 'OpeningHoursSpecification',
+                    dayOfWeek: day.charAt(0).toUpperCase() + day.slice(1),
+                    opens: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).open : undefined,
+                    closes: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).close : undefined,
+                  }))
+                : [],
+              ...(data.reviewStats ? {
+                aggregateRating: {
+                  '@type': 'AggregateRating',
+                  ratingValue: data.reviewStats.average.toFixed(1),
+                  reviewCount: data.reviewStats.count,
+                  bestRating: '5',
+                  worstRating: '1',
+                },
+              } : {}),
+              priceRange: '$$',
+              image: data.siteContent.seo.og_image_url || 'https://thepuppyday.com/og-image.jpg',
+              hasOfferCatalog: {
+                '@type': 'OfferCatalog',
+                name: 'Dog Grooming Services',
+                itemListElement: SERVICE_SLUGS.map((slug) => ({
+                  '@type': 'Offer',
+                  itemOffered: {
+                    '@type': 'Service',
+                    name: SERVICE_CONFIGS[slug].displayName,
+                    url: `https://thepuppyday.com/services/${slug}`,
+                  },
+                })),
+              },
+              areaServed: CITY_SLUGS.map((slug) => ({
+                '@type': 'City',
+                name: CITY_CONFIGS[slug].name,
+              })),
+              sameAs: [
+                data.siteContent.business.social_links.instagram,
+                data.siteContent.business.social_links.yelp,
+                data.siteContent.business.social_links.facebook,
+              ].filter(Boolean),
+            },
+            // Organization
+            {
+              '@type': 'Organization',
+              '@id': 'https://thepuppyday.com/#organization',
+              name: data.siteContent.business.name,
+              url: 'https://thepuppyday.com',
+              logo: 'https://thepuppyday.com/og-image.jpg',
+              sameAs: [
+                data.siteContent.business.social_links.instagram,
+                data.siteContent.business.social_links.yelp,
+                data.siteContent.business.social_links.facebook,
+              ].filter(Boolean),
+            },
+            // WebSite
+            {
+              '@type': 'WebSite',
+              '@id': 'https://thepuppyday.com/#website',
+              url: 'https://thepuppyday.com',
+              name: 'Puppy Day',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: 'https://thepuppyday.com/?s={search_term_string}',
+                },
+                'query-input': 'required name=search_term_string',
+              },
+            },
+            // FAQPage
+            {
+              '@type': 'FAQPage',
+              '@id': 'https://thepuppyday.com/#faq',
+              mainEntity: homepageFaqs.map((item) => ({
+                '@type': 'Question',
+                name: item.question,
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: item.answer,
+                },
+              })),
+            },
+            // Individual Reviews
+            ...(data.individualReviews.length > 0
+              ? data.individualReviews.map((review) => ({
+                  '@type': 'Review',
+                  itemReviewed: { '@id': 'https://thepuppyday.com' },
+                  reviewRating: {
+                    '@type': 'Rating',
+                    ratingValue: review.rating,
+                    bestRating: '5',
+                    worstRating: '1',
+                  },
+                  reviewBody: review.feedback,
+                  datePublished: review.created_at.split('T')[0],
+                  author: { '@type': 'Person', name: 'Anonymous' },
+                }))
+              : []),
+          ],
         }}
       />
     </div>

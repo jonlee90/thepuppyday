@@ -14,31 +14,30 @@ import { getLoyaltySettings } from '@/lib/admin/loyalty-settings';
 async function getLoyaltyData(userId: string) {
   const supabase = await createServerSupabaseClient();
 
-  const [loyaltyDataResult, loyaltyPunchesResult, redemptionsResult] = await Promise.all([
-    // Get loyalty record for customer
-    (supabase as any)
-      .from('customer_loyalty')
-      .select('*')
-      .eq('customer_id', userId)
-      .single(),
+  // First fetch the loyalty record
+  const loyaltyDataResult = await (supabase as any)
+    .from('customer_loyalty')
+    .select('*')
+    .eq('customer_id', userId)
+    .single();
 
-    // Get loyalty punches for current cycle
-    (supabase as any)
-      .from('loyalty_punches')
-      .select('*, customer_loyalty!inner(customer_id)')
-      .eq('customer_loyalty.customer_id', userId)
-      .order('created_at', { ascending: false }),
+  const loyaltyId = loyaltyDataResult.data?.id;
 
-    // Get redemptions through customer_loyalty join
-    (supabase as any)
-      .from('loyalty_redemptions')
-      .select(`
-        *,
-        customer_loyalty!inner(customer_id)
-      `)
-      .eq('customer_loyalty.customer_id', userId)
-      .order('redeemed_at', { ascending: false }),
-  ]);
+  // Then fetch punches and redemptions in parallel (need loyalty ID first)
+  const [loyaltyPunchesResult, redemptionsResult] = loyaltyId
+    ? await Promise.all([
+        (supabase as any)
+          .from('loyalty_punches')
+          .select('*')
+          .eq('customer_loyalty_id', loyaltyId)
+          .order('created_at', { ascending: false }),
+        (supabase as any)
+          .from('loyalty_redemptions')
+          .select('*')
+          .eq('customer_loyalty_id', loyaltyId)
+          .order('redeemed_at', { ascending: false }),
+      ])
+    : [{ data: [] }, { data: [] }];
 
   return {
     loyalty: loyaltyDataResult.data || null,

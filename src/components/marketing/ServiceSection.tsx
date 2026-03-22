@@ -40,8 +40,15 @@ export function ServiceSection({ services, addons }: ServiceSectionProps) {
         <SectionHeader
           title="Our Services"
           subtitle="Professional grooming services tailored to your pet's needs"
-          className="mb-12"
+          className="mb-6"
         />
+
+        <p className="text-center text-[#6B7280] max-w-3xl mx-auto mb-12 leading-relaxed">
+          Puppy Day offers professional dog grooming in La Mirada, CA with bath and brush
+          services starting at $40 for small dogs (under 18 lbs) and premium grooming
+          packages from $70 to $150. Our size-based pricing covers Small (0–18 lbs),
+          Medium (19–35 lbs), Large (36–65 lbs), and X-Large (66+ lbs) dogs.
+        </p>
 
         {groomingServices.length === 0 ? (
           <div className="text-center py-12">

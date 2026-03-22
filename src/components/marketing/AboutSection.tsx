@@ -100,6 +100,13 @@ export function AboutSection({ title, description, showViewAll = false }: AboutS
                 {description}
               </p>
 
+              <p className="text-sm text-[#6B7280] mt-2">
+                Located at 14936 Leffingwell Rd, La Mirada, CA 90638. Open Monday–Saturday, 9 AM – 5 PM.
+              </p>
+              <p className="text-xs text-[#6B7280] mt-4">
+                Last updated <time dateTime="2026-03-21">March 2026</time>
+              </p>
+
               {/* Highlights with icons */}
               <div className="space-y-3 pt-2">
                 {highlights.map((item, i) => {

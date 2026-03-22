@@ -7,6 +7,7 @@
  */
 
 import type { AppSupabaseClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 
 /**
  * Setting type categories
@@ -98,9 +99,10 @@ export async function logSettingsChange(
       return;
     }
 
-    // Insert audit log entry (fire-and-forget)
+    // Insert audit log entry (fire-and-forget) using service role to bypass RLS
+    const serviceClient = createServiceRoleClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await (serviceClient as any)
       .from('settings_audit_log')
       .insert({
         admin_id: adminId,

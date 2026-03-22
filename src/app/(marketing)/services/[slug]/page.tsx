@@ -34,6 +34,7 @@ export async function generateMetadata({
       canonical: `https://thepuppyday.com/services/${slug}`,
     },
     keywords: [config.primaryKeyword, 'dog grooming La Mirada', config.displayName.toLowerCase()],
+    other: { 'article:modified_time': '2026-03-21' },
   };
 }
 

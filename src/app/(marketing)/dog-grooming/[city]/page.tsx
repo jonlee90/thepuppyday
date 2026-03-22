@@ -48,11 +48,35 @@ export default async function CityPage({
     createServerSupabaseClient(),
   ]);
 
-  const { data: servicesData } = await (supabase as any)
-    .from('services')
-    .select('id, name, slug')
-    .eq('is_active', true)
-    .order('display_order');
+  const [servicesRes, reviewsRes, settingsRes] = await Promise.all([
+    (supabase as any)
+      .from('services')
+      .select('id, name, slug')
+      .eq('is_active', true)
+      .order('display_order'),
+    (supabase as any)
+      .from('reviews')
+      .select('rating')
+      .eq('is_public', true)
+      .not('rating', 'is', null),
+    (supabase as any)
+      .from('settings')
+      .select('value')
+      .eq('key', 'business_hours')
+      .single(),
+  ]);
+
+  const servicesData = servicesRes.data;
+
+  const publicReviews = (reviewsRes.data as Array<{ rating: number }>) || [];
+  const reviewStats = publicReviews.length > 0
+    ? {
+        count: publicReviews.length,
+        average: publicReviews.reduce((sum, r) => sum + r.rating, 0) / publicReviews.length,
+      }
+    : null;
+
+  const businessHours = settingsRes.data?.value || {};
 
   const services = ((servicesData as Array<{ id: string; name: string; slug: string }>) || []).map(
     (s) => {
@@ -68,7 +92,9 @@ export default async function CityPage({
 
   const schema = {
     '@context': 'https://schema.org',
-    '@type': 'PetGroomer',
+    '@type': 'LocalBusiness',
+    additionalType: 'https://schema.org/PetGroomer',
+    '@id': `https://thepuppyday.com/dog-grooming/${city}`,
     name: businessInfo.name,
     url: `https://thepuppyday.com/dog-grooming/${city}`,
     telephone: businessInfo.phone,
@@ -80,12 +106,46 @@ export default async function CityPage({
       postalCode: businessInfo.zip,
       addressCountry: 'US',
     },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: '33.9172',
+      longitude: '-118.0120',
+    },
     areaServed: {
       '@type': 'City',
       name: config.name,
       containedInPlace: { '@type': 'State', name: 'California' },
     },
     priceRange: '$$',
+    ...(reviewStats ? {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: reviewStats.average.toFixed(1),
+        reviewCount: reviewStats.count,
+        bestRating: '5',
+        worstRating: '1',
+      },
+    } : {}),
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'Dog Grooming Services',
+      itemListElement: services.map((s) => ({
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': 'Service',
+          name: s.name,
+          url: `https://thepuppyday.com/services/${s.slug}`,
+        },
+      })),
+    },
+    openingHoursSpecification: businessHours
+      ? Object.entries(businessHours).map(([day, hours]) => ({
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: day.charAt(0).toUpperCase() + day.slice(1),
+          opens: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).open : undefined,
+          closes: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).close : undefined,
+        }))
+      : [],
   };
 
   return (

@@ -180,7 +180,7 @@ function ReviewCard({
       <StarRating rating={review.rating} />
 
       {/* Review text */}
-      <p className="text-[#434E54] text-sm leading-relaxed mt-3 flex-1">
+      <blockquote cite={review.yelpUrl} className="text-[#434E54] text-sm leading-relaxed mt-3 flex-1">
         {displayText}
         {needsTruncation && (
           <button
@@ -190,7 +190,7 @@ function ReviewCard({
             {expanded ? 'Show less' : 'Read more'}
           </button>
         )}
-      </p>
+      </blockquote>
 
       {/* Dog photos */}
       <div className="flex gap-2 mt-4">

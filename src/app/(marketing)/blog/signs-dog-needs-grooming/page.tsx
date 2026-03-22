@@ -17,6 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: post.metaDescription,
     keywords: post.keywords,
     alternates: { canonical: `https://thepuppyday.com/blog/${POST_SLUG}` },
+    other: { 'article:modified_time': '2026-03-21' },
   };
 }
 
@@ -54,6 +55,7 @@ export default async function SignsDogNeedsGroomingPage() {
           headline: post.title,
           description: post.excerpt,
           datePublished: post.publishDate,
+          dateModified: '2026-03-21',
           author: { '@type': 'Organization', name: post.author },
           publisher: {
             '@type': 'Organization',
