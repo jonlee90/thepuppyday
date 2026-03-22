@@ -18,6 +18,7 @@ import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { toast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { BlockedDate, BlockedHourRange } from '@/types/settings';
+import { formatLocalDate } from '@/lib/utils/date-validation';
 
 interface ConflictResponse {
   error: string;
@@ -354,7 +355,7 @@ export function BlockedDatesManager({
                     value={formDate}
                     onChange={(e) => setFormDate(e.target.value)}
                     className="input input-bordered w-full bg-white border-gray-200 focus:border-[#434E54] focus:outline-none"
-                    min={new Date().toISOString().split('T')[0]}
+                    min={formatLocalDate(new Date())}
                   />
                 </div>
 

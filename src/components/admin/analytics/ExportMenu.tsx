@@ -11,6 +11,7 @@ import { exportKPIsToCSV, exportChartDataToCSV } from '@/lib/utils/csv-export';
 import { exportAnalyticsPDF } from '@/lib/utils/analytics-pdf';
 import { config } from '@/lib/config';
 import { toast } from '@/hooks/use-toast';
+import { formatLocalDate } from '@/lib/utils/date-validation';
 
 interface ExportMenuProps {
   dateRange: {
@@ -85,7 +86,7 @@ export function ExportMenu({ dateRange }: ExportMenuProps) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `groomer-performance-${dateRange.start.toISOString().split('T')[0]}.csv`;
+      a.download = `groomer-performance-${formatLocalDate(dateRange.start)}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
 
@@ -123,7 +124,7 @@ export function ExportMenu({ dateRange }: ExportMenuProps) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `waitlist-report-${dateRange.start.toISOString().split('T')[0]}.csv`;
+      a.download = `waitlist-report-${formatLocalDate(dateRange.start)}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
 

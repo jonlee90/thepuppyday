@@ -7,6 +7,7 @@ import { createFocusTrap } from '@/lib/accessibility/focus';
 import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { toast } from '@/hooks/use-toast';
 import type { WaitlistEntry } from '@/types/database';
+import { formatLocalDate } from '@/lib/utils/date-validation';
 
 interface BookFromWaitlistModalProps {
   entry: WaitlistEntry & {
@@ -133,7 +134,7 @@ export function BookFromWaitlistModal({
     }
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDate(new Date());
 
   return (
     <AnimatePresence>

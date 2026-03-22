@@ -1345,6 +1345,7 @@ export interface GroomingCompleteEmailData {
   service_name: string;
   yelp_url: string;
   rebook_url: string;
+  review_url?: string;
 }
 
 function generateGroomingCompleteContent(data: GroomingCompleteEmailData): string {
@@ -1361,8 +1362,8 @@ function generateGroomingCompleteContent(data: GroomingCompleteEmailData): strin
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
       <tr>
         <td align="center" style="padding: 8px 0;">
-          <a href="${data.yelp_url}" target="_blank" style="background-color: #D4A574; color: #ffffff !important; text-decoration: none; padding: 14px 40px; border-radius: 50px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(212, 165, 116, 0.4); min-width: 220px; text-align: center;">
-            Leave Us a Yelp Review
+          <a href="${data.review_url || data.yelp_url}" target="_blank" style="background-color: #D4A574; color: #ffffff !important; text-decoration: none; padding: 14px 40px; border-radius: 50px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(212, 165, 116, 0.4); min-width: 220px; text-align: center;">
+            Rate Your Experience
           </a>
         </td>
       </tr>
@@ -1371,7 +1372,7 @@ function generateGroomingCompleteContent(data: GroomingCompleteEmailData): strin
       <tr>
         <td align="center" style="padding: 8px 0;">
           <a href="${data.rebook_url}" target="_blank" style="background-color: transparent; color: #D4A574 !important; text-decoration: none; padding: 14px 40px; border-radius: 50px; border: 2px solid #D4A574; display: inline-block; font-weight: 600; font-size: 16px; min-width: 220px; text-align: center;">
-            Visit Our Website
+            Book Next Visit
           </a>
         </td>
       </tr>
@@ -1389,8 +1390,8 @@ Hi ${escapeHtml(data.customer_name)},
 
 ${escapeHtml(data.pet_name)} is looking and feeling amazing after their ${escapeHtml(data.service_name)} session. Ready for pickup!
 
-If you enjoyed ${escapeHtml(data.pet_name)}'s grooming, we'd love a Yelp review:
-${data.yelp_url}
+We'd love to hear about ${escapeHtml(data.pet_name)}'s experience:
+${data.review_url || data.yelp_url}
 
 Visit Our Website:
 ${data.rebook_url}

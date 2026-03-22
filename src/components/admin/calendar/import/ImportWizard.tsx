@@ -14,6 +14,7 @@ import { DateRangeStep } from './DateRangeStep';
 import { EventSelectionStep } from './EventSelectionStep';
 import { ReviewStep } from './ReviewStep';
 import { toast } from '@/hooks/use-toast';
+import { formatLocalDate } from '@/lib/utils/date-validation';
 
 interface ImportWizardProps {
   isOpen: boolean;
@@ -127,8 +128,8 @@ export function ImportWizard({ isOpen, onClose, onSuccess }: ImportWizardProps) 
       const in30Days = new Date(today);
       in30Days.setDate(today.getDate() + 30);
 
-      setDateFrom(today.toISOString().split('T')[0]);
-      setDateTo(in30Days.toISOString().split('T')[0]);
+      setDateFrom(formatLocalDate(today));
+      setDateTo(formatLocalDate(in30Days));
     }
   }, [isOpen, dateFrom, dateTo]);
 

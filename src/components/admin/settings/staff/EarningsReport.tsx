@@ -20,6 +20,7 @@ import type {
   DatePreset,
 } from '@/types/staff';
 import type { User } from '@/types/database';
+import { formatLocalDate } from '@/lib/utils/date-validation';
 
 // ============================================
 // Main Component
@@ -31,8 +32,8 @@ export function EarningsReport() {
   const [staff, setStaff] = useState<User[]>([]);
   const [reportData, setReportData] = useState<EarningsReportData | null>(null);
   const [filters, setFilters] = useState<EarningsReportFilters>({
-    start_date: startOfMonth(new Date()).toISOString().split('T')[0],
-    end_date: new Date().toISOString().split('T')[0],
+    start_date: formatLocalDate(startOfMonth(new Date())),
+    end_date: formatLocalDate(new Date()),
     groomer_id: 'all',
     group_by: 'day',
   });
@@ -117,8 +118,8 @@ export function EarningsReport() {
 
     setFilters((prev) => ({
       ...prev,
-      start_date: start.toISOString().split('T')[0],
-      end_date: end.toISOString().split('T')[0],
+      start_date: formatLocalDate(start),
+      end_date: formatLocalDate(end),
     }));
   };
 

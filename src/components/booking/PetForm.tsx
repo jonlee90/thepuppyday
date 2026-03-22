@@ -11,6 +11,7 @@ import { petFormSchema, type PetFormData } from '@/lib/booking/validation';
 import { getSizeLabel, getServicePriceForSize, formatCurrency } from '@/lib/booking/pricing';
 import { fetchBreedsOnce, getCachedBreeds } from '@/lib/cache/breedsCache';
 import type { Breed, PetSize, ServiceWithPrices } from '@/types/database';
+import { formatLocalDate } from '@/lib/utils/date-validation';
 
 export interface PetFormHandle {
   /** Programmatically trigger form validation + submit. Returns true if valid. */
@@ -195,7 +196,7 @@ export const PetForm = forwardRef<PetFormHandle, PetFormProps>(function PetForm(
         </label>
         <input
           type="date"
-          max={new Date().toISOString().split('T')[0]}
+          max={formatLocalDate(new Date())}
           className="w-full px-4 py-3 rounded-lg border-2 border-[#EAE0D5] hover:border-[#434E54]/40 bg-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#434E54]/50 focus:ring-offset-1"
           {...register('birth_date')}
         />

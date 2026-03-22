@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { Calendar } from 'lucide-react';
+import { formatLocalDate } from '@/lib/utils/date-validation';
 
 export type DateRangePreset = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
 
@@ -74,7 +75,9 @@ export function DateRangeSelector({ value, onChange }: DateRangeSelectorProps) {
 
   const handleCustomChange = (field: 'start' | 'end', dateValue: string) => {
     const newRange = { ...value };
-    newRange[field] = new Date(dateValue);
+    // Parse as local time (YYYY-MM-DD + 'T00:00:00' avoids UTC midnight shift)
+    const [year, month, day] = dateValue.split('-').map(Number);
+    newRange[field] = new Date(year, month - 1, day);
 
     // Validate that start is before end
     if (newRange.start > newRange.end) {
@@ -85,9 +88,7 @@ export function DateRangeSelector({ value, onChange }: DateRangeSelectorProps) {
     onChange(newRange, 'custom');
   };
 
-  const formatDate = (date: Date): string => {
-    return date.toISOString().split('T')[0];
-  };
+  const formatDate = (date: Date): string => formatLocalDate(date);
 
   const presets: { label: string; value: DateRangePreset }[] = [
     { label: 'Today', value: 'today' },

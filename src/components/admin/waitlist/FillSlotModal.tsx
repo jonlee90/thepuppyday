@@ -8,6 +8,7 @@ import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { SlotSummary } from './SlotSummary';
 import { MatchingWaitlistList } from './MatchingWaitlistList';
 import type { WaitlistEntry } from '@/types/database';
+import { formatLocalDate } from '@/lib/utils/date-validation';
 
 interface FillSlotModalProps {
   isOpen: boolean;
@@ -58,8 +59,8 @@ export function FillSlotModal({
       const params = new URLSearchParams({
         service_id: serviceId,
         status: 'active',
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
+        start_date: formatLocalDate(startDate),
+        end_date: formatLocalDate(endDate),
         sort_by: 'created_at',
         sort_order: 'asc',
         limit: '100', // Get all matches

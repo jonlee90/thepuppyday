@@ -93,7 +93,7 @@ async function getMarketingData() {
   const supabase = await createServerSupabaseClient();
 
   // Fetch site content and other marketing data in parallel
-  const [siteContent, servicesRes, bannersRes, beforeAfterRes, galleryRes, settingsRes, addonsRes] =
+  const [siteContent, servicesRes, bannersRes, beforeAfterRes, galleryRes, settingsRes, addonsRes, reviewsRes] =
     await Promise.all([
       getSiteContent(),
       (supabase as any)
@@ -114,6 +114,11 @@ async function getMarketingData() {
         .select('id, name, price')
         .eq('is_active', true)
         .order('display_order'),
+      (supabase as any)
+        .from('reviews')
+        .select('rating')
+        .eq('is_public', true)
+        .not('rating', 'is', null),
     ]);
 
   // Filter banners by date range
@@ -129,6 +134,15 @@ async function getMarketingData() {
     return afterStart && beforeEnd;
   }) || [];
 
+  // Compute review aggregate stats for schema.org
+  const publicReviews = (reviewsRes.data as Array<{ rating: number }>) || [];
+  const reviewStats = publicReviews.length > 0
+    ? {
+        count: publicReviews.length,
+        average: publicReviews.reduce((sum, r) => sum + r.rating, 0) / publicReviews.length,
+      }
+    : null;
+
   return {
     siteContent,
     services: (servicesRes.data as Service[]) || [],
@@ -137,6 +151,7 @@ async function getMarketingData() {
     galleryImages: (galleryRes.data as GalleryImage[]) || [],
     businessHours: settingsRes.data?.value || {},
     addons: (addonsRes.data as Array<{ id: string; name: string; price: number }>) || [],
+    reviewStats,
   };
 }
 
@@ -242,8 +257,17 @@ export default async function MarketingPage() {
                 closes: (hours as { is_open?: boolean; open?: string; close?: string }).is_open ? (hours as { is_open?: boolean; open?: string; close?: string }).close : undefined,
               }))
             : [],
+          ...(data.reviewStats ? {
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: data.reviewStats.average.toFixed(1),
+              reviewCount: data.reviewStats.count,
+              bestRating: '5',
+              worstRating: '1',
+            },
+          } : {}),
           priceRange: '$$',
-          image: 'https://placedog.net/1200/630?id=business',
+          image: data.siteContent.seo.og_image_url || 'https://thepuppyday.com/og-image.jpg',
           hasOfferCatalog: {
             '@type': 'OfferCatalog',
             name: 'Dog Grooming Services',

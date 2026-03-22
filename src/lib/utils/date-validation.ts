@@ -33,6 +33,18 @@ export function validateAndParseDate(dateString: string | null, paramName: strin
 }
 
 /**
+ * Format a Date as YYYY-MM-DD using local timezone.
+ * Avoids the UTC-shift bug where toISOString().split('T')[0]
+ * returns the previous day for users west of UTC near midnight.
+ */
+export function formatLocalDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
  * Validate date range
  * @throws Error if start date is after end date
  */

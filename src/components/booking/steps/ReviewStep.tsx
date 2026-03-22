@@ -16,6 +16,7 @@ import { formatCurrency, formatDuration, getSizeLabel } from '@/lib/booking/pric
 import { formatTimeDisplay } from '@/lib/booking/availability';
 import dynamic from 'next/dynamic';
 import type { Addon } from '@/types/database';
+import { formatLocalDate } from '@/lib/utils/date-validation';
 
 const PriceAdjustmentForm = dynamic(
   () => import('../PriceAdjustmentForm').then((m) => m.PriceAdjustmentForm),
@@ -64,7 +65,7 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
   } = useBookingStore();
 
   // Derive today string during render for backdated check
-  const todayString = new Date().toISOString().split('T')[0];
+  const todayString = formatLocalDate(new Date());
   const isBackdated = adminMode && selectedDate ? selectedDate < todayString : false;
 
   // Fetch add-ons for selection

@@ -10,6 +10,7 @@ import { CalendarPicker } from '../CalendarPicker';
 import { TimeSlotGrid } from '../TimeSlotGrid';
 import { useAvailability } from '@/hooks/useAvailability';
 import { config } from '@/lib/config';
+import { formatLocalDate } from '@/lib/utils/date-validation';
 import dynamic from 'next/dynamic';
 
 const WaitlistModal = dynamic(
@@ -46,7 +47,7 @@ export function DateTimeStep() {
   const isAdmin = mode === 'admin' || mode === 'walkin';
 
   // Derive today string during render (not via useEffect)
-  const todayString = new Date().toISOString().split('T')[0];
+  const todayString = formatLocalDate(new Date());
 
   // Derive backdated state during render
   const isBackdated = isAdmin && selectedDate ? selectedDate < todayString : false;
@@ -80,7 +81,7 @@ export function DateTimeStep() {
     if (!bookingSettings?.min_advance_hours) return undefined;
     const now = new Date();
     const minDateTime = new Date(now.getTime() + bookingSettings.min_advance_hours * 60 * 60 * 1000);
-    return minDateTime.toISOString().split('T')[0];
+    return formatLocalDate(minDateTime);
   }, [bookingSettings, isAdmin]);
 
   const maxDate = useMemo(() => {
@@ -89,7 +90,7 @@ export function DateTimeStep() {
     const today = new Date();
     const maxDateTime = new Date(today);
     maxDateTime.setDate(maxDateTime.getDate() + bookingSettings.max_advance_days);
-    return maxDateTime.toISOString().split('T')[0];
+    return formatLocalDate(maxDateTime);
   }, [bookingSettings, isAdmin]);
 
   // Auto-select the next available date when the step first loads (customer mode only)

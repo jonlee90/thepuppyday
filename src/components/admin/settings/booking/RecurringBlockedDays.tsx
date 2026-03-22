@@ -26,6 +26,7 @@ import {
 import { AdminButton } from '@/components/admin/ui/AdminButton';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { BookingSettings } from '@/types/settings';
+import { formatLocalDate } from '@/lib/utils/date-validation';
 
 interface RecurringBlockedDaysProps {
   /**
@@ -247,7 +248,7 @@ export function RecurringBlockedDays({
 
       // Get the next 52 occurrences
       for (let i = 0; i < 52; i++) {
-        const dateStr = currentDate.toISOString().split('T')[0];
+        const dateStr = formatLocalDate(currentDate);
         datesToCheck.push(dateStr);
         currentDate.setDate(currentDate.getDate() + 7);
       }

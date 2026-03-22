@@ -66,6 +66,7 @@ export async function triggerGroomingComplete(
     service_name: data.serviceName,
     yelp_url: YELP_URL,
     rebook_url: baseUrl,
+    review_url: `${baseUrl}/review?appointment=${data.appointmentId}`,
   };
 
   // Generate pre-rendered content
