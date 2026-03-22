@@ -56,6 +56,18 @@
   </div>
   <script>
     (function() {
+      // Unregister any service workers and clear caches to prevent cached 502 loop
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          regs.forEach(function(r) { r.unregister(); });
+        });
+        if (window.caches) {
+          caches.keys().then(function(keys) {
+            keys.forEach(function(k) { caches.delete(k); });
+          });
+        }
+      }
+
       var statusEl = document.getElementById('status');
       var spinnerEl = document.getElementById('spinner');
       var attempts = 0;
