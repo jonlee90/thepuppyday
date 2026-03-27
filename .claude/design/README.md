@@ -1,0 +1,1 @@
+# Design Specifications\n\nThis directory contains UI/UX design specifications created by the frontend-expert agent.\n\nEach design spec is converted into a DaisyUI + Tailwind implementation plan by the daisyui-expert agent.

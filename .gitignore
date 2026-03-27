@@ -43,7 +43,7 @@ analyze-lighthouse.js
 nul
 
 # Claude Code / AI tooling — never commit
-.claude/
+
 .cursor/
 .windsurf/
 .aider*
