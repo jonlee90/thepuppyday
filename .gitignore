@@ -43,11 +43,11 @@ analyze-lighthouse.js
 nul
 
 # Claude Code / AI tooling — never commit
-
 .cursor/
 .windsurf/
 .aider*
 .playwright-mcp/
+.serena/
 
 # OS / editor artifacts
 .DS_Store
@@ -66,3 +66,8 @@ service-account*.json
 *-credentials.json
 
 # Serwist service worker build output (generated in .next/ by turbopack, no public artifacts)
+
+# Generated / server-only files
+supabase/schema_export.sql
+*.log
+logs/
