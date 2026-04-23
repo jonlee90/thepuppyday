@@ -71,3 +71,6 @@ service-account*.json
 supabase/schema_export.sql
 *.log
 logs/
+*.md
+.claude
+.agents
