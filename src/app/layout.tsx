@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, DM_Sans } from 'next/font/google';
+import Script from 'next/script';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { ErrorFilter } from './ErrorFilter';
@@ -60,6 +61,7 @@ export default function RootLayout({
     <html lang="en" data-theme="light">
       <head>
         <link rel="preconnect" href="https://jajbtwgbhrkvgxvvruaa.supabase.co" />
+        <Script src="/sw-cleanup.js" strategy="beforeInteractive" />
       </head>
       <body suppressHydrationWarning className={`${bricolage.variable} ${dmSans.variable} antialiased`}>
         {/* Skip to content link for keyboard navigation */}

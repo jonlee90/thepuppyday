@@ -10,12 +10,12 @@ import { useEffect } from 'react';
 export function SwUnregister() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
-    if (sessionStorage.getItem('sw-cleanup-done') === '1') return;
+    if (sessionStorage.getItem('sw-cleanup-v2') === '1') return;
 
     (async () => {
       const regs = await navigator.serviceWorker.getRegistrations();
       if (regs.length === 0) {
-        sessionStorage.setItem('sw-cleanup-done', '1');
+        sessionStorage.setItem('sw-cleanup-v2', '1');
         return;
       }
       await Promise.all(regs.map((r) => r.unregister()));
@@ -23,7 +23,7 @@ export function SwUnregister() {
         const keys = await caches.keys();
         await Promise.all(keys.map((k) => caches.delete(k)));
       } catch {}
-      sessionStorage.setItem('sw-cleanup-done', '1');
+      sessionStorage.setItem('sw-cleanup-v2', '1');
       location.reload();
     })();
   }, []);
