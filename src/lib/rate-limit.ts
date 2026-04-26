@@ -3,7 +3,7 @@
  * For production, consider using Redis or a dedicated rate limiting service
  */
 
-const MAX_ENTRIES = 200;
+const MAX_ENTRIES = 5000;
 
 interface RateLimitEntry {
   count: number;

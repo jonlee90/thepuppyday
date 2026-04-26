@@ -65,11 +65,13 @@ export async function POST(request: NextRequest) {
 
     const reportCardId = reportCardResult.data.id;
 
-    // Schedule report card notification
-    // This runs asynchronously but we don't wait for it
-    // to avoid blocking the webhook response
-    scheduleReportCardNotification(supabase, reportCardId, appointmentId)
-      .then((result) => {
+    // Schedule report card notification asynchronously without blocking the
+    // webhook response. Wrap in self-contained try/catch so any rejection
+    // (or synchronous throw in the async chain) cannot escape and crash the
+    // Node process.
+    (async () => {
+      try {
+        const result = await scheduleReportCardNotification(supabase, reportCardId, appointmentId);
         console.log('[Webhook] Notification scheduled:', {
           reportCardId,
           success: result.success,
@@ -77,10 +79,10 @@ export async function POST(request: NextRequest) {
           smsSent: result.smsSent,
           errors: result.errors,
         });
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('[Webhook] Error scheduling notification:', error);
-      });
+      }
+    })();
 
     return NextResponse.json(
       {

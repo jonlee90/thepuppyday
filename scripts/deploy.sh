@@ -78,4 +78,23 @@ else
   exit 1
 fi
 
+# ── 7. Sync nginx config if changed ──────────────────────────
+NGINX_REPO_CONF="$APP_DIR/nginx/thepuppyday.conf"
+NGINX_LIVE_CONF="/etc/nginx/sites-available/thepuppyday.com"
+if [ -f "$NGINX_REPO_CONF" ] && [ -f "$NGINX_LIVE_CONF" ]; then
+  if ! diff -q "$NGINX_REPO_CONF" "$NGINX_LIVE_CONF" >/dev/null 2>&1; then
+    log "nginx config changed — copying and reloading..."
+    sudo cp "$NGINX_REPO_CONF" "$NGINX_LIVE_CONF"
+    if sudo nginx -t; then
+      sudo systemctl reload nginx
+      log "nginx reloaded successfully"
+    else
+      log "ERROR: nginx -t failed — NOT reloading"
+      exit 1
+    fi
+  else
+    log "nginx config unchanged — skipping reload"
+  fi
+fi
+
 log "Deployment complete!"
