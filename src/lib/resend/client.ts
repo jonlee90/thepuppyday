@@ -63,11 +63,18 @@ export async function sendEmail(params: {
   text?: string;
   replyTo?: string;
 }): Promise<{ id: string; error: Error | null }> {
+  const recipients = Array.isArray(params.to) ? params.to : [params.to];
+  const filtered = recipients.filter((email) => !email.endsWith('@puppyday.local'));
+  if (filtered.length === 0) {
+    console.log('[Resend] Skipping email — all recipients are @puppyday.local:', params.to);
+    return { id: 'skipped-local', error: null };
+  }
+
   const client = getResendClient();
 
   return client.emails.send({
     from: FROM_EMAIL,
-    to: params.to,
+    to: filtered.length === recipients.length ? params.to : filtered,
     subject: params.subject,
     html: params.html,
     text: params.text,

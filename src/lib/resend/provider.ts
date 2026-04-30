@@ -57,6 +57,11 @@ export class ResendProvider implements EmailProvider {
    * Send an email using Resend SDK
    */
   async send(params: EmailParams): Promise<EmailResult> {
+    if (params.to.endsWith('@puppyday.local')) {
+      console.log('[Resend] Skipping email — @puppyday.local recipient:', params.to);
+      return { success: true, messageId: 'skipped-local' };
+    }
+
     try {
       // Prepare email data for Resend
       const emailData = {
