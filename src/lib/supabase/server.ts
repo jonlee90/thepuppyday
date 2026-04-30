@@ -31,28 +31,33 @@ export const createServerSupabaseClient = cache(async (): Promise<AppSupabaseCli
     });
   }
 
-  return createServerClient(
-    config.supabase.url,
-    config.supabase.anonKey,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options as CookieOptions)
-            );
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
+  const cookieOpts = {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options as CookieOptions)
+          );
+        } catch {
+          // Server Component — middleware handles session refresh.
+        }
+      },
+    },
+  };
+
+  try {
+    return createServerClient(config.supabase.url, config.supabase.anonKey, cookieOpts);
+  } catch (error) {
+    // Malformed/stale sb-* cookie — middleware should have evicted it, but fall back
+    // to an anonymous client so SSR doesn't crash. Public queries still work.
+    console.error('[supabase] Malformed auth cookie, falling back to anonymous client:', error);
+    return createServerClient(config.supabase.url, config.supabase.anonKey, {
+      cookies: { getAll: () => [], setAll: () => {} },
+    });
+  }
 });
 
 /**

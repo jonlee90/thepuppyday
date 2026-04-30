@@ -46,11 +46,7 @@ const groomerAllowedApiRoutes = [
 const authRoutes = ['/login', '/register', '/forgot-password'];
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+  let supabaseResponse = NextResponse.next({ request });
 
   const { pathname } = request.nextUrl;
 
@@ -142,27 +138,42 @@ export async function middleware(request: NextRequest) {
   }
 
   // Real Supabase mode - use Supabase session
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
+  let user = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let supabase: any = null;
+  try {
+    supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            supabaseResponse = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            );
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
+      }
+    );
 
-  // Refresh session if expired - required for Server Components
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // Refresh session if expired - required for Server Components
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch (err) {
+    // @supabase/ssr throws on malformed/stale sb-* cookies (bad base64 encoding).
+    // Evict all Supabase cookies and redirect so the next request arrives clean.
+    console.error('[Middleware] Supabase cookie parse error, evicting session:', err);
+    const clean = NextResponse.redirect(request.nextUrl);
+    request.cookies.getAll()
+      .filter(c => c.name.startsWith('sb-'))
+      .forEach(c => clean.cookies.delete(c.name));
+    return clean;
+  }
 
   const isAuthenticated = !!user;
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
@@ -245,7 +256,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return response;
+  return supabaseResponse;
 }
 
 export const config = {
