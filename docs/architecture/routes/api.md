@@ -4,7 +4,7 @@
 > **Status**: Core Complete
 > **Base Path**: `/api/`
 > **Framework**: Next.js 16 App Router API Routes
-> **Last Updated**: 2026-03-16
+> **Last Updated**: 2026-05-03
 
 ## Overview
 
@@ -38,10 +38,10 @@ src/app/api/
 │   │   └── retry/
 │   └── waitlist-expiration/
 ├── customer/                        # Customer endpoints (session-auth)
-│   ├── account/                     # Account deletion
+│   ├── account/                     # Account deletion (DELETE)
 │   ├── appointments/[id]/
 │   ├── preferences/notifications/
-│   └── profile/                     # Profile data
+│   └── profile/                     # Profile update (PATCH)
 ├── health/                          # Health check endpoint
 ├── pets/                            # Pet creation/listing
 ├── report-cards/[uuid]/             # Public report card by UUID
@@ -90,7 +90,8 @@ src/app/api/
 | `/api/appointments` | POST | Create new appointment (customer booking) |
 | `/api/pets` | GET, POST | List/create pets (authenticated) |
 | `/api/waitlist` | POST | Add to waitlist for full slots |
-| `/api/reviews` | POST | Submit a review |
+| `/api/reviews` | GET | Get list of customer reviews |
+| `/api/reviews/submit` | POST | Submit a review (review collection flow) |
 | `/api/booking/settings` | GET | Fetch public booking configuration |
 | `/api/users/guest` | POST | Create guest user for booking |
 | `/api/report-cards/[uuid]` | GET | Fetch shared report card by public UUID |
@@ -106,7 +107,7 @@ src/app/api/
 |-------|---------|---------|
 | `/api/customer/appointments/[id]` | PUT, DELETE | Reschedule or cancel appointment |
 | `/api/customer/preferences/notifications` | GET, PUT | Notification preferences |
-| `/api/customer/profile` | GET | Fetch customer profile data |
+| `/api/customer/profile` | PATCH | Update customer profile (name, phone, address, city, zip) |
 | `/api/customer/account` | DELETE | Delete customer account |
 
 ### Webhook Endpoints
@@ -135,20 +136,23 @@ src/app/api/
 
 | Route | Methods | Purpose |
 |-------|---------|---------|
-| `/api/admin/dashboard/stats` | GET | Dashboard KPI stats |
+| `/api/admin/dashboard/revenue-overview` | GET | Today/week/month revenue with change percentages (admin dashboard redesign) |
 | `/api/admin/dashboard/appointments` | GET | Today's appointments |
 | `/api/admin/dashboard/pending-appointments` | GET | Pending appointments count |
 | `/api/admin/dashboard/activity` | GET | Recent activity feed |
+| `/api/admin/dashboard/stats` | GET | Legacy KPI stats (retained, not used by redesigned dashboard) |
 
 #### Appointments
 
 | Route | Methods | Purpose |
 |-------|---------|---------|
 | `/api/admin/appointments` | GET, POST | List/create appointments |
-| `/api/admin/appointments/[id]` | GET, PUT | Get/update single appointment |
+| `/api/admin/appointments/[id]` | GET, PUT, DELETE | Get/update/delete single appointment |
 | `/api/admin/appointments/[id]/status` | POST | Update appointment status |
+| `/api/admin/appointments/[id]/adjustments` | GET, POST, DELETE | Manage manual price adjustments; POST/DELETE recalculate `total_price` |
 | `/api/admin/appointments/availability` | GET | Check admin availability |
 | `/api/admin/appointments/complete-past` | POST | Bulk complete past appointments |
+| `/api/admin/appointments/conflicts` | POST | Detect scheduling conflicts for proposed slot |
 | `/api/admin/appointments/sync-status` | GET | Calendar sync status for appointments |
 | `/api/admin/appointments/import` | POST | CSV bulk import |
 | `/api/admin/appointments/import/validate` | POST | Validate CSV before import |
@@ -160,11 +164,11 @@ src/app/api/
 |-------|---------|---------|
 | `/api/admin/customers` | GET | List customers with search/filters |
 | `/api/admin/customers/[id]` | GET, PATCH | Get/update customer |
-| `/api/admin/customers/[id]/pets` | GET | Get customer's pets |
+| `/api/admin/customers/[id]/pets` | GET, POST | List/create customer's pets (admin pet CRUD) |
+| `/api/admin/customers/[id]/pets/[petId]` | PATCH, DELETE | Update/delete a customer's pet |
 | `/api/admin/customers/[id]/appointments` | GET | Get customer's appointments |
 | `/api/admin/customers/[id]/flags` | POST | Add customer flag |
 | `/api/admin/customers/[id]/flags/[flagId]` | PATCH, DELETE | Update/remove customer flag |
-| `/api/admin/customers/[id]/pets/[petId]` | PATCH | Update a customer's pet |
 
 #### Services & Addons
 
@@ -214,11 +218,12 @@ src/app/api/
 
 | Route | Methods | Purpose |
 |-------|---------|---------|
-| `/api/admin/waitlist` | GET | List waitlist entries |
+| `/api/admin/waitlist` | GET, POST | List/create waitlist entries |
+| `/api/admin/waitlist/[id]` | GET, PUT, DELETE | View/update/delete a waitlist entry |
 | `/api/admin/waitlist/[id]/book` | POST | Convert waitlist entry to appointment |
+| `/api/admin/waitlist/[id]/cancel` | POST | Cancel a waitlist entry |
 | `/api/admin/waitlist/match` | POST | Match waitlist entries to open slots |
 | `/api/admin/waitlist/fill-slot` | POST | Fill slot from waitlist |
-| `/api/admin/waitlist/[id]/cancel` | POST | Cancel a waitlist entry |
 
 #### Notifications
 
@@ -257,6 +262,7 @@ src/app/api/
 | `/api/admin/analytics/charts/peak-hours` | GET | Peak hours heatmap data |
 | `/api/admin/analytics/charts/pet-sizes` | GET | Pet size distribution |
 | `/api/admin/analytics/groomers` | GET | Groomer performance |
+| `/api/admin/analytics/loyalty` | GET | Loyalty program analytics |
 | `/api/admin/analytics/marketing` | GET | Marketing analytics |
 | `/api/admin/analytics/report-cards` | GET | Report card metrics |
 | `/api/admin/analytics/waitlist` | GET | Waitlist analytics |

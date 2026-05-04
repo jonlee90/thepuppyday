@@ -234,11 +234,10 @@ export async function GET(req: NextRequest) {
     // Get buffer minutes from settings
     const bufferMinutes = bookingSettings.buffer_minutes || 0;
 
-    // Generate available slots using utility function (duration + buffer must fit)
-    const effectiveDuration = service.duration_minutes + bufferMinutes;
+    // Generate available slots — getAvailableSlots handles buffer internally
     const slots = getAvailableSlots(
       date,
-      effectiveDuration,
+      service.duration_minutes,
       appointments || [],
       businessHours,
       bookingSettings,

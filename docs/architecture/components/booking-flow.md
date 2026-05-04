@@ -3,7 +3,7 @@
 > **Module**: Booking Widget Components
 > **Location**: `src/components/booking/`
 > **Status**: Completed (Phase 3, Updated Phase 10, Refactored)
-> **Last Updated**: 2026-03-16
+> **Last Updated**: 2026-05-03
 
 ## Overview
 
@@ -63,7 +63,7 @@ Used in `/admin/dashboard` for immediate walk-in appointments.
 | 3 | `WalkinReviewStep` | Review **with integrated add-ons** |
 | 4 | `ConfirmationStep` | Walk-in confirmed |
 
-> **Note**: Walk-in mode skips Date/Time step (auto-set to NOW) and uses `WalkinReviewStep` for faster processing. Status automatically set to `'checked_in'` with `source: 'walk_in'`.
+> **Note**: Walk-in mode skips Date/Time step (auto-set to NOW) and uses `WalkinReviewStep` for faster processing. Status automatically set to `'in_progress'` with `source: 'walk_in'`. (The `checked_in` status was removed in migration `20251228_remove_checked_in_status.sql`.)
 
 ---
 
@@ -195,6 +195,8 @@ interface PriceSummaryProps {
 **Purpose**: Display service cards with size-based pricing.
 
 **Performance**: The `bookableServices` filter (excludes "Add-Ons" service) is wrapped in `useMemo` keyed on `services` to prevent unnecessary re-renders and stabilize downstream dependencies.
+
+**Quick Services** (commit `971a5b8`): Services flagged with `is_quick_service = true` in the database render in a separate compact section below the regular service cards. Quick services are intended for fast walk-in entry (single click, smaller card, no large image). Toggled per-service via the admin form at `/admin/settings/services`.
 
 **Service Card Props** (`ServiceCard.tsx`):
 ```typescript
@@ -330,7 +332,7 @@ interface WalkinReviewStepProps {
 **Walk-in Specific Logic**:
 - Displays "Now (Walk-In)" for appointment time with current timestamp
 - Sets `source: 'walk_in'` and `send_notification: false`
-- Status automatically set to `'checked_in'` (not 'pending')
+- Status automatically set to `'in_progress'` (not 'pending')
 
 ---
 
@@ -456,6 +458,25 @@ const MAX_STEP: Record<BookingModalMode, number> = {
 
 **Endpoint**: `POST /api/admin/appointments`
 
+**Server-side status assignment** (`src/app/api/admin/appointments/route.ts`):
+
+```typescript
+const isBackdated = scheduledAt < now;
+const appointmentStatus = data.source === 'walk_in'
+  ? 'in_progress'
+  : isBackdated
+    ? 'completed'
+    : data.source === 'admin'
+      ? 'confirmed'    // Auto-confirm for admin-created future appointments (commit 614c63a)
+      : 'pending';
+```
+
+This means:
+- **Walk-in** → `in_progress` immediately
+- **Backdated** (any source) → `completed` (CSV imports of historical data, etc.)
+- **Admin-created future** → `confirmed` (skips the customer-facing confirmation step)
+- **Customer-created** → `pending` (admin must confirm)
+
 **Request**:
 ```typescript
 {
@@ -521,5 +542,5 @@ The following components were removed during prior refactors:
 
 ---
 
-**Last Updated**: 2026-03-16 by Claude Code
-**Changes**: Added CalendarPicker minDate prop docs (past-date restriction for customers, unrestricted for admin); added PriceAdjustmentForm to supporting components; documented CustomerStep 3-mode system (guest/createAccount/login).
+**Last Updated**: 2026-05-03 by Claude Code
+**Changes**: Documented quick services on `ServiceStep` (commit `971a5b8`); documented server-side auto-confirm for admin-created future appointments and `in_progress` walk-in status (commits `614c63a`, migration `20251228_remove_checked_in_status.sql`); aligned status references throughout file.

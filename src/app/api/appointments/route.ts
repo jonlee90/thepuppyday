@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { appointmentCreationSchema } from '@/lib/booking/validation';
-import type { Appointment } from '@/types/database';
+import { isSlotFull } from '@/lib/booking/availability';
 import { z } from 'zod';
 import { randomBytes } from 'crypto';
 
@@ -62,40 +62,6 @@ function generateBookingReference(): string {
   const randomValue = randomBytes(3).readUIntBE(0, 3) % 1000000;
   const random = randomValue.toString().padStart(6, '0');
   return `APT-${year}-${random}`;
-}
-
-/**
- * Check if a time slot has conflicts with existing appointments
- */
-function hasSlotConflict(
-  scheduledAt: string,
-  durationMinutes: number,
-  existingAppointments: Appointment[]
-): boolean {
-  const slotStart = new Date(scheduledAt);
-  const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60000);
-
-  for (const appointment of existingAppointments) {
-    // Skip cancelled or no-show appointments
-    if (
-      appointment.status === 'cancelled' ||
-      appointment.status === 'no_show'
-    ) {
-      continue;
-    }
-
-    const appointmentStart = new Date(appointment.scheduled_at);
-    const appointmentEnd = new Date(
-      appointmentStart.getTime() + appointment.duration_minutes * 60000
-    );
-
-    // Check for overlap
-    if (slotStart < appointmentEnd && slotEnd > appointmentStart) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 export async function POST(req: NextRequest) {
@@ -229,7 +195,7 @@ export async function POST(req: NextRequest) {
       .lte('scheduled_at', dateEnd.toISOString());
 
     if (
-      hasSlotConflict(
+      isSlotFull(
         validated.scheduled_at,
         validated.duration_minutes,
         allAppointments || []

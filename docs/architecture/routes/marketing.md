@@ -4,7 +4,7 @@
 > **Status**: Completed (Phase 2 + SEO Phase)
 > **Base Path**: `(marketing)/`
 > **Authentication**: Not Required
-> **Last Updated**: 2026-03-16
+> **Last Updated**: 2026-05-03
 
 ## Overview
 
@@ -53,8 +53,23 @@ src/app/(marketing)/
 │       └── page.tsx        # Individual service page (/services/basic-grooming)
 ├── terms/
 │   └── page.tsx            # Terms of service (/terms)
+├── review/
+│   ├── page.tsx            # Review submission (/review) — landing page from review-request email
+│   └── ReviewForm.tsx
 └── accessibility/
     └── page.tsx            # Accessibility statement (/accessibility)
+```
+
+### Public Routes Outside `(marketing)/`
+
+```
+src/app/
+├── unsubscribe/
+│   ├── success/page.tsx    # /unsubscribe/success — email unsubscribe confirmation
+│   └── error/page.tsx      # /unsubscribe/error  — invalid/expired token landing
+└── (public)/
+    └── report-cards/
+        └── [uuid]/page.tsx # /report-cards/[uuid] — public report card share link
 ```
 
 ### Additional SEO Files
@@ -79,20 +94,22 @@ The `(marketing)` directory is a route group that does NOT create a URL segment.
 
 Server component that fetches all marketing data in parallel and renders sections.
 
-**Component Render Order**:
+**Component Render Order** (post-refactor — `Section` wrappers each own their `<section>` element):
 ```tsx
 <div className="bg-[#FFFBF7]">
   <PromoBannerCarousel />       {/* Active promo banners carousel */}
   <HeroSection />               {/* Above-fold hero with CTA */}
-  <BeforeAfterCarousel />       {/* Before/after transformation sliders */}
-  <ServiceGrid />               {/* Service cards with pricing */}
-  <GalleryGrid />               {/* Photo gallery grid */}
-  <TestimonialsSection />       {/* Hardcoded Yelp reviews with groomed dog photos */}
+  <BeforeAfterSection />        {/* Wraps BeforeAfterCarousel */}
+  <ServiceSection />            {/* Service cards with pricing (was ServiceGrid) */}
+  <GallerySection />            {/* Photo gallery grid (was GalleryGrid) */}
+  <TestimonialsSection />       {/* Yelp reviews with groomed dog photos */}
   <AboutSection />              {/* Business info and trust signals */}
   <ContactSection />            {/* Contact info, phone, email, address */}
   {/* Schema.org structured data (JSON-LD) */}
 </div>
 ```
+
+All marketing components are imported from the barrel export `@/components/marketing` (`src/components/marketing/index.ts`). See [marketing-dynamic-content.md](../marketing-dynamic-content.md) for content sources.
 
 **Data Fetching** (Server Component):
 ```typescript
@@ -117,7 +134,7 @@ async function getMarketingData() {
 export const revalidate = 900; // ISR: Revalidate every 15 minutes
 ```
 
-**Structured Data**: Schema.org `LocalBusiness` JSON-LD with dynamic business info, opening hours, geo coordinates, and social links. No `aggregateRating` (removed to avoid Google warnings without verified review data).
+**Structured Data**: Schema.org `LocalBusiness` JSON-LD with dynamic business info, opening hours, geo coordinates, social links, and **dynamic `aggregateRating`** computed from real reviews (re-introduced in commit `1b042f7` once the review-collection flow began producing verified data; city pages also include their own `aggregateRating`).
 
 ---
 
@@ -177,7 +194,11 @@ Location hub page linking to city-specific landing pages. Each city page targets
 
 ### 10. Reviews (`/reviews`)
 
-**File**: `src/app/(marketing)/reviews/page.tsx` — Customer reviews and ratings.
+**File**: `src/app/(marketing)/reviews/page.tsx` — Customer reviews and ratings (read-only display).
+
+### 10a. Review Submission (`/review`)
+
+**File**: `src/app/(marketing)/review/page.tsx` (with `ReviewForm.tsx`) — Public review collection landing page reached from the post-grooming review-request email. Submits to `POST /api/reviews/submit`. The collected reviews feed the dynamic `aggregateRating` on the homepage and city pages.
 
 ### 11. FAQ (`/faq`)
 
@@ -188,6 +209,15 @@ Location hub page linking to city-specific landing pages. Each city page targets
 - **Privacy Policy** (`/privacy`): `src/app/(marketing)/privacy/page.tsx`
 - **Terms of Service** (`/terms`): `src/app/(marketing)/terms/page.tsx`
 - **Accessibility** (`/accessibility`): `src/app/(marketing)/accessibility/page.tsx`
+
+### 13. Unsubscribe Landing Pages
+
+These are public landing pages users hit after clicking the unsubscribe link in a notification email. They live **outside** the `(marketing)` group (no marketing layout) so they render minimally without the booking CTA.
+
+- **Success** (`/unsubscribe/success`): `src/app/unsubscribe/success/page.tsx` — confirmation that the user's email was unsubscribed.
+- **Error** (`/unsubscribe/error`): `src/app/unsubscribe/error/page.tsx` — shown when the unsubscribe token is invalid or expired.
+
+The actual unsubscribe action runs through `GET /api/unsubscribe` (HMAC-signed token); these pages are the redirect targets.
 
 ---
 
@@ -249,7 +279,7 @@ All pages rendered on the server for full SEO crawlability.
 Fetched from `site_content` database table, editable via admin panel.
 
 ### Structured Data
-Schema.org `LocalBusiness` with address, phone, hours, geo, and social links (no aggregateRating).
+Schema.org `LocalBusiness` with address, phone, hours, geo, social links, and dynamic `aggregateRating` (computed from collected reviews — see review collection flow below).
 
 ### ISR
 Pages revalidate every 15 minutes (900 seconds) matching banner cache TTL.

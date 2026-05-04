@@ -1,7 +1,7 @@
 # The Puppy Day - Master Architecture Documentation
 
-> **Version**: 1.8
-> **Last Updated**: 2026-03-16
+> **Version**: 1.9
+> **Last Updated**: 2026-05-03
 > **Status**: Production-Ready (Phases 1-6, 8-9, 11, NT Complete | Admin Dashboard Redesign Complete | Phase 7 Pending | Phase 10 In Progress)
 
 ## Table of Contents
@@ -60,7 +60,7 @@
 | 7 | Payments & Memberships | Pending | Stripe integration, memberships, loyalty program |
 | 8 | Notifications | Completed | Templates, triggers, preferences, email provider, unsubscribe system |
 | 9 | Admin Settings | Completed | Business settings, staff management, site content, banners |
-| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), AdminButton component (done), AppointmentDetailModal redesign (done), settings hierarchy reorganization (done), custom swimlane calendar with overlap layout (done), StaffForm edit data loading fix (done), groomer role route restrictions (done), Google Calendar OAuth refactor (done), booking flexibility features (done), comprehensive testing pending |
+| 10 | Testing & Polish | In Progress | Booking modal refactor (done), responsive admin layout (done), admin RLS fixes (done), admin API variable conflict fixes (done), query parallelization (done), client component memoization (done), AdminButton component (done), AppointmentDetailModal redesign (done), settings hierarchy reorganization (done), custom swimlane calendar with overlap layout (done), StaffForm edit data loading fix (done), groomer role route restrictions (done), Google Calendar OAuth refactor (done), booking flexibility features (done), mobile-optimized admin pages (done — all admin routes), pet CRUD on customer detail page (done), quick service support with admin toggle and compact booking UI (done), auto-confirm admin-created future appointments (done), review collection flow with dynamic aggregateRating LocalBusiness schema (done), self-destructing service worker + PWA hardening (done), Next.js 16.1.4 / React 19.2.3 upgrade (done), googleapis tree-shake + memory tuning (done), comprehensive testing pending |
 | 11 | Calendar Error Recovery | Completed | Retry queue, error recovery UI, quota tracking, auto-pause system |
 | SEO | Multi-Page SEO Architecture | Completed | Blog infrastructure with SEO articles, location-based `/dog-grooming/[city]` pages, individual `/services/[slug]` pages, standalone about/contact/gallery/reviews/faq/privacy/terms/accessibility pages, renamed `/areas` to `/dog-grooming` for keyword ranking |
 | PWA | Progressive Web App | Completed | Serwist/Turbopack PWA integration, service worker, offline support |
@@ -75,8 +75,8 @@
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **Next.js** | 16.0.7 | React framework with App Router for SSR, SSG, and API routes |
-| **React** | 19.2.0 | UI library for component-based interfaces |
+| **Next.js** | 16.1.4 | React framework with App Router for SSR, SSG, and API routes |
+| **React** | 19.2.3 | UI library for component-based interfaces |
 | **TypeScript** | 5.9.3 | Type-safe JavaScript with strict mode enabled |
 | **Node.js** | 20+ | JavaScript runtime for server-side execution |
 
@@ -95,9 +95,11 @@
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **Supabase** | 2.86.2 | PostgreSQL database, authentication, storage, and real-time subscriptions |
+| **@supabase/supabase-js** | 2.99.1 | PostgreSQL database, authentication, storage, and real-time subscriptions |
 | **@supabase/ssr** | 0.8.0 | Server-side rendering utilities for Supabase in Next.js |
-| **googleapis** | 169.0.0 | Google Calendar API integration for bidirectional sync |
+| **@googleapis/calendar** | 14.2.0 | Google Calendar API client (split package, replaces full `googleapis` for tree-shake) |
+| **@googleapis/oauth2** | 5.0.1 | Google OAuth2 API client |
+| **google-auth-library** | 10.6.2 | Shared auth primitives used by `@googleapis/*` packages |
 
 ### External Services
 
@@ -119,17 +121,15 @@
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **Chart.js** | 4.5.1 | Chart library for analytics dashboards |
-| **react-chartjs-2** | 5.3.1 | React wrapper for Chart.js |
-| **Recharts** | 3.5.1 | Composable charting library for analytics |
+| **Recharts** | 3.5.1 | Composable charting library for analytics dashboards (sole chart library — Chart.js was removed) |
 
 ### File Handling & Utilities
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **PapaParse** | 5.5.3 | CSV parsing for bulk appointment imports |
-| **jsPDF** | 3.0.4 | PDF generation for reports and exports |
-| **jspdf-autotable** | 5.0.2 | Table generation for PDF exports |
+| **PapaParse** | 5.5.3 | CSV parsing for bulk appointment imports (client-side) |
+| **csv-parse** | 6.1.0 | CSV parsing for server-side import flows |
+| **sharp** | 0.34.5 | Server-side image processing (Next.js image optimization, gallery uploads) |
 | **browser-image-compression** | 2.0.2 | Client-side image compression for photo uploads |
 | **react-dropzone** | 14.3.8 | Drag-and-drop file upload component |
 | **react-compare-image** | 3.5.13 | Before/after image comparison slider |
@@ -158,10 +158,7 @@
 
 ### Progressive Web App
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **@serwist/turbopack** | ^9.5.6 | PWA service worker integration for Next.js 16 with Turbopack |
-| **serwist** | ^9.5.6 | Service worker runtime and caching strategies |
+The app ships a hand-rolled service worker at `public/sw.js`. Serwist (`@serwist/turbopack`, `serwist`) was removed during Phase 10 after a series of cached-502 incidents on production — the current SW is **self-destructing**: on activation it unregisters itself, deletes all caches, and reloads clients to evict stale Serwist installs from earlier deployments. Future PWA work will reinstate a deliberate caching strategy on top of this clean baseline. See commits `7b13afb`, `41a9f3f`, and `1e5657f` for context.
 
 ### Testing
 
@@ -400,7 +397,6 @@ thepuppyday/
 │   │   │   │   └── [id]/page.tsx    # Pet profile
 │   │   │   ├── profile/page.tsx
 │   │   │   ├── loyalty/page.tsx
-│   │   │   ├── membership/page.tsx
 │   │   │   └── report-cards/page.tsx
 │   │   ├── admin/                   # Admin panel (role-protected)
 │   │   │   ├── layout.tsx           # Admin layout with sidebar
@@ -1092,6 +1088,17 @@ interface NotificationSettings {
 
 **Removed types** (migration `20260314_cleanup_unused_notification_types.sql`): `status_checked_in`, `status_in_progress`, `status_completed`, `status_ready`, `membership_activated`, `membership_renewed`, `membership_expiring`, `membership_cancelled`
 
+**Admin / staff triggers (no `notification_settings` row — sent unconditionally by code):**
+
+| Type | Recipient | Trigger File | Description |
+|------|-----------|--------------|-------------|
+| `admin_new_booking` | Admin | `triggers/admin-new-booking.ts` | Notifies admin when a customer books |
+| `admin_cancellation` | Admin | `triggers/admin-cancellation.ts` | Notifies admin on cancellation |
+| `admin_no_show` | Admin | `triggers/admin-no-show.ts` | Notifies admin on no-show |
+| `grooming_complete` | Customer | `triggers/grooming-complete.ts` | Sent after grooming complete; includes Yelp review link |
+
+These four types ship as part of Phase NT and are documented in detail in [services/notifications.md](./services/notifications.md).
+
 #### 24. `notification_template_history` Table
 Version history for notification templates (read-only audit trail).
 
@@ -1474,6 +1481,7 @@ HMAC-SHA256 signed tokens with expiration for email unsubscribe links.
 | GET | `/api/booking/settings` | Get public booking settings |
 | POST | `/api/users/guest` | Create guest user for booking |
 | GET | `/api/reviews` | Get customer reviews |
+| POST | `/api/reviews/submit` | Submit a customer review (review collection flow) |
 | GET | `/api/report-cards/[uuid]` | View public report card |
 | POST | `/api/banners/[id]/click` | Track banner click |
 | POST | `/api/banners/[id]/impression` | Track banner impression |
@@ -1485,6 +1493,8 @@ HMAC-SHA256 signed tokens with expiration for email unsubscribe links.
 #### Customer Endpoints
 | Method | Path | Purpose |
 |--------|------|---------|
+| DELETE | `/api/customer/account` | Delete customer account |
+| PATCH | `/api/customer/profile` | Update customer profile (name, phone, address, city, zip) |
 | GET/PUT | `/api/customer/appointments/[id]` | View/modify own appointment |
 | GET/PUT | `/api/customer/preferences/notifications` | Notification preferences |
 | GET/POST | `/api/pets` | List/create customer pets |
@@ -1497,6 +1507,8 @@ HMAC-SHA256 signed tokens with expiration for email unsubscribe links.
 | PUT | `/api/admin/appointments/[id]/status` | Update appointment status |
 | GET | `/api/admin/appointments/availability` | Check admin availability |
 | POST | `/api/admin/appointments/complete-past` | Bulk complete past appointments |
+| POST | `/api/admin/appointments/conflicts` | Detect scheduling conflicts for proposed slot |
+| GET/POST/DELETE | `/api/admin/appointments/[id]/adjustments` | Manage manual price adjustments (recalculates `total_price`) |
 | POST | `/api/admin/appointments/import` | CSV import |
 | GET | `/api/admin/appointments/import/template` | Download CSV template |
 | POST | `/api/admin/appointments/import/validate` | Validate CSV data |
@@ -1506,7 +1518,8 @@ HMAC-SHA256 signed tokens with expiration for email unsubscribe links.
 | GET | `/api/admin/customers/[id]/appointments` | Customer appointments |
 | GET/POST | `/api/admin/customers/[id]/flags` | Customer flags |
 | DELETE | `/api/admin/customers/[id]/flags/[flagId]` | Remove flag |
-| GET | `/api/admin/customers/[id]/pets` | Customer pets |
+| GET/POST | `/api/admin/customers/[id]/pets` | List/create customer pets |
+| PUT/DELETE | `/api/admin/customers/[id]/pets/[petId]` | Update/delete a customer's pet (admin pet CRUD) |
 | GET/POST | `/api/admin/services` | List/create services |
 | GET/PUT/DELETE | `/api/admin/services/[id]` | Manage service |
 | POST | `/api/admin/services/upload-image` | Upload service image |
@@ -1519,8 +1532,10 @@ HMAC-SHA256 signed tokens with expiration for email unsubscribe links.
 | POST | `/api/admin/report-cards/[id]/send` | Send report card notification |
 | GET | `/api/admin/report-cards/analytics` | Report card analytics |
 | POST | `/api/admin/report-cards/upload` | Upload report card photo |
-| GET | `/api/admin/waitlist` | List waitlist entries |
+| GET/POST | `/api/admin/waitlist` | List/create waitlist entries |
+| GET/PUT/DELETE | `/api/admin/waitlist/[id]` | View/update/delete a waitlist entry |
 | POST | `/api/admin/waitlist/[id]/book` | Book from waitlist |
+| POST | `/api/admin/waitlist/[id]/cancel` | Cancel a waitlist entry |
 | POST | `/api/admin/waitlist/fill-slot` | Fill slot from waitlist |
 | GET | `/api/admin/waitlist/match` | Match waitlist entries |
 | GET | `/api/admin/groomers` | List groomers |
@@ -1532,11 +1547,15 @@ HMAC-SHA256 signed tokens with expiration for email unsubscribe links.
 |--------|------|---------|
 | GET | `/api/admin/analytics/kpis` | Key performance indicators |
 | GET | `/api/admin/analytics/charts/appointments-trend` | Appointment trends |
+| GET | `/api/admin/analytics/charts/booking-sources` | Booking source breakdown (web/walk-in/admin) |
 | GET | `/api/admin/analytics/charts/customers` | Customer analytics |
 | GET | `/api/admin/analytics/charts/operations` | Operations analytics |
+| GET | `/api/admin/analytics/charts/peak-hours` | Peak hours heatmap |
+| GET | `/api/admin/analytics/charts/pet-sizes` | Pet size distribution |
 | GET | `/api/admin/analytics/charts/revenue` | Revenue analytics |
 | GET | `/api/admin/analytics/charts/services` | Service analytics |
 | GET | `/api/admin/analytics/groomers` | Groomer performance |
+| GET | `/api/admin/analytics/loyalty` | Loyalty program analytics |
 | GET | `/api/admin/analytics/marketing` | Marketing analytics |
 | GET | `/api/admin/analytics/report-cards` | Report card analytics |
 | GET | `/api/admin/analytics/waitlist` | Waitlist analytics |
@@ -1570,6 +1589,7 @@ HMAC-SHA256 signed tokens with expiration for email unsubscribe links.
 | POST | `/api/admin/notifications/templates/[id]/preview` | Preview template |
 | POST | `/api/admin/notifications/templates/[id]/rollback` | Rollback template |
 | POST | `/api/admin/notifications/templates/[id]/test` | Send test |
+| GET | `/api/admin/notifications/templates/email-shell` | Render shared email shell HTML |
 
 #### Admin Settings
 | Method | Path | Purpose |
@@ -1588,6 +1608,7 @@ HMAC-SHA256 signed tokens with expiration for email unsubscribe links.
 | GET/PUT | `/api/admin/settings/loyalty/earning-rules` | Earning rules |
 | GET/PUT | `/api/admin/settings/loyalty/redemption-rules` | Redemption rules |
 | GET/PUT | `/api/admin/settings/loyalty/referral` | Referral program |
+| GET/PUT | `/api/admin/settings/default-groomer` | Default groomer assignment |
 | GET | `/api/admin/settings/phase6` | Phase 6 settings |
 | GET/PUT | `/api/admin/settings/templates` | Notification templates |
 | POST | `/api/admin/settings/templates/reset` | Reset templates |
@@ -1665,7 +1686,8 @@ Detailed documentation for each module is available in separate files:
 ### Services
 - [Supabase Service](./services/supabase.md) - Client setup, RLS, migrations, real-time
 - [Notification Service](./services/notifications.md) - Email provider, templates, preferences
-- [Payment Service](./services/payments.md) - Stripe integration (Phase 7)
+- [Calendar Service](./services/calendar.md) - Google Calendar OAuth, bidirectional sync, quota, retry queue, webhook
+- [Payment Service](./services/payments.md) - Stripe integration (Phase 7, pending)
 
 ---
 
@@ -1771,6 +1793,7 @@ NEXT_PUBLIC_USE_MOCKS=true  # Set to 'false' for production
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_JWT_SECRET=your-jwt-secret  # Used to verify auth JWTs for cron/webhook routes
 
 # Stripe (Phase 7)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
@@ -1871,11 +1894,25 @@ module.exports = {
 
 ---
 
-**Document Version**: 1.3
-**Last Updated**: 2026-03-06
+**Document Version**: 1.9
+**Last Updated**: 2026-05-03
 **Maintained By**: Development Team
 
 ## Changelog
+
+### Version 1.9 (2026-05-03)
+- **Tech stack corrections** to match `package.json`:
+  - Bumped Next.js (16.1.4), React (19.2.3), `@supabase/supabase-js` (2.99.1)
+  - Removed Chart.js / react-chartjs-2 (Recharts is the only chart lib)
+  - Removed jsPDF / jspdf-autotable (lazy-loaded variant was deleted in commit `ab0bb82` to fix Turbopack SSR)
+  - Removed `@serwist/turbopack` / `serwist`; documented current self-destructing `public/sw.js`
+  - Replaced single `googleapis` row with split `@googleapis/calendar`, `@googleapis/oauth2`, `google-auth-library` (per `7c12bcb` tree-shake)
+  - Added `csv-parse` and `sharp` rows
+- **Phase 10 status** extended with: mobile-optimized admin pages, pet CRUD on customer detail page, quick service support + compact booking UI, auto-confirm admin-created future appointments, review collection flow + dynamic aggregateRating schema, self-destructing service worker, Next.js / React upgrade, googleapis tree-shake + memory tuning
+- **Notification table** annotated with the four admin/grooming triggers introduced in Phase NT (no `notification_settings` row — sent unconditionally by code)
+- **API map**: added `/api/reviews/submit`, `/api/customer/account`, `/api/customer/profile`, `/api/admin/appointments/conflicts`, `/api/admin/appointments/[id]/adjustments`, `/api/admin/customers/[id]/pets/[petId]`, `/api/admin/waitlist/[id]`, `/api/admin/waitlist/[id]/cancel`, `/api/admin/analytics/loyalty`, `/api/admin/analytics/charts/{booking-sources,peak-hours,pet-sizes}`, `/api/admin/settings/default-groomer`, `/api/admin/notifications/templates/email-shell`
+- **Env vars**: documented `SUPABASE_JWT_SECRET`
+- **New service doc**: `services/calendar.md` (covers OAuth, sync, quota, retry queue, webhook)
 
 ### Version 1.3 (2026-03-06)
 - **Full rewrite** for accuracy against actual codebase

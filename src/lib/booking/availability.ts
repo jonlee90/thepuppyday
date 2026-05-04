@@ -30,6 +30,28 @@ export interface TimeSlot {
 
 const SLOT_INTERVAL_MINUTES = 60;
 
+// Fri/Sat 9:00–14:00 run two groomers in parallel, so those hours fit two bookings.
+const FRIDAY = 5;
+const SATURDAY = 6;
+const WEEKEND_CAPACITY_START_MIN = 9 * 60;
+const WEEKEND_CAPACITY_END_MIN = 14 * 60;
+const DEFAULT_SLOT_CAPACITY = 1;
+const WEEKEND_SLOT_CAPACITY = 2;
+
+/**
+ * Max simultaneous reservations allowed for a slot.
+ */
+export function getSlotCapacity(date: string, slotTime: string): number {
+  const [year, month, day] = date.split('-').map(Number);
+  const dayOfWeek = new Date(year, month - 1, day).getDay();
+  if (dayOfWeek !== FRIDAY && dayOfWeek !== SATURDAY) return DEFAULT_SLOT_CAPACITY;
+
+  const slotMin = timeToMinutes(slotTime);
+  const inWeekendWindow =
+    slotMin >= WEEKEND_CAPACITY_START_MIN && slotMin < WEEKEND_CAPACITY_END_MIN;
+  return inWeekendWindow ? WEEKEND_SLOT_CAPACITY : DEFAULT_SLOT_CAPACITY;
+}
+
 /**
  * Default business hours configuration
  */
@@ -92,46 +114,52 @@ export function generateTimeSlots(openTime: string, closeTime: string): string[]
 }
 
 /**
- * Check if a proposed appointment conflicts with existing appointments
+ * True when overlapping non-cancelled appointments on `date` already meet or exceed capacity.
  */
 export function hasConflict(
   slotStart: string,
   slotDuration: number,
   existingAppointments: Appointment[],
-  date: string
+  date: string,
+  capacity: number = DEFAULT_SLOT_CAPACITY
 ): boolean {
   const slotStartMinutes = timeToMinutes(slotStart);
   const slotEndMinutes = slotStartMinutes + slotDuration;
+  let overlapCount = 0;
 
   for (const appointment of existingAppointments) {
-    // Parse appointment date and time
-    const appointmentDate = new Date(appointment.scheduled_at);
-    // Use local date parts (not UTC) to match the calendar's local date string
-    const year = appointmentDate.getFullYear();
-    const month = String(appointmentDate.getMonth() + 1).padStart(2, '0');
-    const day = String(appointmentDate.getDate()).padStart(2, '0');
-    const appointmentDateStr = `${year}-${month}-${day}`;
-
-    // Skip if different date
-    if (appointmentDateStr !== date) continue;
-
-    // Skip cancelled/no-show appointments
     if (appointment.status === 'cancelled' || appointment.status === 'no_show') continue;
 
-    // Get appointment time in minutes
-    const appointmentHours = appointmentDate.getHours();
-    const appointmentMinutes = appointmentDate.getMinutes();
-    const appointmentStartMinutes = appointmentHours * 60 + appointmentMinutes;
-    const appointmentEndMinutes = appointmentStartMinutes + appointment.duration_minutes;
+    const apptDate = new Date(appointment.scheduled_at);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const apptDateStr = `${apptDate.getFullYear()}-${pad(apptDate.getMonth() + 1)}-${pad(apptDate.getDate())}`;
+    if (apptDateStr !== date) continue;
 
-    // Check for overlap
-    const hasOverlap =
-      slotStartMinutes < appointmentEndMinutes && slotEndMinutes > appointmentStartMinutes;
+    const apptStart = apptDate.getHours() * 60 + apptDate.getMinutes();
+    const apptEnd = apptStart + appointment.duration_minutes;
+    const overlaps = slotStartMinutes < apptEnd && slotEndMinutes > apptStart;
 
-    if (hasOverlap) return true;
+    if (overlaps && ++overlapCount >= capacity) return true;
   }
 
   return false;
+}
+
+/**
+ * Check if a slot identified by an ISO datetime is full at insert time.
+ * Resolves capacity (1 default, 2 for Fri/Sat 9–14) before delegating to hasConflict.
+ */
+export function isSlotFull(
+  scheduledAtISO: string,
+  durationMinutes: number,
+  existingAppointments: Appointment[]
+): boolean {
+  const d = new Date(scheduledAtISO);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const slotTime = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const capacity = getSlotCapacity(dateStr, slotTime);
+  return hasConflict(slotTime, durationMinutes, existingAppointments, dateStr, capacity);
 }
 
 /**
@@ -204,13 +232,13 @@ export function getAvailableSlots(
       return true;
     })
     .map((slotTime) => {
-      // Pass buffer to conflict check
-      const bufferMinutes = bookingSettings?.buffer_minutes || 0;
+      const capacity = getSlotCapacity(date, slotTime);
       const isAvailable = !hasConflict(
         slotTime,
-        serviceDuration + bufferMinutes,
+        serviceDuration,
         existingAppointments,
-        date
+        date,
+        capacity
       );
 
       // Check if slot overlaps with any blocked hour range

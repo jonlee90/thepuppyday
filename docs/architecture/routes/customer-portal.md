@@ -4,7 +4,7 @@
 > **Status**: Completed (Phase 4)
 > **Base Path**: `(customer)/`
 > **Authentication**: Required (customer, admin, or groomer role)
-> **Last Updated**: 2026-03-14
+> **Last Updated**: 2026-05-03
 
 ## Overview
 
@@ -143,7 +143,7 @@ The customer portal uses the following API routes:
 |-------|---------|---------|
 | `/api/customer/appointments/[id]` | PUT, DELETE | Reschedule or cancel an appointment |
 | `/api/customer/preferences/notifications` | GET, PUT | Get/update notification preferences |
-| `/api/customer/profile` | GET | Fetch customer profile data |
+| `/api/customer/profile` | PATCH | Update customer profile (name, phone, address, city, zip) |
 | `/api/customer/account` | DELETE | Delete customer account |
 
 **Public report card route**:

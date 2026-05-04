@@ -2,8 +2,8 @@
 
 > **Module**: Admin Dashboard
 > **Location**: `src/components/admin/dashboard/`
-> **Status**: Complete (Phases A-F, admin-dashboard-redesign spec, Phase 10 polish)
-> **Last Updated**: 2026-03-16
+> **Status**: Complete (Phases A-F, admin-dashboard-redesign spec, Phase 10 polish, mobile responsiveness pass)
+> **Last Updated**: 2026-05-03
 
 ## Overview
 
@@ -58,6 +58,17 @@ page.tsx (Server Component)
 ```
 
 **Note**: `QuickAccess` component was removed from the dashboard layout. `PendingActionsWidget` is now rendered above the main grid (full-width) rather than in the sidebar.
+
+### Mobile Responsiveness
+
+As part of the Phase 10 mobile pass (commits `7a6191b`, `ec39d36`), the dashboard collapses gracefully on small viewports:
+
+- **`md` and below**: 5-column grid collapses to single column (`grid-cols-1 lg:grid-cols-5`)
+- **`RevenueOverview`**: 3 cards → stacked column on `<sm`, condensed numbers, no trend sparkline
+- **`DashboardTimeline`**: NowIndicator and per-card details are preserved; cards reflow to full width
+- **`PendingActionsWidget`**: stays full-width on all breakpoints (already designed that way)
+- **Floating `WalkInButton`**: only renders on `<lg` viewports; bypasses the desktop header buttons in favor of `MobileBottomTabs`-aligned positioning
+- **Admin shell**: see [admin-panel.md → Responsive Layout](../routes/admin-panel.md#responsive-layout-layouttsx) for the surrounding `MobileHeader` / `MobileBottomTabs` / `AdminMobileNav` chrome
 
 ---
 

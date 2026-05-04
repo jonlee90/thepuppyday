@@ -51,6 +51,10 @@ const PetSizeChart = dynamic(
   () => import('./PetSizeChart').then((mod) => ({ default: mod.PetSizeChart })),
   { loading: () => <ChartSkeleton />, ssr: false }
 );
+const BreedAnalytics = dynamic(
+  () => import('./BreedAnalytics').then((mod) => ({ default: mod.BreedAnalytics })),
+  { loading: () => <ChartSkeleton />, ssr: false }
+);
 const PeakHoursChart = dynamic(
   () => import('./PeakHoursChart').then((mod) => ({ default: mod.PeakHoursChart })),
   { loading: () => <ChartSkeleton />, ssr: false }
@@ -209,6 +213,14 @@ export default function AnalyticsDashboard() {
         <div className="card bg-white shadow-md p-6">
           <h2 className="text-xl font-bold text-[#434E54] mb-4">Pet Size Distribution</h2>
           <PetSizeChart dateRange={dateRange} />
+        </div>
+      </AnalyticsErrorBoundary>
+
+      {/* Breed Insights */}
+      <AnalyticsErrorBoundary sectionName="Breed Insights">
+        <div className="card bg-white shadow-md p-6">
+          <h2 className="text-xl font-bold text-[#434E54] mb-4">Breed Insights</h2>
+          <BreedAnalytics dateRange={dateRange} />
         </div>
       </AnalyticsErrorBoundary>
 

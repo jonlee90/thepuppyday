@@ -4,7 +4,7 @@
 > **Location**: `src/lib/notifications/`
 > **Status**: Completed (Phase 8 + NT Redesign)
 > **Channels**: Email (Resend)
-> **Last Updated**: 2026-03-16
+> **Last Updated**: 2026-05-03
 
 ## Overview
 
@@ -37,7 +37,7 @@ src/lib/notifications/
   templates/
     email-base.html       # Base HTML email layout with mood banner placeholder
   triggers/
-    index.ts              # Trigger module exports
+    index.ts                  # Trigger module exports
     booking-confirmation.ts
     appointment-status.ts
     report-card-completion.ts
@@ -47,6 +47,10 @@ src/lib/notifications/
     appointment-rescheduled.ts
     review-request.ts
     waitlist-added.ts
+    grooming-complete.ts      # Customer email after grooming complete (NT redesign)
+    admin-new-booking.ts      # Admin email on new customer booking (NT redesign)
+    admin-cancellation.ts     # Admin email on cancellation (NT redesign)
+    admin-no-show.ts          # Admin email on no-show (NT redesign)
 
 src/lib/resend/
   provider.ts             # ResendProvider (EmailProvider implementation)
@@ -189,6 +193,19 @@ interface RenderedTemplate {
 **Transactional** notifications are always sent (cannot be disabled by customer).
 **Marketing** notifications respect customer preferences.
 
+### Admin / Operational Notification Types (NT Redesign)
+
+These types do **not** have rows in `notification_settings` and are sent unconditionally by their trigger functions — they are operational alerts to admin or post-grooming follow-ups, not customer marketing.
+
+| Type | Recipient | Trigger File | Description |
+|------|-----------|--------------|-------------|
+| `admin_new_booking` | Admin | `triggers/admin-new-booking.ts` | Notifies admin when a customer books (transactional) |
+| `admin_cancellation` | Admin | `triggers/admin-cancellation.ts` | Notifies admin on customer or admin-initiated cancellation |
+| `admin_no_show` | Admin | `triggers/admin-no-show.ts` | Notifies admin when an appointment is marked no-show |
+| `grooming_complete` | Customer | `triggers/grooming-complete.ts` | Sent when grooming is marked complete; includes Yelp review link as secondary CTA |
+
+Because these don't appear in `notification_settings`, the `isNotificationEnabled()` short-circuit in `service.send()` does not gate them — callers must enforce their own send-or-skip logic.
+
 ---
 
 ## Notification Triggers
@@ -249,6 +266,30 @@ export async function triggerReviewRequest(data: ReviewRequestTriggerData): Prom
 ```typescript
 export async function triggerWaitlistAdded(data: WaitlistAddedTriggerData): Promise<NotificationTriggerResult>
 ```
+
+### Grooming Complete (`grooming-complete.ts`)
+```typescript
+export async function triggerGroomingComplete(data: GroomingCompleteTriggerData): Promise<NotificationTriggerResult>
+```
+Sent to the customer when an appointment transitions to `completed`. Email body uses the `success` mood and includes a secondary CTA linking to the Yelp review page.
+
+### Admin New Booking (`admin-new-booking.ts`)
+```typescript
+export async function triggerAdminNewBooking(data: AdminNewBookingTriggerData): Promise<NotificationTriggerResult>
+```
+Sent to the admin email on every new customer-initiated booking. Uses the `info` mood.
+
+### Admin Cancellation (`admin-cancellation.ts`)
+```typescript
+export async function triggerAdminCancellation(data: AdminCancellationTriggerData): Promise<NotificationTriggerResult>
+```
+Sent to the admin email when an appointment is cancelled (by customer or admin). Uses the `warning` mood.
+
+### Admin No-Show (`admin-no-show.ts`)
+```typescript
+export async function triggerAdminNoShow(data: AdminNoShowTriggerData): Promise<NotificationTriggerResult>
+```
+Sent to the admin email when an appointment is marked `no_show`. Uses the `urgent` mood.
 
 ---
 
@@ -710,5 +751,5 @@ Retrieved via `service.getMetrics(startDate, endDate)`.
 
 ---
 
-**Last Updated**: 2026-03-16 by Claude Code
+**Last Updated**: 2026-05-03 by Claude Code
 **Changes**: Marked NT redesign as complete. All 13 email templates redesigned with mood banners and pet hero sections. New triggers: grooming complete (with Yelp review link), admin new booking, admin cancellation, admin no-show. Double-wrapping prevention in email base. Email mood system fully implemented with 6 mood types and 7 reusable component functions.

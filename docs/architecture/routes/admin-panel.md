@@ -1,10 +1,10 @@
 # Admin Panel Routes - Architecture Documentation
 
 > **Module**: Admin Panel
-> **Status**: Phases 5, 6, 8, 9, 11 Complete | Phase 7 Pending (Payments) | Admin Dashboard Redesign Complete
+> **Status**: Phases 5, 6, 8, 9, 11 Complete | Phase 7 Pending (Payments) | Admin Dashboard Redesign Complete | Mobile-Responsive Pass Complete
 > **Base Path**: `admin/`
 > **Authentication**: Required (admin or groomer role)
-> **Last Updated**: 2026-03-16
+> **Last Updated**: 2026-05-03
 
 ## Overview
 
@@ -165,6 +165,7 @@ Client component with toggleable calendar/list views.
 - **6-step wizard**: Service -> Date/Time -> Customer -> Pet -> Review+Addons -> Confirmation
 - Can search/select existing customers or create new
 - Admin can bypass availability constraints
+- **Auto-confirm**: admin-created appointments scheduled in the future are persisted with `status='confirmed'` instead of `'pending'`, so they skip the customer-confirm step (commit `614c63a`). Past appointments are unchanged.
 
 **Walk-In Appointments** (via BookingModal `mode="walkin"`):
 - **5-step wizard**: Service -> Customer -> Pet -> Review+Addons -> Confirmation
@@ -192,7 +193,7 @@ Create/edit grooming report cards with before/after photos, groomer notes, and h
 **Customer Profile** (`/admin/customers/[id]`):
 - Personal information, pets (with inline edit via PetEditModal), appointment history
 - Customer flags/notes, account activation controls
-- Pet CRUD via `/api/admin/customers/[id]/pets` (GET) and `/api/admin/customers/[id]/pets/[petId]` (PATCH)
+- Full pet CRUD: `GET/POST /api/admin/customers/[id]/pets`, `PATCH/DELETE /api/admin/customers/[id]/pets/[petId]` (commit `2a7cc38` added create + delete to the customer detail page)
 
 ---
 
@@ -200,7 +201,7 @@ Create/edit grooming report cards with before/after photos, groomer notes, and h
 
 These pages were moved under `/admin/settings/` as of Phase 10 polish:
 
-**Services** (`/admin/settings/services`): CRUD with size-based pricing, duration, display order.
+**Services** (`/admin/settings/services`): CRUD with size-based pricing, duration, display order, and an `is_quick` toggle. Services flagged as "quick" render in the compact booking-modal layout for fast walk-in entry (commit `971a5b8`).
 
 **Addons** (`/admin/settings/addons`): CRUD with fixed pricing, display order.
 

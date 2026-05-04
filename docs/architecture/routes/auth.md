@@ -4,7 +4,7 @@
 > **Status**: Completed (Phase 1)
 > **Base Path**: `(auth)/`
 > **Authentication**: Redirects if already authenticated
-> **Last Updated**: 2026-03-06
+> **Last Updated**: 2026-05-03
 
 ## Overview
 
@@ -100,6 +100,15 @@ Client component using `useAuth().signUp` and `react-hook-form` with Zod validat
 
 ---
 
+### 5. Auth Diagnostic (`/test-auth`)
+**File**: `src/app/test-auth/page.tsx`
+
+A development-only diagnostic page for verifying Supabase auth wiring (connection, session, PKCE flow). Lives **outside** the `(auth)` group so it does not pick up the auth layout.
+
+**Status**: Diagnostic / development. Not linked from the production UI. Should be removed or gated behind an env flag before public launch — currently reachable in production at `/test-auth`.
+
+---
+
 ## Layout (`layout.tsx`)
 
 **File**: `src/app/(auth)/layout.tsx`
@@ -137,11 +146,10 @@ Server component that fetches business info for the footer.
 
 The auth flow uses Supabase client-side SDK directly (no custom API routes for registration or verification).
 
-**Debug endpoint**:
-
 | Route | Method | Purpose |
 |-------|--------|---------|
-| `/api/auth/debug` | GET | Debug auth state (session, user, role) - development only |
+| `/api/auth/callback` | GET | PKCE code exchange — handles password reset links (→ `/reset-password`) and email confirmation links (→ `/dashboard`) |
+| `/api/auth/debug` | GET | Debug auth state (session, user, role) — development only |
 
 ---
 

@@ -12,7 +12,9 @@ import {
   generateTimeSlots,
   hasConflict,
   getAvailableSlots,
+  getSlotCapacity,
   isDateAvailable,
+  isSlotFull,
   getDisabledDates,
   formatTimeDisplay,
   getNextAvailableDate,
@@ -402,6 +404,118 @@ describe('availability utilities', () => {
       expect(timeToMinutes(lastSlot.time) + 60).toBeLessThanOrEqual(
         timeToMinutes('12:00')
       );
+    });
+  });
+
+  describe('getSlotCapacity', () => {
+    it('should return 2 for Friday 9:00 (within weekend window)', () => {
+      expect(getSlotCapacity('2024-01-12', '09:00')).toBe(2);
+    });
+
+    it('should return 2 for Saturday 13:00 (last weekend slot)', () => {
+      expect(getSlotCapacity('2024-01-13', '13:00')).toBe(2);
+    });
+
+    it('should return 1 for Saturday 14:00 (just outside weekend window)', () => {
+      expect(getSlotCapacity('2024-01-13', '14:00')).toBe(1);
+    });
+
+    it('should return 1 for Friday 08:00 (before window opens)', () => {
+      expect(getSlotCapacity('2024-01-12', '08:00')).toBe(1);
+    });
+
+    it('should return 1 for Thursday 9:00 (weekday)', () => {
+      expect(getSlotCapacity('2024-01-11', '09:00')).toBe(1);
+    });
+
+    it('should return 1 for Sunday 9:00 (weekend non-window day)', () => {
+      expect(getSlotCapacity('2024-01-14', '09:00')).toBe(1);
+    });
+  });
+
+  describe('hasConflict capacity', () => {
+    const fri9amAppointment: Appointment = {
+      id: 'a',
+      created_at: '2024-01-01',
+      customer_id: 'cust',
+      pet_id: 'pet',
+      service_id: 'svc',
+      groomer_id: null,
+      scheduled_at: '2024-01-12T09:00:00',
+      duration_minutes: 60,
+      status: 'confirmed',
+      payment_status: 'pending',
+      total_price: 50,
+      notes: null,
+      updated_at: '2024-01-01',
+    };
+
+    it('Fri 9:00 with 1 existing booking is still available (capacity 2)', () => {
+      expect(hasConflict('09:00', 60, [fri9amAppointment], '2024-01-12', 2)).toBe(false);
+    });
+
+    it('Fri 9:00 with 2 existing bookings is full (capacity 2)', () => {
+      const two = [fri9amAppointment, { ...fri9amAppointment, id: 'b' }];
+      expect(hasConflict('09:00', 60, two, '2024-01-12', 2)).toBe(true);
+    });
+
+    it('Sat 13:00 with 1 existing is available, with 2 is full (capacity 2)', () => {
+      const sat13 = { ...fri9amAppointment, scheduled_at: '2024-01-13T13:00:00' };
+      const sat13b = { ...sat13, id: 'b' };
+      expect(hasConflict('13:00', 60, [sat13], '2024-01-13', 2)).toBe(false);
+      expect(hasConflict('13:00', 60, [sat13, sat13b], '2024-01-13', 2)).toBe(true);
+    });
+
+    it('Sat 14:00 with 1 existing is full (capacity 1, outside weekend window)', () => {
+      const sat14 = { ...fri9amAppointment, scheduled_at: '2024-01-13T14:00:00' };
+      expect(hasConflict('14:00', 60, [sat14], '2024-01-13', 1)).toBe(true);
+    });
+
+    it('Thu 9:00 with 1 existing is full (capacity 1, weekday)', () => {
+      const thu9 = { ...fri9amAppointment, scheduled_at: '2024-01-11T09:00:00' };
+      expect(hasConflict('09:00', 60, [thu9], '2024-01-11', 1)).toBe(true);
+    });
+
+    it('defaults to capacity 1 when arg is omitted', () => {
+      expect(hasConflict('09:00', 60, [fri9amAppointment], '2024-01-12')).toBe(true);
+    });
+
+    it('cancelled appointments do not count toward capacity', () => {
+      const cancelled = { ...fri9amAppointment, status: 'cancelled' };
+      const two = [cancelled, { ...fri9amAppointment, id: 'b' }];
+      expect(hasConflict('09:00', 60, two, '2024-01-12', 2)).toBe(false);
+    });
+  });
+
+  describe('isSlotFull', () => {
+    const fri9am: Appointment = {
+      id: 'a',
+      created_at: '2024-01-01',
+      customer_id: 'cust',
+      pet_id: 'pet',
+      service_id: 'svc',
+      groomer_id: null,
+      scheduled_at: '2024-01-12T09:00:00',
+      duration_minutes: 60,
+      status: 'confirmed',
+      payment_status: 'pending',
+      total_price: 50,
+      notes: null,
+      updated_at: '2024-01-01',
+    };
+
+    it('Fri 9:00 ISO with 1 existing returns false (weekend capacity 2)', () => {
+      expect(isSlotFull('2024-01-12T09:00:00', 60, [fri9am])).toBe(false);
+    });
+
+    it('Fri 9:00 ISO with 2 existing returns true', () => {
+      const two = [fri9am, { ...fri9am, id: 'b' }];
+      expect(isSlotFull('2024-01-12T09:00:00', 60, two)).toBe(true);
+    });
+
+    it('Thu 9:00 ISO with 1 existing returns true (weekday capacity 1)', () => {
+      const thu = { ...fri9am, scheduled_at: '2024-01-11T09:00:00' };
+      expect(isSlotFull('2024-01-11T09:00:00', 60, [thu])).toBe(true);
     });
   });
 

@@ -4,7 +4,7 @@
 > **Location**: `src/lib/supabase/`
 > **Status**: Completed
 > **Provider**: Supabase (PostgreSQL + Auth + Storage + Realtime)
-> **Last Updated**: 2026-03-07
+> **Last Updated**: 2026-05-03 (verified — no drift)
 
 ## Overview
 
@@ -542,5 +542,5 @@ return data;
 
 ---
 
-**Last Updated**: 2026-03-07 by Claude Code
-**Changes**: Updated two-client pattern example to show both variable naming conventions (Pattern A/B), fixed import path for requireAdmin, marked Pattern A as preferred for new routes.
+**Last Updated**: 2026-05-03 by Claude Code
+**Changes**: Doc verified against current code during 2026-05-03 architecture refresh — no drift detected (RLS migrations `20251228_*`, `20260313/14/15_*` all consistent with documented patterns). Prior change (2026-03-07): documented two-client pattern variable naming (Pattern A/B), fixed `requireAdmin` import path, marked Pattern A as preferred for new routes.
