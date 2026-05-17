@@ -55,7 +55,7 @@ const nextConfig = {
               // Script sources: allow self, Stripe checkout, Google Maps, and inline scripts (required for Next.js)
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://maps.googleapis.com",
               // Connect sources: allow API calls to own domain, Supabase, Stripe, Google Maps
-              "connect-src 'self' https://*.supabase.co https://api.stripe.com https://maps.googleapis.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://maps.googleapis.com",
               // Frame sources: allow embedding Stripe Elements and Google Maps
               "frame-src https://js.stripe.com https://maps.googleapis.com",
               // Image sources: allow all HTTPS images, data URIs, and blob URLs for flexibility

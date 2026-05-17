@@ -243,10 +243,16 @@ export function useAuth(): UseAuthReturn {
 
   const signOut = useCallback(async (): Promise<void> => {
     const supabase = createClient();
-    await supabase.auth.signOut();
+    // Race signOut against a 3s timeout — if Supabase hangs we still redirect.
+    // scope:'local' avoids the server-side revoke call, which can stall if
+    // network is degraded or realtime connection is in a broken state.
+    await Promise.race([
+      supabase.auth.signOut({ scope: 'local' }),
+      new Promise((resolve) => setTimeout(resolve, 3000)),
+    ]).catch(() => {});
     clearAuth();
-    router.push('/login');
-  }, [clearAuth, router]);
+    window.location.href = '/login';
+  }, [clearAuth]);
 
   const resetPassword = useCallback(
     async (email: string): Promise<{ error: Error | null }> => {

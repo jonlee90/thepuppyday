@@ -388,7 +388,7 @@ export function ReviewStep({ onComplete, adminMode = false, customerId }: Review
       ) : null}
 
       {/* Add-ons Selection */}
-      {!isLoadingAddons && addons.length > 0 && (
+      {!isLoadingAddons && addons.length > 0 && (adminMode || !selectedService?.is_quick_service) && (
         <div className="space-y-3">
           <h3 className="font-semibold text-[#434E54]">Add Extra Services</h3>
           <p className="text-[#434E54]/70 text-sm max-w-2xl">Enhance your pet&apos;s grooming experience</p>
