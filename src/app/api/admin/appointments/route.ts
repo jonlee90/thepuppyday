@@ -17,6 +17,16 @@ import { generateWalkinEmail } from '@/lib/utils';
 import type { Appointment, User, Pet, Service, PetSize, ServiceWithPrices, Addon } from '@/types/database';
 import type { CreateAppointmentResponse } from '@/types/admin-appointments';
 
+// Status priority order for sorting (module-scope: init once per server boot)
+const STATUS_PRIORITY: Record<string, number> = {
+  pending: 0,
+  confirmed: 1,
+  in_progress: 2,
+  completed: 3,
+  cancelled: 4,
+  no_show: 5,
+};
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
@@ -36,16 +46,6 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get('sortOrder') || 'asc';
 
     const offset = (page - 1) * limit;
-
-    // Status priority order for sorting
-    const STATUS_PRIORITY: Record<string, number> = {
-      pending: 0,
-      confirmed: 1,
-      in_progress: 2,
-      completed: 3,
-      cancelled: 4,
-      no_show: 5,
-    };
 
     // Date priority sort: today → future → past, then by status priority within each group
     const { todayStart, todayEnd } = getTodayInBusinessTimezone();
@@ -227,24 +227,101 @@ export async function GET(request: NextRequest) {
 
     // Apply sorting
     if (isDatePrioritySort) {
-      // date_priority requires 3-group logic (today → future → past) that can't be expressed
-      // with simple .order() calls. Fetch all filtered rows, sort in JS, then paginate.
-      query = query.order('scheduled_at', { ascending: true });
+      // Bucket order: today+future (ASC) then past (DESC). Split at todayStart so we can
+      // page across buckets with two ranged DB queries instead of fetching all rows.
+      const SELECT_WITH_JOINS = `
+        *,
+        customer:users!customer_id(*),
+        pet:pets(*),
+        service:services(*),
+        groomer:users!groomer_id(*)
+      `;
 
-      const { data: rawData, error } = await query;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const applyFilters = (q: any) => {
+        if (status) q = q.eq('status', status);
+        if (service) q = q.eq('service_id', service);
+        if (dateFrom) q = q.gte('scheduled_at', dateFrom);
+        if (dateTo) {
+          const dateToEnd = new Date(dateTo);
+          dateToEnd.setHours(23, 59, 59, 999);
+          q = q.lte('scheduled_at', dateToEnd.toISOString());
+        }
+        return q;
+      };
 
-      if (error) {
-        console.error('[Admin API] Error fetching appointments:', error);
+      const baseQuery = () =>
+        // No count — total comes from baseCountQuery() to avoid duplicate COUNT(*) per page.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        applyFilters((serviceClient as any).from('appointments').select(SELECT_WITH_JOINS));
+
+      const baseCountQuery = () =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        applyFilters((serviceClient as any).from('appointments').select('id', { count: 'exact', head: true }));
+
+      const [tfCountRes, pastCountRes] = await Promise.all([
+        baseCountQuery().gte('scheduled_at', todayStart),
+        baseCountQuery().lt('scheduled_at', todayStart),
+      ]);
+
+      if (tfCountRes.error || pastCountRes.error) {
+        console.error('[Admin API] Error counting appointments:', tfCountRes.error || pastCountRes.error);
         return NextResponse.json(
           { error: 'Failed to fetch appointments' },
           { status: 500 }
         );
       }
 
-      const allData = rawData || [];
-      allData.sort(datePrioritySort);
-      const total = allData.length;
-      const data = allData.slice(offset, offset + limit);
+      const tfCount = tfCountRes.count || 0;
+      const pastCount = pastCountRes.count || 0;
+      const total = tfCount + pastCount;
+
+      const sliceTo = offset + limit;
+
+      const tfFrom = Math.min(offset, tfCount);
+      const tfTake = Math.max(0, Math.min(sliceTo, tfCount) - tfFrom);
+
+      const pastFrom = Math.max(0, offset - tfCount);
+      const pastTake = Math.max(0, Math.max(0, sliceTo - tfCount) - pastFrom);
+
+      const tfPromise = tfTake > 0
+        ? baseQuery()
+            .gte('scheduled_at', todayStart)
+            .order('scheduled_at', { ascending: true })
+            .range(tfFrom, tfFrom + tfTake - 1)
+        : Promise.resolve({ data: [], error: null });
+
+      const pastPromise = pastTake > 0
+        ? baseQuery()
+            .lt('scheduled_at', todayStart)
+            .order('scheduled_at', { ascending: false })
+            .range(pastFrom, pastFrom + pastTake - 1)
+        : Promise.resolve({ data: [], error: null });
+
+      const [tfRes, pastRes] = await Promise.all([tfPromise, pastPromise]);
+
+      if (tfRes.error || pastRes.error) {
+        console.error('[Admin API] Error fetching appointments:', tfRes.error || pastRes.error);
+        return NextResponse.json(
+          { error: 'Failed to fetch appointments' },
+          { status: 500 }
+        );
+      }
+
+      const sortByTimeThenStatus = <T extends { scheduled_at: string; status: string }>(
+        rows: T[],
+        timeAscending: boolean
+      ): T[] =>
+        [...rows].sort((a, b) => {
+          const t = a.scheduled_at.localeCompare(b.scheduled_at);
+          if (t !== 0) return timeAscending ? t : -t;
+          return (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99);
+        });
+
+      const data = [
+        ...sortByTimeThenStatus(tfRes.data || [], true),
+        ...sortByTimeThenStatus(pastRes.data || [], false),
+      ];
 
       return NextResponse.json({
         data,

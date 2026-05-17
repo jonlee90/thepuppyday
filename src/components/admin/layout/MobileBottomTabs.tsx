@@ -1,15 +1,14 @@
 /**
  * Mobile Bottom Tab Navigation
  * Fixed bottom navigation bar for mobile/tablet devices (<1024px)
- * 7 tabs: Home, Appointments, Analytics, Walk-in (center elevated), Waitlist, Customers, More
+ * Tabs: Home, Appointments, Analytics, Waitlist, Customers, More
  */
 
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Calendar, UserPlus, Users, MoreHorizontal, BarChart2, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, MoreHorizontal, BarChart2, ClipboardList } from 'lucide-react';
 import { useAdminStore } from '@/stores/admin-store';
-import { useBookingModal } from '@/hooks/useBookingModal';
 import { config } from '@/lib/config';
 
 interface MobileBottomTabsProps {
@@ -20,7 +19,6 @@ export function MobileBottomTabs({ userRole }: MobileBottomTabsProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { activeBottomTab, setActiveBottomTab, toggleMobileDrawer } = useAdminStore();
-  const { open: openModal } = useBookingModal();
   const isGroomer = userRole === 'groomer';
 
   const allTabs = [
@@ -36,35 +34,12 @@ export function MobileBottomTabs({ userRole }: MobileBottomTabsProps) {
       icon: Calendar,
       href: '/admin/appointments',
     },
-    ...(isGroomer
-      ? [
-          {
-            id: 'walkin' as const,
-            label: 'Walk-in',
-            icon: UserPlus,
-            action: 'walkin' as const,
-          },
-          {
-            id: 'customers' as const,
-            label: 'Customers',
-            icon: Users,
-            href: '/admin/customers',
-          },
-        ]
-      : [
-          {
-            id: 'customers' as const,
-            label: 'Customers',
-            icon: Users,
-            href: '/admin/customers',
-          },
-          {
-            id: 'walkin' as const,
-            label: 'Walk-in',
-            icon: UserPlus,
-            action: 'walkin' as const,
-          },
-        ]),
+    {
+      id: 'customers' as const,
+      label: 'Customers',
+      icon: Users,
+      href: '/admin/customers',
+    },
     ...(!isGroomer && config.features.waitlistEnabled
       ? [
           {
@@ -98,10 +73,7 @@ export function MobileBottomTabs({ userRole }: MobileBottomTabsProps) {
     : allTabs.filter((tab) => tab.id !== 'waitlist');
 
   const handleTabClick = (tab: typeof allTabs[number]) => {
-    if (tab.action === 'walkin') {
-      // Open walk-in booking modal
-      openModal({ mode: 'walkin' });
-    } else if (tab.action === 'drawer') {
+    if (tab.action === 'drawer') {
       // Open mobile drawer for "More" menu
       toggleMobileDrawer();
     } else if (tab.href) {
@@ -128,29 +100,6 @@ export function MobileBottomTabs({ userRole }: MobileBottomTabsProps) {
           const Icon = tab.icon;
           const active = isActive(tab);
 
-          // Walk-in button (center, elevated)
-          if (tab.id === 'walkin') {
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabClick(tab)}
-                className="flex flex-col items-center justify-center relative"
-                style={{ flex: '1 1 0' }}
-                aria-label={tab.label}
-              >
-                {/* Elevated circle button */}
-                <div className="absolute -top-6 w-14 h-14 bg-[#434E54] rounded-full flex items-center justify-center shadow-lg hover:bg-[#363F44] transition-colors">
-                  <Icon className="w-7 h-7 text-white" />
-                </div>
-                {/* Label below */}
-                <span className="text-[10px] font-medium leading-tight text-[#434E54] mt-9">
-                  {tab.label}
-                </span>
-              </button>
-            );
-          }
-
-          // Regular tabs
           return (
             <button
               key={tab.id}
