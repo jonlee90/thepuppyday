@@ -10,9 +10,8 @@ import { getMockStore } from '@/mocks/supabase/store';
 import { config } from '@/lib/config';
 import {
   getAvailableSlots,
-  DEFAULT_BUSINESS_HOURS,
+  normalizeBusinessHours,
   type TimeSlot,
-  type BusinessHours,
 } from '@/lib/booking/availability';
 import type { Appointment, Setting } from '@/types/database';
 import type { BookingSettings } from '@/types/settings';
@@ -70,6 +69,21 @@ export function useAvailability({
   const [error, setError] = useState<Error | null>(null);
   const [bookingSettings, setBookingSettings] = useState<BookingSettings | null>(null);
 
+  // Booking settings drive the calendar (business hours, blocked days, booking window),
+  // so they must load even before a date/service is picked.
+  const fetchSettings = useCallback(async (): Promise<BookingSettings | null> => {
+    try {
+      const settingsResponse = await fetch('/api/booking/settings');
+      if (!settingsResponse.ok) return null;
+      const settingsData = await settingsResponse.json();
+      setBookingSettings(settingsData.data);
+      return settingsData.data as BookingSettings;
+    } catch (settingsErr) {
+      console.warn('[useAvailability] Failed to load booking settings, using defaults:', settingsErr);
+      return null;
+    }
+  }, []);
+
   const fetchAvailability = useCallback(async () => {
     // Don't fetch if date or service not selected
     if (!date || !serviceId) {
@@ -82,20 +96,11 @@ export function useAvailability({
     setError(null);
 
     try {
-      // Fetch booking settings first (used by both mock and API mode)
-      let settings: BookingSettings | null = null;
-      try {
-        const settingsResponse = await fetch('/api/booking/settings');
-        if (settingsResponse.ok) {
-          const settingsData = await settingsResponse.json();
-          settings = settingsData.data;
-          setBookingSettings(settings);
-        }
-      } catch (settingsErr) {
-        console.warn('[useAvailability] Failed to load booking settings, using defaults:', settingsErr);
-      }
-
       if (config.useMocks) {
+        // Mock mode computes slots locally, so it needs the settings values here.
+        // The API path resolves them server-side; the mount effect covers the calendar.
+        const settings = await fetchSettings();
+
         // Fetch from mock store
         const store = getMockStore();
 
@@ -111,9 +116,7 @@ export function useAvailability({
           value: 'business_hours',
         }) as unknown as Setting[])[0];
 
-        const businessHours: BusinessHours = businessHoursSetting?.value
-          ? (businessHoursSetting.value as BusinessHours)
-          : DEFAULT_BUSINESS_HOURS;
+        const businessHours = normalizeBusinessHours(businessHoursSetting?.value);
 
         // Get all appointments for the date
         const allAppointments = store.select('appointments') as unknown as Appointment[];
@@ -150,7 +153,11 @@ export function useAvailability({
     } finally {
       setIsLoading(false);
     }
-  }, [date, serviceId]);
+  }, [date, serviceId, fetchSettings]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   useEffect(() => {
     fetchAvailability();

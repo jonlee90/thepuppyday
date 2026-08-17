@@ -3,14 +3,10 @@
  */
 
 import type { Appointment } from '@/types/database';
-import type { BookingSettings } from '@/types/settings';
+import type { BookingSettings, DayHours, DaySchedule } from '@/types/settings';
 import { isDateBlocked, isWithinBookingWindow } from '@/lib/admin/booking-settings';
 
-export interface BusinessHoursDay {
-  open: string; // "09:00"
-  close: string; // "17:00"
-  is_open: boolean;
-}
+export type BusinessHoursDay = DaySchedule;
 
 export interface BusinessHours {
   monday: BusinessHoursDay;
@@ -29,6 +25,9 @@ export interface TimeSlot {
 }
 
 const SLOT_INTERVAL_MINUTES = 60;
+
+// Latest appointment start time, regardless of when business hours close.
+const LAST_SLOT_START = '15:00';
 
 // Fri/Sat 9:00–14:00 run two groomers in parallel, so those hours fit two bookings.
 const FRIDAY = 5;
@@ -66,6 +65,54 @@ export const DEFAULT_BUSINESS_HOURS: BusinessHours = {
 };
 
 /**
+ * Settings store business hours as `{ isOpen, ranges: [{ start, end }] }`, but every
+ * availability helper here reads the legacy `{ is_open, open, close }` shape.
+ * Normalize once so callers (API routes and the booking UI) agree on the format.
+ */
+export function normalizeBusinessHours(raw: unknown): BusinessHours {
+  if (!raw || typeof raw !== 'object') return DEFAULT_BUSINESS_HOURS;
+
+  const source = raw as Record<string, Partial<DayHours & BusinessHoursDay> | undefined>;
+  const days = Object.keys(DEFAULT_BUSINESS_HOURS) as (keyof BusinessHours)[];
+  const result = {} as BusinessHours;
+
+  for (const day of days) {
+    const dayData = source[day];
+    const fallback = DEFAULT_BUSINESS_HOURS[day];
+
+    if (typeof dayData?.isOpen === 'boolean') {
+      const firstRange = dayData.ranges?.[0];
+      result[day] = {
+        is_open: dayData.isOpen,
+        open: firstRange?.start || fallback.open,
+        close: firstRange?.end || fallback.close,
+      };
+    } else {
+      result[day] =
+        typeof dayData?.is_open === 'boolean' ? (dayData as BusinessHoursDay) : fallback;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Inverse of `normalizeBusinessHours` — legacy shape back to the `{ isOpen, ranges }`
+ * form that `booking_settings.business_hours` stores.
+ */
+export function toSettingsBusinessHours(hours: BusinessHours): Record<string, DayHours> {
+  return Object.fromEntries(
+    Object.entries(hours).map(([day, schedule]) => [
+      day,
+      {
+        isOpen: schedule.is_open,
+        ranges: schedule.is_open ? [{ start: schedule.open, end: schedule.close }] : [],
+      },
+    ])
+  );
+}
+
+/**
  * Get day name from date
  */
 export function getDayName(date: Date): keyof BusinessHours {
@@ -99,14 +146,19 @@ export function minutesToTime(minutes: number): string {
 }
 
 /**
- * Generate time slots for a day within business hours
+ * Generate time slots for a day within business hours.
+ * Never starts a slot after LAST_SLOT_START, even when the shop closes later.
  */
 export function generateTimeSlots(openTime: string, closeTime: string): string[] {
   const slots: string[] = [];
-  const openMinutes = timeToMinutes(openTime);
   const closeMinutes = timeToMinutes(closeTime);
+  const lastStartMinutes = timeToMinutes(LAST_SLOT_START);
 
-  for (let minutes = openMinutes; minutes < closeMinutes; minutes += SLOT_INTERVAL_MINUTES) {
+  for (
+    let minutes = timeToMinutes(openTime);
+    minutes < closeMinutes && minutes <= lastStartMinutes;
+    minutes += SLOT_INTERVAL_MINUTES
+  ) {
     slots.push(minutesToTime(minutes));
   }
 

@@ -8,22 +8,8 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/admin/auth';
-
-interface DaySchedule {
-  is_open: boolean;
-  open: string;
-  close: string;
-}
-
-interface BusinessHours {
-  monday: DaySchedule;
-  tuesday: DaySchedule;
-  wednesday: DaySchedule;
-  thursday: DaySchedule;
-  friday: DaySchedule;
-  saturday: DaySchedule;
-  sunday: DaySchedule;
-}
+import { toSettingsBusinessHours, type BusinessHours } from '@/lib/booking/availability';
+import { BookingSettingsSchema } from '@/types/settings';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -100,6 +86,42 @@ export async function PUT(request: NextRequest) {
           { error: 'Failed to create business hours setting' },
           { status: 500 }
         );
+      }
+    }
+
+    // The booking flow reads hours from booking_settings.business_hours (in { isOpen, ranges }
+    // form), so mirror the change there — otherwise the calendar keeps the old schedule.
+    const { data: bookingSettingsRow } = (await (serviceClient as any)
+      .from('settings')
+      .select('value')
+      .eq('key', 'booking_settings')
+      .single()) as { data: { value: Record<string, unknown> } | null };
+
+    if (bookingSettingsRow?.value) {
+      const merged = {
+        ...bookingSettingsRow.value,
+        business_hours: toSettingsBusinessHours(businessHours),
+      };
+
+      // Both booking-settings readers safeParse this row and fall back to defaults on a
+      // miss, so a malformed write here would silently drop blocked dates and the
+      // booking window. Validate before touching the row.
+      const parsed = BookingSettingsSchema.safeParse(merged);
+
+      if (!parsed.success) {
+        console.error('[Business Hours API] Refusing invalid booking settings sync:', parsed.error);
+      } else {
+        const { error: syncError } = (await (serviceClient as any)
+          .from('settings')
+          .update({
+            value: parsed.data,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('key', 'booking_settings')) as { error: Error | null };
+
+        if (syncError) {
+          console.error('[Business Hours API] Booking settings sync error:', syncError);
+        }
       }
     }
 

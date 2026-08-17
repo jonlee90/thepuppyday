@@ -82,9 +82,9 @@ describe('minutesToTime', () => {
 });
 
 describe('generateTimeSlots', () => {
-  it('generates 30-minute slots', () => {
+  it('generates hourly slots', () => {
     const slots = generateTimeSlots('09:00', '11:00');
-    expect(slots).toEqual(['09:00', '09:30', '10:00', '10:30']);
+    expect(slots).toEqual(['09:00', '10:00']);
   });
 
   it('returns empty array for same open and close time', () => {
@@ -92,11 +92,11 @@ describe('generateTimeSlots', () => {
     expect(slots).toEqual([]);
   });
 
-  it('generates all-day slots correctly', () => {
+  it('generates all-day slots correctly, capped at the 3pm last start', () => {
     const slots = generateTimeSlots('09:00', '18:00');
-    expect(slots.length).toBe(18); // 9 hours * 2 slots/hour
+    expect(slots.length).toBe(7); // 09:00 through 15:00, hourly
     expect(slots[0]).toBe('09:00');
-    expect(slots[slots.length - 1]).toBe('17:30');
+    expect(slots[slots.length - 1]).toBe('15:00');
   });
 });
 

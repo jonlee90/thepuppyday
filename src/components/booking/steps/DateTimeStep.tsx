@@ -26,8 +26,7 @@ const AdminFreeTimeInput = dynamic(
 import {
   getDisabledDates,
   formatTimeDisplay,
-  DEFAULT_BUSINESS_HOURS,
-  type BusinessHours,
+  normalizeBusinessHours,
 } from '@/lib/booking/availability';
 
 export function DateTimeStep() {
@@ -58,8 +57,11 @@ export function DateTimeStep() {
     serviceId: isAdmin ? null : (selectedService?.id || null),
   });
 
-  // Use business hours from booking settings or default
-  const businessHours: BusinessHours = bookingSettings?.business_hours || DEFAULT_BUSINESS_HOURS;
+  // Settings store hours as { isOpen, ranges }; normalize to the legacy shape these helpers read
+  const businessHours = useMemo(
+    () => normalizeBusinessHours(bookingSettings?.business_hours),
+    [bookingSettings?.business_hours]
+  );
 
   // Calculate disabled dates with booking settings (customer mode only)
   const disabledDates = useMemo(() => {

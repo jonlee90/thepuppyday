@@ -11,56 +11,14 @@ import { createServerSupabaseClient, type AppSupabaseClient } from '@/lib/supaba
 import { requireAdmin } from '@/lib/admin/auth';
 import {
   getAvailableSlots,
-  DEFAULT_BUSINESS_HOURS,
+  normalizeBusinessHours,
   getDayName,
   type TimeSlot,
-  type BusinessHours,
 } from '@/lib/booking/availability';
 import type { Appointment } from '@/types/database';
 import type { BookingSettings, BlockedDate } from '@/types/settings';
 
 export const dynamic = 'force-dynamic';
-
-interface NewFormatHours {
-  [key: string]: {
-    isOpen?: boolean;
-    is_open?: boolean;
-    ranges?: Array<{ start: string; end: string }>;
-    open?: string;
-    close?: string;
-  };
-}
-
-/**
- * Convert new booking hours format to legacy format for getAvailableSlots
- * New format: { isOpen: boolean, ranges: [{ start: string, end: string }] }
- * Legacy format: { is_open: boolean, open: string, close: string }
- */
-function convertToLegacyFormat(newFormatHours: NewFormatHours): BusinessHours {
-  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
-  const result: Partial<BusinessHours> = {};
-
-  for (const day of days) {
-    const dayData = newFormatHours[day];
-    if (dayData && typeof dayData.isOpen === 'boolean') {
-      // New format - convert to legacy
-      const firstRange = dayData.ranges?.[0];
-      result[day] = {
-        is_open: dayData.isOpen,
-        open: firstRange?.start || '09:00',
-        close: firstRange?.end || '17:00',
-      };
-    } else if (dayData && typeof dayData.is_open === 'boolean') {
-      // Already in legacy format
-      result[day] = dayData as { is_open: boolean; open: string; close: string };
-    } else {
-      // Fallback to default
-      result[day] = DEFAULT_BUSINESS_HOURS[day];
-    }
-  }
-
-  return result as BusinessHours;
-}
 
 /**
  * Check if a date falls within any blocked date range
@@ -155,11 +113,7 @@ export async function GET(request: NextRequest) {
       recurring_blocked_days: [0], // Sunday by default
     };
 
-    // Extract and convert booking hours from settings
-    const rawBookingHours = bookingSettings.business_hours;
-    const businessHours = rawBookingHours
-      ? convertToLegacyFormat(rawBookingHours)
-      : DEFAULT_BUSINESS_HOURS;
+    const businessHours = normalizeBusinessHours(bookingSettings.business_hours);
 
     // Parse date and check day of week
     const [year, month, day] = date.split('-').map(Number);

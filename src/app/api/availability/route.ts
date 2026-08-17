@@ -9,45 +9,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import {
   getAvailableSlots,
-  DEFAULT_BUSINESS_HOURS,
+  normalizeBusinessHours,
   timeToMinutes,
   getDayName,
-  type BusinessHours,
   type TimeSlot,
 } from '@/lib/booking';
 import type { BookingSettings, BlockedDate } from '@/types/settings';
 import { config } from '@/lib/config';
-
-/**
- * Convert new booking hours format to legacy format for getAvailableSlots
- * New format: { isOpen: boolean, ranges: [{ start: string, end: string }] }
- * Legacy format: { is_open: boolean, open: string, close: string }
- */
-function convertToLegacyFormat(newFormatHours: any): BusinessHours {
-  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
-  const result: any = {};
-
-  for (const day of days) {
-    const dayData = newFormatHours[day];
-    if (dayData && typeof dayData.isOpen === 'boolean') {
-      // New format - convert to legacy
-      const firstRange = dayData.ranges?.[0];
-      result[day] = {
-        is_open: dayData.isOpen,
-        open: firstRange?.start || '09:00',
-        close: firstRange?.end || '17:00',
-      };
-    } else if (dayData && typeof dayData.is_open === 'boolean') {
-      // Already in legacy format
-      result[day] = dayData;
-    } else {
-      // Fallback to default
-      result[day] = DEFAULT_BUSINESS_HOURS[day];
-    }
-  }
-
-  return result as BusinessHours;
-}
 
 /**
  * Check if a date falls within any blocked date range.
@@ -158,11 +126,7 @@ export async function GET(req: NextRequest) {
       recurring_blocked_days: [0], // Sunday by default
     };
 
-    // Extract and convert booking hours from settings
-    const rawBookingHours = bookingSettings.business_hours;
-    const businessHours = rawBookingHours
-      ? convertToLegacyFormat(rawBookingHours)
-      : DEFAULT_BUSINESS_HOURS;
+    const businessHours = normalizeBusinessHours(bookingSettings.business_hours);
 
     // Parse date and check day of week
     const [year, month, day] = date.split('-').map(Number);

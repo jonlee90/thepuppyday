@@ -6,6 +6,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Appointment } from '@/types/database';
 import {
   DEFAULT_BUSINESS_HOURS,
+  normalizeBusinessHours,
+  getDisabledDates,
   getDayName,
   timeToMinutes,
   minutesToTime,
@@ -136,21 +138,26 @@ describe('availability utilities', () => {
   });
 
   describe('generateTimeSlots', () => {
-    it('should generate 30-minute intervals', () => {
+    it('should generate hourly intervals', () => {
       const slots = generateTimeSlots('09:00', '11:00');
-      expect(slots).toEqual(['09:00', '09:30', '10:00', '10:30']);
+      expect(slots).toEqual(['09:00', '10:00']);
     });
 
-    it('should generate full business day slots (9am-5pm)', () => {
+    it('should stop at 3pm on a full business day (9am-5pm)', () => {
       const slots = generateTimeSlots('09:00', '17:00');
-      expect(slots).toHaveLength(16); // 8 hours * 2 slots per hour
-      expect(slots[0]).toBe('09:00');
-      expect(slots[slots.length - 1]).toBe('16:30');
+      expect(slots).toEqual([
+        '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00',
+      ]);
+    });
+
+    it('should never start a slot after 3pm even when open late', () => {
+      const slots = generateTimeSlots('09:00', '21:00');
+      expect(slots[slots.length - 1]).toBe('15:00');
     });
 
     it('should not include closing time', () => {
       const slots = generateTimeSlots('09:00', '10:00');
-      expect(slots).toEqual(['09:00', '09:30']);
+      expect(slots).toEqual(['09:00']);
       expect(slots).not.toContain('10:00');
     });
 
@@ -166,7 +173,7 @@ describe('availability utilities', () => {
 
     it('should handle afternoon times', () => {
       const slots = generateTimeSlots('14:00', '16:00');
-      expect(slots).toEqual(['14:00', '14:30', '15:00', '15:30']);
+      expect(slots).toEqual(['14:00', '15:00']);
     });
   });
 
@@ -826,5 +833,42 @@ describe('availability utilities', () => {
 
       vi.useRealTimers();
     });
+  });
+});
+
+describe('normalizeBusinessHours', () => {
+  const settingsFormat = {
+    monday: { isOpen: true, ranges: [{ start: '09:00', end: '17:00' }] },
+    tuesday: { isOpen: true, ranges: [{ start: '09:00', end: '17:00' }] },
+    wednesday: { isOpen: true, ranges: [{ start: '09:00', end: '17:00' }] },
+    thursday: { isOpen: true, ranges: [{ start: '09:00', end: '17:00' }] },
+    friday: { isOpen: true, ranges: [{ start: '09:00', end: '17:00' }] },
+    saturday: { isOpen: true, ranges: [{ start: '09:00', end: '17:00' }] },
+    sunday: { isOpen: true, ranges: [{ start: '10:00', end: '17:00' }] },
+  };
+
+  it('converts the settings { isOpen, ranges } shape to the legacy shape', () => {
+    const hours = normalizeBusinessHours(settingsFormat);
+    expect(hours.sunday).toEqual({ is_open: true, open: '10:00', close: '17:00' });
+  });
+
+  it('passes legacy hours through unchanged', () => {
+    const hours = normalizeBusinessHours(DEFAULT_BUSINESS_HOURS);
+    expect(hours).toEqual(DEFAULT_BUSINESS_HOURS);
+  });
+
+  it('falls back to defaults for missing input', () => {
+    expect(normalizeBusinessHours(undefined)).toEqual(DEFAULT_BUSINESS_HOURS);
+  });
+
+  it('leaves an open Sunday enabled in the calendar', () => {
+    const hours = normalizeBusinessHours(settingsFormat);
+    // 2026-08-16 is a Sunday
+    const disabled = getDisabledDates(
+      new Date(2026, 7, 16),
+      new Date(2026, 7, 16),
+      hours
+    );
+    expect(disabled).not.toContain('2026-08-16');
   });
 });
